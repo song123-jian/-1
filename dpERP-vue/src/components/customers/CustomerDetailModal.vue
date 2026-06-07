@@ -14,7 +14,7 @@
               <div class="detail-top-badges">
                 <span class="level-badge" :class="'level-' + currentCustomer.level">{{ levelLabel(currentCustomer.level) }}</span>
                 <span class="status-badge" :class="'status-' + currentCustomer.status">{{ currentCustomer.status === 'active' ? '活跃' : '休眠' }}</span>
-                <span v-for="tagId in (currentCustomer.tags || [])" :key="tagId" class="mini-tag" :style="getTagStyle(tagId)">{{ getTagName(tagId) }}</span>
+                <span v-for="tagId in (currentCustomer.tags || [])" :key="tagId" class="mini-tag" :style="_getTagStyle(tagId)">{{ _getTagName(tagId) }}</span>
               </div>
               <div class="detail-top-meta">{{ currentCustomer.customerNo }} · {{ currentCustomer.region || '未知区域' }} · {{ currentCustomer.contactName || currentCustomer.contact || '未指定联系人' }}</div>
             </div>
@@ -156,8 +156,8 @@
             <div class="detail-section">
               <div class="detail-section-title"><Icon name="tag" :size="14" /> 当前标签</div>
               <div class="detail-tags-area" v-if="(currentCustomer.tags || []).length > 0">
-                <span v-for="tagId in (currentCustomer.tags || [])" :key="tagId" class="detail-tag" :style="getTagStyle(tagId)">
-                  {{ getTagName(tagId) }}
+                <span v-for="tagId in (currentCustomer.tags || [])" :key="tagId" class="detail-tag" :style="_getTagStyle(tagId)">
+                  {{ _getTagName(tagId) }}
                   <span class="tag-remove" @click="removeTag(tagId)"><Icon name="close" :size="14" /></span>
                 </span>
               </div>
@@ -235,6 +235,9 @@ import { ref, computed, reactive, watch } from 'vue'
 import { useCustomerStore } from '@/stores/customer'
 import { useDataStore } from '@/stores/data'
 import { useQuotationStore } from '@/stores/quotation'
+import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
+import { quoteStatusLabel, quoteStatusClass, contractStatusLabel, contractStatusClass, collectionMethodLabel } from '@/utils/statusMaps'
 
 const customerStore = useCustomerStore()
 const dataStore = useDataStore()
@@ -247,49 +250,12 @@ const props = defineProps({
 
 defineEmits(['close', 'edit', 'open360'])
 
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
+function _getTagName(tagId) {
+  return getTagName(customerStore.tags, tagId)
 }
 
-function getTagName(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  return tag ? tag.name : tagId
-}
-
-function getTagStyle(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  if (!tag) return {}
-  return { background: tag.color + '20', color: tag.color }
-}
-
-function quoteStatusLabel(s) {
-  const map = { draft: '草稿', pending: '待审', sent: '已发送', accepted: '已接受', approved: '已批准', rejected: '已拒绝', expired: '已过期' }
-  return map[s] || s
-}
-
-function quoteStatusClass(s) {
-  const map = { draft: 'status-draft', pending: 'status-pending', sent: 'status-sent', accepted: 'status-accepted', approved: 'status-approved', rejected: 'status-rejected', expired: 'status-expired' }
-  return map[s] || ''
-}
-
-function contractStatusLabel(s) {
-  const map = { pending: '待签', active: '执行中', completed: '已完成', expired: '已过期', terminated: '已终止' }
-  return map[s] || s
-}
-
-function contractStatusClass(s) {
-  const map = { pending: 'status-pending', active: 'status-accepted', completed: 'status-approved', expired: 'status-expired', terminated: 'status-rejected' }
-  return map[s] || ''
-}
-
-function collectionMethodLabel(m) {
-  const map = { bank_transfer: '银行转账', cash: '现金', check: '支票', other: '其他' }
-  return map[m] || m || '-'
+function _getTagStyle(tagId) {
+  return getTagStyle(customerStore.tags, tagId)
 }
 
 // 从 store 获取最新的客户数据（响应式）
@@ -390,7 +356,7 @@ const customerTimeline = computed(() => {
 // 标签管理
 const availableTags = computed(() => {
   if (!currentCustomer.value) return []
-  return customerStore.tags.filter(t => !(currentCustomer.value.tags || []).includes(t.id))
+  return customerStore.tags.filter(t => !t.hidden && !(currentCustomer.value.tags || []).includes(t.id))
 })
 
 const availableTagsByGroup = computed(() => {
@@ -404,7 +370,7 @@ const availableTagsByGroup = computed(() => {
 
 const detailTagGroups = computed(() => {
   const groups = new Set()
-  customerStore.tags.forEach(t => { if (t.group) groups.add(t.group) })
+  customerStore.tags.filter(t => !t.hidden).forEach(t => { if (t.group) groups.add(t.group) })
   return [...groups].sort()
 })
 

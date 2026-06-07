@@ -117,23 +117,15 @@ async function syncToServer(resource, items) {
 
   const tableName = getTableName(resource)
   try {
-    // 先清空远端数据
-    const { error: delError } = await sb
-      .from(tableName)
-      .delete()
-      .neq('id', '___never___') // 删除所有行
-    if (delError) throw delError
-
-    // 批量插入
+    // 使用 upsert 策略替代先删后插，避免数据丢失
     if (items && items.length > 0) {
-      // Supabase 单次插入上限约1000条，分批处理
       const BATCH_SIZE = 500
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         const batch = items.slice(i, i + BATCH_SIZE)
-        const { error: insError } = await sb
+        const { error: upsertError } = await sb
           .from(tableName)
-          .insert(batch)
-        if (insError) throw insError
+          .upsert(batch, { onConflict: 'id' })
+        if (upsertError) throw upsertError
       }
     }
 

@@ -104,6 +104,15 @@ export const useEcommerceStore = defineStore('ecommerce', () => {
     save(PRODUCT_MAPPING_KEY, productMappings.value)
   }
 
+  /** 清理30天前的同步日志 */
+  function cleanupExpiredLogs() {
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
+    syncLogs.value = syncLogs.value.filter(l => {
+      const ts = l.createdAt || l.startTime
+      return ts && new Date(ts).getTime() > thirtyDaysAgo
+    })
+  }
+
   /**
    * 模拟连接平台
    * 生成授权URL，3秒后模拟连接成功
@@ -171,9 +180,12 @@ export const useEcommerceStore = defineStore('ecommerce', () => {
       count: 0,
       startTime,
       endTime: null,
-      message: '同步进行中...'
+      message: '同步进行中...',
+      createdAt: new Date().toISOString()
     }
     syncLogs.value.unshift(runningLog)
+    /* 清理30天前的日志 */
+    cleanupExpiredLogs()
     persistSyncLogs()
 
     setTimeout(() => {

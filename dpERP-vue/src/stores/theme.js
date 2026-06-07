@@ -14,7 +14,17 @@ export const useThemeStore = defineStore('theme', () => {
     { key: 'crimson', name: '赤焰红', color: '#ef4444' },
     { key: 'emerald', name: '翡翠绿', color: '#10b981' },
     { key: 'rose', name: '玫瑰粉', color: '#f43f5e' },
-    { key: 'indigo', name: '靛蓝', color: '#6366f1' }
+    { key: 'indigo', name: '靛蓝', color: '#6366f1' },
+    { key: 'amber', name: '琥珀', color: '#f59e0b' },
+    { key: 'teal', name: '青绿', color: '#14b8a6' },
+    { key: 'pink', name: '粉色', color: '#ec4899' },
+    { key: 'slate', name: '石板灰', color: '#64748b' },
+    { key: 'sky', name: '天空蓝', color: '#0ea5e9' },
+    { key: 'lime', name: '青柠', color: '#84cc16' },
+    { key: 'orange', name: '橙色', color: '#f97316' },
+    { key: 'cyan', name: '青色', color: '#06b6d4' },
+    { key: 'violet', name: '紫罗兰', color: '#8b5cf6' },
+    { key: 'yellow', name: '黄色', color: '#eab308' }
   ]
 
   const presets = [
@@ -24,16 +34,25 @@ export const useThemeStore = defineStore('theme', () => {
 
   function setTheme(themeKey) {
     currentTheme.value = themeKey
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', themeKey)
+    }
     localStorage.setItem('gj_erp_theme', themeKey)
   }
 
   function setPreset(presetKey) {
     currentPreset.value = presetKey
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-preset', presetKey)
+    }
     localStorage.setItem('gj_erp_activePreset', presetKey)
   }
 
   function setMode(mode) {
     currentMode.value = mode
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-mode', mode)
+    }
     localStorage.setItem('gj_erp_themeMode', mode)
   }
 

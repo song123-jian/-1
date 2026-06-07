@@ -153,11 +153,12 @@
                 <th>付款日期</th>
                 <th>操作人</th>
                 <th>备注</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="paginatedPayments.length === 0">
-                <td colspan="9" class="empty-state">
+                <td colspan="10" class="empty-state">
                   <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无付款记录
                 </td>
               </tr>
@@ -171,6 +172,7 @@
                 <td>{{ pm.paymentDate }}</td>
                 <td>{{ pm.operator }}</td>
                 <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="pm.notes">{{ pm.notes || '-' }}</td>
+                <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleRevokePayment(pm)">撤销</button></td>
               </tr>
             </tbody>
           </table>
@@ -208,139 +210,40 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { usePayableStore } from '@/stores/payable'
 import { useInventoryStore } from '@/stores/inventory'
 import PaymentFormModal from '@/components/finance/PaymentFormModal.vue'
 import AgingAnalysis from '@/components/finance/AgingAnalysis.vue'
 import DataSelect from '@/components/DataSelect.vue'
+import { formatMoney } from '@/utils/format'
+import { useFinancePage } from '@/composables/useFinancePage'
 
 const payableStore = usePayableStore()
 const inventoryStore = useInventoryStore()
 
-const currentTab = ref('payables')
-const showPaymentForm = ref(false)
-const selectedPayable = ref(null)
-const payablePage = ref(1)
-const paymentPage = ref(1)
-const pageSize = 10
-
-const tabs = [
-  { key: 'payables', label: '应付列表', icon: 'list' },
-  { key: 'payments', label: '付款记录', icon: 'dollar' },
-  { key: 'aging', label: '账龄分析', icon: 'chart' }
-]
-
-const filters = reactive({
-  search: '',
-  status: '',
-  supplierId: ''
+const {
+  currentTab, tabs, filters, agingData, getRowStyle, resetFilters, onEntityChange,
+  /* 重命名为模板中使用的变量名 */
+  showForm: showPaymentForm,
+  selectedItem: selectedPayable,
+  primaryPage: payablePage,
+  secondaryPage: paymentPage,
+  paginatedPrimaryList: paginatedPayables,
+  totalPrimaryPages: totalPayablePages,
+  paginatedSecondaryList: paginatedPayments,
+  totalSecondaryPages: totalPaymentPages,
+  openForm: openPaymentForm,
+  onFormSaved: onPaymentSaved,
+  handleRevoke: handleRevokePayment,
+} = useFinancePage({
+  financeStore: payableStore,
+  secondaryStore: inventoryStore,
+  type: 'payable'
 })
 
-/* 供应商列表 */
-const supplierList = computed(() => {
-  const suppliers = inventoryStore.suppliers || []
-  const seen = new Set()
-  const result = []
-  /* 从应付单中提取供应商 */
-  for (const py of payableStore.payables) {
-    if (py.supplierId && !seen.has(py.supplierId)) {
-      seen.add(py.supplierId)
-      result.push({ id: py.supplierId, name: py.supplierName })
-    }
-  }
-  /* 补充供应商Store中的数据 */
-  for (const s of suppliers) {
-    const id = s.id
-    if (!seen.has(id)) {
-      seen.add(id)
-      result.push({ id, name: s.name || s.shortName })
-    }
-  }
-  return result
-})
-
-/* 筛选后的应付列表 */
-const filteredPayables = computed(() => {
-  return payableStore.payables.filter(py => {
-    if (filters.search) {
-      const s = filters.search.toLowerCase()
-      if (!(py.payableNo || '').toLowerCase().includes(s) &&
-          !(py.supplierName || '').toLowerCase().includes(s) &&
-          !(py.sourceNo || '').toLowerCase().includes(s)) return false
-    }
-    if (filters.status && py.status !== filters.status) return false
-    if (filters.supplierId && py.supplierId !== filters.supplierId) return false
-    return true
-  })
-})
-
-/* 筛选后的付款列表 */
-const filteredPayments = computed(() => {
-  let list = [...payableStore.payments]
-  if (filters.search) {
-    const s = filters.search.toLowerCase()
-    list = list.filter(pm =>
-      (pm.paymentNo || '').toLowerCase().includes(s) ||
-      (pm.supplierName || '').toLowerCase().includes(s)
-    )
-  }
-  if (filters.supplierId) {
-    list = list.filter(pm => pm.supplierId === filters.supplierId)
-  }
-  return list.sort((a, b) => (b.paymentDate || '').localeCompare(a.paymentDate || ''))
-})
-
-/* 分页 */
-const totalPayablePages = computed(() => Math.max(1, Math.ceil(filteredPayables.value.length / pageSize)))
-const paginatedPayables = computed(() => {
-  const start = (payablePage.value - 1) * pageSize
-  return filteredPayables.value.slice(start, start + pageSize)
-})
-
-const totalPaymentPages = computed(() => Math.max(1, Math.ceil(filteredPayments.value.length / pageSize)))
-const paginatedPayments = computed(() => {
-  const start = (paymentPage.value - 1) * pageSize
-  return filteredPayments.value.slice(start, start + pageSize)
-})
-
-/* 账龄分析数据 */
-const agingData = computed(() => payableStore.getAgingAnalysis())
-
-function onSupplierChange({ value, data }) {
-  if (data) {
-    filters.supplierId = data.id
-  }
-}
-
-function resetFilters() {
-  filters.search = ''
-  filters.status = ''
-  filters.supplierId = ''
-  payablePage.value = 1
-  paymentPage.value = 1
-}
-
-function openPaymentForm(py) {
-  selectedPayable.value = py || null
-  showPaymentForm.value = true
-}
-
-function onPaymentSaved() {
-  selectedPayable.value = null
-}
-
-function getRowStyle(py) {
-  if (py.status === 'overdue') return { borderLeft: '3px solid var(--color-danger)' }
-  if (py.status === 'partial') return { borderLeft: '3px solid var(--color-warning)' }
-  if (py.status === 'completed') return { borderLeft: '3px solid var(--color-success)' }
-  return {}
-}
-
-function formatMoney(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-}
+/* 保留 onSupplierChange 作为 onEntityChange 的别名，兼容模板 */
+const onSupplierChange = onEntityChange
 
 onMounted(() => {
   payableStore.initSeedData()

@@ -608,8 +608,8 @@ class DataService {
       const session = useSessionStore()
       const permStore = usePermissionStore()
 
-      if (!session.isLoggedIn) {
-        return { allowed: false, reason: '请先选择角色' }
+      if (!session.currentRole) {
+        return { allowed: false, reason: '未登录' }
       }
 
       const role = session.currentRole
@@ -647,9 +647,9 @@ class DataService {
 
       return { allowed: true, reason: '' }
     } catch (e) {
-      /* 权限检查失败时默认允许（降级策略） */
-      console.warn('[DataService] 权限检查异常:', e)
-      return { allowed: true, reason: '' }
+      /* 权限检查异常时默认拒绝（安全优先） */
+      console.error('[DataService] 权限检查异常:', e)
+      return { allowed: false, reason: '权限检查失败，默认拒绝' }
     }
   }
 

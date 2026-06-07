@@ -37,7 +37,7 @@
                 <div v-if="!isInlineEditing(c.id, 'fullName')" class="name-cell">
                   <strong>{{ c.fullName || c.name }}</strong>
                   <div v-if="c.tags && c.tags.length > 0" class="tag-row">
-                    <span v-for="tagId in c.tags" :key="tagId" class="mini-tag" :style="getTagStyle(tagId)">{{ getTagName(tagId) }}</span>
+                    <span v-for="tagId in c.tags" :key="tagId" class="mini-tag" :style="_getTagStyle(tagId)">{{ _getTagName(tagId) }}</span>
                   </div>
                 </div>
                 <input v-else v-model="inlineEdit.value" class="inline-input" @keydown="onInlineKeydown($event, c)" @blur="confirmInlineEdit(c)" />
@@ -111,6 +111,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCustomerStore } from '@/stores/customer'
 import { useQuotationStore } from '@/stores/quotation'
 import { useDataStore } from '@/stores/data'
+import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
 
 const customerStore = useCustomerStore()
 const quotationStore = useQuotationStore()
@@ -123,25 +124,14 @@ const props = defineProps({
 
 const emit = defineEmits(['update:selectedIds', 'openEdit', 'openDetail', 'handleDelete'])
 
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
 const decisionOptions = ['', '决策者', '影响者', '使用者', '推荐者', '把关者']
 
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
+function _getTagName(tagId) {
+  return getTagName(customerStore.tags, tagId)
 }
 
-function getTagName(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  return tag ? tag.name : tagId
-}
-
-function getTagStyle(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  if (!tag) return {}
-  return { background: tag.color + '20', color: tag.color }
+function _getTagStyle(tagId) {
+  return getTagStyle(customerStore.tags, tagId)
 }
 
 function getCustomerDocCount(c) {

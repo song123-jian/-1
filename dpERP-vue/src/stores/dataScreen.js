@@ -14,6 +14,9 @@ import { useCollectionStore } from './collection'
 export const useDataScreenStore = defineStore('dataScreen', () => {
   /* ==================== 辅助函数 ==================== */
 
+  /** 数据刷新间隔（毫秒），默认30秒 */
+  const REFRESH_INTERVAL = 30000
+
   /** 获取当前日期字符串 YYYY-MM-DD */
   function today() {
     return new Date().toISOString().split('T')[0]
@@ -581,6 +584,8 @@ export const useDataScreenStore = defineStore('dataScreen', () => {
   ])
 
   return {
+    // 配置
+    REFRESH_INTERVAL,
     // 销售数据
     todaySalesAmount,
     todayOrderCount,

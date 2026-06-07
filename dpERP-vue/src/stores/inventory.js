@@ -103,6 +103,21 @@ const ALERT_STATUS_COLORS = {
   over: 'var(--color-info)'
 }
 
+export const categoryOptions = [
+  { value: 'raw', label: '原材料' },
+  { value: 'finished', label: '成品' },
+  { value: 'semi', label: '半成品' },
+  { value: 'auxiliary', label: '辅料' },
+  { value: 'packaging', label: '包装材料' }
+]
+
+export const warehouseOptions = [
+  { value: 'main', label: '主仓库' },
+  { value: 'secondary', label: '副仓库' },
+  { value: 'temp', label: '临时仓库' },
+  { value: 'return', label: '退货仓库' }
+]
+
 export const useInventoryStore = defineStore('inventory', () => {
   /* 获取当前用户标识 */
   function getCurrentUser() {
@@ -288,16 +303,20 @@ export const useInventoryStore = defineStore('inventory', () => {
     persist()
   }
 
-  function adjustStock(itemCode, delta) {
-    const idx = inventory.value.findIndex(i => i.code === itemCode)
-    if (idx !== -1) {
-      inventory.value[idx].quantity = Math.max(0, (parseFloat(inventory.value[idx].quantity) || 0) + delta)
-      inventory.value[idx].totalValue = inventory.value[idx].quantity * (parseFloat(inventory.value[idx].unitCost) || 0)
-      inventory.value[idx].status = computeAlertStatus(inventory.value[idx]) === 'ok' ? 'normal' : computeAlertStatus(inventory.value[idx])
-      persist()
-      return true
+  function adjustStock(itemCode, delta, direction, reason, itemId) {
+    let invIdx = -1
+    if (itemId) {
+      invIdx = inventory.value.findIndex(i => i.id === itemId)
     }
-    return false
+    if (invIdx === -1) {
+      invIdx = inventory.value.findIndex(i => i.code === itemCode)
+    }
+    if (invIdx === -1) return false
+    inventory.value[invIdx].quantity = Math.max(0, (parseFloat(inventory.value[invIdx].quantity) || 0) + delta)
+    inventory.value[invIdx].totalValue = inventory.value[invIdx].quantity * (parseFloat(inventory.value[invIdx].unitCost) || 0)
+    inventory.value[invIdx].status = computeAlertStatus(inventory.value[invIdx]) === 'ok' ? 'normal' : computeAlertStatus(inventory.value[invIdx])
+    persist()
+    return true
   }
 
   function submitInboundOrder(data) {
@@ -389,6 +408,16 @@ export const useInventoryStore = defineStore('inventory', () => {
 
     if (newItems.length > 0) {
       for (const ni of newItems) {
+        const code = ni.code
+        /* 自动创建物料前增加编码非空和唯一性校验 */
+        if (!code || !code.trim()) {
+          console.warn('[Inventory] 自动创建物料失败：编码为空')
+          continue
+        }
+        if (inventory.value.some(i => i.code === code)) {
+          console.warn(`[Inventory] 自动创建物料失败：编码 ${code} 已存在`)
+          continue
+        }
         inventory.value.push({
           id: generateId('i'),
           code: ni.code,
@@ -743,6 +772,40 @@ export const useInventoryStore = defineStore('inventory', () => {
     return generateOrderNo(warehouseOrders.value, 'CK')
   }
 
+  function saveOutboundDraft(data) {
+    data.status = 'draft'
+    data.outStatus = 'draft'
+    const orderNo = data.outboundNo || data.orderNo || generateOrderNo(warehouseOrders.value, 'CK')
+    const order = {
+      id: data.id || generateId('wo'),
+      orderNo: data.orderNo || orderNo,
+      outboundNo: data.outboundNo || orderNo,
+      type: data.outType || data.type || 'sales',
+      outType: data.outType || 'sales',
+      date: data.date || new Date().toISOString().split('T')[0],
+      counterpartyId: data.counterpartyId || '',
+      counterpartyName: data.counterpartyName || '',
+      materialCode: data.materialCode || '',
+      materialName: data.materialName || '',
+      grade: data.grade || '',
+      color: data.color || '',
+      outQty: data.outQty || 0,
+      unitPrice: data.unitPrice || 0,
+      outAmount: data.outAmount || (data.outQty || 0) * (data.unitPrice || 0),
+      referenceId: data.referenceId || '',
+      status: 'draft',
+      outStatus: 'draft',
+      notes: data.notes || '',
+      warehouseId: data.warehouseId || 'main',
+      items: data.items ? JSON.stringify(data.items) : '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    warehouseOrders.value.push(order)
+    persistOrders()
+    return { success: true, order }
+  }
+
   function updateOutboundOrder(id, data) {
     const idx = warehouseOrders.value.findIndex(o => o.id === id)
     if (idx === -1) return { success: false, error: '未找到出库单' }
@@ -805,7 +868,7 @@ export const useInventoryStore = defineStore('inventory', () => {
   function deleteSupplier(id) {
     suppliers.value = suppliers.value.filter(s => s.id !== id)
     const syncEngine = useSyncEngine()
-    syncEngine.recordDeletedId('inventory', id)
+    syncEngine.recordDeletedId('suppliers', id)
     persistSuppliers()
   }
 
@@ -982,7 +1045,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     restoreFromRecycleBin, permanentDeleteFromRecycleBin, emptyRecycleBin,
     addAuditLog,
     submitOutboundOrder, approveOutbound, confirmOutbound, cancelOutbound, deleteOutboundOrder,
-    reverseOutboundOrder, batchApproveOutbound, batchConfirmOutbound, generateOutboundNo, updateOutboundOrder,
+    reverseOutboundOrder, batchApproveOutbound, batchConfirmOutbound, generateOutboundNo, saveOutboundDraft, updateOutboundOrder,
     getAttachments, addAttachment, deleteAttachment,
     addSupplier, updateSupplier, deleteSupplier,
     initSeedData,

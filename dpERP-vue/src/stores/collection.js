@@ -168,6 +168,7 @@ export const useCollectionStore = defineStore('collection', () => {
           if (diffDays <= 30) current += amt
           else if (diffDays <= 60) days30 += amt
           else if (diffDays <= 90) days60 += amt
+          else if (diffDays <= 120) days90 += amt
           else daysOver += amt
         }
       }
@@ -179,7 +180,7 @@ export const useCollectionStore = defineStore('collection', () => {
         current = Math.round(current * ratio)
         days30 = Math.round(days30 * ratio)
         days60 = Math.round(days60 * ratio)
-        days90 = Math.round(days60 > 0 ? Math.round((days60 + daysOver) * ratio * 0.3) : 0)
+        days90 = Math.round(days90 * ratio)
         daysOver = Math.round(daysOver * ratio)
         const total = current + days30 + days60 + days90 + daysOver
         if (total <= 0 && balance > 0) { current = balance }
@@ -188,8 +189,8 @@ export const useCollectionStore = defineStore('collection', () => {
         days30 = 0; days60 = 0; days90 = 0; daysOver = 0
       }
 
-      const status = daysOver > 0 ? '高风险' : days60 > 0 ? '中风险' : days30 > 0 ? '低风险' : '正常'
-      const statusColor = daysOver > 0 ? 'var(--color-danger)' : days60 > 0 ? 'var(--color-warning)' : days30 > 0 ? 'var(--color-info)' : 'var(--color-success)'
+      const status = daysOver > 0 ? '高风险' : days90 > 0 ? '中高风险' : days60 > 0 ? '中风险' : days30 > 0 ? '低风险' : '正常'
+      const statusColor = daysOver > 0 ? 'var(--color-danger)' : days90 > 0 ? '#e65100' : days60 > 0 ? 'var(--color-warning)' : days30 > 0 ? 'var(--color-info)' : 'var(--color-success)'
 
       agingData.push({
         name: c.fullName || c.companyName || c.shortName || c.name,
@@ -414,7 +415,6 @@ export const useCollectionStore = defineStore('collection', () => {
     updateInstallmentStatus,
     deleteInstallment,
     initSeedData,
-    replaceData, mergeRemoteItems,
-    _save
+    replaceData, mergeRemoteItems
   }
 })

@@ -455,16 +455,18 @@ function sendQuoteByEmail(q) {
 }
 
 function convertToDelivery(q) {
-  if (q.status !== 'approved' && q.status !== 'accepted') {
-    alert('只有已审批或已接受的报价可以转为送货单')
+  const result = quotationStore.convertToDelivery(q.id)
+  if (!result.success) {
+    alert(result.error)
     return
   }
   alert('报价单 ' + q.quoteNo + ' 已标记为转送货单，请前往送货管理查看。')
 }
 
 function convertToContract(q) {
-  if (q.status !== 'approved' && q.status !== 'accepted') {
-    alert('只有已审批或已接受的报价可以转为合同')
+  const result = quotationStore.convertToContract(q.id)
+  if (!result.success) {
+    alert(result.error)
     return
   }
   alert('报价单 ' + q.quoteNo + ' 已标记为转合同，请前往合同管理查看。')

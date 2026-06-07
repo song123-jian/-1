@@ -15,11 +15,13 @@
         </router-view>
       </main>
     </div>
+    <ToastNotification ref="toastRef" />
+    <ConfirmDialog ref="confirmRef" />
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, watch, ref, computed } from 'vue'
+import { onMounted, onUnmounted, watch, ref, computed, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
@@ -28,8 +30,12 @@ import { useSyncEngine } from '@/utils/syncEngine'
 import { useDataCenterStore } from '@/stores/dataCenter'
 import { useResponsive } from '@/utils/responsive'
 import autoSave from '@/utils/autoSave'
+import dataCache from '@/utils/dataCache'
+import eventBus from '@/utils/eventBus'
 import AppSidebar from '@/layouts/AppSidebar.vue'
 import AppTopbar from '@/layouts/AppTopbar.vue'
+import ToastNotification from '@/components/common/ToastNotification.vue'
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
 const router = useRouter()
 const themeStore = useThemeStore()
@@ -37,6 +43,22 @@ const sessionStore = useSessionStore()
 const syncEngine = useSyncEngine()
 const dataCenter = useDataCenterStore()
 const { isDesktop, isMobile, deviceType, layoutMode, shouldUseHamburger, responsive } = useResponsive()
+
+/* 全局 Toast 和 ConfirmDialog 引用 */
+const toastRef = ref(null)
+const confirmRef = ref(null)
+
+/* 全局挂载 Toast 和 ConfirmDialog */
+provide('toast', {
+  show: (...args) => toastRef.value?.show(...args),
+  success: (...args) => toastRef.value?.success(...args),
+  error: (...args) => toastRef.value?.error(...args),
+  warning: (...args) => toastRef.value?.warning(...args),
+  info: (...args) => toastRef.value?.info(...args)
+})
+provide('confirm', {
+  show: (...args) => confirmRef.value?.show(...args)
+})
 
 /* 侧边栏状态 */
 const sidebarCollapsed = ref(false)
@@ -83,38 +105,40 @@ router.afterEach((to) => {
 /* 应用启动时恢复会话并初始化 */
 onMounted(async () => {
   /* 初始化响应式管理器 */
-  responsive.init()
+  try { responsive.init() } catch (e) { console.error('[App] responsive初始化失败:', e) }
 
   /* 初始化自动保存管理器 */
-  autoSave.init({ router })
+  try { autoSave.init({ router }) } catch (e) { console.error('[App] autoSave初始化失败:', e) }
 
   /* 恢复布局状态 */
-  const layoutState = autoSave.restoreLayoutState()
-  if (layoutState.sidebarCollapsed !== undefined) {
-    sidebarCollapsed.value = layoutState.sidebarCollapsed
-  }
+  try {
+    const layoutState = autoSave.restoreLayoutState()
+    if (layoutState.sidebarCollapsed !== undefined) {
+      sidebarCollapsed.value = layoutState.sidebarCollapsed
+    }
+  } catch (e) { console.error('[App] 布局状态恢复失败:', e) }
 
   /* 恢复会话 */
-  sessionStore.restoreSession()
+  try { sessionStore.restoreSession() } catch (e) { console.error('[App] 会话恢复失败:', e) }
 
   /* 初始化数据管理中心 */
-  await dataCenter.init()
+  try { await dataCenter.init() } catch (e) { console.error('[App] 数据中心初始化失败:', e) }
 
   /* 恢复上次的路由 */
-  const lastRoute = autoSave.restoreLastRoute()
-  if (lastRoute && lastRoute !== '/' && router.currentRoute.value.path === '/') {
-    try {
+  try {
+    const lastRoute = autoSave.restoreLastRoute()
+    if (lastRoute && lastRoute !== '/' && router.currentRoute.value.path === '/') {
       await router.replace(lastRoute)
-    } catch (e) {
-      /* 路由可能不存在，忽略 */
     }
-  }
+  } catch (e) { console.error('[App] 路由恢复失败:', e) }
 
   /* 如果已连接 Supabase，订阅 Presence 并启动自动同步 */
-  if (SupabaseClient.isConnected() && sessionStore.isLoggedIn) {
-    sessionStore.subscribePresence(SupabaseClient.getClient())
-    syncEngine.initAutoSync()
-  }
+  try {
+    if (SupabaseClient.isConnected() && sessionStore.isLoggedIn) {
+      sessionStore.subscribePresence(SupabaseClient.getClient())
+      syncEngine.initAutoSync()
+    }
+  } catch (e) { console.error('[App] Supabase订阅失败:', e) }
 })
 
 /* 应用卸载时清理 */
@@ -122,6 +146,9 @@ onUnmounted(() => {
   syncEngine.stopAutoSync()
   autoSave.destroy()
   responsive.destroy()
+  try { sessionStore.unsubscribePresence?.() } catch (e) { /* ignore */ }
+  try { dataCache.destroy() } catch (e) { /* ignore */ }
+  try { eventBus.clear() } catch (e) { /* ignore */ }
 })
 </script>
 

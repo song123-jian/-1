@@ -35,6 +35,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -59,6 +60,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -83,6 +85,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -107,6 +110,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -131,6 +135,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -161,6 +166,7 @@
               :to="item.path"
               class="nav-item"
               :class="{ active: isItemActive(item) }"
+              @contextmenu.prevent="onNavContext($event, item)"
             >
               <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
               <span class="nav-item-text">{{ item.label }}</span>
@@ -172,6 +178,7 @@
             :to="item.path"
             class="nav-item"
             :class="{ active: isItemActive(item) }"
+            @contextmenu.prevent="onNavContext($event, item)"
           >
             <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
@@ -197,6 +204,22 @@
       </div>
     </div>
 
+    <!-- 右键菜单 -->
+    <Teleport to="body">
+      <div
+        v-if="contextMenu.visible"
+        class="context-menu"
+        :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+      >
+        <div class="context-menu-item" @click="handleContextAddFavorite">
+          <Icon name="star" :size="14" /> 添加收藏
+        </div>
+        <div class="context-menu-item" @click="handleContextRemoveFavorite">
+          <Icon name="close" :size="14" /> 移除收藏
+        </div>
+      </div>
+    </Teleport>
+
     <div class="sidebar-footer">
       <div class="sidebar-user" @click="handleSwitchRole" :title="'点击切换角色'">
         <div class="sidebar-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
@@ -210,13 +233,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTodoStore } from '@/stores/todo'
 import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
 import { useInventoryStore } from '@/stores/inventory'
 import { useSessionStore } from '@/stores/session'
+import { usePermissionStore } from '@/stores/permission'
 import { useSyncEngine } from '@/utils/syncEngine'
 import autoSave from '@/utils/autoSave'
 
@@ -234,6 +258,7 @@ const quotationStore = useQuotationStore()
 const contractStore = useContractStore()
 const inventoryStore = useInventoryStore()
 const sessionStore = useSessionStore()
+const permissionStore = usePermissionStore()
 const settingsSubmenuOpen = ref(false)
 
 /* 内部折叠状态，与props同步 */
@@ -320,6 +345,41 @@ function removeFavorite(path) {
   saveToStorage(FAV_STORAGE_KEY, favorites.value)
 }
 
+/* 右键菜单 */
+const contextMenu = reactive({
+  visible: false,
+  x: 0,
+  y: 0,
+  item: null
+})
+
+function onNavContext(e, item) {
+  contextMenu.x = e.clientX
+  contextMenu.y = e.clientY
+  contextMenu.item = item
+  contextMenu.visible = true
+}
+
+function handleContextAddFavorite() {
+  if (contextMenu.item) {
+    addFavorite(contextMenu.item)
+  }
+  contextMenu.visible = false
+}
+
+function handleContextRemoveFavorite() {
+  if (contextMenu.item) {
+    removeFavorite(contextMenu.item.path)
+  }
+  contextMenu.visible = false
+}
+
+function closeContextMenu(e) {
+  if (contextMenu.visible) {
+    contextMenu.visible = false
+  }
+}
+
 onMounted(() => {
   /* 恢复导航分区折叠状态 */
   const collapsedState = loadFromStorage(COLLAPSED_STORAGE_KEY, {})
@@ -328,48 +388,65 @@ onMounted(() => {
       sectionCollapsed[key] = collapsedState[key]
     }
   })
+  document.addEventListener('click', closeContextMenu)
 })
 
-const overviewItems = computed(() => [
-  { path: '/dashboard', icon: 'table', label: '仪表盘' },
-  { path: '/data-screen', icon: 'database', label: '数据大屏', matchPath: '/data-screen' },
-  { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
-  { path: '/workflow', icon: 'layers', label: '工作流管理', matchPath: '/workflow' },
-  { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' },
-])
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeContextMenu)
+})
 
-const salesItems = computed(() => [
-  { path: '/customers', icon: 'building', label: '客户管理', matchPath: '/customers' },
-  { path: '/tag-category', icon: 'tag', label: '标签分类', matchPath: '/tag-category' },
-  { path: '/project-tracking', icon: 'target', label: '项目追踪', matchPath: '/project-tracking' },
-  { path: '/quotations', icon: 'list', label: '报价管理', badge: quotationStore.pendingCount || null, matchPath: '/quotations' },
-  { path: '/contracts', icon: 'file', label: '合同管理', badge: contractStore.pendingApprovalCount || null, matchPath: '/contracts' },
-  { path: '/transactions', icon: 'dollar', label: '交易管理', matchPath: '/transactions' },
-  { path: '/statements', icon: 'clipboard', label: '对账管理', matchPath: '/statements' },
-])
+const overviewItems = computed(() => {
+  const items = [
+    { path: '/dashboard', icon: 'table', label: '仪表盘' },
+    { path: '/data-screen', icon: 'database', label: '数据大屏', matchPath: '/data-screen' },
+    { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
+    { path: '/workflow', icon: 'layers', label: '工作流管理', matchPath: '/workflow', permModule: 'workflow', permKey: 'workflowView' },
+    { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' },
+  ]
+  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+})
 
-const warehouseItems = computed(() => [
-  { path: '/suppliers', icon: 'building', label: '供应商管理', matchPath: '/suppliers' },
-  { path: '/purchase', icon: 'clipboard', label: '采购管理', matchPath: '/purchase' },
-  { path: '/inbound', icon: 'upload', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inbound' },
-  { path: '/inventory', icon: 'package', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
-  { path: '/outbound', icon: 'download', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/outbound' },
-  { path: '/stocktaking', icon: 'clipboardCheck', label: '盘点管理', matchPath: '/stocktaking' },
-  { path: '/transfer', icon: 'shuffle', label: '调拨管理', matchPath: '/transfer' },
-  { path: '/production', icon: 'layers', label: '生产管理', matchPath: '/production' },
-  { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理', matchPath: '/warehouse-locations' },
-  { path: '/deliveries', icon: 'truck', label: '送货管理', matchPath: '/deliveries' },
-  { path: '/ecommerce', icon: 'globe', label: '电商对接', matchPath: '/ecommerce' },
-])
+const salesItems = computed(() => {
+  const items = [
+    { path: '/customers', icon: 'building', label: '客户管理', matchPath: '/customers' },
+    { path: '/tag-category', icon: 'tag', label: '标签分类', matchPath: '/tag-category' },
+    { path: '/project-tracking', icon: 'target', label: '项目追踪', matchPath: '/project-tracking' },
+    { path: '/quotations', icon: 'list', label: '报价管理', badge: quotationStore.pendingCount || null, matchPath: '/quotations', permModule: 'quote_contract', permKey: 'canCreateQuote' },
+    { path: '/contracts', icon: 'file', label: '合同管理', badge: contractStore.pendingApprovalCount || null, matchPath: '/contracts', permModule: 'quote_contract', permKey: 'canCreateContract' },
+    { path: '/transactions', icon: 'dollar', label: '交易管理', matchPath: '/transactions' },
+    { path: '/statements', icon: 'clipboard', label: '对账管理', matchPath: '/statements', permModule: 'statement', permKey: 'statementCreate' },
+  ]
+  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+})
 
-const financeItems = computed(() => [
-  { path: '/monthly-stats', icon: 'calendar', label: '月度统计', matchPath: '/monthly-stats' },
-  { path: '/collections', icon: 'dollar', label: '回款管理', matchPath: '/collections' },
-  { path: '/receivables', icon: 'trendUp', label: '应收管理', matchPath: '/receivables' },
-  { path: '/payables', icon: 'arrowDown', label: '应付管理', matchPath: '/payables' },
-  { path: '/cost-analysis', icon: 'calculator', label: '成本核算', matchPath: '/cost-analysis' },
-  { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' },
-])
+const warehouseItems = computed(() => {
+  const items = [
+    { path: '/suppliers', icon: 'building', label: '供应商管理', matchPath: '/suppliers', permModule: 'supplier', permKey: 'supplierView' },
+    { path: '/purchase', icon: 'clipboard', label: '采购管理', matchPath: '/purchase', permModule: 'purchase', permKey: 'purchaseCreate' },
+    { path: '/inbound', icon: 'upload', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inbound', permModule: 'inbound', permKey: 'inboundCreate' },
+    { path: '/inventory', icon: 'package', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
+    { path: '/outbound', icon: 'download', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/outbound', permModule: 'outbound', permKey: 'outboundCreate' },
+    { path: '/stocktaking', icon: 'clipboardCheck', label: '盘点管理', matchPath: '/stocktaking', permModule: 'stocktaking', permKey: 'stocktakingCreate' },
+    { path: '/transfer', icon: 'shuffle', label: '调拨管理', matchPath: '/transfer', permModule: 'transfer', permKey: 'transferCreate' },
+    { path: '/production', icon: 'layers', label: '生产管理', matchPath: '/production', permModule: 'production', permKey: 'productionCreate' },
+    { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理', matchPath: '/warehouse-locations', permModule: 'warehouse', permKey: 'warehouseCreate' },
+    { path: '/deliveries', icon: 'truck', label: '送货管理', matchPath: '/deliveries', permModule: 'delivery', permKey: 'deliveryCreate' },
+    { path: '/ecommerce', icon: 'globe', label: '电商对接', matchPath: '/ecommerce', permModule: 'ecommerce', permKey: 'ecommerceConnect' },
+  ]
+  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+})
+
+const financeItems = computed(() => {
+  const items = [
+    { path: '/monthly-stats', icon: 'calendar', label: '月度统计', matchPath: '/monthly-stats' },
+    { path: '/collections', icon: 'dollar', label: '回款管理', matchPath: '/collections' },
+    { path: '/receivables', icon: 'trendUp', label: '应收管理', matchPath: '/receivables', permModule: 'receivable', permKey: 'receivableView' },
+    { path: '/payables', icon: 'arrowDown', label: '应付管理', matchPath: '/payables', permModule: 'payable', permKey: 'payableView' },
+    { path: '/cost-analysis', icon: 'calculator', label: '成本核算', matchPath: '/cost-analysis', permModule: 'cost', permKey: 'costView' },
+    { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' },
+  ]
+  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+})
 
 const resourceItems = computed(() => [
   { path: '/archives', icon: 'card', label: '档案管理', matchPath: '/archives' },
@@ -932,5 +1009,31 @@ const systemItems = computed(() => [
 .nav-fav-indicator {
   display: inline-block;
   animation: favPulse 0.3s ease-out;
+}
+
+/* 右键菜单 */
+.context-menu {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  min-width: 140px;
+  padding: var(--space-1) 0;
+}
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.context-menu-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
 }
 </style>

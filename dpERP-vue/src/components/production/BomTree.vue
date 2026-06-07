@@ -23,6 +23,7 @@
         :key="comp.id"
         :node="comp"
         :depth="1"
+        :max-depth="10"
       />
     </div>
   </div>

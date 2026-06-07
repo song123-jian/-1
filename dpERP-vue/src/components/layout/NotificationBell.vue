@@ -76,6 +76,9 @@
             <Icon name="bell" :size="32" />
             <p>暂无通知</p>
           </div>
+          <div v-if="hasMoreNotifications" class="panel-load-more">
+            <button class="load-more-btn" @click="loadMore">加载更多</button>
+          </div>
         </div>
       </div>
     </Transition>
@@ -83,17 +86,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotificationStore } from '@/stores/notification'
 import { NotificationType, NotificationLevel } from '@/stores/notification'
+import { useConfirm } from '@/composables/useConfirm'
 
 const router = useRouter()
 const notificationStore = useNotificationStore()
+const confirm = useConfirm()
 
 const showPanel = ref(false)
 const activePanelTab = ref('all')
 const bellRef = ref(null)
+const displayLimit = ref(20)
+
+watch(activePanelTab, () => {
+  displayLimit.value = 20
+})
 
 const panelTabs = computed(() => [
   { key: 'all', label: '全部', count: notificationStore.notifications.length },
@@ -107,8 +117,20 @@ const filteredNotifications = computed(() => {
   if (activePanelTab.value !== 'all') {
     list = list.filter(n => n.type === activePanelTab.value)
   }
-  return list.slice(0, 50)
+  return list.slice(0, displayLimit.value)
 })
+
+const hasMoreNotifications = computed(() => {
+  let list = notificationStore.notifications
+  if (activePanelTab.value !== 'all') {
+    list = list.filter(n => n.type === activePanelTab.value)
+  }
+  return list.length > displayLimit.value
+})
+
+function loadMore() {
+  displayLimit.value += 20
+}
 
 function togglePanel() {
   showPanel.value = !showPanel.value
@@ -163,9 +185,10 @@ function handleDelete(id) {
   notificationStore.removeNotification(id)
 }
 
-function handleClearAll() {
+async function handleClearAll() {
   if (notificationStore.notifications.length === 0) return
-  if (confirm('确定要清空所有通知吗？')) {
+  const ok = await confirm.show({ title: '清空通知', message: '确定要清空所有通知吗？', danger: true })
+  if (ok) {
     notificationStore.clearAll()
   }
 }
@@ -490,6 +513,27 @@ onBeforeUnmount(() => {
 .panel-empty p {
   margin-top: var(--space-2);
   font-size: var(--font-size-sm);
+}
+
+.panel-load-more {
+  padding: var(--space-2) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.load-more-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+
+.load-more-btn:hover {
+  background: var(--color-surface-hover);
 }
 
 /* 面板动画 */

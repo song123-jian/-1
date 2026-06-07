@@ -5,6 +5,7 @@
 import { ref, watch } from 'vue'
 import { usePermissionStore } from '@/stores/permission'
 import { useSessionStore } from '@/stores/session'
+import eventBus from '@/utils/eventBus'
 
 /**
  * 检查当前角色是否拥有指定模块的指定权限
@@ -32,9 +33,18 @@ export function checkPermission(moduleKey, perm) {
  * @returns {boolean} 是否拥有权限
  */
 export function requirePermission(moduleKey, perm) {
+  const sessionStore = useSessionStore()
+  const permissionStore = usePermissionStore()
+
+  if (!sessionStore.currentRole) {
+    eventBus.emit('notification:show', { type: 'warning', message: '请先登录' })
+    return false
+  }
+
   const allowed = checkPermission(moduleKey, perm)
   if (!allowed) {
     console.warn(`[权限守卫] 您没有执行此操作的权限（模块: ${moduleKey}, 权限: ${perm}）`)
+    eventBus.emit('notification:show', { type: 'warning', message: '权限不足，无法执行此操作' })
   }
   return allowed
 }
@@ -149,10 +159,18 @@ export function usePermission() {
     return checkPermission(moduleKey, perm)
   }
 
+  /**
+   * 判断是否拥有任一权限
+   */
+  function hasAnyPermission(moduleKey, actions) {
+    return actions.some(action => checkPermission(moduleKey, action))
+  }
+
   return {
     check,
     require,
     isAllowed,
+    hasAnyPermission,
     currentRole
   }
 }

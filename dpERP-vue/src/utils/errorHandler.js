@@ -23,6 +23,47 @@ export const ErrorTypes = {
   UNKNOWN: 'unknown'         /* 未知错误 */
 }
 
+/* 错误码枚举：提供可靠的错误分类标识，避免依赖消息字符串匹配 */
+export const ErrorCodes = {
+  /* 网络错误 */
+  NETWORK_TIMEOUT: 'NETWORK_TIMEOUT',
+  NETWORK_OFFLINE: 'NETWORK_OFFLINE',
+  NETWORK_SERVER_ERROR: 'NETWORK_SERVER_ERROR',
+  NETWORK_FETCH_FAILED: 'NETWORK_FETCH_FAILED',
+
+  /* 验证错误 */
+  VALIDATION_REQUIRED: 'VALIDATION_REQUIRED',
+  VALIDATION_FORMAT: 'VALIDATION_FORMAT',
+  VALIDATION_RANGE: 'VALIDATION_RANGE',
+  VALIDATION_DUPLICATE: 'VALIDATION_DUPLICATE',
+
+  /* 权限错误 */
+  PERMISSION_DENIED: 'PERMISSION_DENIED',
+  PERMISSION_ROLE_REQUIRED: 'PERMISSION_ROLE_REQUIRED',
+  PERMISSION_EXPIRED: 'PERMISSION_EXPIRED',
+
+  /* 数据不存在 */
+  NOT_FOUND_RECORD: 'NOT_FOUND_RECORD',
+  NOT_FOUND_MODULE: 'NOT_FOUND_MODULE',
+
+  /* 数据冲突 */
+  CONFLICT_CONCURRENT: 'CONFLICT_CONCURRENT',
+  CONFLICT_VERSION: 'CONFLICT_VERSION',
+
+  /* 存储错误 */
+  STORAGE_FULL: 'STORAGE_FULL',
+  STORAGE_CORRUPTED: 'STORAGE_CORRUPTED',
+
+  /* 业务逻辑错误 */
+  BUSINESS_STOCK_INSUFFICIENT: 'BUSINESS_STOCK_INSUFFICIENT',
+  BUSINESS_STATUS_INVALID: 'BUSINESS_STATUS_INVALID',
+  BUSINESS_AMOUNT_MISMATCH: 'BUSINESS_AMOUNT_MISMATCH',
+  BUSINESS_ORDER_EXISTS: 'BUSINESS_ORDER_EXISTS',
+
+  /* 未知错误 */
+  UNKNOWN: 'UNKNOWN'
+}
+
 /* 错误码映射 */
 const ERROR_MESSAGES = {
   /* 网络错误 */
@@ -253,11 +294,52 @@ class ErrorHandler {
 
   /**
    * 分类错误
+   * 优先使用错误码（error.code）进行分类，降级使用消息字符串匹配
    */
   _classifyError(error, context) {
     const message = error?.message || String(error)
+    const errorCode = error?.code || error?.errorCode || ''
 
-    /* 根据错误消息判断类型 */
+    /* 错误码到类型/消息码的映射 */
+    const CODE_MAP = {
+      [ErrorCodes.NETWORK_TIMEOUT]: { type: ErrorTypes.NETWORK, msgCode: 'network.timeout', suggestion: '请检查网络连接后重试', recoverable: true },
+      [ErrorCodes.NETWORK_OFFLINE]: { type: ErrorTypes.NETWORK, msgCode: 'network.offline', suggestion: '请检查网络连接', recoverable: true },
+      [ErrorCodes.NETWORK_SERVER_ERROR]: { type: ErrorTypes.NETWORK, msgCode: 'network.server_error', suggestion: '服务器错误，请稍后重试', recoverable: true },
+      [ErrorCodes.NETWORK_FETCH_FAILED]: { type: ErrorTypes.NETWORK, msgCode: 'network.server_error', suggestion: '请检查网络连接后重试', recoverable: true },
+      [ErrorCodes.VALIDATION_REQUIRED]: { type: ErrorTypes.VALIDATION, msgCode: 'validation.required', suggestion: '请检查输入数据是否符合要求', recoverable: true },
+      [ErrorCodes.VALIDATION_FORMAT]: { type: ErrorTypes.VALIDATION, msgCode: 'validation.format', suggestion: '请检查数据格式是否正确', recoverable: true },
+      [ErrorCodes.VALIDATION_RANGE]: { type: ErrorTypes.VALIDATION, msgCode: 'validation.range', suggestion: '请检查数据是否在允许范围内', recoverable: true },
+      [ErrorCodes.VALIDATION_DUPLICATE]: { type: ErrorTypes.VALIDATION, msgCode: 'validation.duplicate', suggestion: '数据已存在，请检查是否重复', recoverable: true },
+      [ErrorCodes.PERMISSION_DENIED]: { type: ErrorTypes.PERMISSION, msgCode: 'permission.denied', suggestion: '请联系管理员获取相应权限', recoverable: false },
+      [ErrorCodes.PERMISSION_ROLE_REQUIRED]: { type: ErrorTypes.PERMISSION, msgCode: 'permission.role_required', suggestion: '此操作需要特定角色权限', recoverable: false },
+      [ErrorCodes.PERMISSION_EXPIRED]: { type: ErrorTypes.PERMISSION, msgCode: 'permission.expired', suggestion: '会话已过期，请重新登录', recoverable: false },
+      [ErrorCodes.NOT_FOUND_RECORD]: { type: ErrorTypes.NOT_FOUND, msgCode: 'not_found.record', suggestion: '数据可能已被删除，请刷新页面', recoverable: false },
+      [ErrorCodes.NOT_FOUND_MODULE]: { type: ErrorTypes.NOT_FOUND, msgCode: 'not_found.module', suggestion: '未找到指定模块', recoverable: false },
+      [ErrorCodes.CONFLICT_CONCURRENT]: { type: ErrorTypes.CONFLICT, msgCode: 'conflict.concurrent', suggestion: '数据已被其他用户修改，请刷新后重试', recoverable: true },
+      [ErrorCodes.CONFLICT_VERSION]: { type: ErrorTypes.CONFLICT, msgCode: 'conflict.version', suggestion: '数据版本冲突，请先同步最新数据', recoverable: true },
+      [ErrorCodes.STORAGE_FULL]: { type: ErrorTypes.STORAGE, msgCode: 'storage.full', suggestion: '本地存储空间不足，请导出备份并清理数据', recoverable: false },
+      [ErrorCodes.STORAGE_CORRUPTED]: { type: ErrorTypes.STORAGE, msgCode: 'storage.corrupted', suggestion: '本地数据损坏，请尝试重新同步', recoverable: false },
+      [ErrorCodes.BUSINESS_STOCK_INSUFFICIENT]: { type: ErrorTypes.BUSINESS, msgCode: 'business.stock_insufficient', suggestion: '请检查业务数据是否满足操作条件', recoverable: true },
+      [ErrorCodes.BUSINESS_STATUS_INVALID]: { type: ErrorTypes.BUSINESS, msgCode: 'business.status_invalid', suggestion: '当前状态不允许此操作', recoverable: true },
+      [ErrorCodes.BUSINESS_AMOUNT_MISMATCH]: { type: ErrorTypes.BUSINESS, msgCode: 'business.amount_mismatch', suggestion: '金额不匹配，请检查数据', recoverable: true },
+      [ErrorCodes.BUSINESS_ORDER_EXISTS]: { type: ErrorTypes.BUSINESS, msgCode: 'business.order_exists', suggestion: '单据已存在，请勿重复提交', recoverable: true }
+    }
+
+    /* 优先使用错误码分类 */
+    if (errorCode && CODE_MAP[errorCode]) {
+      const mapping = CODE_MAP[errorCode]
+      return {
+        type: mapping.type,
+        code: mapping.msgCode,
+        message: ERROR_MESSAGES[mapping.msgCode] || message,
+        originalMessage: message,
+        errorCode,
+        suggestion: mapping.suggestion,
+        recoverable: mapping.recoverable
+      }
+    }
+
+    /* 降级：根据错误消息判断类型 */
     let type = ErrorTypes.UNKNOWN
     let code = 'unknown'
     let recoverable = true
@@ -304,6 +386,7 @@ class ErrorHandler {
       code,
       message: ERROR_MESSAGES[code] || message,
       originalMessage: message,
+      errorCode: errorCode || null,
       suggestion,
       recoverable
     }

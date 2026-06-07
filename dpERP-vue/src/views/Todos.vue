@@ -309,23 +309,23 @@
           <button class="btn btn-ghost btn-sm" @click="weekNext">下周 <Icon name="chevronRight" :size="14" /></button>
         </div>
       </div>
-      <div class="todo-week-grid">
-        <div class="todo-week-time-col">
-          <div class="todo-week-day-header"></div>
-          <div v-for="h in 11" :key="h" class="todo-week-time-slot">{{ h + 7 }}:00</div>
-        </div>
+      <div class="todo-week-day-columns">
         <div v-for="(d, di) in weekDays" :key="di" class="todo-week-day-col">
           <div class="todo-week-day-header" :class="{ today: d.isToday }">
             {{ weekDayNames[di] }}<span class="day-num">{{ d.dayNum }}</span>
           </div>
-          <div v-for="h in 11" :key="h" class="todo-week-cell">
+          <div class="todo-week-day-items">
             <div
-              v-for="item in getWeekCellItems(d.dateStr, h + 7)"
+              v-for="item in getWeekDayItems(d.dateStr)"
               :key="item.id"
               class="todo-week-item"
               :class="item.status === 'completed' ? 'completed' : item.priority || 'medium'"
               @click="openEditModal(item)"
-            >{{ item.title }}</div>
+            >
+              <span class="todo-week-item-title">{{ item.title }}</span>
+              <span v-if="item.dueDate" class="todo-week-item-due">{{ item.dueDate }}</span>
+            </div>
+            <div v-if="getWeekDayItems(d.dateStr).length === 0" class="todo-week-empty">无待办</div>
           </div>
         </div>
       </div>
@@ -640,10 +640,8 @@ const weekTodosByDate = computed(() => {
   return map
 })
 
-function getWeekCellItems(dateStr, hour) {
-  const items = weekTodosByDate.value[dateStr] || []
-  if (hour === 8) return items
-  return []
+function getWeekDayItems(dateStr) {
+  return weekTodosByDate.value[dateStr] || []
 }
 
 function weekPrev() {
@@ -1146,20 +1144,20 @@ onUnmounted(() => {
 .todo-week-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); }
 .todo-week-title { font-size: var(--font-size-lg); font-weight: 600; color: var(--color-text-primary); }
 .todo-week-nav { display: flex; gap: var(--space-2); }
-.todo-week-grid { display: flex; overflow-x: auto; }
-.todo-week-time-col { flex-shrink: 0; width: 60px; border-right: 1px solid var(--color-border); }
-.todo-week-time-slot { height: 36px; display: flex; align-items: center; justify-content: flex-end; padding-right: var(--space-2); font-size: 10px; color: var(--color-text-tertiary); font-family: var(--font-mono); }
-.todo-week-day-col { flex: 1; min-width: 120px; border-right: 1px solid var(--color-border); }
-.todo-week-day-col:last-child { border-right: none; }
-.todo-week-day-header { height: 36px; display: flex; align-items: center; justify-content: center; gap: var(--space-1); font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-secondary); border-bottom: 1px solid var(--color-border); }
+.todo-week-day-columns { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.todo-week-day-col { background: var(--color-bg-primary); min-height: 120px; display: flex; flex-direction: column; }
+.todo-week-day-header { padding: var(--space-2) var(--space-3); font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-secondary); background: var(--color-surface); border-bottom: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; gap: var(--space-1); }
 .todo-week-day-header.today { color: var(--color-accent); background: var(--color-accent-subtle); }
 .todo-week-day-header .day-num { font-size: var(--font-size-sm); }
-.todo-week-cell { height: 36px; border-bottom: 1px solid var(--color-border); padding: 2px; }
-.todo-week-item { font-size: 9px; padding: 1px 4px; border-radius: 2px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1px; }
+.todo-week-day-items { flex: 1; padding: var(--space-1); display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.todo-week-item { font-size: 10px; padding: 3px 6px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: var(--space-1); }
+.todo-week-item-title { overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.todo-week-item-due { font-size: 9px; opacity: 0.7; flex-shrink: 0; }
 .todo-week-item.high { background: var(--color-danger-subtle); color: var(--color-danger); }
 .todo-week-item.medium { background: var(--color-warning-subtle); color: var(--color-warning); }
 .todo-week-item.low { background: var(--color-info-subtle); color: var(--color-info); }
 .todo-week-item.completed { background: var(--color-success-subtle); color: var(--color-success); text-decoration: line-through; }
+.todo-week-empty { font-size: 10px; color: var(--color-text-tertiary); text-align: center; padding: var(--space-4) 0; }
 
 /* 空状态 */
 .empty-state { text-align: center; padding: var(--space-16) 0; }

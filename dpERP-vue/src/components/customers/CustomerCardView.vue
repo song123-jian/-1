@@ -1,8 +1,11 @@
 <template>
   <div class="customer-card-view">
-    <div v-for="c in customers" :key="c.id" class="customer-card" :class="{ 'dormant-card': c.status === 'dormant' }">
+    <div v-for="c in customers" :key="c.id" class="customer-card" :class="{ 'dormant-card': c.status === 'dormant', 'selected-card': selectedIds.includes(c.id) }">
       <div class="card-prio-bar" :style="{ background: levelColors[c.level] || '#94a3b8' }"></div>
       <div class="card-header">
+        <div class="card-checkbox" @click.stop="$emit('toggleSelect', c.id)">
+          <span class="checkbox" :class="{ checked: selectedIds.includes(c.id) }">{{ selectedIds.includes(c.id) ? '✓' : '' }}</span>
+        </div>
         <div class="card-avatar" :style="{ background: levelColors[c.level] || '#94a3b8' }">{{ (c.fullName || c.name || '?').charAt(0) }}</div>
         <div class="card-title-area">
           <div class="card-title">{{ c.fullName || c.name }}</div>
@@ -17,7 +20,7 @@
         <div class="card-field"><span class="field-label">余额</span><span class="mono">¥{{ formatNumber(c.balance) }}</span></div>
         <div class="card-field"><span class="field-label">信用额度</span><span class="mono">¥{{ formatNumber(c.creditLimit) }}</span></div>
         <div v-if="c.tags && c.tags.length > 0" class="card-tags">
-          <span v-for="tagId in c.tags" :key="tagId" class="mini-tag" :style="getTagStyle(tagId)">{{ getTagName(tagId) }}</span>
+          <span v-for="tagId in c.tags" :key="tagId" class="mini-tag" :style="_getTagStyle(tagId)">{{ _getTagName(tagId) }}</span>
         </div>
       </div>
       <div class="card-footer">
@@ -34,6 +37,8 @@
 
 <script setup>
 import { useCustomerStore } from '@/stores/customer'
+import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
 
 const customerStore = useCustomerStore()
 
@@ -44,24 +49,12 @@ defineProps({
 
 defineEmits(['toggleSelect', 'openEdit', 'openDetail', 'handleDelete'])
 
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
+function _getTagName(tagId) {
+  return getTagName(customerStore.tags, tagId)
 }
 
-function getTagName(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  return tag ? tag.name : tagId
-}
-
-function getTagStyle(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  if (!tag) return {}
-  return { background: tag.color + '20', color: tag.color }
+function _getTagStyle(tagId) {
+  return getTagStyle(customerStore.tags, tagId)
 }
 </script>
 
@@ -70,6 +63,8 @@ function getTagStyle(tagId) {
 .customer-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); overflow: hidden; transition: all var(--transition-fast); }
 .customer-card:hover { border-color: var(--color-border-light); box-shadow: var(--shadow-md); }
 .customer-card.dormant-card { opacity: 0.6; }
+.customer-card.selected-card { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-subtle); }
+.card-checkbox { cursor: pointer; flex-shrink: 0; }
 .card-prio-bar { height: 3px; }
 .card-header { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
 .card-avatar { width: 40px; height: 40px; border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: var(--font-size-lg); flex-shrink: 0; }

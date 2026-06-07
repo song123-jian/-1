@@ -61,7 +61,7 @@
             <span class="tag-item-id">ID: {{ tag.id }}</span>
           </div>
           <div class="tag-item-right">
-            <span class="tag-item-cust-count">{{ getTagCustomerCount(tag.id) }} 位客户</span>
+            <span class="tag-item-cust-count">{{ tagCustomerCountMap[tag.id] || 0 }} 位客户</span>
             <button class="btn btn-ghost btn-sm" @click="openEditModal(tag)"><Icon name="edit" :size="14" /> 编辑</button>
             <button class="btn btn-ghost btn-sm danger" @click="confirmDeleteTag(tag)"><Icon name="delete" :size="14" /> 删除</button>
           </div>
@@ -110,6 +110,9 @@
               <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary);margin-bottom:var(--space-2);display:block">预览效果</span>
               <span class="tag-item-preview" :style="{ background: tagForm.color + '20', color: tagForm.color }">{{ tagForm.name || tagForm.id }}</span>
             </div>
+          </div>
+          <div v-if="tagFormError" class="form-errors-block">
+            <div class="form-error-item">{{ tagFormError }}</div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="showTagModal = false">取消</button>
@@ -173,6 +176,7 @@ const confirmMessage = ref('')
 const confirmCallback = ref(null)
 const editingTag = ref(null)
 const newGroupName = ref('')
+const tagFormError = ref('')
 
 const presetColors = [
   '#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6',
@@ -221,25 +225,43 @@ const untaggedCustomerCount = computed(() => {
   return customerStore.customers.filter(c => !c.tags || c.tags.length === 0).length
 })
 
-function getTagCustomerCount(tagId) {
-  return customerStore.customers.filter(c => c.tags && c.tags.includes(tagId)).length
-}
+const tagCustomerCountMap = computed(() => {
+  const map = {}
+  customerStore.tags.forEach(t => { map[t.id] = 0 })
+  customerStore.customers.forEach(c => {
+    if (c.tags && c.tags.length > 0) {
+      c.tags.forEach(tagId => {
+        if (map[tagId] !== undefined) map[tagId]++
+      })
+    }
+  })
+  return map
+})
 
 function openAddModal() {
   editingTag.value = null
+  tagFormError.value = ''
   Object.assign(tagForm, { id: '', name: '', color: '#3b82f6', group: tagGroups.value[0] || '关系' })
   showTagModal.value = true
 }
 
 function openEditModal(tag) {
   editingTag.value = tag
+  tagFormError.value = ''
   Object.assign(tagForm, { id: tag.id, name: tag.name, color: tag.color, group: tag.group || tagGroups.value[0] || '关系' })
   showTagModal.value = true
 }
 
 function saveTag() {
-  if (!tagForm.id.trim() || !tagForm.name.trim()) return
-  if (!tagForm.color.match(/^#[0-9A-Fa-f]{6}$/)) return
+  tagFormError.value = ''
+  if (!tagForm.id.trim() || !tagForm.name.trim()) {
+    tagFormError.value = '标签ID和名称为必填项'
+    return
+  }
+  if (!tagForm.color.match(/^#[0-9A-Fa-f]{6}$/)) {
+    tagFormError.value = '标签颜色格式不正确，请输入6位十六进制颜色值（如 #3b82f6）'
+    return
+  }
 
   if (editingTag.value) {
     customerStore.updateTag(editingTag.value.id, {
@@ -248,7 +270,10 @@ function saveTag() {
       group: tagForm.group
     })
   } else {
-    if (customerStore.tags.some(t => t.id === tagForm.id.trim())) return
+    if (customerStore.tags.some(t => t.id === tagForm.id.trim())) {
+      tagFormError.value = '该标签ID已存在，请使用其他ID'
+      return
+    }
     customerStore.addTag({
       id: tagForm.id.trim(),
       name: tagForm.name.trim(),
@@ -260,7 +285,7 @@ function saveTag() {
 }
 
 function confirmDeleteTag(tag) {
-  const count = getTagCustomerCount(tag.id)
+  const count = tagCustomerCountMap.value[tag.id] || 0
   confirmMessage.value = `确定要删除标签"${tag.name}"吗？${count > 0 ? `该标签关联了 ${count} 位客户，删除后将自动解除关联。` : ''}`
   confirmCallback.value = () => {
     customerStore.deleteTag(tag.id)
@@ -281,7 +306,8 @@ function saveGroup() {
     id: '_placeholder_' + Date.now(),
     name: name + '（示例标签）',
     color: '#94a3b8',
-    group: name
+    group: name,
+    hidden: true
   })
   showGroupModal.value = false
 }
@@ -354,6 +380,9 @@ function confirmAction() {
 .btn.danger:hover { background: var(--color-danger-subtle); }
 
 .required { color: var(--color-danger); }
+
+.form-errors-block { margin: 0 var(--space-5); padding: var(--space-2) var(--space-3); background: var(--color-danger-subtle, #fef2f2); border-radius: var(--radius-md); }
+.form-error-item { font-size: var(--font-size-xs); color: var(--color-danger); }
 
 .form-group { margin-bottom: var(--space-4); }
 .form-label { display: block; font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-secondary); margin-bottom: var(--space-1); }

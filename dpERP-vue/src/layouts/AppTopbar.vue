@@ -17,11 +17,28 @@
         <input
           type="text"
           class="search-input"
-          placeholder="搜索客户、报价、合同..."
+          placeholder="搜索客户、物料、订单、报价..."
           v-model="searchQuery"
-          @focus="searchCollapsed = false"
-          @blur="handleSearchBlur"
+          @focus="onSearchFocus"
+          @input="onSearchInput"
+          @blur="onSearchBlur"
         />
+        <!-- 搜索结果下拉面板 -->
+        <div v-if="showSearchResults && searchResults.length > 0" class="search-results-panel">
+          <div
+            v-for="item in searchResults"
+            :key="item.key"
+            class="search-result-item"
+            @mousedown.prevent="onSearchResultClick(item)"
+          >
+            <span class="search-result-icon"><Icon :name="item.icon" :size="14" /></span>
+            <span class="search-result-label">{{ item.label }}</span>
+            <span class="search-result-type">{{ item.typeLabel }}</span>
+          </div>
+        </div>
+        <div v-if="showSearchResults && searchQuery && searchResults.length === 0" class="search-results-panel">
+          <div class="search-result-empty">未找到匹配结果</div>
+        </div>
       </div>
       <div class="topbar-theme-switcher">
         <button
@@ -33,6 +50,19 @@
           :title="theme.name"
           @click="themeStore.setTheme(theme.key)"
         />
+        <button v-if="themeStore.themes.length > 5" class="theme-dot theme-more" :class="{ active: showThemeMenu }" @click="showThemeMenu = !showThemeMenu" title="更多主题">+</button>
+        <div v-if="showThemeMenu" class="theme-dropdown">
+          <button
+            v-for="theme in themeStore.themes"
+            :key="theme.key"
+            class="theme-dropdown-item"
+            :class="{ active: themeStore.currentTheme === theme.key }"
+            @click="themeStore.setTheme(theme.key); showThemeMenu = false"
+          >
+            <span class="theme-dropdown-dot" :style="{ background: theme.color }"></span>
+            <span>{{ theme.name }}</span>
+          </button>
+        </div>
       </div>
       <LanguageSwitcher />
       <NotificationBell />
@@ -44,10 +74,13 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
+import { useCustomerStore } from '@/stores/customer'
+import { useInventoryStore } from '@/stores/inventory'
+import { useQuotationStore } from '@/stores/quotation'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 
@@ -59,19 +92,153 @@ const props = defineProps({
 const emit = defineEmits(['toggle-menu'])
 
 const route = useRoute()
+const router = useRouter()
 const themeStore = useThemeStore()
 const sessionStore = useSessionStore()
+const customerStore = useCustomerStore()
+const inventoryStore = useInventoryStore()
+const quotationStore = useQuotationStore()
 const searchQuery = ref('')
 const searchCollapsed = ref(false)
+const showSearchResults = ref(false)
+const showThemeMenu = ref(false)
+let debounceTimer = null
 
 const pageTitle = computed(() => route.meta.title || '冠久ERP')
 const hasSidebar = computed(() => !props.showHamburger)
 
-function handleSearchBlur() {
+/* 搜索结果 */
+const searchResults = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  const results = []
+
+  /* 搜索客户 */
+  const customers = customerStore.customers || []
+  customers.forEach(c => {
+    const name = (c.name || c.shortName || '').toLowerCase()
+    if (name.includes(q)) {
+      results.push({
+        key: 'customer_' + c.id,
+        label: c.name || c.shortName,
+        typeLabel: '客户',
+        icon: 'users',
+        path: '/customers'
+      })
+    }
+  })
+
+  /* 搜索物料 */
+  const items = inventoryStore.inventory || []
+  items.forEach(i => {
+    const code = (i.code || '').toLowerCase()
+    const name = (i.name || '').toLowerCase()
+    if (code.includes(q) || name.includes(q)) {
+      results.push({
+        key: 'material_' + i.id,
+        label: (i.code || '') + ' ' + (i.name || ''),
+        typeLabel: '物料',
+        icon: 'package',
+        path: '/inventory'
+      })
+    }
+  })
+
+  /* 搜索报价单 */
+  const quotations = quotationStore.quotations || []
+  quotations.forEach(qt => {
+    const no = (qt.quotationNo || qt.quoteNo || '').toLowerCase()
+    const customerName = (qt.customerName || '').toLowerCase()
+    if (no.includes(q) || customerName.includes(q)) {
+      results.push({
+        key: 'quotation_' + qt.id,
+        label: (qt.quotationNo || qt.quoteNo || '') + ' - ' + (qt.customerName || ''),
+        typeLabel: '报价单',
+        icon: 'edit',
+        path: '/quotations'
+      })
+    }
+  })
+
+  /* 搜索出库单 */
+  const outboundOrders = inventoryStore.outboundOrders || []
+  outboundOrders.forEach(o => {
+    const no = (o.outboundNo || o.orderNo || '').toLowerCase()
+    if (no.includes(q)) {
+      results.push({
+        key: 'outbound_' + o.id,
+        label: (o.outboundNo || o.orderNo || ''),
+        typeLabel: '出库单',
+        icon: 'download',
+        path: '/outbound'
+      })
+    }
+  })
+
+  /* 搜索入库单 */
+  const inboundOrders = inventoryStore.inboundOrders || []
+  inboundOrders.forEach(o => {
+    const no = (o.orderNo || '').toLowerCase()
+    if (no.includes(q)) {
+      results.push({
+        key: 'inbound_' + o.id,
+        label: o.orderNo || '',
+        typeLabel: '入库单',
+        icon: 'upload',
+        path: '/inbound'
+      })
+    }
+  })
+
+  return results.slice(0, 10)
+})
+
+function onSearchFocus() {
+  searchCollapsed.value = false
+  if (searchQuery.value.trim()) {
+    showSearchResults.value = true
+  }
+}
+
+function onSearchInput() {
+  clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    showSearchResults.value = searchQuery.value.trim().length > 0
+  }, 300)
+}
+
+function onSearchBlur() {
   if (!searchQuery.value) {
     searchCollapsed.value = false
   }
+  /* 延迟关闭，让 mousedown 事件先触发 */
+  setTimeout(() => {
+    showSearchResults.value = false
+  }, 200)
 }
+
+function onSearchResultClick(item) {
+  showSearchResults.value = false
+  searchQuery.value = ''
+  if (item.path) {
+    router.push(item.path)
+  }
+}
+
+function handleClickOutside(e) {
+  if (!e.target.closest('.topbar-search')) {
+    showSearchResults.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+  clearTimeout(debounceTimer)
+})
 </script>
 
 <style scoped>
@@ -157,6 +324,7 @@ function handleSearchBlur() {
   border-radius: var(--radius-md);
   padding: var(--space-1) var(--space-3);
   transition: border-color var(--transition-fast), width 200ms ease;
+  position: relative;
 }
 .topbar-search:focus-within {
   border-color: var(--color-accent);
@@ -198,6 +366,53 @@ function handleSearchBlur() {
 .theme-dot.active {
   border-color: var(--color-text-primary);
   box-shadow: 0 0 0 2px var(--color-bg-primary);
+}
+.theme-more {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+}
+.theme-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  min-width: 140px;
+  padding: var(--space-1) 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.theme-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  text-align: left;
+}
+.theme-dropdown-item:hover {
+  background: var(--color-surface-hover);
+}
+.theme-dropdown-item.active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.theme-dropdown-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
 }
 
 .topbar-user {
@@ -258,5 +473,59 @@ function handleSearchBlur() {
   .topbar-right {
     gap: var(--space-2);
   }
+}
+
+/* 搜索结果面板 */
+.search-results-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  transition: background var(--transition-fast);
+}
+.search-result-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+.search-result-icon {
+  flex-shrink: 0;
+  color: var(--color-text-tertiary);
+}
+.search-result-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.search-result-type {
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+.search-result-empty {
+  padding: var(--space-4) var(--space-3);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-tertiary);
 }
 </style>

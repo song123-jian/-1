@@ -206,6 +206,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useSupabaseStore } from '@/stores/supabase'
 import { useSyncEngine } from '@/utils/syncEngine'
+import { mergeArrays } from '@/utils/conflictResolver'
 import { useCustomerStore } from '@/stores/customer'
 import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
@@ -216,9 +217,11 @@ import { useStatementStore } from '@/stores/statement'
 import { useTodoStore } from '@/stores/todo'
 import { useCostStore } from '@/stores/cost'
 import { useWarehouseLocationStore } from '@/stores/warehouseLocation'
+import { useConfirm } from '@/composables/useConfirm'
 
 const sbStore = useSupabaseStore()
 const syncEngine = useSyncEngine()
+const confirm = useConfirm()
 const customerStore = useCustomerStore()
 const quotationStore = useQuotationStore()
 const contractStore = useContractStore()
@@ -232,6 +235,35 @@ const warehouseLocationStore = useWarehouseLocationStore()
 
 const syncing = ref(false)
 const copySuccess = ref(false)
+
+/**
+ * 校验从远端拉取的数据数组是否合法
+ * 确保数据是数组且每条记录包含 id 字段，过滤掉不合法的记录
+ * @param {*} data - 待校验的数据
+ * @param {string} tableName - 表名（用于日志）
+ * @returns {Array} 校验后的合法数据数组
+ */
+function validateDataArray(data, tableName) {
+  if (!Array.isArray(data)) {
+    console.warn(`[数据校验] ${tableName}: 拉取数据不是数组，已忽略 (类型: ${typeof data})`)
+    return []
+  }
+  const validItems = data.filter(item => {
+    if (!item || typeof item !== 'object') {
+      console.warn(`[数据校验] ${tableName}: 存在非对象记录，已过滤`)
+      return false
+    }
+    if (!item.id) {
+      console.warn(`[数据校验] ${tableName}: 存在缺少id字段的记录，已过滤`, item)
+      return false
+    }
+    return true
+  })
+  if (validItems.length !== data.length) {
+    console.warn(`[数据校验] ${tableName}: 原始 ${data.length} 条，有效 ${validItems.length} 条，过滤 ${data.length - validItems.length} 条`)
+  }
+  return validItems
+}
 
 const syncTables = computed(() => [
   { name: 'customers', label: '客户管理', localCount: customerStore.customers.length, dataKey: 'customers', storeRef: customerStore },
@@ -281,19 +313,72 @@ async function handleConnect() {
   }
 }
 
-function handleDisconnect() {
-  if (confirm('断开连接后，数据将仅保存在本地浏览器中。确定断开？')) {
+async function handleDisconnect() {
+  const ok = await confirm.show({ title: '断开连接', message: '断开连接后，数据将仅保存在本地浏览器中。确定断开？', danger: true })
+  if (ok) {
     sbStore.disconnect()
   }
 }
 
 function subscribeAllTables() {
-  const tables = ['customers', 'quotations', 'contracts', 'inventory', 'deliveries', 'collections', 'statements', 'todos']
+  const tables = ['customers', 'quotations', 'contracts', 'inventory', 'inbound_orders', 'outbound_orders', 'deliveries', 'collections', 'statements', 'todos', 'cost_records', 'warehouse_locations']
+  const storeMap = {
+    customers: { store: customerStore, dataKey: 'customers' },
+    quotations: { store: quotationStore, dataKey: 'quotations' },
+    contracts: { store: contractStore, dataKey: 'contracts' },
+    inventory: { store: inventoryStore, dataKey: 'inventory' },
+    inbound_orders: { store: inventoryStore, dataKey: 'inboundOrders', replaceMethod: 'replaceInbound' },
+    outbound_orders: { store: inventoryStore, dataKey: 'outboundOrders', replaceMethod: 'replaceOutbound' },
+    deliveries: { store: deliveryStore, dataKey: 'deliveries' },
+    collections: { store: collectionStore, dataKey: 'collections' },
+    statements: { store: statementStore, dataKey: 'statements' },
+    todos: { store: todoStore, dataKey: 'todos' },
+    cost_records: { store: costStore, dataKey: 'records' },
+    warehouse_locations: { store: warehouseLocationStore, dataKey: 'locations' }
+  }
+
   for (const t of tables) {
+    const config = storeMap[t]
+    if (!config) continue
+
     sbStore.subscribeRealtime(t, {
-      onInsert: (row) => { console.info(`[Realtime] ${t} 新增:`, row.id) },
-      onUpdate: (row) => { console.info(`[Realtime] ${t} 更新:`, row.id) },
-      onDelete: (old) => { console.info(`[Realtime] ${t} 删除:`, old.id) }
+      onInsert: (row) => {
+        if (!row || !row.id) return
+        const data = config.store[config.dataKey]
+        if (Array.isArray(data) && !data.some(item => item.id === row.id)) {
+          data.push(row)
+          console.info(`[Realtime] ${t} 新增同步到Store:`, row.id)
+        }
+      },
+      onUpdate: (row) => {
+        if (!row || !row.id) return
+        const data = config.store[config.dataKey]
+        if (Array.isArray(data)) {
+          const idx = data.findIndex(item => item.id === row.id)
+          if (idx !== -1) {
+            data[idx] = row
+            console.info(`[Realtime] ${t} 更新同步到Store:`, row.id)
+          }
+        }
+      },
+      onDelete: (old) => {
+        if (!old || !old.id) return
+        const data = config.store[config.dataKey]
+        if (Array.isArray(data)) {
+          const filtered = data.filter(item => item.id !== old.id)
+          if (filtered.length !== data.length) {
+            // 使用 replaceData 方法触发响应式更新和持久化
+            if (config.replaceMethod && config.store[config.replaceMethod]) {
+              config.store[config.replaceMethod](filtered)
+            } else if (config.store.replaceData) {
+              config.store.replaceData(filtered)
+            } else {
+              config.store[config.dataKey] = filtered
+            }
+            console.info(`[Realtime] ${t} 删除同步到Store:`, old.id)
+          }
+        }
+      }
     })
   }
 }
@@ -319,23 +404,24 @@ async function handlePushAll() {
 }
 
 async function handlePullAll() {
-  if (!confirm('从云端拉取数据将覆盖本地数据，确定继续？')) return
+  const ok = await confirm.show({ title: '拉取数据', message: '从云端拉取数据将覆盖本地数据，确定继续？', danger: true })
+  if (!ok) return
   syncing.value = true
   try {
     const data = await sbStore.pullAll()
-    // 将拉取的数据写入各 Store
-    if (data.customers?.length >= 0) customerStore.replaceData(data.customers)
-    if (data.quotations?.length >= 0) quotationStore.replaceData(data.quotations)
-    if (data.contracts?.length >= 0) contractStore.replaceData(data.contracts)
-    if (data.inventory?.length >= 0) inventoryStore.replaceData(data.inventory)
-    if (data.inbound_orders?.length >= 0) inventoryStore.replaceInbound(data.inbound_orders)
-    if (data.outbound_orders?.length >= 0) inventoryStore.replaceOutbound(data.outbound_orders)
-    if (data.deliveries?.length >= 0) deliveryStore.replaceData(data.deliveries)
-    if (data.collections?.length >= 0) collectionStore.replaceData(data.collections)
-    if (data.statements?.length >= 0) statementStore.replaceData(data.statements)
-    if (data.todos?.length >= 0) todoStore.replaceData(data.todos)
-    if (data.cost_records?.length >= 0) costStore.replaceData(data.cost_records)
-    if (data.warehouse_locations?.length >= 0) warehouseLocationStore.replaceData(data.warehouse_locations)
+    // 将拉取的数据校验后写入各 Store
+    if (data.customers) customerStore.replaceData(validateDataArray(data.customers, 'customers'))
+    if (data.quotations) quotationStore.replaceData(validateDataArray(data.quotations, 'quotations'))
+    if (data.contracts) contractStore.replaceData(validateDataArray(data.contracts, 'contracts'))
+    if (data.inventory) inventoryStore.replaceData(validateDataArray(data.inventory, 'inventory'))
+    if (data.inbound_orders) inventoryStore.replaceInbound(validateDataArray(data.inbound_orders, 'inbound_orders'))
+    if (data.outbound_orders) inventoryStore.replaceOutbound(validateDataArray(data.outbound_orders, 'outbound_orders'))
+    if (data.deliveries) deliveryStore.replaceData(validateDataArray(data.deliveries, 'deliveries'))
+    if (data.collections) collectionStore.replaceData(validateDataArray(data.collections, 'collections'))
+    if (data.statements) statementStore.replaceData(validateDataArray(data.statements, 'statements'))
+    if (data.todos) todoStore.replaceData(validateDataArray(data.todos, 'todos'))
+    if (data.cost_records) costStore.replaceData(validateDataArray(data.cost_records, 'cost_records'))
+    if (data.warehouse_locations) warehouseLocationStore.replaceData(validateDataArray(data.warehouse_locations, 'warehouse_locations'))
   } finally {
     syncing.value = false
   }
@@ -344,21 +430,42 @@ async function handlePullAll() {
 async function handleBidirectionalSync() {
   syncing.value = true
   try {
-    // 先拉取远端数据
+    // 拉取远端数据
     const remoteData = await sbStore.pullAll()
-    // 再推送本地数据（简单策略：以本地为准覆盖远端）
-    await sbStore.pushAll({
-      customer: customerStore,
-      quotation: quotationStore,
-      contract: contractStore,
-      inventory: inventoryStore,
-      delivery: deliveryStore,
-      collection: collectionStore,
-      statement: statementStore,
-      todo: todoStore,
-      cost: costStore,
-      warehouseLocation: warehouseLocationStore
-    })
+    if (!remoteData) {
+      console.warn('[双向同步] 拉取远端数据失败')
+      return
+    }
+
+    // 定义表与本地数据/替换方法的映射
+    const tableConfigs = [
+      { name: 'customers', localData: customerStore.customers, replaceFn: (merged) => customerStore.replaceData(merged) },
+      { name: 'quotations', localData: quotationStore.quotations, replaceFn: (merged) => quotationStore.replaceData(merged) },
+      { name: 'contracts', localData: contractStore.contracts, replaceFn: (merged) => contractStore.replaceData(merged) },
+      { name: 'inventory', localData: inventoryStore.inventory, replaceFn: (merged) => inventoryStore.replaceData(merged) },
+      { name: 'inbound_orders', localData: inventoryStore.inboundOrders, replaceFn: (merged) => inventoryStore.replaceInbound(merged) },
+      { name: 'outbound_orders', localData: inventoryStore.outboundOrders, replaceFn: (merged) => inventoryStore.replaceOutbound(merged) },
+      { name: 'deliveries', localData: deliveryStore.deliveries, replaceFn: (merged) => deliveryStore.replaceData(merged) },
+      { name: 'collections', localData: collectionStore.collections, replaceFn: (merged) => collectionStore.replaceData(merged) },
+      { name: 'statements', localData: statementStore.statements, replaceFn: (merged) => statementStore.replaceData(merged) },
+      { name: 'todos', localData: todoStore.todos, replaceFn: (merged) => todoStore.replaceData(merged) },
+      { name: 'cost_records', localData: costStore.records, replaceFn: (merged) => costStore.replaceData(merged) },
+      { name: 'warehouse_locations', localData: warehouseLocationStore.locations, replaceFn: (merged) => warehouseLocationStore.replaceData(merged) }
+    ]
+
+    for (const config of tableConfigs) {
+      try {
+        const remoteTableData = remoteData[config.name] || []
+        // 双向合并：保留双方独有数据，冲突取最新
+        const merged = mergeArrays(config.localData, remoteTableData, 'id')
+        // 推送合并结果到远端
+        await sbStore.pushToServer(config.name, merged)
+        // 更新本地数据
+        config.replaceFn(merged)
+      } catch (e) {
+        console.warn(`双向同步表 ${config.name} 失败:`, e)
+      }
+    }
   } finally {
     syncing.value = false
   }
@@ -431,85 +538,128 @@ const INIT_SQL = `-- 冠久ERP 数据库建表语句
 
 CREATE TABLE customers (
   id TEXT PRIMARY KEY,
-  "customerNo" TEXT, "fullName" TEXT, name TEXT,
-  contact TEXT, "contactName" TEXT, phone TEXT,
+  "customerNo" TEXT, "fullName" TEXT, name TEXT, "shortName" TEXT,
+  contact TEXT, "contactName" TEXT, phone TEXT, email TEXT,
   department TEXT, position TEXT, level TEXT DEFAULT 'B',
-  "decisionPower" TEXT, concerns TEXT, region TEXT,
+  "decisionAuthority" TEXT, "coreConcerns" TEXT, region TEXT,
   balance NUMERIC DEFAULT 0, "creditLimit" NUMERIC DEFAULT 0,
-  status TEXT DEFAULT 'active', tags JSONB DEFAULT '[]',
-  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
+  address TEXT, status TEXT DEFAULT 'active', tags JSONB DEFAULT '[]',
+  "createdBy" TEXT, "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE quotations (
-  id TEXT PRIMARY KEY, "quoteNo" TEXT, "customerName" TEXT,
-  date TEXT, status TEXT DEFAULT 'draft', total NUMERIC DEFAULT 0,
-  "profitMargin" NUMERIC, notes TEXT, items JSONB DEFAULT '[]',
-  "createdAt" TIMESTAMPTZ DEFAULT now()
+  id TEXT PRIMARY KEY, "quoteNo" TEXT,
+  "customerId" TEXT, "customerName" TEXT, "customerFullName" TEXT,
+  "custContact" TEXT, "custPhone" TEXT, "custEmail" TEXT,
+  "senderContact" TEXT, "senderCompany" TEXT, "senderPhone" TEXT, "senderEmail" TEXT,
+  date TEXT, "expiryDate" TEXT, status TEXT DEFAULT 'draft',
+  subtotal NUMERIC DEFAULT 0, "taxRate" NUMERIC DEFAULT 13, total NUMERIC DEFAULT 0,
+  "costBasis" NUMERIC DEFAULT 0, "profitMargin" NUMERIC,
+  currency TEXT DEFAULT 'CNY', items JSONB DEFAULT '[]',
+  "termPrice" TEXT, "termPayment" TEXT, "termDelivery" TEXT,
+  "termDeliveryAddr" TEXT, "termQuality" TEXT, "termPriceAdj" TEXT,
+  notes TEXT, "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE contracts (
-  id TEXT PRIMARY KEY, "contractNo" TEXT, "customerName" TEXT,
-  type TEXT, status TEXT DEFAULT 'draft', "totalAmount" NUMERIC DEFAULT 0,
-  "settlementMethod" TEXT, "startDate" TEXT, "endDate" TEXT,
-  items JSONB DEFAULT '[]', "createdAt" TIMESTAMPTZ DEFAULT now()
+  id TEXT PRIMARY KEY, "contractNo" TEXT,
+  "contractType" TEXT, "partyA" TEXT, "partyAId" TEXT,
+  "partyB" TEXT, "signPlace" TEXT, "signDate" TEXT, "endDate" TEXT,
+  settlement TEXT, products JSONB DEFAULT '[]', terms JSONB DEFAULT '{}',
+  "partyAInfo" JSONB DEFAULT '{}', "partyBInfo" JSONB DEFAULT '{}',
+  "totalAmount" NUMERIC DEFAULT 0, "sourceQuoteId" TEXT,
+  status TEXT DEFAULT 'draft', notes TEXT,
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE inventory (
   id TEXT PRIMARY KEY, code TEXT, name TEXT, grade TEXT,
   category TEXT, quantity NUMERIC DEFAULT 0,
   "safetyStock" NUMERIC DEFAULT 0, "maxStock" NUMERIC DEFAULT 0,
-  unit TEXT, warehouse TEXT, "createdAt" TIMESTAMPTZ DEFAULT now()
+  unit TEXT, warehouse TEXT, "locationId" TEXT,
+  "supplierId" TEXT, "supplierName" TEXT, "unitPrice" NUMERIC DEFAULT 0,
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE inbound_orders (
   id TEXT PRIMARY KEY, "orderNo" TEXT, type TEXT, date TEXT,
-  supplier TEXT, status TEXT DEFAULT 'pending',
-  items JSONB DEFAULT '[]', "createdAt" TIMESTAMPTZ DEFAULT now()
+  supplier TEXT, "customerId" TEXT,
+  "warehouseId" TEXT, "warehouseName" TEXT,
+  status TEXT DEFAULT 'pending', notes TEXT,
+  "totalAmount" NUMERIC DEFAULT 0, items JSONB DEFAULT '[]',
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE outbound_orders (
   id TEXT PRIMARY KEY, "outboundNo" TEXT, "outType" TEXT, date TEXT,
-  customer TEXT, status TEXT DEFAULT 'pending',
-  items JSONB DEFAULT '[]', "createdAt" TIMESTAMPTZ DEFAULT now()
+  customer TEXT, "customerId" TEXT,
+  "warehouseId" TEXT, "warehouseName" TEXT,
+  status TEXT DEFAULT 'pending', notes TEXT,
+  "totalAmount" NUMERIC DEFAULT 0, items JSONB DEFAULT '[]',
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE deliveries (
   id TEXT PRIMARY KEY, "deliveryNo" TEXT, "customerName" TEXT,
-  date TEXT, status TEXT DEFAULT 'created',
-  "totalAmount" NUMERIC DEFAULT 0, items JSONB DEFAULT '[]',
-  "createdAt" TIMESTAMPTZ DEFAULT now()
+  date TEXT, "orderId" TEXT, urgency TEXT DEFAULT 'normal',
+  status TEXT DEFAULT 'created', address TEXT, contact TEXT, phone TEXT,
+  "expectedDate" TEXT, "expectedArrivalDate" TEXT,
+  "transportMethod" TEXT DEFAULT 'logistics', carrier TEXT,
+  driver TEXT, "driverPhone" TEXT, "plateNo" TEXT, "driverMobile" TEXT,
+  "trackingNo" TEXT,
+  "totalQuantity" NUMERIC DEFAULT 0, "totalAmount" NUMERIC DEFAULT 0,
+  "totalTax" NUMERIC DEFAULT 0, "grandTotal" NUMERIC DEFAULT 0,
+  "actualDate" TEXT, "acceptanceResult" TEXT, "acceptNote" TEXT,
+  "acceptPerson" TEXT, "acceptDate" TEXT,
+  items JSONB DEFAULT '[]',
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE collections (
   id TEXT PRIMARY KEY, "collectionNo" TEXT, "customerName" TEXT,
-  amount NUMERIC DEFAULT 0, method TEXT, status TEXT DEFAULT 'pending',
-  date TEXT, "createdAt" TIMESTAMPTZ DEFAULT now()
+  "customerId" TEXT, "statementId" TEXT,
+  amount NUMERIC DEFAULT 0, "dueDate" TEXT,
+  currency TEXT DEFAULT 'CNY', method TEXT,
+  "referenceNo" TEXT, "bankAccount" TEXT,
+  status TEXT DEFAULT 'pending', installments JSONB DEFAULT '[]',
+  notes TEXT, "createdBy" TEXT,
+  date TEXT, "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE statements (
   id TEXT PRIMARY KEY, "statementNo" TEXT, "reconDate" TEXT,
   "buyerName" TEXT, "sellerName" TEXT, "totalAmount" NUMERIC DEFAULT 0,
   status TEXT DEFAULT 'draft', items JSONB DEFAULT '[]',
-  "createdAt" TIMESTAMPTZ DEFAULT now()
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE todos (
-  id TEXT PRIMARY KEY, title TEXT, status TEXT DEFAULT 'pending',
-  priority TEXT DEFAULT 'medium', "dueDate" TEXT,
-  "createdAt" TIMESTAMPTZ DEFAULT now()
+  id TEXT PRIMARY KEY, title TEXT, type TEXT DEFAULT 'custom',
+  status TEXT DEFAULT 'pending', priority TEXT DEFAULT 'medium',
+  source TEXT, "sourceId" TEXT,
+  "dueDate" TEXT, "startDate" TEXT, "completedAt" TEXT,
+  notes TEXT, tag TEXT, reminder TEXT DEFAULT '不提醒',
+  "repeat" TEXT DEFAULT 'none', progress NUMERIC DEFAULT 0,
+  remark TEXT, subtasks JSONB DEFAULT '[]',
+  "createdBy" TEXT,
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE cost_records (
-  id TEXT PRIMARY KEY, "poNo" TEXT, "supplierName" TEXT,
+  id TEXT PRIMARY KEY, "poNo" TEXT, "supplierId" TEXT, "supplierName" TEXT,
   date TEXT, "materialName" TEXT, quantity NUMERIC DEFAULT 0,
   "actualCost" NUMERIC DEFAULT 0, "standardCost" NUMERIC DEFAULT 0,
   variance NUMERIC DEFAULT 0, "varianceRate" NUMERIC DEFAULT 0,
-  status TEXT DEFAULT 'pending', "createdAt" TIMESTAMPTZ DEFAULT now()
+  status TEXT DEFAULT 'pending', "createdBy" TEXT,
+  "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 CREATE TABLE warehouse_locations (
-  id TEXT PRIMARY KEY, code TEXT, name TEXT, zone TEXT,
-  status TEXT DEFAULT 'active', "createdAt" TIMESTAMPTZ DEFAULT now()
+  id TEXT PRIMARY KEY, "locationCode" TEXT,
+  "warehouseName" TEXT, "warehouseId" TEXT,
+  "areaName" TEXT DEFAULT '合格品区',
+  manager TEXT, "managerPhone" TEXT, notes TEXT,
+  "createdBy" TEXT, "createdAt" TIMESTAMPTZ DEFAULT now(), "updatedAt" TIMESTAMPTZ DEFAULT now()
 );
 
 -- 启用 RLS
@@ -545,9 +695,14 @@ ALTER PUBLICATION supabase_realtime ADD TABLE customers;
 ALTER PUBLICATION supabase_realtime ADD TABLE quotations;
 ALTER PUBLICATION supabase_realtime ADD TABLE contracts;
 ALTER PUBLICATION supabase_realtime ADD TABLE inventory;
+ALTER PUBLICATION supabase_realtime ADD TABLE inbound_orders;
+ALTER PUBLICATION supabase_realtime ADD TABLE outbound_orders;
 ALTER PUBLICATION supabase_realtime ADD TABLE deliveries;
 ALTER PUBLICATION supabase_realtime ADD TABLE collections;
-ALTER PUBLICATION supabase_realtime ADD TABLE statements;`
+ALTER PUBLICATION supabase_realtime ADD TABLE statements;
+ALTER PUBLICATION supabase_realtime ADD TABLE todos;
+ALTER PUBLICATION supabase_realtime ADD TABLE cost_records;
+ALTER PUBLICATION supabase_realtime ADD TABLE warehouse_locations;`
 
 async function copySQL() {
   try {

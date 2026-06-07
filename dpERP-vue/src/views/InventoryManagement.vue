@@ -30,11 +30,7 @@
               <div class="form-group">
                 <label class="form-label">类别</label>
                 <select v-model="itemForm.category" class="form-select">
-                  <option value="raw">原材料</option>
-                  <option value="finished">成品</option>
-                  <option value="semi">半成品</option>
-                  <option value="auxiliary">辅料</option>
-                  <option value="packaging">包装材料</option>
+                  <option v-for="cat in categoryOptions" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
                 </select>
               </div>
               <div class="form-group">
@@ -50,10 +46,7 @@
               <div class="form-group">
                 <label class="form-label">仓库 <span class="required">*</span></label>
                 <select v-model="itemForm.warehouse" class="form-select">
-                  <option value="main">主仓库</option>
-                  <option value="A">A区(原料仓)</option>
-                  <option value="B">B区(成品仓)</option>
-                  <option value="C">C区(危化仓)</option>
+                  <option v-for="wh in warehouseOptions" :key="wh.value" :value="wh.value">{{ wh.label }}</option>
                 </select>
               </div>
               <div class="form-group">
@@ -64,6 +57,9 @@
             <div class="form-group">
               <label class="form-label">库位/货位</label>
               <input v-model="itemForm.location" type="text" class="form-input" placeholder="如: A-01-03" />
+            </div>
+            <div v-if="formErrors.length > 0" class="form-errors">
+              <div v-for="(err, idx) in formErrors" :key="idx" class="form-error">{{ err }}</div>
             </div>
           </div>
           <div class="wizard-footer">
@@ -79,7 +75,7 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useInventoryStore } from '@/stores/inventory'
+import { useInventoryStore, categoryOptions, warehouseOptions } from '@/stores/inventory'
 import StockSection from '@/components/inventory/StockSection.vue'
 import AlertSection from '@/components/inventory/AlertSection.vue'
 
@@ -90,6 +86,7 @@ const inventoryStore = useInventoryStore()
 const showItemModal = ref(false)
 const editingItemId = ref(null)
 const alertOpen = ref(true)
+const formErrors = ref([])
 const itemForm = reactive({
   code: '', name: '', category: 'raw', warehouse: 'main',
   quantity: 0, safetyStock: 50, maxStock: 0, unitCost: 0,
@@ -97,6 +94,7 @@ const itemForm = reactive({
 })
 
 function openEditItem(item) {
+  formErrors.value = []
   if (!item) {
     editingItemId.value = null
     Object.assign(itemForm, {
@@ -123,10 +121,34 @@ function closeItemModal() {
 }
 
 function handleSaveItem() {
-  if (!itemForm.code || !itemForm.name) {
-    alert('物料编码和名称为必填项')
-    return
+  formErrors.value = []
+
+  // 编码必填
+  if (!itemForm.code || !itemForm.code.trim()) {
+    formErrors.value.push('物料编码为必填项')
   }
+  // 名称必填
+  if (!itemForm.name || !itemForm.name.trim()) {
+    formErrors.value.push('物料名称为必填项')
+  }
+  // 编码唯一性校验（新增时或编辑时编码变更）
+  if (itemForm.code) {
+    const existing = inventoryStore.inventory.find(i => i.code === itemForm.code && i.id !== editingItemId.value)
+    if (existing) {
+      formErrors.value.push('物料编码已存在，请使用其他编码')
+    }
+  }
+  // 数量非负校验
+  if (itemForm.quantity !== undefined && itemForm.quantity !== '' && Number(itemForm.quantity) < 0) {
+    formErrors.value.push('数量不能为负数')
+  }
+  // 仓库必选校验
+  if (!itemForm.warehouse) {
+    formErrors.value.push('请选择仓库')
+  }
+
+  if (formErrors.value.length > 0) return
+
   if (editingItemId.value) {
     inventoryStore.updateInventoryItem(editingItemId.value, { ...itemForm })
   } else {
@@ -140,14 +162,26 @@ function handleOpenInbound() {
 }
 
 function handleQuickInbound(item) {
-  // Open inbound wizard with item pre-filled - navigate to inbound page
-  router.push('/inbound')
+  router.push({ path: '/inbound', query: { materialCode: item.code, materialName: item.name } })
 }
 </script>
 
 <style scoped>
 .inventory-management-page {
   width: 100%;
+}
+
+.form-errors {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: rgba(239,68,68,0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.form-error {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  padding: 2px 0;
 }
 
 /* 响应式适配 */

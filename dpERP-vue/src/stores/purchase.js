@@ -385,6 +385,14 @@ export const usePurchaseStore = defineStore('purchase', () => {
             notes: '采购单 ' + order.orderNo + ' 完成入库'
           })
         }
+        /* 同时调用 adjustStock 确保库存即时增加 */
+        for (const item of (order.items || [])) {
+          const code = item.materialCode || item.code
+          const qty = item.quantity || item.qty
+          if (code && qty) {
+            inventoryStore.adjustStock(code, qty)
+          }
+        }
       } catch (e) {
         console.warn('[purchaseStore] completePurchaseOrder: inventory sync skipped', e)
       }

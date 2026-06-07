@@ -162,11 +162,16 @@ class DataCache {
    */
   invalidateNamespace(namespace) {
     const prefix = `${namespace}:`
+    /* 先收集待删除键到数组，再遍历数组删除，避免在迭代中删除 Map 条目 */
+    const keysToDelete = []
     for (const [key] of this._cache) {
       if (key.startsWith(prefix)) {
-        this._cache.delete(key)
-        this._stats.invalidations++
+        keysToDelete.push(key)
       }
+    }
+    for (const key of keysToDelete) {
+      this._cache.delete(key)
+      this._stats.invalidations++
     }
   }
 
@@ -220,11 +225,15 @@ class DataCache {
    * 清理过期缓存
    */
   cleanup() {
+    const keysToDelete = []
     for (const [key, item] of this._cache) {
       if (item.isExpired) {
-        this._cache.delete(key)
-        this._stats.evictions++
+        keysToDelete.push(key)
       }
+    }
+    for (const key of keysToDelete) {
+      this._cache.delete(key)
+      this._stats.evictions++
     }
   }
 

@@ -250,6 +250,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
+import { escapeHtml, formatNumber } from '@/utils/format'
 
 const emit = defineEmits(['edit-item', 'open-inbound-wizard'])
 
@@ -398,7 +399,7 @@ const stockCalHtml = computed(() => {
       const dayItems = itemsByDate[dateStr] || []
       html += '<td' + (isToday ? ' style="background:var(--color-accent-subtle)"' : '') + '><div style="font-weight:' + (isToday ? '700' : '400') + '">' + day + '</div>'
       for (const di of dayItems.slice(0, 2)) {
-        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + di.name + '</div>'
+        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(di.name) + '</div>'
       }
       if (dayItems.length > 2) html += '<div style="font-size:10px;color:var(--color-accent)">+' + (dayItems.length - 2) + '</div>'
       html += '</td>'
@@ -421,11 +422,6 @@ function toggleStockSort(field) {
 
 function alertColor(status) {
   return inventoryStore.ALERT_STATUS_COLORS[status] || 'var(--color-text-secondary)'
-}
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
 }
 
 function toggleStockSelectAll() {

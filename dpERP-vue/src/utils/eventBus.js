@@ -245,6 +245,48 @@ class EventBus {
   }
 
   /**
+   * 订阅事件，并自动在组件卸载时取消订阅
+   * @param {string} event - 事件名称
+   * @param {Function} handler - 事件处理函数
+   * @param {Object} componentInstance - Vue 组件实例（setup 中的 this 或 getCurrentInstance()）
+   * @param {Object} options - 选项 { once: boolean, priority: number }
+   * @returns {Function} 取消订阅的函数
+   */
+  onWithLifecycle(event, handler, componentInstance, options = {}) {
+    const unsubscribe = this.on(event, handler, options)
+
+    if (componentInstance && typeof componentInstance === 'object') {
+      // 兼容 Vue 3 的 onUnmounted 钩子注册
+      if (componentInstance.__cleanup_fns) {
+        // 组件实例上已有清理函数集合
+        componentInstance.__cleanup_fns.push(unsubscribe)
+      } else if (componentInstance.$ && componentInstance.$.appContext) {
+        // Vue 组件实例（通过 getCurrentInstance() 获取）
+        if (!componentInstance.__cleanup_fns) {
+          componentInstance.__cleanup_fns = []
+        }
+        componentInstance.__cleanup_fns.push(unsubscribe)
+      }
+    }
+
+    return unsubscribe
+  }
+
+  /**
+   * 清除组件关联的所有事件订阅
+   * 在组件的 onUnmounted 钩子中调用
+   * @param {Object} componentInstance - Vue 组件实例
+   */
+  cleanupByComponent(componentInstance) {
+    if (componentInstance && componentInstance.__cleanup_fns) {
+      componentInstance.__cleanup_fns.forEach(fn => {
+        try { fn() } catch (e) { /* ignore */ }
+      })
+      componentInstance.__cleanup_fns = []
+    }
+  }
+
+  /**
    * 获取事件历史
    * @param {string} [eventFilter] - 事件名过滤
    * @param {number} [limit=50] - 返回条数

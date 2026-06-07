@@ -69,8 +69,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useToast } from '@/composables/useToast'
 
 const router = useRouter()
+const toast = useToast()
 
 const FAV_STORAGE_KEY = 'gj_erp_navFavorites'
 const maxFavorites = 15
@@ -92,37 +94,31 @@ function saveToStorage(key, data) {
 
 const favorites = ref(loadFromStorage(FAV_STORAGE_KEY, []))
 
-const allNavItems = [
-  { path: '/dashboard', icon: 'table', label: '仪表盘' },
-  { path: '/todos', icon: 'check', label: '待办事项' },
-  { path: '/customers', icon: 'building', label: '客户管理' },
-  { path: '/tag-category', icon: 'tag', label: '标签分类' },
-  { path: '/project-tracking', icon: 'target', label: '项目追踪' },
-  { path: '/quotations', icon: 'list', label: '报价管理' },
-  { path: '/contracts', icon: 'file', label: '合同管理' },
-  { path: '/transactions', icon: 'creditCard', label: '交易管理' },
-  { path: '/inbound', icon: 'upload', label: '入库管理' },
-  { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理' },
-  { path: '/deliveries', icon: 'truck', label: '送货管理' },
-  { path: '/monthly-stats', icon: 'calendar', label: '月度统计' },
-  { path: '/collections', icon: 'dollar', label: '回款管理' },
-  { path: '/cost-analysis', icon: 'calculator', label: '成本核算' },
-  { path: '/reports', icon: 'trendUp', label: '报表中心' },
-  { path: '/statements', icon: 'file', label: '对账管理' },
-  { path: '/archives', icon: 'archive', label: '档案管理' },
-  { path: '/doc-settings', icon: 'award', label: '资质设置' },
-  { path: '/approvals', icon: 'checkCircle', label: '审批配置' },
-  { path: '/sales-permission', icon: 'shield', label: '销售权限配置' },
-  { path: '/database-connection', icon: 'link', label: '数据库连接' },
-  { path: '/logs', icon: 'log', label: '操作日志' },
-  { path: '/mobile-design', icon: 'mobile', label: '移动端设计' },
-  { path: '/settings/company', icon: 'building', label: '公司信息' },
-  { path: '/settings/params', icon: 'setting', label: '系统参数' },
-]
+/* 从路由配置动态生成导航项，避免硬编码 */
+const allNavItems = computed(() => {
+  const routes = router.getRoutes()
+  // 排除重定向路由、角色选择页、404页、详情页等非导航页面
+  const excludeNames = ['RoleSelect', 'CustomerDetail', 'Favorites']
+  return routes
+    .filter(route => {
+      if (!route.name || !route.path || !route.meta?.title) return false
+      if (excludeNames.includes(route.name)) return false
+      if (route.path.includes(':') || route.path === '/') return false
+      // 排除重定向路由
+      if (route.redirect) return false
+      return true
+    })
+    .map(route => ({
+      path: route.path,
+      icon: route.meta.icon || 'file',
+      label: route.meta.title
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
+})
 
 const recommendItems = computed(() => {
   const favPaths = new Set(favorites.value.map(f => f.path))
-  return allNavItems.filter(item => !favPaths.has(item.path))
+  return allNavItems.value.filter(item => !favPaths.has(item.path))
 })
 
 function navigateTo(path) {
@@ -132,7 +128,10 @@ function navigateTo(path) {
 function addFavorite(item) {
   const exists = favorites.value.find(f => f.path === item.path)
   if (exists) return
-  if (favorites.value.length >= maxFavorites) return
+  if (favorites.value.length >= maxFavorites) {
+    toast.warning(`收藏数量已达上限（${maxFavorites}个），请先移除部分收藏后再添加`)
+    return
+  }
   favorites.value.push({ path: item.path, label: item.label, icon: item.icon })
   saveToStorage(FAV_STORAGE_KEY, favorites.value)
 }

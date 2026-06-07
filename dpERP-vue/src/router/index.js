@@ -11,6 +11,26 @@ const FINANCE_ROUTES = ['Collections', 'CostAnalysis', 'MonthlyStats', 'Receivab
 /* 需要仓储权限的路由 */
 const WAREHOUSE_ROUTES = ['WarehouseLocations', 'StocktakingManagement', 'TransferManagement']
 
+/* 路由权限映射：路由名 → 权限模块和操作 */
+const ROUTE_PERM_MAP = {
+  Quotations: { module: 'quote_contract', action: 'canCreateQuote' },
+  Contracts: { module: 'quote_contract', action: 'canCreateContract' },
+  InboundManagement: { module: 'inbound', action: 'inboundCreate' },
+  InventoryManagement: { module: 'warehouse', action: 'warehouseCreate' },
+  OutboundManagement: { module: 'outbound', action: 'outboundCreate' },
+  WarehouseLocations: { module: 'warehouse', action: 'warehouseCreate' },
+  StocktakingManagement: { module: 'stocktaking', action: 'stocktakingCreate' },
+  TransferManagement: { module: 'transfer', action: 'transferCreate' },
+  Deliveries: { module: 'delivery', action: 'deliveryCreate' },
+  Collections: { module: 'statement', action: 'statementCreate' },
+  ReceivableManagement: { module: 'receivable', action: 'receivableView' },
+  PayableManagement: { module: 'payable', action: 'payableView' },
+  CostAnalysis: { module: 'cost', action: 'costView' },
+  PurchaseManagement: { module: 'purchase', action: 'purchaseCreate' },
+  SupplierManagement: { module: 'supplier', action: 'supplierCreate' },
+  ProductionManagement: { module: 'production', action: 'productionCreate' }
+}
+
 const routes = [
   {
     path: '/',
@@ -265,7 +285,7 @@ const routes = [
   },
   {
     path: '/:pathMatch(.*)*',
-    redirect: '/dashboard'
+    component: () => import('@/views/NotFound.vue')
   }
 ]
 
@@ -308,6 +328,15 @@ router.beforeEach((to, from) => {
   /* 仓位管理：仓储角色/管理员/总经理可访问 */
   if (WAREHOUSE_ROUTES.includes(to.name) && !['管理员', '总经理', '仓库主管', '仓管员'].includes(role)) {
     return { name: 'Dashboard' }
+  }
+
+  /* 基于权限矩阵的路由权限检查 */
+  const routePerm = ROUTE_PERM_MAP[to.name]
+  if (routePerm) {
+    const hasPerm = permStore.getPerm(role, routePerm.module, routePerm.action)
+    if (!hasPerm) {
+      return { name: 'Dashboard' }
+    }
   }
 })
 

@@ -38,13 +38,15 @@
                 <th v-if="columnVisible.areaName">库区名称</th>
                 <th v-if="columnVisible.manager">库管员</th>
                 <th v-if="columnVisible.managerPhone">联系电话</th>
+                <th>关联物料</th>
+                <th>物料数量</th>
                 <th v-if="columnVisible.notes">备注</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="paginatedLocations.length === 0">
-                <td colspan="7" class="empty-state">
+                <td colspan="9" class="empty-state">
                   <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无库位数据
                 </td>
               </tr>
@@ -54,6 +56,8 @@
                 <td v-if="columnVisible.areaName"><span :style="{ color: whLocStore.AREA_COLORS[loc.areaName] || 'var(--color-text-tertiary)', fontWeight: 600 }">{{ loc.areaName }}</span></td>
                 <td v-if="columnVisible.manager">{{ loc.manager }}</td>
                 <td v-if="columnVisible.managerPhone" class="cell-mono">{{ loc.managerPhone }}</td>
+                <td style="text-align:center">{{ whLocStore.getLocationStockInfo[loc.id]?.count || 0 }}</td>
+                <td class="cell-mono" style="text-align:right">{{ (whLocStore.getLocationStockInfo[loc.id]?.totalQty || 0).toFixed(2) }}</td>
                 <td v-if="columnVisible.notes">{{ loc.notes || '-' }}</td>
                 <td class="cell-actions">
                   <button class="btn btn-ghost btn-sm" @click="openEditModal(loc)"><Icon name="edit" :size="14" /></button>
@@ -90,6 +94,22 @@
             <div style="font-size:24px;font-weight:700" :style="{ color: whLocStore.AREA_COLORS[area] || 'var(--color-text-tertiary)' }">{{ count }}</div>
             <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">{{ area }}</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
+      <div class="modal-panel" style="max-width:400px">
+        <div class="modal-header">
+          <h3 :style="{ fontSize: '14px', fontWeight: 700, color: deleteConfirmData.type === 'hasStock' ? 'var(--color-warning)' : 'var(--color-danger)' }">{{ deleteConfirmData.type === 'hasStock' ? '无法删除' : '确认删除' }}</h3>
+          <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false"><Icon name="close" :size="14" /></button>
+        </div>
+        <div class="modal-body" style="text-align:center;padding:24px">
+          <div style="font-size:15px;color:var(--color-text-secondary)">{{ deleteConfirmData.message }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" @click="showDeleteConfirm = false">{{ deleteConfirmData.type === 'hasStock' ? '知道了' : '取消' }}</button>
+          <button v-if="deleteConfirmData.type === 'confirm'" class="btn btn-primary" style="background:var(--color-danger)" @click="confirmDeleteLocation">确认删除</button>
         </div>
       </div>
     </div>
@@ -175,6 +195,8 @@ const areaFilter = ref('')
 const showModal = ref(false)
 const editingId = ref(null)
 const formErrors = ref([])
+const showDeleteConfirm = ref(false)
+const deleteConfirmData = ref({ id: null, type: '', message: '' })
 const formData = ref({
   locationCode: '', warehouseName: '', areaName: '合格品区',
   manager: '', managerPhone: '', notes: ''
@@ -251,9 +273,21 @@ function handleSave() {
 }
 
 function handleDelete(id) {
-  if (confirm('确认删除该库位？')) {
-    whLocStore.deleteLocation(id)
+  const stockInfo = whLocStore.getLocationStockInfo[id]
+  if (stockInfo && stockInfo.count > 0) {
+    deleteConfirmData.value = { id, type: 'hasStock', message: `该库位关联了 ${stockInfo.count} 种物料（总数量 ${stockInfo.totalQty.toFixed(2)}），请先转移物料后再删除。` }
+    showDeleteConfirm.value = true
+    return
   }
+  deleteConfirmData.value = { id, type: 'confirm', message: '确认删除该库位？此操作不可撤销。' }
+  showDeleteConfirm.value = true
+}
+
+function confirmDeleteLocation() {
+  if (deleteConfirmData.value.type === 'confirm') {
+    whLocStore.deleteLocation(deleteConfirmData.value.id)
+  }
+  showDeleteConfirm.value = false
 }
 
 function handleExport() {
@@ -261,12 +295,18 @@ function handleExport() {
     库位编码: l.locationCode, 仓库名称: l.warehouseName, 库区名称: l.areaName,
     库管员: l.manager, 联系电话: l.managerPhone, 备注: l.notes || ''
   }))
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
+  /* CSV导出（含UTF-8 BOM） */
+  const headers = Object.keys(data[0] || {})
+  const csvRows = [headers.join(',')]
+  for (const row of data) {
+    csvRows.push(headers.map(h => '"' + String(row[h] || '').replace(/"/g, '""') + '"').join(','))
+  }
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = '库位数据_' + new Date().toISOString().split('T')[0] + '.json'
+  a.download = '库位数据_' + new Date().toISOString().split('T')[0] + '.csv'
   a.click()
   URL.revokeObjectURL(url)
 }

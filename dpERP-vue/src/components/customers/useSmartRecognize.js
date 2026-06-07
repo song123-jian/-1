@@ -81,7 +81,7 @@ export function useSmartRecognize(form) {
     }
 
     // 提取部门
-    const deptMatch = text.match(/(?:部门|部门)[:\s：]*([\u4e00-\u9fa5]{2,8})/)
+    const deptMatch = text.match(/(?:部门|Dept|Department)[:\s：]*([\u4e00-\u9fa5]{2,8})/i)
     if (deptMatch) {
       const confidence = 65
       items.push({ key: 'department', label: '部门', value: deptMatch[1], confidence, confLevel: confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low', confLabel: confidence >= 80 ? '可信' : confidence >= 50 ? '待确认' : '低可信' })

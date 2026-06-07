@@ -70,7 +70,11 @@ class AutoSaveManager {
     window.addEventListener('beforeunload', () => this._emergencySave())
     window.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'hidden') {
-        this._emergencySave()
+        /* visibilitychange 中提前同步，比 beforeunload 更可靠 */
+        this.saveSessionState()
+        if (githubSync.getAuthStatus().isAuthenticated && githubSync.getConfig().autoUpload) {
+          this._syncToGitHub()
+        }
       }
     })
 
@@ -361,10 +365,9 @@ class AutoSaveManager {
     /* 保存会话状态 */
     this.saveSessionState()
 
-    /* 如果 GitHub 自动上传已启用，尝试同步 */
+    /* 如果 GitHub 自动上传已启用，使用 sendBeacon 尝试同步 */
     if (githubSync.getAuthStatus().isAuthenticated && githubSync.getConfig().autoUpload) {
-      /* 使用 sendBeacon 或同步请求（页面关闭前无法使用 async） */
-      this._syncToGitHub()
+      this._syncToGitHubBeacon()
     }
   }
 
@@ -487,6 +490,26 @@ class AutoSaveManager {
       githubSync.uploadAllData().catch(e => {
         console.warn('[AutoSave] GitHub紧急同步失败:', e)
       })
+    } catch (e) { /* ignore */ }
+  }
+
+  /**
+   * 使用 sendBeacon 同步到 GitHub（beforeunload 安全方式）
+   */
+  _syncToGitHubBeacon() {
+    try {
+      const authStatus = githubSync.getAuthStatus()
+      if (!authStatus.isAuthenticated) return
+      /* 将本地关键数据序列化，通过 sendBeacon 发送 */
+      const payload = JSON.stringify({
+        type: 'emergency_sync',
+        timestamp: Date.now(),
+        token: authStatus.token || ''
+      })
+      const gistUrl = githubSync.getConfig()?.gistUrl || ''
+      if (gistUrl && navigator.sendBeacon) {
+        navigator.sendBeacon(gistUrl, payload)
+      }
     } catch (e) { /* ignore */ }
   }
 

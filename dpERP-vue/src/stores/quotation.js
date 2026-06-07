@@ -388,6 +388,56 @@ export const useQuotationStore = defineStore('quotation', () => {
     persist()
   }
 
+  /**
+   * 报价转合同
+   * 增加已转换状态检查，防止重复转换
+   * @param {string} id - 报价ID
+   * @returns {{ success: boolean, error?: string, quotation?: Object }}
+   */
+  function convertToContract(id) {
+    const idx = quotations.value.findIndex(q => q.id === id)
+    if (idx === -1) {
+      return { success: false, error: '报价单不存在' }
+    }
+    const quotation = quotations.value[idx]
+    if (quotation.status !== 'approved' && quotation.status !== 'accepted') {
+      return { success: false, error: '只有已审批或已接受的报价可以转为合同' }
+    }
+    if (quotation.convertedToContract) {
+      return { success: false, error: '该报价已转换，不可重复操作' }
+    }
+    quotation.convertedToContract = true
+    quotation.convertedAt = new Date().toISOString()
+    saveVersion(id, '转为合同')
+    persist()
+    return { success: true, quotation }
+  }
+
+  /**
+   * 报价转送货单
+   * 增加已转换状态检查，防止重复转换
+   * @param {string} id - 报价ID
+   * @returns {{ success: boolean, error?: string, quotation?: Object }}
+   */
+  function convertToDelivery(id) {
+    const idx = quotations.value.findIndex(q => q.id === id)
+    if (idx === -1) {
+      return { success: false, error: '报价单不存在' }
+    }
+    const quotation = quotations.value[idx]
+    if (quotation.status !== 'approved' && quotation.status !== 'accepted') {
+      return { success: false, error: '只有已审批或已接受的报价可以转为送货单' }
+    }
+    if (quotation.convertedToDelivery) {
+      return { success: false, error: '该报价已转换，不可重复操作' }
+    }
+    quotation.convertedToDelivery = true
+    quotation.convertedAt = new Date().toISOString()
+    saveVersion(id, '转为送货单')
+    persist()
+    return { success: true, quotation }
+  }
+
   return {
     quotations, templates,
     draftCount, pendingCount, approvedCount, acceptedCount, rejectedCount, expiredCount,
@@ -401,6 +451,7 @@ export const useQuotationStore = defineStore('quotation', () => {
     addTemplate, deleteTemplate,
     initSeedData,
     replaceData, mergeRemoteItems,
+    convertToContract, convertToDelivery,
     persist
   }
 })

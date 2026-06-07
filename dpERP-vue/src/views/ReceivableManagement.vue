@@ -153,11 +153,12 @@
                 <th>收款日期</th>
                 <th>操作人</th>
                 <th>备注</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="paginatedReceipts.length === 0">
-                <td colspan="9" class="empty-state">
+                <td colspan="10" class="empty-state">
                   <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无收款记录
                 </td>
               </tr>
@@ -171,6 +172,7 @@
                 <td>{{ rc.receiptDate }}</td>
                 <td>{{ rc.operator }}</td>
                 <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" :title="rc.notes">{{ rc.notes || '-' }}</td>
+                <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleRevokeReceipt(rc)">撤销</button></td>
               </tr>
             </tbody>
           </table>
@@ -208,133 +210,37 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useReceivableStore } from '@/stores/receivable'
 import { useCustomerStore } from '@/stores/customer'
 import DataSelect from '@/components/DataSelect.vue'
+import { formatMoney } from '@/utils/format'
 import ReceiptFormModal from '@/components/finance/ReceiptFormModal.vue'
 import AgingAnalysis from '@/components/finance/AgingAnalysis.vue'
+import { useFinancePage } from '@/composables/useFinancePage'
 
 const receivableStore = useReceivableStore()
 const customerStore = useCustomerStore()
 
-const currentTab = ref('receivables')
-const showReceiptForm = ref(false)
-const selectedReceivable = ref(null)
-const receivablePage = ref(1)
-const receiptPage = ref(1)
-const pageSize = 10
-
-const tabs = [
-  { key: 'receivables', label: '应收列表', icon: 'list' },
-  { key: 'receipts', label: '收款记录', icon: 'dollar' },
-  { key: 'aging', label: '账龄分析', icon: 'chart' }
-]
-
-const filters = reactive({
-  search: '',
-  status: '',
-  customerId: ''
+const {
+  currentTab, tabs, filters, agingData, getRowStyle, resetFilters,
+  /* 重命名为模板中使用的变量名 */
+  showForm: showReceiptForm,
+  selectedItem: selectedReceivable,
+  primaryPage: receivablePage,
+  secondaryPage: receiptPage,
+  paginatedPrimaryList: paginatedReceivables,
+  totalPrimaryPages: totalReceivablePages,
+  paginatedSecondaryList: paginatedReceipts,
+  totalSecondaryPages: totalReceiptPages,
+  openForm: openReceiptForm,
+  onFormSaved: onReceiptSaved,
+  handleRevoke: handleRevokeReceipt,
+} = useFinancePage({
+  financeStore: receivableStore,
+  secondaryStore: customerStore,
+  type: 'receivable'
 })
-
-/* 客户列表 */
-const customerList = computed(() => {
-  const customers = customerStore.customers || []
-  const seen = new Set()
-  const result = []
-  /* 从应收单中提取客户 */
-  for (const rv of receivableStore.receivables) {
-    if (rv.customerId && !seen.has(rv.customerId)) {
-      seen.add(rv.customerId)
-      result.push({ id: rv.customerId, name: rv.customerName })
-    }
-  }
-  /* 补充客户Store中的数据 */
-  for (const c of customers) {
-    const id = c.id
-    if (!seen.has(id)) {
-      seen.add(id)
-      result.push({ id, name: c.name || c.fullName || c.companyName })
-    }
-  }
-  return result
-})
-
-/* 筛选后的应收列表 */
-const filteredReceivables = computed(() => {
-  return receivableStore.receivables.filter(rv => {
-    if (filters.search) {
-      const s = filters.search.toLowerCase()
-      if (!(rv.receivableNo || '').toLowerCase().includes(s) &&
-          !(rv.customerName || '').toLowerCase().includes(s) &&
-          !(rv.sourceNo || '').toLowerCase().includes(s)) return false
-    }
-    if (filters.status && rv.status !== filters.status) return false
-    if (filters.customerId && rv.customerId !== filters.customerId) return false
-    return true
-  })
-})
-
-/* 筛选后的收款列表 */
-const filteredReceipts = computed(() => {
-  let list = [...receivableStore.receipts]
-  if (filters.search) {
-    const s = filters.search.toLowerCase()
-    list = list.filter(rc =>
-      (rc.receiptNo || '').toLowerCase().includes(s) ||
-      (rc.customerName || '').toLowerCase().includes(s)
-    )
-  }
-  if (filters.customerId) {
-    list = list.filter(rc => rc.customerId === filters.customerId)
-  }
-  return list.sort((a, b) => (b.receiptDate || '').localeCompare(a.receiptDate || ''))
-})
-
-/* 分页 */
-const totalReceivablePages = computed(() => Math.max(1, Math.ceil(filteredReceivables.value.length / pageSize)))
-const paginatedReceivables = computed(() => {
-  const start = (receivablePage.value - 1) * pageSize
-  return filteredReceivables.value.slice(start, start + pageSize)
-})
-
-const totalReceiptPages = computed(() => Math.max(1, Math.ceil(filteredReceipts.value.length / pageSize)))
-const paginatedReceipts = computed(() => {
-  const start = (receiptPage.value - 1) * pageSize
-  return filteredReceipts.value.slice(start, start + pageSize)
-})
-
-/* 账龄分析数据 */
-const agingData = computed(() => receivableStore.getAgingAnalysis())
-
-function resetFilters() {
-  filters.search = ''
-  filters.status = ''
-  filters.customerId = ''
-  receivablePage.value = 1
-  receiptPage.value = 1
-}
-
-function openReceiptForm(rv) {
-  selectedReceivable.value = rv || null
-  showReceiptForm.value = true
-}
-
-function onReceiptSaved() {
-  selectedReceivable.value = null
-}
-
-function getRowStyle(rv) {
-  if (rv.status === 'overdue') return { borderLeft: '3px solid var(--color-danger)' }
-  if (rv.status === 'partial') return { borderLeft: '3px solid var(--color-warning)' }
-  if (rv.status === 'completed') return { borderLeft: '3px solid var(--color-success)' }
-  return {}
-}
-
-function formatMoney(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })
-}
 
 onMounted(() => {
   receivableStore.initSeedData()

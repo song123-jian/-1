@@ -65,6 +65,20 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
     return stats
   })
 
+  /* 库位关联物料统计：每个库位的物料种类数和总数量 */
+  const getLocationStockInfo = computed(() => {
+    const inventoryStore = useInventoryStore()
+    const locationMap = {}
+    locations.value.forEach(loc => { locationMap[loc.id] = { count: 0, totalQty: 0 } })
+    inventoryStore.inventory.forEach(item => {
+      if (item.locationId && locationMap[item.locationId]) {
+        locationMap[item.locationId].count++
+        locationMap[item.locationId].totalQty += (item.quantity || 0)
+      }
+    })
+    return locationMap
+  })
+
   function addLocation(data) {
     const item = {
       id: generateId('wl'),
@@ -134,7 +148,7 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
   }
 
   return {
-    locations, warehouses, AREA_OPTIONS, AREA_COLORS, areaStats,
+    locations, warehouses, AREA_OPTIONS, AREA_COLORS, areaStats, getLocationStockInfo,
     addLocation, updateLocation, deleteLocation, initSeedData,
     replaceData, mergeRemoteItems,
     persist

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useSessionStore } from './session'
 import { generateId } from '@/utils/uid'
 import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
+import { generateOrderNo, computeAging, refreshOverdueStatus, statusBadgeMap, methodLabels } from '@/utils/financeHelpers'
 
 const RECEIVABLE_KEY = 'gj_erp_receivables'
 const RECEIPT_KEY = 'gj_erp_receipts'
@@ -36,22 +37,10 @@ export const useReceivableStore = defineStore('receivable', () => {
     completed: '已收完',
     overdue: '已逾期'
   }
-  const statusBadgeMap = {
-    pending: 'warning',
-    partial: 'info',
-    completed: 'success',
-    overdue: 'danger'
-  }
   const sourceTypeLabels = {
     contract: '合同',
     order: '订单',
     delivery: '送货单'
-  }
-  const methodLabels = {
-    bank: '银行转账',
-    cash: '现金',
-    check: '支票',
-    other: '其他'
   }
 
   /* 统计计算 */
@@ -81,56 +70,17 @@ export const useReceivableStore = defineStore('receivable', () => {
 
   /* 生成应收单号 */
   function generateReceivableNo() {
-    const now = new Date()
-    const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
-    const prefix = 'YS' + dateStr
-    let maxSeq = 0
-    for (const r of receivables.value) {
-      if ((r.receivableNo || '').startsWith(prefix)) {
-        const tail = r.receivableNo.slice(prefix.length)
-        const n = parseInt(tail, 10)
-        if (!isNaN(n) && n > maxSeq) maxSeq = n
-      }
-    }
-    return prefix + String(maxSeq + 1).padStart(3, '0')
+    return generateOrderNo('YS', receivables.value, 'receivableNo')
   }
 
   /* 生成收款单号 */
   function generateReceiptNo() {
-    const now = new Date()
-    const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
-    const prefix = 'RC' + dateStr
-    let maxSeq = 0
-    for (const r of receipts.value) {
-      if ((r.receiptNo || '').startsWith(prefix)) {
-        const tail = r.receiptNo.slice(prefix.length)
-        const n = parseInt(tail, 10)
-        if (!isNaN(n) && n > maxSeq) maxSeq = n
-      }
-    }
-    return prefix + String(maxSeq + 1).padStart(3, '0')
+    return generateOrderNo('RC', receipts.value, 'receiptNo')
   }
 
   /* 自动更新逾期状态 */
-  function refreshOverdueStatus() {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    let changed = false
-    for (const r of receivables.value) {
-      if (r.status === 'completed') continue
-      const dueDate = r.dueDate ? new Date(r.dueDate) : null
-      if (dueDate) {
-        dueDate.setHours(0, 0, 0, 0)
-        const isOverdue = dueDate < now && r.status !== 'completed'
-        if (isOverdue && r.status !== 'overdue') {
-          r.status = 'overdue'
-          changed = true
-        } else if (!isOverdue && r.status === 'overdue') {
-          r.status = (parseFloat(r.receivedAmount) || 0) > 0 ? 'partial' : 'pending'
-          changed = true
-        }
-      }
-    }
+  function _refreshOverdueStatus() {
+    const changed = refreshOverdueStatus(receivables.value, 'receivedAmount')
     if (changed) persistReceivables()
   }
 
@@ -155,7 +105,7 @@ export const useReceivableStore = defineStore('receivable', () => {
     }
     item.remainingAmount = (parseFloat(item.amount) || 0) - (parseFloat(item.receivedAmount) || 0)
     receivables.value.push(item)
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     persistReceivables()
     return item
   }
@@ -164,14 +114,14 @@ export const useReceivableStore = defineStore('receivable', () => {
   function addReceipt(data) {
     const receivableId = data.receivableId
     const amount = parseFloat(data.amount) || 0
-    if (amount <= 0) return null
+    if (amount <= 0) return { success: false, error: '收款金额必须大于0' }
 
     const rvIdx = receivables.value.findIndex(r => r.id === receivableId)
-    if (rvIdx === -1) return null
+    if (rvIdx === -1) return { success: false, error: '应收单不存在' }
 
     const rv = receivables.value[rvIdx]
     const remaining = (parseFloat(rv.amount) || 0) - (parseFloat(rv.receivedAmount) || 0)
-    if (amount > remaining) return null
+    if (amount > remaining) return { success: false, error: '收款金额超过应收余额' }
 
     const item = {
       id: generateId('rc'),
@@ -201,9 +151,9 @@ export const useReceivableStore = defineStore('receivable', () => {
     } else if (newReceived > 0) {
       receivables.value[rvIdx].status = 'partial'
     }
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     persistReceivables()
-    return item
+    return { success: true, item }
   }
 
   /* 按客户查询 */
@@ -211,66 +161,38 @@ export const useReceivableStore = defineStore('receivable', () => {
     return receivables.value.filter(r => r.customerId === customerId)
   }
 
+  /* 撤销收款记录 */
+  function deleteReceipt(receivableId, receiptId) {
+    const receivable = receivables.value.find(r => r.id === receivableId)
+    if (!receivable) return { success: false, error: '应收单不存在' }
+    const receipt = receivable.receipts?.find(rc => rc.id === receiptId)
+    if (!receipt) return { success: false, error: '收款记录不存在' }
+    /* 回退已收金额 */
+    receivable.receivedAmount = Math.max(0, (receivable.receivedAmount || 0) - (receipt.amount || 0))
+    receivable.remainingAmount = (parseFloat(receivable.amount) || 0) - receivable.receivedAmount
+    /* 移除收款记录 */
+    receivable.receipts = (receivable.receipts || []).filter(rc => rc.id !== receiptId)
+    /* 从全局 receipts 中也移除 */
+    receipts.value = receipts.value.filter(rc => rc.id !== receiptId)
+    /* 更新状态 */
+    if (receivable.receivedAmount <= 0) receivable.status = 'pending'
+    else if (receivable.receivedAmount < (parseFloat(receivable.amount) || 0)) receivable.status = 'partial'
+    else receivable.status = 'completed'
+    _refreshOverdueStatus()
+    persistReceivables()
+    persistReceipts()
+    return { success: true }
+  }
+
   /* 获取逾期应收 */
   function getOverdueReceivables() {
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     return receivables.value.filter(r => r.status === 'overdue')
   }
 
   /* 账龄分析 */
   function getAgingAnalysis() {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const result = {
-      current: 0,
-      days30: 0,
-      days60: 0,
-      days90: 0,
-      days180: 0,
-      over180: 0,
-      currentCount: 0,
-      days30Count: 0,
-      days60Count: 0,
-      days90Count: 0,
-      days180Count: 0,
-      over180Count: 0
-    }
-
-    for (const r of receivables.value) {
-      if (r.status === 'completed') continue
-      const remaining = (parseFloat(r.amount) || 0) - (parseFloat(r.receivedAmount) || 0)
-      if (remaining <= 0) continue
-
-      const dueDate = r.dueDate ? new Date(r.dueDate) : null
-      if (!dueDate) {
-        result.current += remaining
-        result.currentCount++
-        continue
-      }
-      dueDate.setHours(0, 0, 0, 0)
-      const diffDays = Math.floor((now - dueDate) / 86400000)
-
-      if (diffDays <= 0) {
-        result.current += remaining
-        result.currentCount++
-      } else if (diffDays <= 30) {
-        result.days30 += remaining
-        result.days30Count++
-      } else if (diffDays <= 60) {
-        result.days60 += remaining
-        result.days60Count++
-      } else if (diffDays <= 90) {
-        result.days90 += remaining
-        result.days90Count++
-      } else if (diffDays <= 180) {
-        result.days180 += remaining
-        result.days180Count++
-      } else {
-        result.over180 += remaining
-        result.over180Count++
-      }
-    }
-    return result
+    return computeAging(receivables.value, 'amount', 'receivedAmount')
   }
 
   /* 初始化种子数据 */
@@ -363,7 +285,7 @@ export const useReceivableStore = defineStore('receivable', () => {
     ]
     persistReceipts()
 
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     safeSetItem(INIT_KEY, '1')
   }
 
@@ -371,9 +293,9 @@ export const useReceivableStore = defineStore('receivable', () => {
     receivables, receipts,
     statusLabels, statusBadgeMap, sourceTypeLabels, methodLabels,
     totalAmount, totalReceived, totalRemaining, totalOverdue, thisMonthReceipts,
-    addReceivable, addReceipt,
+    addReceivable, addReceipt, deleteReceipt,
     getReceivablesByCustomer, getOverdueReceivables, getAgingAnalysis,
-    refreshOverdueStatus,
+    refreshOverdueStatus: _refreshOverdueStatus,
     initSeedData,
     persistReceivables, persistReceipts
   }

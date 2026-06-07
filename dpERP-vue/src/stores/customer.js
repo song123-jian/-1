@@ -162,10 +162,47 @@ export const useCustomerStore = defineStore('customer', () => {
   }
 
   function deleteCustomer(id) {
+    // 检查关联数据：报价、合同、送货、回款
+    const { useQuotationStore } = require('./quotation')
+    const { useContractStore } = require('./contract')
+    const { useDeliveryStore } = require('./delivery')
+    const { useCollectionStore } = require('./collection')
+
+    const relatedData = []
+    try {
+      const quotationStore = useQuotationStore()
+      const quoteCount = quotationStore.quotations.filter(q => q.customerId === id).length
+      if (quoteCount > 0) relatedData.push({ type: '报价单', count: quoteCount })
+    } catch (e) { /* quotation store may not be initialized */ }
+
+    try {
+      const contractStore = useContractStore()
+      const contractCount = contractStore.contracts.filter(ct => ct.partyAId === id).length
+      if (contractCount > 0) relatedData.push({ type: '合同', count: contractCount })
+    } catch (e) { /* contract store may not be initialized */ }
+
+    try {
+      const deliveryStore = useDeliveryStore()
+      const deliveryCount = deliveryStore.deliveries.filter(d => d.customerId === id).length
+      if (deliveryCount > 0) relatedData.push({ type: '送货单', count: deliveryCount })
+    } catch (e) { /* delivery store may not be initialized */ }
+
+    try {
+      const collectionStore = useCollectionStore()
+      const collectionCount = collectionStore.collections.filter(col => col.customerId === id).length
+      if (collectionCount > 0) relatedData.push({ type: '回款记录', count: collectionCount })
+    } catch (e) { /* collection store may not be initialized */ }
+
+    if (relatedData.length > 0) {
+      const details = relatedData.map(r => `${r.type} ${r.count} 条`).join('、')
+      return { success: false, error: `该客户关联了 ${details}，请先处理关联数据后再删除。` }
+    }
+
     customers.value = customers.value.filter(c => c.id !== id)
     const syncEngine = useSyncEngine()
     syncEngine.recordDeletedId('customers', id)
     persist(STORAGE_KEY, customers.value)
+    return { success: true }
   }
 
   function batchDelete(ids) {

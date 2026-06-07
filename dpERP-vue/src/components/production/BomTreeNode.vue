@@ -19,12 +19,16 @@
       </span>
       <span v-if="node.isOptional" class="bom-node-optional">选配</span>
     </div>
-    <div v-if="expanded && node.children && node.children.length > 0" class="bom-node-children">
+    <div v-if="expanded && depth >= maxDepth" class="bom-node-depth-limit">
+      ...
+    </div>
+    <div v-else-if="expanded && node.children && node.children.length > 0" class="bom-node-children">
       <BomTreeNode
         v-for="child in node.children"
         :key="child.id"
         :node="child"
         :depth="depth + 1"
+        :max-depth="maxDepth"
       />
     </div>
   </div>
@@ -37,7 +41,8 @@ const var_space_4 = 16
 
 const props = defineProps({
   node: { type: Object, required: true },
-  depth: { type: Number, default: 0 }
+  depth: { type: Number, default: 0 },
+  maxDepth: { type: Number, default: 10 }
 })
 
 const expanded = ref(false)
@@ -165,5 +170,14 @@ function toggleExpand() {
 .bom-node-children {
   border-left: 1px dashed var(--color-border);
   margin-left: 7px;
+}
+
+.bom-node-depth-limit {
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  margin-left: 7px;
+  border-left: 1px dashed var(--color-border);
 }
 </style>

@@ -117,6 +117,7 @@
                   <td v-if="outboundColumnVisible.relatedNo" class="cell-mono">{{ order.referenceId || '-' }}</td>
                   <td v-if="outboundColumnVisible.outStatus"><span class="status-badge" :class="'status-' + (order.outStatus || order.status)">{{ inventoryStore.OUTBOUND_STATUS_LABELS[order.outStatus || order.status] || (order.outStatus || order.status) }}</span></td>
                   <td class="cell-actions">
+                    <button class="btn btn-ghost btn-sm" @click="handleViewOutbound(order)">查看</button>
                     <template v-if="(order.outStatus || order.status) === 'pending_review' || (order.outStatus || order.status) === 'pending'">
                       <button class="btn btn-ghost btn-sm" @click="openEditOutbound(order)"><Icon name="edit" :size="14" /></button>
                       <button v-if="canApproveOutbound" class="btn btn-ghost btn-sm" style="color:var(--color-info)" @click="handleApproveOutbound(order.id)">审批</button>
@@ -211,6 +212,30 @@
           <option :value="100">100条/页</option>
         </select>
       </div>
+    </div>
+
+    <!-- 自定义确认弹窗 -->
+    <Teleport to="body">
+      <div v-if="confirmDialog.show" class="wizard-overlay" @click.self="handleConfirmCancel">
+        <div class="wizard-modal" style="max-width:400px">
+          <div class="wizard-header">
+            <h3>{{ confirmDialog.title }}</h3>
+            <button class="btn btn-ghost btn-sm" @click="handleConfirmCancel"><Icon name="close" :size="14" /></button>
+          </div>
+          <div class="wizard-body" style="text-align:center;padding:24px">
+            <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmDialog.message }}</div>
+          </div>
+          <div class="wizard-footer">
+            <button class="btn btn-ghost" @click="handleConfirmCancel">取消</button>
+            <button class="btn btn-primary" @click="handleConfirmOk">确认</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- 内联消息提示 -->
+    <div v-if="inlineMessage.show" class="inline-message" :class="'inline-' + inlineMessage.type">
+      {{ inlineMessage.message }}
     </div>
 
     <!-- 出库向导模态框 -->
@@ -321,7 +346,59 @@
           </div>
           <div class="wizard-footer">
             <button class="btn btn-ghost" @click="closeOutboundWizard">取消</button>
+            <button class="btn btn-secondary" @click="handleSaveOutboundDraft"><Icon name="save" :size="14" /> 保存草稿</button>
             <button class="btn btn-primary" @click="handleSubmitOutbound"><Icon name="check" :size="14" /> 提交出库</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- 出库单详情弹窗 -->
+    <Teleport to="body">
+      <div v-if="viewDetail && selectedOrder" class="wizard-overlay" @click.self="viewDetail = false">
+        <div class="wizard-modal">
+          <div class="wizard-header">
+            <h3><Icon name="download" :size="14" /> 出库单详情</h3>
+            <button class="btn btn-ghost btn-sm" @click="viewDetail = false"><Icon name="close" :size="14" /></button>
+          </div>
+          <div class="wizard-body">
+            <div class="form-section-title"><Icon name="list" :size="14" /> 基本信息</div>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="detail-label">出库单号</span><span class="detail-value cell-mono">{{ selectedOrder.outboundNo || selectedOrder.orderNo || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">出库类型</span><span class="detail-value">{{ outboundTypeLabel(selectedOrder.outType || selectedOrder.type) }}</span></div>
+              <div class="detail-item"><span class="detail-label">出库状态</span><span class="status-badge" :class="'status-' + (selectedOrder.outStatus || selectedOrder.status)">{{ inventoryStore.OUTBOUND_STATUS_LABELS[selectedOrder.outStatus || selectedOrder.status] || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">出库日期</span><span class="detail-value">{{ selectedOrder.date || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">关联单号</span><span class="detail-value cell-mono">{{ selectedOrder.referenceId || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">仓库</span><span class="detail-value">{{ selectedOrder.warehouseId || '-' }}</span></div>
+            </div>
+            <div class="form-section-title" style="margin-top:var(--space-4)"><Icon name="package" :size="14" /> 物料信息</div>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="detail-label">物料编码</span><span class="detail-value cell-mono">{{ selectedOrder.materialCode || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">物料名称</span><span class="detail-value">{{ selectedOrder.materialName || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">牌号</span><span class="detail-value">{{ selectedOrder.grade || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">颜色</span><span class="detail-value">{{ selectedOrder.color || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">出库数量</span><span class="detail-value cell-mono">{{ (selectedOrder.outQty || 0).toFixed(2) }} kg</span></div>
+              <div class="detail-item"><span class="detail-label">单价</span><span class="detail-value cell-mono">{{ (selectedOrder.unitPrice || 0).toFixed(2) }} 元/kg</span></div>
+              <div class="detail-item"><span class="detail-label">出库金额</span><span class="detail-value cell-mono" style="font-weight:700;color:var(--color-accent)">{{ formatNumber(selectedOrder.outAmount || 0) }} 元</span></div>
+              <div class="detail-item"><span class="detail-label">批号</span><span class="detail-value">{{ selectedOrder.batchNo || '-' }}</span></div>
+            </div>
+            <div class="form-section-title" style="margin-top:var(--space-4)"><Icon name="clock" :size="14" /> 操作记录</div>
+            <div class="detail-grid">
+              <div class="detail-item"><span class="detail-label">创建时间</span><span class="detail-value">{{ selectedOrder.createdAt || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">更新时间</span><span class="detail-value">{{ selectedOrder.updatedAt || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">审批人</span><span class="detail-value">{{ selectedOrder.approvedBy || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">审批时间</span><span class="detail-value">{{ selectedOrder.approvedAt || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">确认人</span><span class="detail-value">{{ selectedOrder.confirmedBy || '-' }}</span></div>
+              <div class="detail-item"><span class="detail-label">确认时间</span><span class="detail-value">{{ selectedOrder.confirmedAt || '-' }}</span></div>
+            </div>
+            <div v-if="selectedOrder.notes" style="margin-top:var(--space-4)">
+              <div class="form-section-title"><Icon name="edit" :size="14" /> 备注</div>
+              <div style="padding:var(--space-3);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);font-size:var(--font-size-sm);color:var(--color-text-secondary)">{{ selectedOrder.notes }}</div>
+            </div>
+          </div>
+          <div class="wizard-footer">
+            <button class="btn btn-ghost" @click="viewDetail = false">关闭</button>
+            <button class="btn btn-primary" @click="handlePrintOutbound(selectedOrder)"><Icon name="print" :size="14" /> 打印</button>
           </div>
         </div>
       </div>
@@ -333,6 +410,7 @@ import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
 import DataSelect from '@/components/DataSelect.vue'
+import { escapeHtml, formatNumber } from '@/utils/format'
 
 const emit = defineEmits([])
 
@@ -382,6 +460,8 @@ const outboundCalYear = ref(new Date().getFullYear())
 const outboundCalMonth = ref(new Date().getMonth())
 
 const showOutboundWizard = ref(false)
+const viewDetail = ref(false)
+const selectedOrder = ref(null)
 const outboundForm = reactive({
   date: new Date().toISOString().split('T')[0],
   outType: '', materialCode: '', materialName: '',
@@ -390,6 +470,28 @@ const outboundForm = reactive({
   outboundNo: '', referenceId: '', warehouseId: 'main', locationId: '', batchNo: ''
 })
 const outboundErrors = ref([])
+
+/* 自定义确认弹窗 */
+const confirmDialog = ref({ show: false, title: '', message: '', onConfirm: null })
+function showConfirmDialog(title, message, onConfirm) {
+  confirmDialog.value = { show: true, title, message, onConfirm }
+}
+function handleConfirmOk() {
+  if (confirmDialog.value.onConfirm) confirmDialog.value.onConfirm()
+  confirmDialog.value.show = false
+}
+function handleConfirmCancel() {
+  confirmDialog.value.show = false
+}
+
+/* 内联消息提示 */
+const inlineMessage = ref({ show: false, type: 'warning', message: '' })
+let inlineTimer = null
+function showInlineMessage(type, message) {
+  inlineMessage.value = { show: true, type, message }
+  if (inlineTimer) clearTimeout(inlineTimer)
+  inlineTimer = setTimeout(() => { inlineMessage.value.show = false }, 3000)
+}
 
 const filteredOutboundOrders = computed(() => {
   let list = inventoryStore.outboundOrders
@@ -486,7 +588,7 @@ const outboundCalHtml = computed(() => {
       const dayItems = itemsByDate[dateStr] || []
       html += '<td' + (isToday ? ' style="background:var(--color-accent-subtle)"' : '') + '><div style="font-weight:' + (isToday ? '700' : '400') + '">' + day + '</div>'
       for (const di of dayItems.slice(0, 2)) {
-        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (di.outboundNo || di.orderNo) + '</div>'
+        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(di.outboundNo || di.orderNo) + '</div>'
       }
       if (dayItems.length > 2) html += '<div style="font-size:10px;color:var(--color-accent)">+' + (dayItems.length - 2) + '</div>'
       html += '</td>'
@@ -501,11 +603,6 @@ const outboundCalHtml = computed(() => {
 function outboundTypeLabel(type) {
   const found = inventoryStore.OUTBOUND_TYPES.find(t => t.value === type)
   return found ? found.label : type || '-'
-}
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
 }
 
 function getParsedItems(order) {
@@ -607,12 +704,26 @@ function handleSubmitOutbound() {
   }
 }
 
+function handleSaveOutboundDraft() {
+  const outNo = outboundForm.outboundNo || inventoryStore.generateOutboundNo()
+  const result = inventoryStore.saveOutboundDraft({
+    ...outboundForm, outboundNo: outNo, orderNo: outNo,
+    outAmount: outboundForm.outQty * outboundForm.unitPrice
+  })
+  if (result.success) {
+    inventoryStore.addAuditLog('create', 'outbound', '保存出库草稿: ' + outNo)
+    closeOutboundWizard()
+  } else {
+    outboundErrors.value = ['保存草稿失败']
+  }
+}
+
 function handleApproveOutbound(orderId) {
   const result = inventoryStore.approveOutbound(orderId)
   if (result.success) {
     inventoryStore.addAuditLog('approve', 'outbound', '审批出库单')
   } else {
-    alert(result.error || '审批失败')
+    showInlineMessage('error', result.error || '审批失败')
   }
 }
 
@@ -621,23 +732,25 @@ function handleConfirmOutbound(orderId) {
   if (result.success) {
     inventoryStore.addAuditLog('confirm', 'outbound', '确认出库')
   } else {
-    alert(result.error || '确认出库失败')
+    showInlineMessage('error', result.error || '确认出库失败')
   }
 }
 
 function handleCancelOutbound(orderId) {
-  if (!confirm('确认取消该出库单？此操作不可撤销。')) return
-  const result = inventoryStore.cancelOutbound(orderId)
-  if (result) {
-    inventoryStore.addAuditLog('cancel', 'outbound', '取消出库单')
-  }
+  showConfirmDialog('确认取消', '确认取消该出库单？此操作不可撤销。', () => {
+    const result = inventoryStore.cancelOutbound(orderId)
+    if (result) {
+      inventoryStore.addAuditLog('cancel', 'outbound', '取消出库单')
+    }
+  })
 }
 
 function handleDeleteOutbound(id) {
-  if (!confirm('确认删除该出库单？')) return
-  const order = inventoryStore.outboundOrders.find(o => o.id === id)
-  inventoryStore.deleteOutboundOrder(id)
-  inventoryStore.addAuditLog('delete', 'outbound', '删除出库单: ' + (order ? order.outboundNo : id))
+  showConfirmDialog('确认删除', '确认删除该出库单？', () => {
+    const order = inventoryStore.outboundOrders.find(o => o.id === id)
+    inventoryStore.deleteOutboundOrder(id)
+    inventoryStore.addAuditLog('delete', 'outbound', '删除出库单: ' + (order ? order.outboundNo : id))
+  })
 }
 
 function toggleOutboundSelectAll() {
@@ -650,12 +763,13 @@ function handleBatchApproveOutbound() {
     const st = o ? (o.outStatus || o.status) : ''
     return st === 'pending_review' || st === 'pending'
   })
-  if (pendingIds.length === 0) { alert('请选择待审核的出库单'); return }
-  if (!confirm('确认批量审批选中的 ' + pendingIds.length + ' 条待审核出库单？')) return
-  const count = inventoryStore.batchApproveOutbound(pendingIds)
-  outboundSelectedIds.value = []
-  outboundSelectAll.value = false
-  inventoryStore.addAuditLog('batchApprove', 'outbound', '批量审批出库单: ' + count + '条')
+  if (pendingIds.length === 0) { showInlineMessage('warning', '请选择待审核的出库单'); return }
+  showConfirmDialog('批量审批', '确认批量审批选中的 ' + pendingIds.length + ' 条待审核出库单？', () => {
+    const count = inventoryStore.batchApproveOutbound(pendingIds)
+    outboundSelectedIds.value = []
+    outboundSelectAll.value = false
+    inventoryStore.addAuditLog('batchApprove', 'outbound', '批量审批出库单: ' + count + '条')
+  })
 }
 
 function handleBatchConfirmOutbound() {
@@ -663,12 +777,13 @@ function handleBatchConfirmOutbound() {
     const o = inventoryStore.outboundOrders.find(x => x.id === id)
     return o && (o.outStatus || o.status) === 'approved'
   })
-  if (approvedIds.length === 0) { alert('请选择已审核的出库单'); return }
-  if (!confirm('确认批量出库选中的记录？库存将相应扣减。')) return
-  const count = inventoryStore.batchConfirmOutbound(approvedIds)
-  outboundSelectedIds.value = []
-  outboundSelectAll.value = false
-  inventoryStore.addAuditLog('batchConfirm', 'outbound', '批量确认出库: ' + count + '条')
+  if (approvedIds.length === 0) { showInlineMessage('warning', '请选择已审核的出库单'); return }
+  showConfirmDialog('批量确认出库', '确认批量出库选中的记录？库存将相应扣减。', () => {
+    const count = inventoryStore.batchConfirmOutbound(approvedIds)
+    outboundSelectedIds.value = []
+    outboundSelectAll.value = false
+    inventoryStore.addAuditLog('batchConfirm', 'outbound', '批量确认出库: ' + count + '条')
+  })
 }
 
 function handleExportOutbound() {
@@ -680,12 +795,18 @@ function handleExportOutbound() {
     单价: (o.unitPrice || 0).toFixed(2), 出库金额: (o.outAmount || 0).toFixed(2),
     关联单号: o.referenceId || '', 状态: inventoryStore.OUTBOUND_STATUS_LABELS[o.outStatus || o.status] || ''
   }))
-  const json = JSON.stringify(data, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
+  /* CSV导出（含UTF-8 BOM） */
+  const headers = Object.keys(data[0] || {})
+  const csvRows = [headers.join(',')]
+  for (const row of data) {
+    csvRows.push(headers.map(h => '"' + String(row[h] || '').replace(/"/g, '""') + '"').join(','))
+  }
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = '出库数据_' + new Date().toISOString().split('T')[0] + '.json'
+  a.download = '出库数据_' + new Date().toISOString().split('T')[0] + '.csv'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -708,13 +829,14 @@ function handleExportSelectedOutbound() {
 }
 
 function handleReverseOutbound(orderId) {
-  if (!confirm('确认冲销该出库单？库存将恢复，此操作不可撤销。')) return
-  const result = inventoryStore.reverseOutboundOrder(orderId)
-  if (result.success) {
-    inventoryStore.addAuditLog('reverse', 'outbound', '冲销出库单: ' + (result.reverseOrder ? result.reverseOrder.outboundNo : ''))
-  } else {
-    alert(result.error || '冲销失败')
-  }
+  showConfirmDialog('确认冲销', '确认冲销该出库单？库存将恢复，此操作不可撤销。', () => {
+    const result = inventoryStore.reverseOutboundOrder(orderId)
+    if (result.success) {
+      inventoryStore.addAuditLog('reverse', 'outbound', '冲销出库单: ' + (result.reverseOrder ? result.reverseOrder.outboundNo : ''))
+    } else {
+      showInlineMessage('error', result.error || '冲销失败')
+    }
+  })
 }
 
 function handlePrintOutbound(order) {
@@ -751,6 +873,11 @@ function openEditOutbound(order) {
   })
   outboundErrors.value = []
   showOutboundWizard.value = true
+}
+
+function handleViewOutbound(order) {
+  selectedOrder.value = order
+  viewDetail.value = true
 }
 
 function outboundCalPrev() {
@@ -1214,6 +1341,25 @@ defineExpose({
   margin-right: var(--space-2);
 }
 
+/* 详情网格 */
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm);
+}
+.detail-value {
+  color: var(--color-text-primary);
+  font-weight: 500;
+}
+
 /* 日历表格 */
 .cal-table {
   width: 100%;
@@ -1248,6 +1394,41 @@ defineExpose({
   .inv-stats-row {
     grid-template-columns: repeat(3, 1fr);
   }
+}
+
+/* 内联消息提示 */
+.inline-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: var(--space-3) var(--space-6);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  z-index: 9999;
+  animation: fadeInUp 0.3s ease;
+  max-width: 400px;
+  text-align: center;
+}
+.inline-warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  border: 1px solid var(--color-warning);
+}
+.inline-error {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border: 1px solid var(--color-danger);
+}
+.inline-success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+  border: 1px solid var(--color-success);
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @media (max-width: 768px) {
   .inv-stats-row {

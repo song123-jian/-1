@@ -194,11 +194,41 @@ export const useTodoStore = defineStore('todo', () => {
       } else {
         todo.status = 'completed'
         todo.completedAt = new Date().toISOString()
+        /* 重复任务完成时，自动创建下一条待办 */
+        if (todo.repeat && todo.repeat !== 'none') {
+          const nextDue = _calculateNextDueDate(todo.dueDate, todo.repeat)
+          if (nextDue) {
+            addTodo({
+              ...todo,
+              id: undefined,
+              status: 'pending',
+              dueDate: nextDue,
+              startDate: '',
+              completedAt: null,
+              createdAt: new Date().toISOString(),
+              progress: 0,
+              subtasks: (todo.subtasks || []).map(s => ({ ...s, completed: false }))
+            })
+          }
+        }
       }
       persist(todos.value)
       return { action: todo.status === 'completed' ? 'completed' : 'restored', id }
     }
     return null
+  }
+
+  function _calculateNextDueDate(currentDate, repeat) {
+    if (!currentDate || !repeat || repeat === 'none') return null
+    const d = new Date(currentDate)
+    switch (repeat) {
+      case 'daily': d.setDate(d.getDate() + 1); break
+      case 'weekly': d.setDate(d.getDate() + 7); break
+      case 'monthly': d.setMonth(d.getMonth() + 1); break
+      case 'yearly': d.setFullYear(d.getFullYear() + 1); break
+      default: return null
+    }
+    return d.toISOString().split('T')[0]
   }
 
   function deleteTodo(id) {

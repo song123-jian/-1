@@ -225,7 +225,7 @@
             <div class="page-btns">
               <button class="btn btn-ghost btn-sm" :disabled="inboundDetailPage <= 1" @click="inboundDetailPage = 1">&laquo;</button>
               <button class="btn btn-ghost btn-sm" :disabled="inboundDetailPage <= 1" @click="inboundDetailPage--">&lsaquo;</button>
-              <button v-for="p in inboundVisiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === inboundPage }" @click="inboundPage = p" style="min-width:28px">{{ p }}</button>
+              <button v-for="p in inboundDetailVisiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === inboundDetailPage }" @click="inboundDetailPage = p" style="min-width:28px">{{ p }}</button>
               <button class="btn btn-ghost btn-sm" :disabled="inboundDetailPage >= inboundDetailTotalPages" @click="inboundDetailPage++">&rsaquo;</button>
               <button class="btn btn-ghost btn-sm" :disabled="inboundDetailPage >= inboundDetailTotalPages" @click="inboundDetailPage = inboundDetailTotalPages">&raquo;</button>
             </div>
@@ -555,6 +555,7 @@ import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
 import DataSelect from '@/components/DataSelect.vue'
+import { escapeHtml, formatNumber } from '@/utils/format'
 
 const emit = defineEmits(['edit-item', 'quick-outbound'])
 
@@ -732,6 +733,17 @@ const paginatedInboundDetails = computed(() => {
   return filteredInboundDetails.value.slice(start, start + inboundDetailPageSize)
 })
 
+const inboundDetailVisiblePages = computed(() => {
+  const total = inboundDetailTotalPages.value
+  const current = inboundDetailPage.value
+  const pages = []
+  let start = Math.max(1, current - 2)
+  let end = Math.min(total, start + 4)
+  if (end - start < 4) start = Math.max(1, end - 4)
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
+})
+
 const inboundItemsTotalWeight = computed(() => inboundFormItems.value.reduce((s, it) => s + (it.qty || 0), 0))
 const inboundItemsTotalAmount = computed(() => inboundFormItems.value.reduce((s, it) => s + (it.qty || 0) * (it.cost || 0), 0))
 
@@ -782,7 +794,7 @@ const inboundCalHtml = computed(() => {
       const dayItems = itemsByDate[dateStr] || []
       html += '<td' + (isToday ? ' style="background:var(--color-accent-subtle)"' : '') + '><div style="font-weight:' + (isToday ? '700' : '400') + '">' + day + '</div>'
       for (const di of dayItems.slice(0, 2)) {
-        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + di.orderNo + '</div>'
+        html += '<div style="font-size:10px;color:var(--color-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(di.orderNo) + '</div>'
       }
       if (dayItems.length > 2) html += '<div style="font-size:10px;color:var(--color-accent)">+' + (dayItems.length - 2) + '</div>'
       html += '</td>'
@@ -795,11 +807,6 @@ const inboundCalHtml = computed(() => {
 })
 
 /* 函数 */
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
-}
-
 function inboundTypeLabel(type) {
   const found = inventoryStore.INBOUND_TYPES.find(t => t.value === type)
   return found ? found.label : type || '-'
@@ -994,7 +1001,7 @@ function handleSaveInboundDraft() {
     inventoryStore.addAuditLog('save', 'inbound', '保存入库草稿: ' + (result.order ? result.order.orderNo : ''))
     closeInboundWizard()
   } else {
-    closeInboundWizard()
+    inboundErrors.value = (result && result.errors) || ['草稿保存失败，请检查表单数据']
   }
 }
 

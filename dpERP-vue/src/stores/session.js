@@ -3,6 +3,9 @@ import { ref, computed } from 'vue'
 
 const SESSION_KEY = 'gj_erp_session'
 
+/* 会话超时时间：30分钟（毫秒） */
+const SESSION_TIMEOUT = 30 * 60 * 1000
+
 /* 可用角色列表（与 permission store 保持一致） */
 const AVAILABLE_ROLES = ['管理员', '总经理', '销售主管', '销售员', '仓库主管', '仓管员', '财务', '查看者']
 
@@ -100,11 +103,17 @@ export const useSessionStore = defineStore('session', () => {
       if (saved) {
         const data = JSON.parse(saved)
         if (data.role && AVAILABLE_ROLES.includes(data.role)) {
+          /* 检查会话是否已超时 */
+          if (data.lastActiveTime && Date.now() - data.lastActiveTime > SESSION_TIMEOUT) {
+            clearSession()
+            return false
+          }
           currentRole.value = data.role
           sessionId.value = data.sessionId || null
           deviceFingerprint.value = data.deviceFingerprint || generateDeviceFingerprint()
           loginTime.value = data.loginTime || null
-          lastActiveTime.value = Date.now()
+          lastActiveTime.value = data.lastActiveTime || Date.now()
+          updateActivity()
           return true
         }
       }
@@ -137,7 +146,8 @@ export const useSessionStore = defineStore('session', () => {
       role: currentRole.value,
       sessionId: sessionId.value,
       deviceFingerprint: deviceFingerprint.value,
-      loginTime: loginTime.value
+      loginTime: loginTime.value,
+      lastActiveTime: lastActiveTime.value
     }
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData))
@@ -166,10 +176,33 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   /**
-   * 更新活跃时间
+   * 更新活跃时间（每次用户操作时调用）
    */
   function updateActivity() {
     lastActiveTime.value = Date.now()
+    /* 同步更新 localStorage 中的 lastActiveTime，确保刷新后仍可校验超时 */
+    try {
+      const saved = localStorage.getItem(SESSION_KEY)
+      if (saved) {
+        const data = JSON.parse(saved)
+        data.lastActiveTime = lastActiveTime.value
+        localStorage.setItem(SESSION_KEY, JSON.stringify(data))
+      }
+    } catch (e) {
+      /* 忽略存储错误 */
+    }
+  }
+
+  /**
+   * 检查会话是否已过期
+   * @returns {boolean} true 表示已过期并已清除会话，false 表示未过期
+   */
+  function checkSessionExpiry() {
+    if (currentRole.value && lastActiveTime.value && Date.now() - lastActiveTime.value > SESSION_TIMEOUT) {
+      clearSession()
+      return true // 已过期
+    }
+    return false
   }
 
   /**
@@ -235,7 +268,7 @@ export const useSessionStore = defineStore('session', () => {
     currentRole, sessionId, deviceFingerprint, onlineMembers,
     lastActiveTime, loginTime, isLoggedIn, currentUser, roleName,
     availableRoles,
-    restoreSession, selectRole, clearSession, updateActivity,
+    restoreSession, selectRole, clearSession, updateActivity, checkSessionExpiry,
     subscribePresence, unsubscribePresence, getOnlineMembers
   }
 })

@@ -9,7 +9,7 @@
             <strong class="list-item-name">{{ c.fullName || c.name }}</strong>
             <span class="level-badge" :class="'level-' + c.level">{{ levelLabel(c.level) }}</span>
             <span class="status-badge" :class="'status-' + c.status">{{ c.status === 'active' ? '活跃' : '休眠' }}</span>
-            <span v-for="tagId in (c.tags || [])" :key="tagId" class="mini-tag" :style="getTagStyle(tagId)">{{ getTagName(tagId) }}</span>
+            <span v-for="tagId in (c.tags || [])" :key="tagId" class="mini-tag" :style="_getTagStyle(tagId)">{{ _getTagName(tagId) }}</span>
           </div>
           <div class="list-item-row2">
             <span>{{ c.customerNo }}</span>
@@ -36,6 +36,8 @@
 
 <script setup>
 import { useCustomerStore } from '@/stores/customer'
+import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
 
 const customerStore = useCustomerStore()
 
@@ -46,24 +48,12 @@ const props = defineProps({
 
 const emit = defineEmits(['update:selectedIds', 'openEdit', 'openDetail', 'handleDelete'])
 
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
+function _getTagName(tagId) {
+  return getTagName(customerStore.tags, tagId)
 }
 
-function getTagName(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  return tag ? tag.name : tagId
-}
-
-function getTagStyle(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  if (!tag) return {}
-  return { background: tag.color + '20', color: tag.color }
+function _getTagStyle(tagId) {
+  return getTagStyle(customerStore.tags, tagId)
 }
 
 function handleToggleSelect(id) {

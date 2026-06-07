@@ -148,10 +148,6 @@
   --color-text-inverse: #f1f5f9;
   --color-text-disabled: #94a3b8;
   --color-accent-subtle: rgba(59, 130, 246, 0.08);
-  --color-success-subtle: rgba(34, 197, 94, 0.08);
-  --color-warning-subtle: rgba(245, 158, 11, 0.08);
-  --color-danger-subtle: rgba(239, 68, 68, 0.08);
-  --color-info-subtle: rgba(6, 182, 212, 0.08);
   --color-purple-subtle: rgba(168, 85, 247, 0.08);
   --color-orange-subtle: #fff7ed;
   --color-pink-subtle: #fdf2f8;
@@ -494,6 +490,12 @@ a { color: var(--color-accent); text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; font-size: inherit; }
 ul, ol { list-style: none; }
+
+/* 键盘导航焦点样式 */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--color-accent, #3b82f6);
+  outline-offset: 2px;
+}
 
 :root { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }

@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useSessionStore } from './session'
 import { generateId } from '@/utils/uid'
 import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
+import { generateOrderNo, computeAging, refreshOverdueStatus, statusBadgeMap, methodLabels } from '@/utils/financeHelpers'
 
 const PAYABLE_KEY = 'gj_erp_payables'
 const PAYMENT_KEY = 'gj_erp_payments'
@@ -36,22 +37,10 @@ export const usePayableStore = defineStore('payable', () => {
     completed: '已付完',
     overdue: '已逾期'
   }
-  const statusBadgeMap = {
-    pending: 'warning',
-    partial: 'info',
-    completed: 'success',
-    overdue: 'danger'
-  }
   const sourceTypeLabels = {
     purchase: '采购单',
     inbound: '入库单',
     contract: '合同'
-  }
-  const methodLabels = {
-    bank: '银行转账',
-    cash: '现金',
-    check: '支票',
-    other: '其他'
   }
 
   /* 统计计算 */
@@ -81,56 +70,17 @@ export const usePayableStore = defineStore('payable', () => {
 
   /* 生成应付单号 */
   function generatePayableNo() {
-    const now = new Date()
-    const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
-    const prefix = 'YF' + dateStr
-    let maxSeq = 0
-    for (const p of payables.value) {
-      if ((p.payableNo || '').startsWith(prefix)) {
-        const tail = p.payableNo.slice(prefix.length)
-        const n = parseInt(tail, 10)
-        if (!isNaN(n) && n > maxSeq) maxSeq = n
-      }
-    }
-    return prefix + String(maxSeq + 1).padStart(3, '0')
+    return generateOrderNo('YF', payables.value, 'payableNo')
   }
 
   /* 生成付款单号 */
   function generatePaymentNo() {
-    const now = new Date()
-    const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
-    const prefix = 'PY' + dateStr
-    let maxSeq = 0
-    for (const p of payments.value) {
-      if ((p.paymentNo || '').startsWith(prefix)) {
-        const tail = p.paymentNo.slice(prefix.length)
-        const n = parseInt(tail, 10)
-        if (!isNaN(n) && n > maxSeq) maxSeq = n
-      }
-    }
-    return prefix + String(maxSeq + 1).padStart(3, '0')
+    return generateOrderNo('PY', payments.value, 'paymentNo')
   }
 
   /* 自动更新逾期状态 */
-  function refreshOverdueStatus() {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    let changed = false
-    for (const p of payables.value) {
-      if (p.status === 'completed') continue
-      const dueDate = p.dueDate ? new Date(p.dueDate) : null
-      if (dueDate) {
-        dueDate.setHours(0, 0, 0, 0)
-        const isOverdue = dueDate < now && p.status !== 'completed'
-        if (isOverdue && p.status !== 'overdue') {
-          p.status = 'overdue'
-          changed = true
-        } else if (!isOverdue && p.status === 'overdue') {
-          p.status = (parseFloat(p.paidAmount) || 0) > 0 ? 'partial' : 'pending'
-          changed = true
-        }
-      }
-    }
+  function _refreshOverdueStatus() {
+    const changed = refreshOverdueStatus(payables.value, 'paidAmount')
     if (changed) persistPayables()
   }
 
@@ -155,7 +105,7 @@ export const usePayableStore = defineStore('payable', () => {
     }
     item.remainingAmount = (parseFloat(item.amount) || 0) - (parseFloat(item.paidAmount) || 0)
     payables.value.push(item)
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     persistPayables()
     return item
   }
@@ -164,14 +114,14 @@ export const usePayableStore = defineStore('payable', () => {
   function addPayment(data) {
     const payableId = data.payableId
     const amount = parseFloat(data.amount) || 0
-    if (amount <= 0) return null
+    if (amount <= 0) return { success: false, error: '付款金额必须大于0' }
 
     const pyIdx = payables.value.findIndex(p => p.id === payableId)
-    if (pyIdx === -1) return null
+    if (pyIdx === -1) return { success: false, error: '应付单不存在' }
 
     const py = payables.value[pyIdx]
     const remaining = (parseFloat(py.amount) || 0) - (parseFloat(py.paidAmount) || 0)
-    if (amount > remaining) return null
+    if (amount > remaining) return { success: false, error: '付款金额超过应付余额' }
 
     const item = {
       id: generateId('pm'),
@@ -201,9 +151,9 @@ export const usePayableStore = defineStore('payable', () => {
     } else if (newPaid > 0) {
       payables.value[pyIdx].status = 'partial'
     }
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     persistPayables()
-    return item
+    return { success: true, item }
   }
 
   /* 按供应商查询 */
@@ -211,66 +161,38 @@ export const usePayableStore = defineStore('payable', () => {
     return payables.value.filter(p => p.supplierId === supplierId)
   }
 
+  /* 撤销付款记录 */
+  function deletePayment(payableId, paymentId) {
+    const payable = payables.value.find(p => p.id === payableId)
+    if (!payable) return { success: false, error: '应付单不存在' }
+    const payment = payable.payments?.find(pm => pm.id === paymentId)
+    if (!payment) return { success: false, error: '付款记录不存在' }
+    /* 回退已付金额 */
+    payable.paidAmount = Math.max(0, (payable.paidAmount || 0) - (payment.amount || 0))
+    payable.remainingAmount = (parseFloat(payable.amount) || 0) - payable.paidAmount
+    /* 移除付款记录 */
+    payable.payments = (payable.payments || []).filter(pm => pm.id !== paymentId)
+    /* 从全局 payments 中也移除 */
+    payments.value = payments.value.filter(pm => pm.id !== paymentId)
+    /* 更新状态 */
+    if (payable.paidAmount <= 0) payable.status = 'pending'
+    else if (payable.paidAmount < (parseFloat(payable.amount) || 0)) payable.status = 'partial'
+    else payable.status = 'completed'
+    _refreshOverdueStatus()
+    persistPayables()
+    persistPayments()
+    return { success: true }
+  }
+
   /* 获取逾期应付 */
   function getOverduePayables() {
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     return payables.value.filter(p => p.status === 'overdue')
   }
 
   /* 账龄分析 */
   function getAgingAnalysis() {
-    const now = new Date()
-    now.setHours(0, 0, 0, 0)
-    const result = {
-      current: 0,
-      days30: 0,
-      days60: 0,
-      days90: 0,
-      days180: 0,
-      over180: 0,
-      currentCount: 0,
-      days30Count: 0,
-      days60Count: 0,
-      days90Count: 0,
-      days180Count: 0,
-      over180Count: 0
-    }
-
-    for (const p of payables.value) {
-      if (p.status === 'completed') continue
-      const remaining = (parseFloat(p.amount) || 0) - (parseFloat(p.paidAmount) || 0)
-      if (remaining <= 0) continue
-
-      const dueDate = p.dueDate ? new Date(p.dueDate) : null
-      if (!dueDate) {
-        result.current += remaining
-        result.currentCount++
-        continue
-      }
-      dueDate.setHours(0, 0, 0, 0)
-      const diffDays = Math.floor((now - dueDate) / 86400000)
-
-      if (diffDays <= 0) {
-        result.current += remaining
-        result.currentCount++
-      } else if (diffDays <= 30) {
-        result.days30 += remaining
-        result.days30Count++
-      } else if (diffDays <= 60) {
-        result.days60 += remaining
-        result.days60Count++
-      } else if (diffDays <= 90) {
-        result.days90 += remaining
-        result.days90Count++
-      } else if (diffDays <= 180) {
-        result.days180 += remaining
-        result.days180Count++
-      } else {
-        result.over180 += remaining
-        result.over180Count++
-      }
-    }
-    return result
+    return computeAging(payables.value, 'amount', 'paidAmount')
   }
 
   /* 初始化种子数据 */
@@ -345,7 +267,7 @@ export const usePayableStore = defineStore('payable', () => {
     ]
     persistPayments()
 
-    refreshOverdueStatus()
+    _refreshOverdueStatus()
     safeSetItem(INIT_KEY, '1')
   }
 
@@ -353,9 +275,9 @@ export const usePayableStore = defineStore('payable', () => {
     payables, payments,
     statusLabels, statusBadgeMap, sourceTypeLabels, methodLabels,
     totalAmount, totalPaid, totalRemaining, totalOverdue, thisMonthPayments,
-    addPayable, addPayment,
+    addPayable, addPayment, deletePayment,
     getPayablesBySupplier, getOverduePayables, getAgingAnalysis,
-    refreshOverdueStatus,
+    refreshOverdueStatus: _refreshOverdueStatus,
     initSeedData,
     persistPayables, persistPayments
   }

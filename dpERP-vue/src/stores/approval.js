@@ -227,12 +227,28 @@ export const useApprovalStore = defineStore('approval', () => {
     persist(LOG_KEY, logs.value)
   }
 
+  /**
+   * 获取指定模块和操作的审批链
+   * 供工作流引擎调用，根据审批配置返回审批人列表
+   * @param {string} module - 模块名称（如 '报价管理'）
+   * @param {string} action - 操作类型（如 'create', 'update'）
+   * @returns {Array} 审批人列表
+   */
+  function getApprovalChain(module, action) {
+    const config = rules.value.find(r => r.module === module && r.enabled)
+    if (!config) return []
+    const approvers = []
+    if (config.approver) approvers.push(config.approver)
+    if (config.nextApprover) approvers.push(config.nextApprover)
+    return approvers
+  }
+
   return {
     rules, logs,
     condLabels, typeLabels, moduleOptions, approverOptions, templates,
     totalCount, enabledCount, pendingCount, todayCount,
     getById, addRule, updateRule, deleteRule, toggleRule, batchOperation,
     replaceData, initSeedData, escalateTimeout, delegateApproval, recallApproval,
-    checkTimeout, addLog, getLogs, clearLogs
+    checkTimeout, addLog, getLogs, clearLogs, getApprovalChain
   }
 })

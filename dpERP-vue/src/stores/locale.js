@@ -3,7 +3,8 @@ import { ref } from 'vue'
 import i18n from '@/i18n'
 
 export const useLocaleStore = defineStore('locale', () => {
-  const currentLocale = ref(localStorage.getItem('gj_erp_locale') || 'zh-CN')
+  /* 从 i18n 实例获取当前语言，避免双重 localStorage 读取 */
+  const currentLocale = ref(i18n.global.locale.value || 'zh-CN')
 
   function setLocale(locale) {
     currentLocale.value = locale

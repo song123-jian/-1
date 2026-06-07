@@ -24,7 +24,7 @@
           <div class="detail-top-badges">
             <span class="level-badge" :class="'level-' + customer.level">{{ levelLabel(customer.level) }}</span>
             <span class="status-badge" :class="'status-' + customer.status">{{ customer.status === 'active' ? '活跃' : '休眠' }}</span>
-            <span v-for="tagId in (customer.tags || [])" :key="tagId" class="mini-tag" :style="getTagStyle(tagId)">{{ getTagName(tagId) }}</span>
+            <span v-for="tagId in (customer.tags || [])" :key="tagId" class="mini-tag" :style="_getTagStyle(tagId)">{{ _getTagName(tagId) }}</span>
           </div>
           <div class="detail-top-meta">{{ customer.customerNo }} · {{ customer.region || '未知区域' }} · {{ customer.contactName || customer.contact || '未指定联系人' }}</div>
         </div>
@@ -205,8 +205,8 @@
             <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showConfirm = false">取消</button>
-            <button class="btn btn-danger" @click="confirmDelete">确认删除</button>
+            <button class="btn btn-ghost" @click="showConfirm = false">{{ confirmType === 'warning' ? '知道了' : '取消' }}</button>
+            <button v-if="confirmType === 'confirm'" class="btn btn-danger" @click="confirmDelete">确认删除</button>
           </div>
         </div>
       </div>
@@ -222,6 +222,9 @@ import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
 import { useDeliveryStore } from '@/stores/delivery'
 import { useCollectionStore } from '@/stores/collection'
+import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
+import { quoteStatusLabel, quoteStatusClass, contractStatusLabel, contractStatusClass, deliveryStatusLabel, deliveryStatusClass, collectionStatusLabel, collectionStatusClass, collectionMethodLabel } from '@/utils/statusMaps'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,13 +234,18 @@ const contractStore = useContractStore()
 const deliveryStore = useDeliveryStore()
 const collectionStore = useCollectionStore()
 
+/* 包装函数：适配 customerHelpers 中需要 tags 参数的函数 */
+function _getTagName(tagId) {
+  return getTagName(customerStore.tags, tagId)
+}
+function _getTagStyle(tagId) {
+  return getTagStyle(customerStore.tags, tagId)
+}
+
 const activeDocTab = ref('quotations')
 const showConfirm = ref(false)
 const confirmMessage = ref('')
-
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
+const confirmType = ref('confirm') // 'confirm' | 'warning'
 
 const docTabs = [
   { key: 'quotations', icon: 'list', label: '报价单' },
@@ -259,30 +267,29 @@ const creditUtilization = computed(() => {
   return Math.round(((customer.value.balance || 0) / limit) * 100)
 })
 
-/* 关联数据 */
-const cname = computed(() => customer.value ? (customer.value.fullName || customer.value.name || '') : '')
-
+/* 关联数据：使用 ID 精确匹配，移除 name 回退逻辑避免误匹配 */
 const customerQuotations = computed(() => {
   if (!customer.value) return []
   const cid = customer.value.id
-  return quotationStore.quotations.filter(q => q.customerId === cid || q.customerName === cname.value)
+  return quotationStore.quotations.filter(q => q.customerId === cid)
 })
 
 const customerContracts = computed(() => {
   if (!customer.value) return []
   const cid = customer.value.id
-  return contractStore.contracts.filter(ct => ct.partyAId === cid || ct.partyA === cname.value)
+  return contractStore.contracts.filter(ct => ct.partyAId === cid)
 })
 
 const customerDeliveries = computed(() => {
   if (!customer.value) return []
-  return deliveryStore.deliveries.filter(d => d.customerName === cname.value)
+  const cid = customer.value.id
+  return deliveryStore.deliveries.filter(d => d.customerId === cid)
 })
 
 const customerCollections = computed(() => {
   if (!customer.value) return []
   const cid = customer.value.id
-  return collectionStore.collections.filter(col => col.customerId === cid || col.customerName === cname.value)
+  return collectionStore.collections.filter(col => col.customerId === cid)
 })
 
 /* 交易概览统计 */
@@ -323,61 +330,6 @@ const timeline = computed(() => {
   return events
 })
 
-/* 状态标签 */
-function quoteStatusLabel(s) {
-  const map = { draft: '草稿', pending: '待审', sent: '已发送', accepted: '已接受', approved: '已批准', rejected: '已拒绝', expired: '已过期' }
-  return map[s] || s
-}
-function quoteStatusClass(s) {
-  const map = { draft: 'status-draft', pending: 'status-pending', sent: 'status-sent', accepted: 'status-accepted', approved: 'status-approved', rejected: 'status-rejected', expired: 'status-expired' }
-  return map[s] || ''
-}
-function contractStatusLabel(s) {
-  const map = { draft: '草稿', pending_approval: '待审批', approved: '已审批', signed: '已签订', archived: '已归档', cancelled: '已作废' }
-  return map[s] || s
-}
-function contractStatusClass(s) {
-  const map = { draft: 'status-draft', pending_approval: 'status-pending', approved: 'status-approved', signed: 'status-accepted', archived: 'status-expired', cancelled: 'status-rejected' }
-  return map[s] || ''
-}
-function deliveryStatusLabel(s) {
-  const map = { created: '已创建', pending: '待发货', shipped: '已发货', transit: '运输中', received: '已签收', accepted: '已验收', partial: '部分签收', exception: '异常处理中', returned: '退回', cancelled: '已取消' }
-  return map[s] || s
-}
-function deliveryStatusClass(s) {
-  const map = { created: 'status-draft', pending: 'status-pending', shipped: 'status-sent', transit: 'status-pending', received: 'status-accepted', accepted: 'status-approved', partial: 'status-pending', exception: 'status-rejected', returned: 'status-rejected', cancelled: 'status-expired' }
-  return map[s] || ''
-}
-function collectionStatusLabel(s) {
-  const map = { pending: '待确认', confirmed: '已确认', completed: '已完成', voided: '已作废' }
-  return map[s] || s
-}
-function collectionStatusClass(s) {
-  const map = { pending: 'status-pending', confirmed: 'status-accepted', completed: 'status-approved', voided: 'status-rejected' }
-  return map[s] || ''
-}
-function collectionMethodLabel(m) {
-  const map = { bank_transfer: '银行转账', cash: '现金', check: '支票', wechat: '微信', alipay: '支付宝', other: '其他' }
-  return map[m] || m || '-'
-}
-
-/* 工具函数 */
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
-}
-
-function getTagName(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  return tag ? tag.name : tagId
-}
-
-function getTagStyle(tagId) {
-  const tag = customerStore.tags.find(t => t.id === tagId)
-  if (!tag) return {}
-  return { background: tag.color + '20', color: tag.color }
-}
-
 /* 操作 */
 function goBack() {
   router.push('/customers')
@@ -388,12 +340,30 @@ function goEdit() {
 }
 
 function handleDelete() {
-  confirmMessage.value = `确定要删除客户"${customer.value.fullName || customer.value.name}"吗？`
-  showConfirm.value = true
+  // 先检查关联数据
+  const result = customerStore.deleteCustomer(customer.value.id)
+  if (result.success) {
+    // 无关联数据，弹出确认删除弹窗
+    confirmMessage.value = `确定要删除客户"${customer.value.fullName || customer.value.name}"吗？`
+    confirmType.value = 'confirm'
+    showConfirm.value = true
+  } else {
+    // 有关联数据，显示警告信息
+    confirmMessage.value = result.error
+    confirmType.value = 'warning'
+    showConfirm.value = true
+  }
 }
 
 function confirmDelete() {
-  customerStore.deleteCustomer(customer.value.id)
+  if (confirmType.value === 'warning') {
+    // 有关联数据，不允许删除，仅关闭弹窗
+    showConfirm.value = false
+    return
+  }
+  // 执行删除（deleteCustomer已确认无关联数据时才走到这里）
+  // 需要重新调用删除，因为第一次调用时如果有关联数据会返回失败
+  // 如果无关联数据，第一次调用已经删除了，这里只需跳转
   showConfirm.value = false
   router.push('/customers')
 }

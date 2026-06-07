@@ -4,10 +4,11 @@
  * 支持实时订阅、增量拉取/推送、冲突合并、离线队列
  */
 
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import { SupabaseClient } from '@/lib/supabase.js'
 import { API } from '@/services/api.js'
 import { mergeArrays } from '@/utils/conflictResolver.js'
+import eventBus from '@/utils/eventBus.js'
 
 // ==================== Store 导入 ====================
 import { useCustomerStore } from '@/stores/customer'
@@ -302,7 +303,7 @@ function initAutoSync() {
 
 /**
  * 增量拉取所有表数据
- * 对每张表，根据上次同步时间拉取增量数据并合并到本地 Store
+ * 使用 Promise.allSettled 并行拉取所有表，单表失败不影响其他表
  */
 async function incrementalPullAll() {
   if (isSyncing.value) {
@@ -315,21 +316,30 @@ async function incrementalPullAll() {
   let errorCount = 0
 
   try {
-    for (const tableName of Object.keys(SYNC_MAP)) {
-      try {
-        const lastSync = syncState.value[tableName] || null
-        const remoteData = await API.pullSince(tableName, lastSync)
+    const tableNames = Object.keys(SYNC_MAP)
 
-        if (remoteData && remoteData.length > 0) {
-          const { storeName, dataKey } = SYNC_MAP[tableName]
-          mergeRemoteItems(storeName, dataKey, remoteData)
-          syncedCount += remoteData.length
-        }
+    // 并行拉取所有表
+    const pullPromises = tableNames.map(async (tableName) => {
+      const lastSync = syncState.value[tableName] || null
+      const remoteData = await API.pullSince(tableName, lastSync)
 
+      if (remoteData && remoteData.length > 0) {
+        const { storeName, dataKey } = SYNC_MAP[tableName]
+        mergeRemoteItems(storeName, dataKey, remoteData)
+        return { tableName, count: remoteData.length }
+      }
+      return { tableName, count: 0 }
+    })
+
+    const results = await Promise.allSettled(pullPromises)
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        syncedCount += result.value.count
         // 更新该表的同步时间戳
-        syncState.value[tableName] = new Date().toISOString()
-      } catch (e) {
-        console.error(`[SyncEngine] 拉取 ${tableName} 失败:`, e)
+        syncState.value[result.value.tableName] = new Date().toISOString()
+      } else {
+        console.error(`[SyncEngine] 拉取失败:`, result.reason)
         errorCount++
       }
     }
@@ -493,7 +503,9 @@ function handleRemoteInsert(tableName, record) {
 
 /**
  * 处理远端 UPDATE 事件
- * 使用 last-write-wins 策略替换本地记录
+ * 使用 last-write-wins 策略：比较 updatedAt 时间戳
+ * - 远端更新时，保留本地较新的版本并加入推送队列
+ * - 远端较新或相同时，替换本地数据
  * @param {string} tableName - 表名
  * @param {Object} record - 更新后的记录
  */
@@ -511,9 +523,20 @@ function handleRemoteUpdate(tableName, record) {
     const currentData = store[dataKey]
     if (!Array.isArray(currentData)) return
 
-    // 查找并替换（last-write-wins）
     const idx = currentData.findIndex(item => item.id === record.id)
     if (idx !== -1) {
+      const localItem = currentData[idx]
+      const localTime = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0
+      const remoteTime = record.updatedAt ? new Date(record.updatedAt).getTime() : 0
+
+      if (localTime > remoteTime) {
+        // 本地版本更新，保留本地数据，加入推送队列确保远端同步
+        console.info(`[SyncEngine] 本地更新，保留本地版本: ${tableName}/${record.id} (本地 ${localItem.updatedAt} > 远端 ${record.updatedAt})`)
+        queuePendingPush(tableName)
+        return
+      }
+
+      // 远端版本更新或相同，替换本地
       currentData[idx] = record
     } else {
       // 本地不存在，直接添加
@@ -710,7 +733,7 @@ function getStorageKey(storeName, dataKey) {
 
 /**
  * 监听 Store 数据变更，自动触发推送
- * 深度监听数据 + 脏标记定时检查，3秒防抖推送
+ * 通过 eventBus 监听数据变更事件，替代深度 watch，3秒防抖推送
  * 仅在 Supabase 已连接时生效
  */
 function watchStoreChanges() {
@@ -719,34 +742,31 @@ function watchStoreChanges() {
 
   if (!SupabaseClient.isConnected()) return
 
-  Object.entries(SYNC_MAP).forEach(([tableName, { storeName, dataKey }]) => {
-    try {
-      const store = getStore(storeName)
-      if (!store || !store[dataKey]) return
-
-      /* 深度监听数据变更，3秒防抖推送 */
-      let dirty = false
-      watch(
-        () => store[dataKey],
-        () => { dirty = true },
-        { deep: true }
-      )
-
-      /* 定时检查脏标记并推送 */
-      const intervalId = setInterval(() => {
-        if (dirty && SupabaseClient.isConnected()) {
-          dirty = false
-          incrementalPushTable(tableName, storeName, dataKey)
+  // 监听 eventBus 的数据变更事件，替代深度 watch
+  const events = ['data:created', 'data:updated', 'data:deleted']
+  const unsubscribers = []
+  events.forEach(event => {
+    const unsub = eventBus.on(event, (data) => {
+      const storeName = data.store || data.module
+      if (storeName) {
+        // 根据 storeName 反查 tableName
+        const tableName = Object.keys(SYNC_MAP).find(
+          t => SYNC_MAP[t].storeName === storeName
+        )
+        if (tableName) {
+          debouncePush(tableName)
         }
-      }, 3000)
-
-      _watchers.value.push({ intervalId, tableName })
-    } catch (e) {
-      console.warn(`[SyncEngine] 监听 ${storeName}.${dataKey} 失败:`, e)
-    }
+      }
+    })
+    unsubscribers.push(unsub)
   })
 
-  console.info('[SyncEngine] Store 变更监听已启动')
+  // 保存取消订阅函数，用于后续清理
+  _watcherStoppers.push(() => {
+    unsubscribers.forEach(fn => fn())
+  })
+
+  console.info('[SyncEngine] Store 变更监听已启动（eventBus模式）')
 }
 
 /**

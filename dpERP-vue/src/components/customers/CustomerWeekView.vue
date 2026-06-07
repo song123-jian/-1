@@ -53,21 +53,14 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { levelColors, levelLabel } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
 
 const props = defineProps({
   customers: { type: Array, required: true }
 })
 
 defineEmits(['openEdit', 'openDetail'])
-
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
-}
 
 const calWeekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 const custWeekOffset = ref(0)

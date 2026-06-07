@@ -12,7 +12,7 @@
         <button v-if="canCreate" class="btn btn-primary" @click="openAddModal">+ 新增客户</button>
         <button class="btn btn-outline" @click="handleDownloadTemplate"><Icon name="file" :size="14" /> 模板下载</button>
         <button class="btn btn-outline" @click="handleBatchAdd"><Icon name="list" :size="14" /> 批量增加</button>
-        <button class="btn btn-outline" @click="handleExport"><Icon name="download" :size="14" /> 导出Excel</button>
+        <button class="btn btn-outline" @click="handleExport"><Icon name="download" :size="14" /> 导出CSV</button>
         <button v-if="canDelete" class="btn btn-outline btn-danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
       </div>
     </div>
@@ -67,7 +67,7 @@
         </select>
         <select v-model="filterTag" class="form-select filter-select">
           <option value="all">全部标签</option>
-          <option v-for="t in customerStore.tags" :key="t.id" :value="t.id">{{ t.name }}</option>
+          <option v-for="t in customerStore.tags.filter(t => !t.hidden)" :key="t.id" :value="t.id">{{ t.name }}</option>
         </select>
         <select v-model="sortField" class="form-select filter-select">
           <option value="level">按等级</option>
@@ -266,7 +266,7 @@
               <div class="form-group full-width">
                 <label>标签</label>
                 <div class="tag-selector">
-                  <span v-for="tag in customerStore.tags" :key="tag.id"
+                  <span v-for="tag in customerStore.tags.filter(t => !t.hidden)" :key="tag.id"
                     class="tag-option"
                     :class="{ selected: form.tags.includes(tag.id) }"
                     :style="form.tags.includes(tag.id) ? { background: tag.color + '20', color: tag.color, borderColor: tag.color } : {}"
@@ -274,6 +274,9 @@
                   >{{ tag.name }}</span>
                 </div>
               </div>
+            </div>
+            <div v-if="formErrors.length > 0" class="form-errors-block">
+              <div v-for="(err, idx) in formErrors" :key="idx" class="form-error-item">{{ err }}</div>
             </div>
           </div>
           <div class="modal-footer">
@@ -302,8 +305,8 @@
             <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showConfirm = false">取消</button>
-            <button class="btn btn-danger" @click="confirmAction">确认删除</button>
+            <button class="btn btn-ghost" @click="showConfirm = false">{{ confirmType === 'warning' ? '知道了' : '取消' }}</button>
+            <button v-if="confirmType === 'confirm'" class="btn btn-danger" @click="confirmAction">确认删除</button>
           </div>
         </div>
       </div>
@@ -322,14 +325,14 @@
               已选 <strong>{{ selectedIds.length }}</strong> 位客户，请选择要添加的标签：
             </div>
             <div class="batch-tag-list">
-              <span v-for="tag in customerStore.tags" :key="tag.id"
+              <span v-for="tag in customerStore.tags.filter(t => !t.hidden)" :key="tag.id"
                 class="batch-tag-option"
                 :class="{ selected: batchSelectedTags.includes(tag.id) }"
                 :style="batchSelectedTags.includes(tag.id) ? { background: tag.color + '20', color: tag.color, borderColor: tag.color } : {}"
                 @click="toggleBatchTag(tag.id)"
               >{{ tag.name }}</span>
             </div>
-            <div v-if="customerStore.tags.length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);text-align:center;padding:var(--space-4)">
+            <div v-if="customerStore.tags.filter(t => !t.hidden).length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);text-align:center;padding:var(--space-4)">
               暂无可用标签，请先在标签分类中创建
             </div>
           </div>
@@ -345,12 +348,14 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useCustomerStore } from '@/stores/customer'
 import { useDataStore } from '@/stores/data'
 import { useSessionStore } from '@/stores/session'
 import { useSmartRecognize } from '@/components/customers/useSmartRecognize'
 import { useCustomerImport } from '@/components/customers/useCustomerImport'
+import { levelColors, levelLabel } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
 
 import CustomerTable from '@/components/customers/CustomerTable.vue'
 import CustomerList from '@/components/customers/CustomerList.vue'
@@ -360,6 +365,7 @@ import CustomerWeekView from '@/components/customers/CustomerWeekView.vue'
 import CustomerDetailModal from '@/components/customers/CustomerDetailModal.vue'
 
 const router = useRouter()
+const route = useRoute()
 const customerStore = useCustomerStore()
 const dataStore = useDataStore()
 const sessionStore = useSessionStore()
@@ -386,16 +392,15 @@ const showDetail = ref(false)
 const showConfirm = ref(false)
 const confirmMessage = ref('')
 const confirmCallback = ref(null)
+const confirmType = ref('confirm') // 'confirm' | 'warning'
 const editingCustomer = ref(null)
 const detailCustomer = ref(null)
 const batchLevel = ref('')
 const showBatchTagModal = ref(false)
 const batchSelectedTags = ref([])
+const formErrors = ref([])
 
-const levelColors = { A: '#ef4444', B: '#f59e0b', C: '#3b82f6' }
 const levelList = ['A', 'B', 'C']
-const levelLabelMap = { A: '大客户', B: 'B类客户', C: 'C类客户' }
-function levelLabel(lvl) { return levelLabelMap[lvl] || lvl }
 
 const viewModes = [
   { key: 'table', icon: 'table', label: '表格' },
@@ -446,13 +451,9 @@ const form = reactive(defaultForm())
 const { showSmartRec, smartRecInput, smartRecResult, runSmartRecognize, applySmartRecognize, handleSmartFileUpload } = useSmartRecognize(form)
 const { handleBatchAdd } = useCustomerImport(customerStore)
 
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
-}
-
 function openAddModal() {
   editingCustomer.value = null
+  formErrors.value = []
   const defaults = defaultForm()
   defaults.customerNo = customerStore.generateCustomerNo()
   Object.assign(form, defaults)
@@ -464,6 +465,7 @@ function openAddModal() {
 
 function openEditModal(c) {
   editingCustomer.value = c
+  formErrors.value = []
   Object.assign(form, {
     customerNo: c.customerNo || '', fullName: c.fullName || c.name || '',
     shortName: c.shortName || '', contactName: c.contactName || c.contact || '',
@@ -498,7 +500,40 @@ function closeModal() {
 }
 
 function saveCustomer() {
-  if (!form.fullName.trim() && !form.contactName.trim() && !form.phone.trim()) return
+  formErrors.value = []
+
+  // 至少一个关键信息字段非空
+  if (!form.fullName.trim() && !form.contactName.trim() && !form.phone.trim()) {
+    formErrors.value.push('请至少填写客户全称、联系人姓名或手机号码中的一项')
+  }
+
+  // 客户编号唯一性校验
+  if (form.customerNo) {
+    const existing = customerStore.customers.find(c =>
+      c.customerNo === form.customerNo && (!editingCustomer.value || c.id !== editingCustomer.value.id)
+    )
+    if (existing) {
+      formErrors.value.push('客户编号已存在，请使用其他编号')
+    }
+  }
+
+  // 手机号格式校验
+  if (form.phone && !/^1[3-9]\d{9}$/.test(form.phone)) {
+    formErrors.value.push('手机号格式不正确，应为11位手机号码')
+  }
+
+  // 邮箱格式校验
+  if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    formErrors.value.push('邮箱格式不正确')
+  }
+
+  // 信用额度非负校验
+  if (form.creditLimit !== undefined && form.creditLimit !== '' && Number(form.creditLimit) < 0) {
+    formErrors.value.push('信用额度不能为负数')
+  }
+
+  if (formErrors.value.length > 0) return
+
   if (editingCustomer.value) {
     customerStore.updateCustomer(editingCustomer.value.id, { ...form, name: form.fullName, contact: form.contactName })
   } else {
@@ -515,11 +550,24 @@ function toggleFormTag(tagId) {
 
 function handleDelete(c) {
   confirmMessage.value = `确定要删除客户"${c.fullName || c.name}"吗？`
-  confirmCallback.value = () => customerStore.deleteCustomer(c.id)
+  confirmCallback.value = () => {
+    const result = customerStore.deleteCustomer(c.id)
+    if (!result.success) {
+      confirmMessage.value = result.error
+      confirmType.value = 'warning'
+      showConfirm.value = true
+      return
+    }
+  }
+  confirmType.value = 'confirm'
   showConfirm.value = true
 }
 
 function confirmAction() {
+  if (confirmType.value === 'warning') {
+    showConfirm.value = false
+    return
+  }
   if (confirmCallback.value) confirmCallback.value()
   showConfirm.value = false
 }
@@ -571,13 +619,7 @@ function handleBatchExport() {
     决策权: c.decisionAuthority, 区域: c.region, 余额: c.balance,
     信用额度: c.creditLimit, 状态: c.status === 'active' ? '活跃' : '休眠'
   }))
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `客户数据_选中${selected.length}条_${new Date().toISOString().split('T')[0]}.json`
-  a.click()
-  URL.revokeObjectURL(url)
+  exportToCSV(data, `客户数据_选中${selected.length}条`)
 }
 
 function handleExport() {
@@ -587,11 +629,30 @@ function handleExport() {
     决策权: c.decisionAuthority, 区域: c.region, 余额: c.balance,
     信用额度: c.creditLimit, 状态: c.status === 'active' ? '活跃' : '休眠'
   }))
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  exportToCSV(data, '客户数据')
+}
+
+function exportToCSV(data, filename) {
+  if (!data || data.length === 0) return
+  const headers = Object.keys(data[0])
+  const csvRows = [headers.join(',')]
+  for (const row of data) {
+    const values = headers.map(h => {
+      const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : ''
+      // CSV 中包含逗号、引号或换行符的字段需要用双引号包裹
+      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+        return '"' + val.replace(/"/g, '""') + '"'
+      }
+      return val
+    })
+    csvRows.push(values.join(','))
+  }
+  const csv = '\uFEFF' + csvRows.join('\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `客户数据_${new Date().toISOString().split('T')[0]}.json`
+  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -622,6 +683,17 @@ function handleDownloadTemplate() {
 onMounted(() => {
   customerStore.initSeedData()
   dataStore.initSeedData()
+
+  // 处理从客户详情页跳转过来的编辑请求
+  const editId = route.query.editId
+  if (editId) {
+    const customer = customerStore.customers.find(c => c.id === editId)
+    if (customer) {
+      openEditModal(customer)
+    }
+    // 清除 URL 中的 editId 参数，避免刷新页面时重复打开
+    router.replace({ path: '/customers', query: {} })
+  }
 })
 </script>
 
@@ -701,6 +773,18 @@ onMounted(() => {
 .form-textarea { width: 100%; padding: var(--space-2) var(--space-3); font-size: var(--font-size-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-primary); color: var(--color-text-primary); resize: vertical; font-family: inherit; line-height: 1.5; }
 .form-textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-subtle); }
 .form-textarea::placeholder { color: var(--color-text-tertiary); }
+.form-errors-block {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: rgba(239,68,68,0.1);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239,68,68,0.3);
+}
+.form-error-item {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  padding: 2px 0;
+}
 .tag-selector { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 .tag-option { padding: 3px 10px; border-radius: 14px; font-size: 11px; cursor: pointer; border: 1px dashed var(--color-border); color: var(--color-text-secondary); transition: all var(--transition-fast); }
 .tag-option:hover { border-style: solid; }

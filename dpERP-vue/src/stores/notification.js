@@ -335,6 +335,27 @@ export const useNotificationStore = defineStore('notification', () => {
   }
 
   /**
+   * 订阅 Supabase Realtime 通知表变更
+   */
+  async function subscribeToNotifications() {
+    try {
+      const { useSupabaseStore } = await import('./supabase')
+      const supabaseStore = useSupabaseStore()
+      if (!supabaseStore.client) return
+      supabaseStore.client
+        .channel('notifications')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            addNotification(payload.new)
+          }
+        })
+        .subscribe()
+    } catch (e) {
+      console.warn('[Notification] 订阅失败:', e)
+    }
+  }
+
+  /**
    * 重置通知数据
    */
   function resetSeedData() {
@@ -356,6 +377,7 @@ export const useNotificationStore = defineStore('notification', () => {
     clearExpired,
     getByType,
     getByCategory,
+    subscribeToNotifications,
     initSeedData,
     resetSeedData
   }
