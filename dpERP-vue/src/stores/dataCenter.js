@@ -27,9 +27,13 @@ const STORE_IMPORTS = {
   collection: () => import('@/stores/collection').then(m => m.useCollectionStore()),
   statement: () => import('@/stores/statement').then(m => m.useStatementStore()),
   supplier: () => import('@/stores/inventory').then(m => m.useInventoryStore()),
+  warehouse: () => import('@/stores/warehouseLocation').then(m => m.useWarehouseLocationStore()),
   warehouseLocation: () => import('@/stores/warehouseLocation').then(m => m.useWarehouseLocationStore()),
   cost: () => import('@/stores/cost').then(m => m.useCostStore()),
-  todo: () => import('@/stores/todo').then(m => m.useTodoStore())
+  todo: () => import('@/stores/todo').then(m => m.useTodoStore()),
+  purchase: () => import('@/stores/purchase').then(m => m.usePurchaseStore()),
+  production: () => import('@/stores/production').then(m => m.useProductionStore()),
+  transfer: () => import('@/stores/transfer').then(m => m.useTransferStore())
 }
 
 /* 模块数据键映射 */
@@ -42,9 +46,13 @@ const DATA_KEY_MAP = {
   collection: 'collections',
   statement: 'statements',
   supplier: 'suppliers',
+  warehouse: 'warehouses',
   warehouseLocation: 'locations',
   cost: 'records',
-  todo: 'todos'
+  todo: 'todos',
+  purchase: 'orders',
+  production: 'orders',
+  transfer: 'transfers'
 }
 
 /* 下拉选项配置 - 定义每个模块可提供的下拉选项 */
@@ -55,14 +63,17 @@ const SELECT_CONFIGS = {
     variants: {
       active: { valueField: 'id', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'active' }] },
       byLevel: { valueField: 'id', labelField: 'name', groupBy: 'level' },
-      byRegion: { valueField: 'id', labelField: 'name', groupBy: 'region' }
+      byRegion: { valueField: 'id', labelField: 'name', groupBy: 'region' },
+      /* 级联：按等级筛选客户 */
+      byCustomerLevel: { valueField: 'id', labelField: 'name', filters: [] }
     }
   },
   /* 供应商下拉选项 */
   supplier: {
     default: { valueField: 'id', labelField: 'name', filters: [] },
     variants: {
-      active: { valueField: 'id', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'active' }] }
+      active: { valueField: 'id', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'active' }] },
+      withCode: { valueField: 'id', labelField: 'name', filters: [] }
     }
   },
   /* 库存物料下拉选项 */
@@ -72,7 +83,9 @@ const SELECT_CONFIGS = {
       inStock: { valueField: 'code', labelField: 'name', filters: [{ field: 'quantity', operator: 'gt', value: 0 }] },
       lowStock: { valueField: 'code', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'low' }] },
       byCategory: { valueField: 'code', labelField: 'name', groupBy: 'category' },
-      byWarehouse: { valueField: 'code', labelField: 'name', groupBy: 'warehouse' }
+      byWarehouse: { valueField: 'code', labelField: 'name', groupBy: 'warehouse' },
+      /* 级联：按类别筛选物料 */
+      byCatFilter: { valueField: 'code', labelField: 'name', filters: [] }
     }
   },
   /* 报价单下拉选项 */
@@ -80,21 +93,77 @@ const SELECT_CONFIGS = {
     default: { valueField: 'id', labelField: 'quoteNo', filters: [] },
     variants: {
       approved: { valueField: 'id', labelField: 'quoteNo', filters: [{ field: 'status', operator: 'eq', value: 'approved' }] },
-      accepted: { valueField: 'id', labelField: 'quoteNo', filters: [{ field: 'status', operator: 'eq', value: 'accepted' }] }
+      accepted: { valueField: 'id', labelField: 'quoteNo', filters: [{ field: 'status', operator: 'eq', value: 'accepted' }] },
+      /* 级联：按客户筛选报价单 */
+      byCustomer: { valueField: 'id', labelField: 'quoteNo', filters: [] }
     }
   },
   /* 合同下拉选项 */
   contract: {
     default: { valueField: 'id', labelField: 'contractNo', filters: [] },
     variants: {
-      active: { valueField: 'id', labelField: 'contractNo', filters: [{ field: 'status', operator: 'in', value: ['approved', 'signed'] }] }
+      active: { valueField: 'id', labelField: 'contractNo', filters: [{ field: 'status', operator: 'in', value: ['approved', 'signed'] }] },
+      /* 级联：按客户筛选合同 */
+      byCustomer: { valueField: 'id', labelField: 'contractNo', filters: [] }
+    }
+  },
+  /* 仓库下拉选项 */
+  warehouse: {
+    default: { valueField: 'id', labelField: 'name', filters: [] },
+    variants: {
+      active: { valueField: 'id', labelField: 'name', filters: [] }
     }
   },
   /* 仓位下拉选项 */
   warehouseLocation: {
-    default: { valueField: 'id', labelField: 'name', filters: [] },
+    default: { valueField: 'id', labelField: 'locationCode', filters: [] },
     variants: {
-      available: { valueField: 'id', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'available' }] }
+      available: { valueField: 'id', labelField: 'locationCode', filters: [{ field: 'status', operator: 'eq', value: 'available' }] },
+      /* 级联：按仓库筛选仓位 */
+      byWarehouse: { valueField: 'id', labelField: 'locationCode', filters: [] }
+    }
+  },
+  /* 送货单下拉选项 */
+  delivery: {
+    default: { valueField: 'id', labelField: 'deliveryNo', filters: [] },
+    variants: {
+      pending: { valueField: 'id', labelField: 'deliveryNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] },
+      byCustomer: { valueField: 'id', labelField: 'deliveryNo', filters: [] }
+    }
+  },
+  /* 回款下拉选项 */
+  collection: {
+    default: { valueField: 'id', labelField: 'receiptNo', filters: [] },
+    variants: {
+      byCustomer: { valueField: 'id', labelField: 'receiptNo', filters: [] }
+    }
+  },
+  /* 对账单下拉选项 */
+  statement: {
+    default: { valueField: 'id', labelField: 'statementNo', filters: [] },
+    variants: {
+      byCustomer: { valueField: 'id', labelField: 'statementNo', filters: [] }
+    }
+  },
+  /* 采购单下拉选项 */
+  purchase: {
+    default: { valueField: 'id', labelField: 'orderNo', filters: [] },
+    variants: {
+      pending: { valueField: 'id', labelField: 'orderNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
+    }
+  },
+  /* 生产工单下拉选项 */
+  production: {
+    default: { valueField: 'id', labelField: 'orderNo', filters: [] },
+    variants: {
+      pending: { valueField: 'id', labelField: 'orderNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
+    }
+  },
+  /* 调拨单下拉选项 */
+  transfer: {
+    default: { valueField: 'id', labelField: 'transferNo', filters: [] },
+    variants: {
+      pending: { valueField: 'id', labelField: 'transferNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
     }
   }
 }
@@ -113,6 +182,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   const collections = computed(() => _stores.value.collection?.collections || [])
   const statements = computed(() => _stores.value.statement?.statements || [])
   const suppliers = computed(() => _stores.value.inventory?.suppliers || [])
+  const warehouses = computed(() => _stores.value.warehouse?.warehouses || [])
   const warehouseLocations = computed(() => _stores.value.warehouseLocation?.locations || [])
   const costRecords = computed(() => _stores.value.cost?.records || [])
   const todos = computed(() => _stores.value.todo?.todos || [])
@@ -583,7 +653,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     /* 数据引用 */
     customers, quotations, contracts, inventory,
     deliveries, collections, statements, suppliers,
-    warehouseLocations, costRecords, todos,
+    warehouses, warehouseLocations, costRecords, todos,
 
     /* 跨模块关联 */
     getCustomerRelatedData,

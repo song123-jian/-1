@@ -378,10 +378,7 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">购货单位名称 <span class="required">*</span></label>
-              <select class="form-select" v-model="editorData.customerName" @change="onCustomerChange">
-                <option value="">请选择客户</option>
-                <option v-for="c in customerOptions" :key="c.id" :value="c.fullName || c.name">{{ c.fullName || c.name }}</option>
-              </select>
+              <DataSelect module="customer" variant="active" v-model="editorData.customerName" value-field="name" label-field="name" placeholder="选择客户" @change="onCustomerChange" />
             </div>
             <div class="form-group">
               <label class="form-label">地址</label>
@@ -757,6 +754,7 @@ import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useDeliveryStore } from '@/stores/delivery'
 import { useCustomerStore } from '@/stores/customer'
 import { usePermission } from '@/utils/permissionGuard'
+import DataSelect from '@/components/DataSelect.vue'
 
 const deliveryStore = useDeliveryStore()
 const customerStore = useCustomerStore()
@@ -1039,12 +1037,12 @@ function closeEditor() {
   editingId.value = null
 }
 
-function onCustomerChange() {
-  const c = customerStore.customers.find(c => (c.fullName || c.name) === editorData.customerName)
-  if (c) {
-    editorData.address = c.address || ''
-    editorData.contact = c.contact || c.contactPerson || ''
-    editorData.phone = c.phone || c.contactPhone || ''
+function onCustomerChange({ value, data }) {
+  if (data) {
+    editorData.customerName = data.fullName || data.name
+    editorData.address = data.address || ''
+    editorData.contact = data.contact || data.contactPerson || ''
+    editorData.phone = data.phone || data.contactPhone || ''
   }
 }
 

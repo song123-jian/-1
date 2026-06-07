@@ -357,10 +357,7 @@
               <div class="form-row form-row-3">
                 <div class="form-group">
                   <label class="form-label">物料编码</label>
-                  <select v-model="comp.materialCode" class="form-select form-select-sm" @change="fillMaterialInfo(comp)">
-                    <option value="">选择物料</option>
-                    <option v-for="item in inventoryItems" :key="item.id" :value="item.code">{{ item.code }} - {{ item.name }}</option>
-                  </select>
+                  <DataSelect module="inventory" v-model="comp.materialCode" value-field="code" label-field="name" placeholder="选择物料" @change="(e) => onMaterialChange(comp, e)" />
                 </div>
                 <div class="form-group">
                   <label class="form-label">物料名称</label>
@@ -442,6 +439,7 @@ import { useBomStore } from '@/stores/bom'
 import { useProductionStore } from '@/stores/production'
 import { useInventoryStore } from '@/stores/inventory'
 import { generateId } from '@/utils/uid'
+import DataSelect from '@/components/DataSelect.vue'
 import BomTree from '@/components/production/BomTree.vue'
 import ProductionOrder from '@/components/production/ProductionOrder.vue'
 import ProductionSchedule from '@/components/production/ProductionSchedule.vue'
@@ -647,11 +645,15 @@ function removeComponent(idx) {
   bomForm.components.splice(idx, 1)
 }
 
-function fillMaterialInfo(comp) {
-  const item = inventoryItems.value.find(i => i.code === comp.materialCode)
-  if (item) {
-    comp.materialName = item.name
-    comp.spec = item.grade || ''
+/* DataSelect 物料变更：单向联动+可改，自动填充但字段仍可编辑 */
+function onMaterialChange(comp, { value, data }) {
+  if (data) {
+    comp.materialCode = data.code || ''
+    comp.materialName = data.name || ''
+    comp.spec = data.grade || ''
+  } else {
+    comp.materialName = ''
+    comp.spec = ''
   }
 }
 

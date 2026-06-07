@@ -30,14 +30,19 @@
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">客户公司</label>
-                <select v-model="form.customerId" class="form-select" @change="fillCustomerInfo">
-                  <option value="">请选择客户</option>
-                  <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">{{ c.fullName || c.name }}</option>
-                </select>
+                <DataSelect
+                  module="customer"
+                  variant="active"
+                  v-model="form.customerId"
+                  value-field="id"
+                  label-field="name"
+                  placeholder="选择客户"
+                  @change="onCustomerChange"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">客户公司全称</label>
-                <input v-model="form.customerFullName" class="form-input" readonly style="opacity:0.8" />
+                <input v-model="form.customerFullName" class="form-input" placeholder="自动填充，可编辑" />
               </div>
             </div>
             <div class="form-row form-row-3">
@@ -190,6 +195,7 @@
 import { ref, computed, watch } from 'vue'
 import { useQuotationStore } from '@/stores/quotation'
 import { useCustomerStore } from '@/stores/customer'
+import DataSelect from '@/components/DataSelect.vue'
 
 const props = defineProps({
   showModal: { type: Boolean, default: false },
@@ -254,8 +260,9 @@ function resetForm() {
   formItems.value = [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
 }
 
-function fillCustomerInfo() {
-  const c = customerStore.customers.find(x => x.id === form.value.customerId)
+/* DataSelect change 事件提供 { value, data, option }，data 为完整客户对象 */
+function onCustomerChange(event) {
+  const c = event?.data
   if (!c) return
   form.value.customerName = c.fullName || c.name || ''
   form.value.customerFullName = c.fullName || c.name || ''

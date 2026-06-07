@@ -254,13 +254,18 @@
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">出库仓库 <span class="required">*</span></label>
-                <select v-model="outboundForm.warehouseId" class="form-select">
-                  <option value="main">主仓库</option>
-                  <option value="A">A区(原料仓)</option>
-                  <option value="B">B区(成品仓)</option>
-                  <option value="C">C区(危化仓)</option>
-                </select>
+                <DataSelect module="warehouse" v-model="outboundForm.warehouseId"
+                  value-field="id" label-field="name" placeholder="选择仓库"
+                  @change="onWarehouseChange" />
               </div>
+              <div class="form-group">
+                <label class="form-label">库位</label>
+                <DataSelect module="warehouseLocation" variant="byWarehouse" v-model="outboundForm.locationId"
+                  value-field="id" label-field="locationCode" placeholder="选择库位"
+                  :parent-filters="locationParentFilters" />
+              </div>
+            </div>
+            <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">备注</label>
                 <input v-model="outboundForm.notes" type="text" class="form-input" placeholder="特殊说明" />
@@ -270,23 +275,22 @@
             <div class="form-section-title" style="margin-top:var(--space-4)"><Icon name="package" :size="14" /> 物料信息</div>
             <div class="form-group">
               <label class="form-label">物料编码 <span class="required">*</span></label>
-              <select v-model="outboundForm.materialCode" class="form-select" @change="onOutboundMaterialChange">
-                <option value="">请选择物料</option>
-                <option v-for="item in inventoryStore.enrichedInventory" :key="item.code" :value="item.code">{{ item.code }} - {{ item.name }} (库存: {{ item.stock.toFixed(1) }}kg)</option>
-              </select>
+              <DataSelect module="inventory" variant="inStock" v-model="outboundForm.materialCode"
+                value-field="code" label-field="name" placeholder="选择物料"
+                @change="onMaterialChange" />
             </div>
             <div class="form-row form-row-3">
               <div class="form-group">
                 <label class="form-label">物料名称</label>
-                <input v-model="outboundForm.materialName" type="text" class="form-input" readonly style="opacity:0.8" />
+                <input v-model="outboundForm.materialName" type="text" class="form-input" placeholder="自动填充，可修改" />
               </div>
               <div class="form-group">
                 <label class="form-label">牌号</label>
-                <input v-model="outboundForm.grade" type="text" class="form-input" readonly style="opacity:0.8" />
+                <input v-model="outboundForm.grade" type="text" class="form-input" placeholder="自动填充，可修改" />
               </div>
               <div class="form-group">
                 <label class="form-label">颜色</label>
-                <input v-model="outboundForm.color" type="text" class="form-input" readonly style="opacity:0.8" />
+                <input v-model="outboundForm.color" type="text" class="form-input" placeholder="自动填充，可修改" />
               </div>
             </div>
             <div class="form-row form-row-2">
@@ -328,6 +332,7 @@
 import { ref, computed, reactive, onMounted, onBeforeUnmount } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
+import DataSelect from '@/components/DataSelect.vue'
 
 const emit = defineEmits([])
 
@@ -382,7 +387,7 @@ const outboundForm = reactive({
   outType: '', materialCode: '', materialName: '',
   grade: '', color: '',
   outQty: 0, unitPrice: 0, notes: '',
-  outboundNo: '', referenceId: '', warehouseId: 'main', batchNo: ''
+  outboundNo: '', referenceId: '', warehouseId: 'main', locationId: '', batchNo: ''
 })
 const outboundErrors = ref([])
 
@@ -520,7 +525,7 @@ function openOutboundWizard() {
     grade: '', color: '',
     outQty: 0, unitPrice: 0, notes: '',
     outboundNo: inventoryStore.generateOutboundNo(),
-    referenceId: '', warehouseId: 'main', batchNo: ''
+    referenceId: '', warehouseId: 'main', locationId: '', batchNo: ''
   })
   outboundErrors.value = []
   showOutboundWizard.value = true
@@ -539,6 +544,32 @@ function onOutboundMaterialChange() {
     outboundForm.color = item.color || ''
     outboundForm.unitPrice = item.unitCost || 0
   }
+}
+
+/* DataSelect 物料变更处理：接收 { value, data, option } */
+function onMaterialChange({ data }) {
+  if (data) {
+    outboundForm.materialName = data.name || ''
+    outboundForm.grade = data.grade || data.brand || ''
+    outboundForm.color = data.color || ''
+    outboundForm.unitPrice = data.unitCost || 0
+  }
+}
+
+/* 仓库→库位级联过滤的计算属性 */
+const locationParentFilters = computed(() => {
+  const warehouseId = outboundForm.warehouseId
+  if (!warehouseId) return []
+  /* 通过 inventoryStore.warehouses 映射 warehouseId → warehouseName */
+  const wh = inventoryStore.warehouses.find(w => w.id === warehouseId)
+  const warehouseName = wh ? wh.warehouseName : ''
+  return warehouseName ? [{ field: 'warehouseName', value: warehouseName }] : []
+})
+
+/* DataSelect 仓库变更处理 */
+function onWarehouseChange() {
+  /* 仓库变更时清空库位选择，避免库位与仓库不匹配 */
+  outboundForm.locationId = ''
 }
 
 function handleSubmitOutbound() {
@@ -715,6 +746,7 @@ function openEditOutbound(order) {
     outboundNo: order.outboundNo || order.orderNo || '',
     referenceId: order.referenceId || '',
     warehouseId: order.warehouseId || 'main',
+    locationId: order.locationId || '',
     batchNo: order.batchNo || ''
   })
   outboundErrors.value = []

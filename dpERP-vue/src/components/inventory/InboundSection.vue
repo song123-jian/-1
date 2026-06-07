@@ -341,20 +341,22 @@
               </div>
               <div class="form-group">
                 <label class="form-label">目标仓库</label>
-                <select v-model="inboundForm.warehouseId" class="form-select">
-                  <option value="main">主仓库</option>
-                  <option value="secondary">副仓库</option>
-                  <option value="temp">临时仓库</option>
-                  <option value="cold">冷库</option>
-                </select>
+                <DataSelect module="warehouse" v-model="inboundForm.warehouseId"
+                  value-field="id" label-field="name" placeholder="选择仓库"
+                  @change="onWarehouseChange" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">库位</label>
+                <DataSelect module="warehouseLocation" v-model="inboundForm.locationId"
+                  value-field="id" label-field="locationCode" placeholder="选择库位"
+                  :parent-filters="locationParentFilters" />
               </div>
               <div class="form-group">
                 <label class="form-label">供应商 <span class="required">*</span></label>
                 <div class="supplier-input-group">
-                  <select v-model="inboundForm.counterpartyId" class="form-select" @change="onInboundSupplierChange">
-                    <option value="">请选择供应商</option>
-                    <option v-for="s in inventoryStore.suppliers" :key="s.id" :value="s.id">{{ s.shortName || s.name }}</option>
-                  </select>
+                  <DataSelect module="supplier" variant="active" v-model="inboundForm.counterpartyId"
+                    value-field="id" label-field="name" placeholder="选择供应商"
+                    @change="onSupplierChange" />
                   <input v-model="inboundForm.supplierCode" type="text" class="form-input" placeholder="供应商编码" @change="onInboundSupplierCodeChange" />
                 </div>
               </div>
@@ -372,6 +374,7 @@
                     <tr>
                       <th>序号</th>
                       <th>物料条码</th>
+                      <th>物料选择</th>
                       <th>物料编码</th>
                       <th>物料名称</th>
                       <th>牌号</th>
@@ -387,10 +390,11 @@
                     <tr v-for="(item, idx) in inboundFormItems" :key="idx">
                       <td class="cell-mono">{{ idx + 1 }}</td>
                       <td><input v-model="item.barcode" type="text" class="form-input form-input-sm inbound-barcode-input" placeholder="扫码/输入" @change="onInboundItemBarcodeChange(idx)" /></td>
-                      <td><input v-model="item.code" type="text" class="form-input form-input-sm" placeholder="编码" readonly style="background:var(--color-bg-tertiary)" /></td>
-                      <td><input v-model="item.name" type="text" class="form-input form-input-sm" placeholder="名称" readonly style="background:var(--color-bg-tertiary)" /></td>
-                      <td><input v-model="item.grade" type="text" class="form-input form-input-sm" placeholder="牌号" readonly style="background:var(--color-bg-tertiary)" /></td>
-                      <td><input v-model="item.color" type="text" class="form-input form-input-sm" placeholder="颜色" readonly style="background:var(--color-bg-tertiary)" /></td>
+                      <td class="cell-material-select"><DataSelect module="inventory" v-model="item.code" value-field="code" label-field="name" placeholder="选择物料" @change="(e) => onMaterialChange(idx, e)" /></td>
+                      <td><input v-model="item.code" type="text" class="form-input form-input-sm" placeholder="编码" readonly style="opacity:0.7;cursor:not-allowed" /></td>
+                      <td><input v-model="item.name" type="text" class="form-input form-input-sm" placeholder="名称" /></td>
+                      <td><input v-model="item.grade" type="text" class="form-input form-input-sm" placeholder="牌号" /></td>
+                      <td><input v-model="item.color" type="text" class="form-input form-input-sm" placeholder="颜色" /></td>
                       <td><input v-model.number="item.qty" type="number" class="form-input form-input-sm" min="0.01" step="0.01" max="999999" style="width:90px" /></td>
                       <td><input v-model.number="item.cost" type="number" class="form-input form-input-sm" min="0" step="0.01" max="999999" style="width:90px" /></td>
                       <td class="cell-mono">{{ ((item.qty || 0) * (item.cost || 0)).toFixed(2) }}</td>
@@ -550,6 +554,7 @@
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
+import DataSelect from '@/components/DataSelect.vue'
 
 const emit = defineEmits(['edit-item', 'quick-outbound'])
 
@@ -617,7 +622,7 @@ const copySuccessMsg = ref('')
 const inboundForm = reactive({
   date: new Date().toISOString().split('T')[0],
   type: '', counterpartyId: '', counterpartyName: '', supplierCode: '',
-  warehouseId: 'main', notes: '', orderNo: ''
+  warehouseId: 'main', locationId: '', notes: '', orderNo: ''
 })
 
 /* computed */
@@ -730,6 +735,12 @@ const paginatedInboundDetails = computed(() => {
 const inboundItemsTotalWeight = computed(() => inboundFormItems.value.reduce((s, it) => s + (it.qty || 0), 0))
 const inboundItemsTotalAmount = computed(() => inboundFormItems.value.reduce((s, it) => s + (it.qty || 0) * (it.cost || 0), 0))
 
+/* 库位级联过滤：根据选中仓库的 warehouseId 过滤库位选项 */
+const locationParentFilters = computed(() => {
+  if (!inboundForm.warehouseId) return []
+  return [{ field: 'warehouseId', operator: 'eq', value: inboundForm.warehouseId }]
+})
+
 const inboundSelectedPendingCount = computed(() => {
   return inboundSelectedIds.value.filter(id => {
     const o = inventoryStore.inboundOrders.find(ord => ord.id === id)
@@ -818,7 +829,7 @@ function openInboundWizard() {
   Object.assign(inboundForm, {
     date: new Date().toISOString().split('T')[0],
     type: '', counterpartyId: '', counterpartyName: '', supplierCode: '',
-    warehouseId: 'main', notes: '',
+    warehouseId: 'main', locationId: '', notes: '',
     orderNo: inventoryStore.generateInboundNo()
   })
   inboundFormItems.value = [{ barcode: '', code: '', name: '', grade: '', color: '', qty: 0, cost: 0, batch: '' }]
@@ -835,6 +846,7 @@ function openEditInbound(order) {
     counterpartyName: order.counterpartyName || '',
     supplierCode: order.supplierCode || '',
     warehouseId: order.warehouseId || 'main',
+    locationId: order.locationId || '',
     notes: order.notes || '',
     orderNo: order.orderNo || ''
   })
@@ -891,6 +903,33 @@ function onInboundSupplierChange() {
     inboundForm.supplierCode = sup.supplierCode || ''
   } else {
     inboundForm.supplierCode = ''
+  }
+}
+
+/* DataSelect 供应商变更：单向联动+可改，自动填充但字段仍可编辑 */
+function onSupplierChange({ value, data }) {
+  if (data) {
+    inboundForm.counterpartyName = data.shortName || data.name
+    inboundForm.supplierCode = data.supplierCode || ''
+  } else {
+    inboundForm.counterpartyName = ''
+    inboundForm.supplierCode = ''
+  }
+}
+
+/* DataSelect 仓库变更：清空库位选择 */
+function onWarehouseChange({ value, data }) {
+  inboundForm.locationId = ''
+}
+
+/* DataSelect 物料变更：单向联动+可改，自动填充但字段仍可编辑 */
+function onMaterialChange(idx, { value, data }) {
+  if (data) {
+    inboundFormItems.value[idx].code = data.code || ''
+    inboundFormItems.value[idx].name = data.name || ''
+    inboundFormItems.value[idx].grade = data.grade || ''
+    inboundFormItems.value[idx].color = data.color || ''
+    inboundFormItems.value[idx].cost = data.unitCost || 0
   }
 }
 
@@ -1294,8 +1333,14 @@ defineExpose({
 .inbound-summary { display: flex; gap: var(--space-4); margin-top: var(--space-3); padding: var(--space-2) var(--space-3); background: var(--color-bg-secondary); border-radius: var(--radius-md); font-size: var(--font-size-sm); }
 
 .supplier-input-group { display: flex; gap: var(--space-2); }
-.supplier-input-group .form-select { flex: 2; }
+.supplier-input-group .data-select { flex: 2; }
 .supplier-input-group .form-input { flex: 1; }
+
+/* 表格内 DataSelect 紧凑样式 */
+.cell-material-select { min-width: 140px; }
+.cell-material-select .data-select { min-width: 120px; }
+.cell-material-select .data-select-trigger { min-height: 28px; padding: 2px 24px 2px 6px; font-size: var(--font-size-xs); }
+.cell-material-select .data-select-dropdown { font-size: var(--font-size-xs); }
 
 .view-toggle-dropdown { position: relative; }
 .view-toggle-menu { position: absolute; top: 100%; left: 0; background: var(--color-bg-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100; min-width: 140px; padding: var(--space-1) 0; }

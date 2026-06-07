@@ -22,8 +22,14 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">供应商 <span class="required">*</span></label>
-              <SupplierSelect v-model="form.supplierId" @change="onSupplierChange" />
+              <DataSelect module="supplier" variant="active" v-model="form.supplierId"
+                value-field="id" label-field="name" placeholder="选择供应商"
+                @change="onSupplierChange" />
               <span v-if="errors.supplierId" class="form-error">{{ errors.supplierId }}</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">供应商名称</label>
+              <input v-model="form.supplierName" type="text" class="form-input" placeholder="选择供应商后自动填充，可手动修改" />
             </div>
             <div class="form-group">
               <label class="form-label">类型</label>
@@ -125,9 +131,8 @@
 <script setup>
 import { reactive, computed, watch } from 'vue'
 import { usePurchaseStore } from '@/stores/purchase'
-import { useSupplierStore } from '@/stores/supplier'
 import { generateId } from '@/utils/uid'
-import SupplierSelect from '@/components/purchase/SupplierSelect.vue'
+import DataSelect from '@/components/DataSelect.vue'
 
 const props = defineProps({
   order: { type: Object, default: null },
@@ -136,7 +141,6 @@ const props = defineProps({
 const emit = defineEmits(['save', 'cancel'])
 
 const purchaseStore = usePurchaseStore()
-const supplierStore = useSupplierStore()
 const isEdit = computed(() => !!props.order?.id)
 
 const form = reactive({
@@ -221,8 +225,8 @@ const totalAmount = computed(() =>
   form.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
 )
 
-function onSupplierChange(supplier) {
-  form.supplierName = supplier ? (supplier.shortName || supplier.name) : ''
+function onSupplierChange({ value, data }) {
+  form.supplierName = data ? (data.shortName || data.name) : ''
 }
 
 function validate() {

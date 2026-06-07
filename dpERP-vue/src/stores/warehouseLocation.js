@@ -43,6 +43,19 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
     '危险品区': '#c62828'
   }
 
+  /* 从库位数据中提取去重后的仓库列表，供 DataSelect 使用 */
+  const warehouses = computed(() => {
+    const names = new Set()
+    const result = []
+    for (const loc of locations.value) {
+      if (loc.warehouseName && !names.has(loc.warehouseName)) {
+        names.add(loc.warehouseName)
+        result.push({ id: loc.warehouseName, name: loc.warehouseName })
+      }
+    }
+    return result
+  })
+
   const areaStats = computed(() => {
     const stats = {}
     for (const loc of locations.value) {
@@ -57,6 +70,7 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
       id: generateId('wl'),
       locationCode: data.locationCode || '',
       warehouseName: data.warehouseName || '',
+      warehouseId: data.warehouseId || '',
       areaName: data.areaName || '合格品区',
       manager: data.manager || '',
       managerPhone: data.managerPhone || '',
@@ -92,14 +106,14 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
   function initSeedData() {
     if (load(INIT_KEY, false)) return
     const seed = [
-      { locationCode: 'CK01-YL-A-01', warehouseName: '原料一库', areaName: '合格品区', manager: '张明', managerPhone: '13800001001', notes: 'A区货架1层' },
-      { locationCode: 'CK01-YL-A-02', warehouseName: '原料一库', areaName: '合格品区', manager: '张明', managerPhone: '13800001001', notes: 'A区货架2层' },
-      { locationCode: 'CK01-YL-B-01', warehouseName: '原料一库', areaName: '待检区', manager: '李红', managerPhone: '13800001002', notes: 'B区待检区域' },
-      { locationCode: 'CK02-CP-A-01', warehouseName: '成品库', areaName: '合格品区', manager: '王刚', managerPhone: '13800001003', notes: '成品A区' },
-      { locationCode: 'CK02-CP-B-01', warehouseName: '成品库', areaName: '不合格品区', manager: '王刚', managerPhone: '13800001003', notes: '不合格品隔离' },
-      { locationCode: 'CK03-WX-A-01', warehouseName: '危化品库', areaName: '危险品区', manager: '赵安全', managerPhone: '13800001004', notes: '危化品专用' },
-      { locationCode: 'CK01-YL-C-01', warehouseName: '原料一库', areaName: '回料区', manager: '李红', managerPhone: '13800001002', notes: '回料存放区' },
-      { locationCode: 'CK01-YL-D-01', warehouseName: '原料一库', areaName: '隔离区', manager: '张明', managerPhone: '13800001001', notes: '问题物料隔离' }
+      { locationCode: 'CK01-YL-A-01', warehouseName: '原料一库', warehouseId: 'main', areaName: '合格品区', manager: '张明', managerPhone: '13800001001', notes: 'A区货架1层' },
+      { locationCode: 'CK01-YL-A-02', warehouseName: '原料一库', warehouseId: 'main', areaName: '合格品区', manager: '张明', managerPhone: '13800001001', notes: 'A区货架2层' },
+      { locationCode: 'CK01-YL-B-01', warehouseName: '原料一库', warehouseId: 'main', areaName: '待检区', manager: '李红', managerPhone: '13800001002', notes: 'B区待检区域' },
+      { locationCode: 'CK02-CP-A-01', warehouseName: '成品库', warehouseId: 'B', areaName: '合格品区', manager: '王刚', managerPhone: '13800001003', notes: '成品A区' },
+      { locationCode: 'CK02-CP-B-01', warehouseName: '成品库', warehouseId: 'B', areaName: '不合格品区', manager: '王刚', managerPhone: '13800001003', notes: '不合格品隔离' },
+      { locationCode: 'CK03-WX-A-01', warehouseName: '危化品库', warehouseId: 'C', areaName: '危险品区', manager: '赵安全', managerPhone: '13800001004', notes: '危化品专用' },
+      { locationCode: 'CK01-YL-C-01', warehouseName: '原料一库', warehouseId: 'main', areaName: '回料区', manager: '李红', managerPhone: '13800001002', notes: '回料存放区' },
+      { locationCode: 'CK01-YL-D-01', warehouseName: '原料一库', warehouseId: 'main', areaName: '隔离区', manager: '张明', managerPhone: '13800001001', notes: '问题物料隔离' }
     ]
     for (const s of seed) {
       addLocation(s)
@@ -120,7 +134,7 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
   }
 
   return {
-    locations, AREA_OPTIONS, AREA_COLORS, areaStats,
+    locations, warehouses, AREA_OPTIONS, AREA_COLORS, areaStats,
     addLocation, updateLocation, deleteLocation, initSeedData,
     replaceData, mergeRemoteItems,
     persist

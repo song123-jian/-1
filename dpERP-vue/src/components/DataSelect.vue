@@ -18,6 +18,7 @@
         <!-- 占位符 -->
         <span v-else class="data-select-placeholder">{{ placeholder }}</span>
       </div>
+      <span v-if="clearable && modelValue && !disabled" class="data-select-clear" @click.stop="handleClear">×</span>
       <span class="data-select-arrow" :class="{ 'is-open': isOpen }">▾</span>
     </div>
 
@@ -128,6 +129,8 @@ export default {
     emptyText: { type: String, default: '暂无数据' },
     /* 自定义过滤条件 */
     filters: { type: Array, default: () => [] },
+    /* 级联过滤：父级字段值变化时自动过滤子级选项 */
+    parentFilters: { type: Array, default: () => [] },
     /* 模块中文名（用于新增按钮） */
     moduleName: { type: String, default: '' },
     /* 是否清空选项 */
@@ -144,10 +147,12 @@ export default {
 
     /* 获取选项列表 */
     const rawOptions = computed(() => {
+      /* 合并静态 filters 和动态 parentFilters */
+      const allFilters = [...props.filters, ...props.parentFilters.filter(pf => pf.value !== undefined && pf.value !== null && pf.value !== '')]
       return dataCenter.getSelectOptions(props.module, props.variant, {
         valueField: props.valueField,
         labelField: props.labelField,
-        filters: props.filters
+        filters: allFilters
       })
     })
 
@@ -309,12 +314,38 @@ export default {
       emit('refresh', props.module)
     }
 
+    /* 清除选中值 */
+    function handleClear() {
+      const emptyValue = props.multiple ? [] : ''
+      emit('update:modelValue', emptyValue)
+      emit('change', { value: emptyValue, data: null, option: null })
+      closeDropdown()
+    }
+
     /* 点击外部关闭 */
     function handleClickOutside(e) {
       if (selectRef.value && !selectRef.value.contains(e.target)) {
         closeDropdown()
       }
     }
+
+    /* 级联过滤变化时，如果当前选中值不在新选项中，则清空 */
+    watch(() => props.parentFilters, () => {
+      if (props.modelValue) {
+        const validValues = flatOptions.value.map(o => o.value)
+        if (props.multiple) {
+          const current = Array.isArray(props.modelValue) ? props.modelValue : []
+          const filtered = current.filter(v => validValues.includes(v))
+          if (filtered.length !== current.length) {
+            emit('update:modelValue', filtered)
+          }
+        } else {
+          if (!validValues.includes(props.modelValue)) {
+            emit('update:modelValue', '')
+          }
+        }
+      }
+    }, { deep: true })
 
     onMounted(() => {
       document.addEventListener('click', handleClickOutside)
@@ -330,7 +361,7 @@ export default {
       isEmpty, selectedItems, selectedLabel,
       isSelected, getOptionIndex, toggleDropdown, closeDropdown,
       selectOption, removeItem, highlightNext, highlightPrev, selectHighlighted,
-      handleCreate, handleRefresh
+      handleCreate, handleRefresh, handleClear
     }
   }
 }
@@ -394,6 +425,19 @@ export default {
   margin-left: 2px;
 }
 .tag-close:hover { color: var(--color-danger, #ef4444); }
+.data-select-clear {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted, #9ca3af);
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 2px;
+  transition: color 0.2s;
+}
+.data-select-clear:hover { color: var(--color-danger, #ef4444); }
 .data-select-arrow {
   position: absolute;
   right: 8px;

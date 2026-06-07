@@ -316,10 +316,7 @@
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">客户 <span style="color:var(--color-danger)">*</span></label>
-            <select class="form-select" v-model="formData.customerId" @change="onCustomerChange">
-              <option value="">请选择客户</option>
-              <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">{{ c.name || c.fullName || c.companyName }}</option>
-            </select>
+            <DataSelect module="customer" variant="active" v-model="formData.customerId" value-field="id" label-field="name" placeholder="选择客户" @change="onCustomerChange" />
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -508,6 +505,7 @@ import { useCollectionStore } from '@/stores/collection'
 import { useCustomerStore } from '@/stores/customer'
 import { useDataStore } from '@/stores/data'
 import { usePermission } from '@/utils/permissionGuard'
+import DataSelect from '@/components/DataSelect.vue'
 
 const collectionStore = useCollectionStore()
 const customerStore = useCustomerStore()
@@ -722,10 +720,9 @@ function closeForm() {
   editingCollection.value = null
 }
 
-function onCustomerChange() {
-  const c = customerStore.customers.find(c => c.id === formData.customerId)
-  if (c) {
-    formData.customerName = c.name || c.fullName || c.companyName
+function onCustomerChange({ value, data }) {
+  if (data) {
+    formData.customerName = data.name || data.fullName || data.companyName
   }
 }
 

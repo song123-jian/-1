@@ -61,10 +61,7 @@
         <option value="completed">已付完</option>
         <option value="overdue">已逾期</option>
       </select>
-      <select class="form-select" v-model="filters.supplierId">
-        <option value="">全部供应商</option>
-        <option v-for="s in supplierList" :key="s.id" :value="s.id">{{ s.name }}</option>
-      </select>
+      <DataSelect module="supplier" variant="active" v-model="filters.supplierId" value-field="id" label-field="name" placeholder="选择供应商" @change="onSupplierChange" />
       <button class="btn btn-ghost btn-sm" @click="resetFilters">
         <Icon name="refresh" :size="14" /> 重置
       </button>
@@ -216,6 +213,7 @@ import { usePayableStore } from '@/stores/payable'
 import { useInventoryStore } from '@/stores/inventory'
 import PaymentFormModal from '@/components/finance/PaymentFormModal.vue'
 import AgingAnalysis from '@/components/finance/AgingAnalysis.vue'
+import DataSelect from '@/components/DataSelect.vue'
 
 const payableStore = usePayableStore()
 const inventoryStore = useInventoryStore()
@@ -308,6 +306,12 @@ const paginatedPayments = computed(() => {
 
 /* 账龄分析数据 */
 const agingData = computed(() => payableStore.getAgingAnalysis())
+
+function onSupplierChange({ value, data }) {
+  if (data) {
+    filters.supplierId = data.id
+  }
+}
 
 function resetFilters() {
   filters.search = ''

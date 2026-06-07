@@ -120,6 +120,14 @@ export const useInventoryStore = defineStore('inventory', () => {
   const recycleBin = ref(load(RECYCLE_BIN_KEY, []))
   const auditLogs = ref(load(AUDIT_LOG_KEY, []))
 
+  /* 仓库列表（含仓库名称映射，用于级联过滤库位） */
+  const warehouses = ref([
+    { id: 'main', name: '主仓库', warehouseName: '原料一库' },
+    { id: 'A', name: 'A区(原料仓)', warehouseName: '原料一库' },
+    { id: 'B', name: 'B区(成品仓)', warehouseName: '成品库' },
+    { id: 'C', name: 'C区(危化仓)', warehouseName: '危化品库' }
+  ])
+
   const enrichedInventory = computed(() => {
     if (!Array.isArray(inventory.value)) return []
     return inventory.value.map(item => {
@@ -958,7 +966,7 @@ export const useInventoryStore = defineStore('inventory', () => {
   }
 
   return {
-    inventory, warehouseOrders, suppliers, recycleBin, auditLogs,
+    inventory, warehouses, warehouseOrders, suppliers, recycleBin, auditLogs,
     enrichedInventory, lowStockCount, exhaustedCount, overStockCount, normalStockCount,
     totalStockWeight, totalStockValue, alertItems,
     inboundOrders, outboundOrders,

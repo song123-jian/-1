@@ -61,10 +61,7 @@
         <option value="completed">已收完</option>
         <option value="overdue">已逾期</option>
       </select>
-      <select class="form-select" v-model="filters.customerId">
-        <option value="">全部客户</option>
-        <option v-for="c in customerList" :key="c.id" :value="c.id">{{ c.name }}</option>
-      </select>
+      <DataSelect module="customer" variant="active" v-model="filters.customerId" value-field="id" label-field="name" placeholder="全部客户" clearable style="min-width:160px" />
       <button class="btn btn-ghost btn-sm" @click="resetFilters">
         <Icon name="refresh" :size="14" /> 重置
       </button>
@@ -214,6 +211,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useReceivableStore } from '@/stores/receivable'
 import { useCustomerStore } from '@/stores/customer'
+import DataSelect from '@/components/DataSelect.vue'
 import ReceiptFormModal from '@/components/finance/ReceiptFormModal.vue'
 import AgingAnalysis from '@/components/finance/AgingAnalysis.vue'
 

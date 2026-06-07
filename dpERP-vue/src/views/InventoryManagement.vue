@@ -19,7 +19,7 @@
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">物料编码 <span class="required">*</span></label>
-                <input v-model="itemForm.code" type="text" class="form-input" placeholder="如 MTL-001" />
+                <input v-model="itemForm.code" type="text" class="form-input" placeholder="如 MTL-001" :readonly="!!editingItemId" :style="editingItemId ? 'opacity:0.7;cursor:not-allowed' : ''" />
               </div>
               <div class="form-group">
                 <label class="form-label">物料名称 <span class="required">*</span></label>

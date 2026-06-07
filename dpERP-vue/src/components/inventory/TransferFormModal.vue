@@ -18,21 +18,57 @@
           </div>
           <div class="form-group" style="flex: 1">
             <label class="form-label"><span class="required">*</span> 调出仓库</label>
-            <select v-model="form.fromWarehouseId" class="form-select" :class="{ 'form-error': errors.fromWarehouseId }">
-              <option value="">请选择</option>
-              <option value="main">主仓库</option>
-              <option value="branch">分仓库</option>
-            </select>
+            <DataSelect
+              module="warehouse"
+              v-model="form.fromWarehouseId"
+              value-field="id"
+              label-field="name"
+              placeholder="选择调出仓库"
+              :class="{ 'form-error': errors.fromWarehouseId }"
+              @change="onFromWarehouseChange"
+            />
             <div v-if="errors.fromWarehouseId" class="form-error-text">{{ errors.fromWarehouseId }}</div>
           </div>
           <div class="form-group" style="flex: 1">
             <label class="form-label"><span class="required">*</span> 调入仓库</label>
-            <select v-model="form.toWarehouseId" class="form-select" :class="{ 'form-error': errors.toWarehouseId }">
-              <option value="">请选择</option>
-              <option value="main">主仓库</option>
-              <option value="branch">分仓库</option>
-            </select>
+            <DataSelect
+              module="warehouse"
+              v-model="form.toWarehouseId"
+              value-field="id"
+              label-field="name"
+              placeholder="选择调入仓库"
+              :class="{ 'form-error': errors.toWarehouseId }"
+              @change="onToWarehouseChange"
+            />
             <div v-if="errors.toWarehouseId" class="form-error-text">{{ errors.toWarehouseId }}</div>
+          </div>
+        </div>
+
+        <!-- 仓位级联 -->
+        <div class="form-row" style="margin-bottom: var(--space-4)">
+          <div class="form-group" style="flex: 1">
+            <label class="form-label">调出仓位</label>
+            <DataSelect
+              module="warehouseLocation"
+              variant="byWarehouse"
+              v-model="form.fromLocation"
+              value-field="locationCode"
+              label-field="locationCode"
+              placeholder="选择调出仓位"
+              :parent-filters="[{ field: 'warehouseName', operator: 'eq', value: form.fromWarehouseId }]"
+            />
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label class="form-label">调入仓位</label>
+            <DataSelect
+              module="warehouseLocation"
+              variant="byWarehouse"
+              v-model="form.toLocation"
+              value-field="locationCode"
+              label-field="locationCode"
+              placeholder="选择调入仓位"
+              :parent-filters="[{ field: 'warehouseName', operator: 'eq', value: form.toWarehouseId }]"
+            />
           </div>
         </div>
 
@@ -78,13 +114,19 @@
               <tbody>
                 <tr v-for="(item, idx) in form.items" :key="idx">
                   <td>
-                    <select v-model="item.materialCode" class="form-select" style="min-width: 140px" @change="onMaterialChange(idx)">
-                      <option value="">请选择</option>
-                      <option v-for="inv in inventoryList" :key="inv.id" :value="inv.code">{{ inv.code }} - {{ inv.name }}</option>
-                    </select>
+                    <DataSelect
+                      module="inventory"
+                      variant="inStock"
+                      v-model="item.materialCode"
+                      value-field="code"
+                      label-field="name"
+                      placeholder="选择物料"
+                      style="min-width: 140px"
+                      @change="onMaterialChange(idx, $event)"
+                    />
                   </td>
-                  <td>{{ item.spec }}</td>
-                  <td>{{ item.unit }}</td>
+                  <td><input v-model="item.spec" type="text" class="form-input" style="width: 100px" placeholder="规格" /></td>
+                  <td><input v-model="item.unit" type="text" class="form-input" style="width: 60px" placeholder="单位" /></td>
                   <td>
                     <input
                       v-model.number="item.quantity"
@@ -139,18 +181,19 @@
 import { ref, computed } from 'vue'
 import { useInventoryStore } from '@/stores/inventory'
 import { useTransferStore } from '@/stores/transfer'
+import DataSelect from '@/components/DataSelect.vue'
 
 const emit = defineEmits(['close', 'created'])
 
 const invStore = useInventoryStore()
 const transferStore = useTransferStore()
 
-const warehouseMap = { main: '主仓库', branch: '分仓库' }
-
 const form = ref({
   type: 'same_price',
   fromWarehouseId: '',
   toWarehouseId: '',
+  fromLocation: '',
+  toLocation: '',
   requester: '',
   expectedDate: '',
   notes: '',
@@ -179,18 +222,28 @@ function removeItem(idx) {
   form.value.items.splice(idx, 1)
 }
 
-function onMaterialChange(idx) {
+/* DataSelect change 事件提供 { value, data, option }，data 为完整数据对象 */
+function onMaterialChange(idx, event) {
   const item = form.value.items[idx]
-  const inv = inventoryList.value.find(i => i.code === item.materialCode)
+  const inv = event?.data
   if (inv) {
-    item.materialName = inv.name
+    item.materialName = inv.name || ''
     item.spec = inv.grade || ''
-    item.unit = 'kg'
+    item.unit = inv.unit || 'kg'
     if (form.value.type === 'same_price') {
       item.unitPrice = parseFloat(inv.unitCost) || 0
     }
     calcItemAmount(idx)
   }
+}
+
+/* 仓库变更时清空对应仓位 */
+function onFromWarehouseChange() {
+  form.value.fromLocation = ''
+}
+
+function onToWarehouseChange() {
+  form.value.toLocation = ''
 }
 
 function calcItemAmount(idx) {
@@ -224,9 +277,11 @@ function handleSubmit() {
   transferStore.addTransferOrder({
     type: form.value.type,
     fromWarehouseId: form.value.fromWarehouseId,
-    fromWarehouseName: warehouseMap[form.value.fromWarehouseId] || '',
+    fromWarehouseName: form.value.fromWarehouseId || '',
     toWarehouseId: form.value.toWarehouseId,
-    toWarehouseName: warehouseMap[form.value.toWarehouseId] || '',
+    toWarehouseName: form.value.toWarehouseId || '',
+    fromLocation: form.value.fromLocation,
+    toLocation: form.value.toLocation,
     requester: form.value.requester,
     expectedDate: form.value.expectedDate,
     notes: form.value.notes,
