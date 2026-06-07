@@ -3,11 +3,19 @@
     <div class="page-header">
       <div>
         <h2 class="page-header-title">交易管理</h2>
-        <p class="page-header-subtitle">全链路交易记录追踪：报价→合同→回款→对账</p>
+        <p class="page-header-subtitle">全链路交易记录追踪：报价<Icon name="chevronRight" :size="14" />合同<Icon name="chevronRight" :size="14" />回款<Icon name="chevronRight" :size="14" />对账</p>
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
-          <button v-for="v in viewOptions" :key="v.key" class="btn btn-outline" :class="{ active: currentView === v.key }" @click="currentView = v.key">{{ v.icon }} {{ v.label }}</button>
+          <button v-for="v in viewOptions" :key="v.key" class="btn btn-outline" :class="{ active: currentView === v.key }" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+        </div>
+        <div class="column-config-wrapper">
+          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
+              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            </label>
+          </div>
         </div>
         <button class="btn btn-outline" @click="exportCSV">导出</button>
         <button class="btn btn-primary" @click="openForm()">+ 新建交易</button>
@@ -62,206 +70,48 @@
     <div class="panel-card">
       <div class="panel-card-body no-padding">
 
-        <!-- 表格视图 -->
-        <div class="table-container" v-if="currentView === 'table'">
-          <div class="table-toolbar">
-            <span class="table-toolbar-info">共 {{ filteredTransactions.length }} 条记录</span>
-            <button class="btn btn-outline" @click="showSpacingPanel = !showSpacingPanel" :class="{ active: showSpacingPanel }">间距评估</button>
-          </div>
+        <TransactionTable
+          v-if="currentView === 'table'"
+          :transactions="filteredTransactions"
+          v-model="currentPage"
+          :column-visible="columnVisible"
+          :type-labels="typeLabels"
+          :status-labels="statusLabels"
+          :status-badge-map="statusBadgeMap"
+          @view-detail="viewDetail"
+          @open-form="openForm"
+          @handle-delete="handleDelete"
+          @navigate-to-path="navigateToPath"
+        />
 
-          <div v-if="showSpacingPanel" class="spacing-eval-panel">
-            <div class="spacing-eval-header">
-              <span class="spacing-eval-title">📊 自动化内容间距评估报告</span>
-              <button class="btn btn-outline" @click="runSpacingEval">重新评估</button>
-            </div>
-            <div class="spacing-eval-body">
-              <div class="spacing-eval-summary">
-                <div class="eval-score-card" :class="spacingScoreClass">
-                  <div class="eval-score-value">{{ spacingScore }}</div>
-                  <div class="eval-score-label">综合评分</div>
-                </div>
-                <div class="eval-metrics">
-                  <div class="eval-metric">
-                    <span class="eval-metric-label">列间距均衡度</span>
-                    <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.columnBalance + '%' }"></div></div>
-                    <span class="eval-metric-value">{{ spacingMetrics.columnBalance }}%</span>
-                  </div>
-                  <div class="eval-metric">
-                    <span class="eval-metric-label">文本对齐一致性</span>
-                    <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.alignmentConsistency + '%' }"></div></div>
-                    <span class="eval-metric-value">{{ spacingMetrics.alignmentConsistency }}%</span>
-                  </div>
-                  <div class="eval-metric">
-                    <span class="eval-metric-label">内容密度适宜度</span>
-                    <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.densityScore + '%' }"></div></div>
-                    <span class="eval-metric-value">{{ spacingMetrics.densityScore }}%</span>
-                  </div>
-                  <div class="eval-metric">
-                    <span class="eval-metric-label">视觉层级清晰度</span>
-                    <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.visualHierarchy + '%' }"></div></div>
-                    <span class="eval-metric-value">{{ spacingMetrics.visualHierarchy }}%</span>
-                  </div>
-                </div>
-              </div>
-              <div class="spacing-eval-columns">
-                <div class="eval-col-title">各列间距详情</div>
-                <div class="eval-col-list">
-                  <div v-for="col in columnSpacingDetails" :key="col.key" class="eval-col-item">
-                    <span class="eval-col-name">{{ col.label }}</span>
-                    <span class="eval-col-width">{{ col.currentWidth }}px</span>
-                    <span class="eval-col-optimal">建议 {{ col.optimalWidth }}px</span>
-                    <span class="eval-col-status" :class="col.statusClass">{{ col.statusText }}</span>
-                  </div>
-                </div>
-              </div>
-              <div class="spacing-eval-suggestions" v-if="spacingSuggestions.length > 0">
-                <div class="eval-suggest-title">优化建议</div>
-                <div v-for="(s, i) in spacingSuggestions" :key="i" class="eval-suggest-item">
-                  <span class="eval-suggest-icon">{{ s.icon }}</span>
-                  <span class="eval-suggest-text">{{ s.text }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <TransactionList
+          v-else-if="currentView === 'list'"
+          :transactions="filteredTransactions"
+          :type-labels="typeLabels"
+          :status-labels="statusLabels"
+          :status-badge-map="statusBadgeMap"
+          @view-detail="viewDetail"
+          @navigate-to-path="navigateToPath"
+        />
 
-          <table class="data-table txn-table" ref="txnTableRef">
-            <colgroup>
-              <col class="col-ref" />
-              <col class="col-type" />
-              <col class="col-customer" />
-              <col class="col-date" />
-              <col class="col-amount" />
-              <col class="col-status" />
-              <col class="col-related" />
-              <col class="col-actions" />
-            </colgroup>
-            <thead>
-              <tr>
-                <th class="th-ref">编号</th>
-                <th class="th-type">类型</th>
-                <th class="th-customer">客户</th>
-                <th class="th-date">日期</th>
-                <th class="th-amount">金额</th>
-                <th class="th-status">状态</th>
-                <th class="th-related">关联单据</th>
-                <th class="th-actions">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="pagedTransactions.length === 0">
-                <td colspan="8" class="empty-state">
-                  <div class="empty-state-icon">💱</div>暂无交易记录
-                </td>
-              </tr>
-              <tr v-for="t in pagedTransactions" :key="t.id" :class="{ 'row-overdue': t.status === 'overdue' }">
-                <td class="cell-ref cell-mono" @click="viewDetail(t)">{{ t.refNo }}</td>
-                <td class="cell-type">
-                  <span class="type-badge" :class="'type-' + t.type">
-                    {{ typeLabels[t.type] || t.type }}
-                  </span>
-                </td>
-                <td class="cell-customer">{{ t.customerName }}</td>
-                <td class="cell-date">{{ t.date || '-' }}</td>
-                <td class="cell-amount cell-mono">¥{{ formatMoney(t.amount) }}</td>
-                <td class="cell-status">
-                  <span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">
-                    {{ statusLabels[t.status] || t.status }}
-                  </span>
-                </td>
-                <td class="cell-related">
-                  <template v-if="t.relatedDocs && t.relatedDocs.length > 0">
-                    <div v-for="rd in t.relatedDocs" :key="rd.refNo" class="related-doc-item">
-                      <span class="type-badge" :class="'type-' + rd.type" style="font-size:10px;padding:1px 4px">{{ typeLabels[rd.type] }}</span>
-                      <span class="related-ref" @click="navigateToPath(rd.path)">{{ rd.refNo }}</span>
-                    </div>
-                  </template>
-                  <span v-else class="cell-placeholder">—</span>
-                </td>
-                <td class="cell-actions">
-                  <button class="btn btn-sm btn-outline" @click="viewDetail(t)" title="查看详情">查看</button>
-                  <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" @click="openForm(t)" title="编辑">编辑</button>
-                  <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click="handleDelete(t.id)" title="删除">删除</button>
-                  <button v-if="t.relatedPath" class="btn btn-sm btn-outline" @click="navigateToPath(t.relatedPath)" title="跳转关联">跳转</button>
-                  <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click="handleDelete(t.id)" title="删除">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div v-if="totalPages > 1" class="pagination-bar">
-            <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
-            <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
-            <button v-for="p in visiblePages" :key="p" class="pagination-btn" :class="{ active: p === currentPage }" @click="currentPage = p">{{ p }}</button>
-            <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
-            <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
-            <span class="pagination-info">第 {{ currentPage }}/{{ totalPages }} 页 · 共 {{ filteredTransactions.length }} 条</span>
-          </div>
-        </div>
-
-        <!-- 列表视图 -->
-        <div v-else-if="currentView === 'list'" class="list-view">
-          <div v-for="t in filteredTransactions" :key="t.id" class="list-item" @click="viewDetail(t)">
-            <div class="list-item-header">
-              <span class="list-item-title">{{ t.refNo }}</span>
-              <span class="type-badge" :class="'type-' + t.type">{{ typeLabels[t.type] }}</span>
-              <span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">{{ statusLabels[t.status] || t.status }}</span>
-            </div>
-            <div class="list-item-meta">
-              <span>{{ t.customerName }}</span>
-              <span class="cell-mono">¥{{ formatMoney(t.amount) }}</span>
-              <span>{{ t.date }}</span>
-            </div>
-            <div class="list-item-related" v-if="t.relatedDocs && t.relatedDocs.length > 0">
-              <span class="list-related-label">关联：</span>
-              <span v-for="(rd, idx) in t.relatedDocs" :key="rd.refNo" class="list-related-item">
-                <span class="type-badge" :class="'type-' + rd.type" style="font-size:10px;padding:1px 4px">{{ typeLabels[rd.type] }}</span>
-                <span class="related-ref" @click.stop="navigateToPath(rd.path)">{{ rd.refNo }}</span>
-                <span v-if="idx < t.relatedDocs.length - 1" style="margin:0 2px">·</span>
-              </span>
-            </div>
-          </div>
-          <div v-if="filteredTransactions.length === 0" class="empty-state">
-            <div class="empty-state-icon">💱</div>暂无交易记录
-          </div>
-        </div>
-
-        <!-- 卡片视图 -->
-        <div v-else-if="currentView === 'card'" class="card-view">
-          <div v-for="t in filteredTransactions" :key="t.id" class="txn-card" :class="'card-type-' + t.type" @click="viewDetail(t)">
-            <div class="card-header">
-              <span class="card-title">{{ t.refNo }}</span>
-              <span class="type-badge" :class="'type-' + t.type">{{ typeLabels[t.type] }}</span>
-            </div>
-            <div class="card-body">
-              <div class="card-field"><span class="card-label">客户</span><span>{{ t.customerName }}</span></div>
-              <div class="card-field"><span class="card-label">金额</span><span class="cell-mono">¥{{ formatMoney(t.amount) }}</span></div>
-              <div class="card-field"><span class="card-label">日期</span><span>{{ t.date }}</span></div>
-              <div class="card-field"><span class="card-label">状态</span><span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">{{ statusLabels[t.status] || t.status }}</span></div>
-              <div class="card-field" v-if="t.relatedDocs && t.relatedDocs.length > 0">
-                <span class="card-label">关联</span>
-                <span class="card-related-refs">
-                  <span v-for="rd in t.relatedDocs" :key="rd.refNo" class="related-ref" @click.stop="navigateToPath(rd.path)">{{ rd.refNo }}</span>
-                </span>
-              </div>
-            </div>
-            <div class="card-actions">
-              <button class="btn btn-sm btn-outline" @click.stop="viewDetail(t)">详情</button>
-              <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" @click.stop="openForm(t)">编辑</button>
-              <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click.stop="handleDelete(t.id)">删除</button>
-              <button v-if="t.relatedPath" class="btn btn-sm btn-outline" @click.stop="navigateToPath(t.relatedPath)">跳转</button>
-              <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click.stop="handleDelete(t.id)">删除</button>
-            </div>
-          </div>
-          <div v-if="filteredTransactions.length === 0" class="empty-state">
-            <div class="empty-state-icon">💱</div>暂无交易记录
-          </div>
-        </div>
+        <TransactionCardView
+          v-else-if="currentView === 'card'"
+          :transactions="filteredTransactions"
+          :type-labels="typeLabels"
+          :status-labels="statusLabels"
+          :status-badge-map="statusBadgeMap"
+          @view-detail="viewDetail"
+          @open-form="openForm"
+          @handle-delete="handleDelete"
+          @navigate-to-path="navigateToPath"
+        />
 
         <!-- 日历视图 -->
         <div v-else-if="currentView === 'calendar'" class="calendar-view">
           <div class="calendar-nav">
-            <button class="btn btn-ghost btn-sm" @click="calendarPrev">◀ 上月</button>
+            <button class="btn btn-ghost btn-sm" @click="calendarPrev"><Icon name="chevronLeft" :size="14" /> 上月</button>
             <span class="calendar-title">{{ calendarYear }}年{{ calendarMonth }}月</span>
-            <button class="btn btn-ghost btn-sm" @click="calendarNext">下月 ▶</button>
+            <button class="btn btn-ghost btn-sm" @click="calendarNext">下月 <Icon name="chevronRight" :size="14" /></button>
             <button class="btn btn-ghost btn-sm" @click="calendarToday" style="margin-left:8px">今天</button>
           </div>
           <div class="calendar-grid">
@@ -300,9 +150,9 @@
         <!-- 周视图 -->
         <div v-else-if="currentView === 'week'" class="week-view">
           <div class="calendar-nav">
-            <button class="btn btn-ghost btn-sm" @click="weekPrev">◀ 上一周</button>
+            <button class="btn btn-ghost btn-sm" @click="weekPrev"><Icon name="chevronLeft" :size="14" /> 上一周</button>
             <span class="calendar-title">{{ weekRangeLabel }}</span>
-            <button class="btn btn-ghost btn-sm" @click="weekNext">下一周 ▶</button>
+            <button class="btn btn-ghost btn-sm" @click="weekNext">下一周 <Icon name="chevronRight" :size="14" /></button>
             <button class="btn btn-ghost btn-sm" @click="weekToday" style="margin-left:8px">本周</button>
           </div>
           <div class="week-grid">
@@ -339,50 +189,14 @@
       </div>
     </div>
 
-    <!-- 新建/编辑表单弹窗 -->
-    <div v-if="showForm" class="modal-overlay" @click.self="closeForm">
-      <div class="modal-content" style="max-width:560px">
-        <div class="modal-header">
-          <h3>{{ editingTxn ? '编辑交易' : '新建交易' }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeForm">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label class="form-label">客户</label>
-            <select class="form-select" v-model="formData.customerId">
-              <option value="">请选择客户</option>
-              <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">{{ c.name || c.fullName || c.companyName }}</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">交易类型</label>
-            <select class="form-select" v-model="formData.type">
-              <option value="manual">手动记录</option>
-              <option value="quotation">报价</option>
-              <option value="contract">合同</option>
-              <option value="collection">回款</option>
-              <option value="delivery">送货</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">金额</label>
-            <input type="number" class="form-input" v-model.number="formData.amount" placeholder="请输入金额" min="0" step="0.01">
-          </div>
-          <div class="form-group">
-            <label class="form-label">日期</label>
-            <input type="date" class="form-input" v-model="formData.date">
-          </div>
-          <div class="form-group">
-            <label class="form-label">备注</label>
-            <textarea class="form-input" v-model="formData.notes" rows="3" placeholder="备注信息..."></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" @click="closeForm">取消</button>
-          <button class="btn btn-primary" @click="handleSubmit" :disabled="!canSubmit">{{ editingTxn ? '保存修改' : '创建交易' }}</button>
-        </div>
-      </div>
-    </div>
+    <TransactionFormModal
+      :show-modal="showForm"
+      :editing-transaction="editingTxn"
+      :customers="customerStore.customers"
+      :can-submit="canSubmit"
+      @close="closeForm"
+      @save="handleFormSave"
+    />
 
     <!-- 详情弹窗 -->
     <div v-if="showDetail" class="modal-overlay" @click.self="showDetail = false">
@@ -408,7 +222,7 @@
                 <span class="detail-related-ref">{{ rd.refNo }}</span>
                 <span class="detail-related-amount" v-if="rd.amount">¥{{ formatMoney(rd.amount) }}</span>
                 <span class="detail-related-status" v-if="rd.status">{{ statusLabels[rd.status] || rd.status }}</span>
-                <span class="detail-related-link">查看 →</span>
+                <span class="detail-related-link">查看 <Icon name="chevronRight" :size="14" /></span>
               </div>
             </div>
           </div>
@@ -451,13 +265,17 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCustomerStore } from '@/stores/customer'
 import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
 import { useCollectionStore } from '@/stores/collection'
 import { useDeliveryStore } from '@/stores/delivery'
+import TransactionTable from '@/components/transactions/TransactionTable.vue'
+import TransactionList from '@/components/transactions/TransactionList.vue'
+import TransactionCardView from '@/components/transactions/TransactionCardView.vue'
+import TransactionFormModal from '@/components/transactions/TransactionFormModal.vue'
 
 const router = useRouter()
 const customerStore = useCustomerStore()
@@ -486,15 +304,12 @@ const manualTransactions = ref(loadManual())
 
 const currentView = ref('table')
 const currentPage = ref(1)
-const pageSize = 15
 const showForm = ref(false)
 const showDetail = ref(false)
 const editingTxn = ref(null)
 const detailTxn = ref(null)
 const showDayModal = ref(false)
 const dayModalDate = ref('')
-const showSpacingPanel = ref(false)
-const txnTableRef = ref(null)
 const calendarYear = ref(new Date().getFullYear())
 const calendarMonth = ref(new Date().getMonth() + 1)
 const weekStartDate = ref(getMonday(new Date()))
@@ -516,20 +331,12 @@ const filters = ref({
   dateTo: ''
 })
 
-const formData = ref({
-  customerId: '',
-  type: 'manual',
-  amount: 0,
-  date: new Date().toISOString().slice(0, 10),
-  notes: ''
-})
-
 const viewOptions = [
-  { key: 'table', icon: '📊', label: '表格' },
-  { key: 'list', icon: '📋', label: '列表' },
-  { key: 'card', icon: '🗂', label: '卡片' },
-  { key: 'calendar', icon: '📅', label: '日历' },
-  { key: 'week', icon: '🗓', label: '周视图' }
+  { key: 'table', icon: 'table', label: '表格' },
+  { key: 'list', icon: 'list', label: '列表' },
+  { key: 'card', icon: 'archive', label: '卡片' },
+  { key: 'calendar', icon: 'calendar', label: '日历' },
+  { key: 'week', icon: 'calendar', label: '周视图' }
 ]
 
 const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
@@ -730,24 +537,6 @@ const filteredTransactions = computed(() => {
   return list
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredTransactions.value.length / pageSize)))
-
-const visiblePages = computed(() => {
-  const pages = []
-  const total = totalPages.value
-  const current = currentPage.value
-  let start = Math.max(1, current - 2)
-  let end = Math.min(total, start + 4)
-  if (end - start < 4) start = Math.max(1, end - 4)
-  for (let i = start; i <= end; i++) pages.push(i)
-  return pages
-})
-
-const pagedTransactions = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredTransactions.value.slice(start, start + pageSize)
-})
-
 const totalAmount = computed(() => {
   return allTransactions.value.reduce((s, t) => s + (t.amount || 0), 0)
 })
@@ -779,26 +568,7 @@ function resetFilters() {
 }
 
 function openForm(txn) {
-  if (txn && txn.type === 'manual') {
-    editingTxn.value = txn
-    const src = txn.source || txn
-    formData.value = {
-      customerId: src.customerId || '',
-      type: 'manual',
-      amount: src.amount || 0,
-      date: src.date || '',
-      notes: src.notes || ''
-    }
-  } else {
-    editingTxn.value = null
-    formData.value = {
-      customerId: '',
-      type: 'manual',
-      amount: 0,
-      date: new Date().toISOString().slice(0, 10),
-      notes: ''
-    }
-  }
+  editingTxn.value = txn || null
   showForm.value = true
 }
 
@@ -807,19 +577,19 @@ function closeForm() {
   editingTxn.value = null
 }
 
-function handleSubmit() {
-  const customerName = getCustomerName(formData.value.customerId)
+function handleFormSave(formData) {
+  const customerName = getCustomerName(formData.customerId)
   if (editingTxn.value) {
     const src = editingTxn.value.source || editingTxn.value
     const idx = manualTransactions.value.findIndex(t => t.id === src.id)
     if (idx !== -1) {
       manualTransactions.value[idx] = {
         ...manualTransactions.value[idx],
-        customerId: formData.value.customerId,
+        customerId: formData.customerId,
         customerName,
-        amount: formData.value.amount,
-        date: formData.value.date,
-        notes: formData.value.notes
+        amount: formData.amount,
+        date: formData.date,
+        notes: formData.notes
       }
       saveManual(manualTransactions.value)
     }
@@ -829,13 +599,13 @@ function handleSubmit() {
     manualTransactions.value.push({
       id: 'txn-' + Date.now(),
       refNo,
-      customerId: formData.value.customerId,
+      customerId: formData.customerId,
       customerName,
       type: 'manual',
-      amount: formData.value.amount,
-      date: formData.value.date,
+      amount: formData.amount,
+      date: formData.date,
       status: 'pending',
-      notes: formData.value.notes,
+      notes: formData.notes,
       createdAt: now.toISOString()
     })
     saveManual(manualTransactions.value)
@@ -1007,130 +777,39 @@ function weekToday() {
 }
 
 const columnDefs = [
-  { key: 'ref', label: '编号', optimalWidth: 140, align: 'left' },
-  { key: 'type', label: '类型', optimalWidth: 80, align: 'center' },
-  { key: 'customer', label: '客户', optimalWidth: 140, align: 'left' },
-  { key: 'date', label: '日期', optimalWidth: 110, align: 'center' },
-  { key: 'amount', label: '金额', optimalWidth: 120, align: 'right' },
-  { key: 'status', label: '状态', optimalWidth: 80, align: 'center' },
-  { key: 'related', label: '关联单据', optimalWidth: 205, align: 'left' },
-  { key: 'actions', label: '操作', optimalWidth: 230, align: 'center' }
+  { key: 'refNo', label: '编号' },
+  { key: 'type', label: '类型' },
+  { key: 'customerName', label: '客户' },
+  { key: 'date', label: '日期' },
+  { key: 'amount', label: '金额' },
+  { key: 'status', label: '状态' },
+  { key: 'relatedDocs', label: '关联单据' },
+  { key: 'actions', label: '操作', hideable: false }
 ]
+const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const showColumnConfig = ref(false)
+const colDropdownStyle = ref({})
+function toggleColumnConfig(event) {
+  showColumnConfig.value = !showColumnConfig.value
+  if (showColumnConfig.value) {
+    const rect = event.target.getBoundingClientRect()
+    colDropdownStyle.value = { top: rect.bottom + 8 + 'px', left: rect.left + 'px' }
+  }
+}
 
-const spacingMetrics = ref({
-  columnBalance: 0,
-  alignmentConsistency: 0,
-  densityScore: 0,
-  visualHierarchy: 0
-})
-
-const columnSpacingDetails = ref([])
-
-const spacingSuggestions = ref([])
-
-const spacingScore = computed(() => {
-  const m = spacingMetrics.value
-  return Math.round((m.columnBalance + m.alignmentConsistency + m.densityScore + m.visualHierarchy) / 4)
-})
-
-const spacingScoreClass = computed(() => {
-  const s = spacingScore.value
-  if (s >= 90) return 'score-excellent'
-  if (s >= 75) return 'score-good'
-  if (s >= 60) return 'score-fair'
-  return 'score-poor'
-})
-
-function runSpacingEval() {
-  nextTick(() => {
-    const table = txnTableRef.value
-    if (!table) return
-
-    const cols = table.querySelectorAll('colgroup col')
-    const ths = table.querySelectorAll('thead th')
-    const currentWidths = []
-
-    ths.forEach((th, i) => {
-      currentWidths.push(th.offsetWidth || 0)
-    })
-
-    const totalWidth = currentWidths.reduce((s, w) => s + w, 0) || 1
-
-    const details = columnDefs.map((def, i) => {
-      const cw = currentWidths[i] || 0
-      const ow = def.optimalWidth
-      const ratio = cw / totalWidth
-      const diff = Math.abs(cw - ow)
-      let statusClass = 'status-optimal'
-      let statusText = '最佳'
-      if (diff > 40) { statusClass = 'status-warning'; statusText = '偏窄' }
-      if (cw > ow + 60) { statusClass = 'status-loose'; statusText = '偏宽' }
-      if (diff <= 20) { statusClass = 'status-optimal'; statusText = '最佳' }
-      return { key: def.key, label: def.label, currentWidth: cw, optimalWidth: ow, statusClass, statusText }
-    })
-    columnSpacingDetails.value = details
-
-    const avgDiff = details.reduce((s, d) => s + Math.abs(d.currentWidth - d.optimalWidth), 0) / details.length
-    const maxOptimal = Math.max(...columnDefs.map(d => d.optimalWidth))
-    const balanceScore = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / maxOptimal) * 100)))
-
-    const alignMap = { ref: 'left', type: 'center', customer: 'left', date: 'center', amount: 'right', status: 'center', related: 'left', actions: 'center' }
-    const actualAligns = []
-    ths.forEach((th, i) => {
-      const style = window.getComputedStyle(th)
-      actualAligns.push(style.textAlign || 'left')
-    })
-    const expectedAligns = columnDefs.map(d => d.align)
-    let alignMatches = 0
-    expectedAligns.forEach((ea, i) => {
-      if (actualAligns[i] === ea) alignMatches++
-    })
-    const alignScore = Math.round((alignMatches / expectedAligns.length) * 100)
-
-    const rowCount = pagedTransactions.value.length
-    const rowHeight = table.querySelector('tbody tr') ? table.querySelector('tbody tr').offsetHeight : 40
-    const idealRowHeight = 44
-    const densityRatio = rowHeight / idealRowHeight
-    let densityScore = 100
-    if (densityRatio < 0.8) densityScore = 60
-    else if (densityRatio < 0.9) densityScore = 80
-    else if (densityRatio > 1.3) densityScore = 70
-    else if (densityRatio > 1.1) densityScore = 90
-
-    const hasColgroup = table.querySelectorAll('colgroup col').length === columnDefs.length
-    const hasFixedLayout = window.getComputedStyle(table).tableLayout === 'fixed'
-    let hierarchyScore = 70
-    if (hasColgroup) hierarchyScore += 15
-    if (hasFixedLayout) hierarchyScore += 10
-    if (balanceScore >= 80) hierarchyScore += 5
-    hierarchyScore = Math.min(100, hierarchyScore)
-
-    spacingMetrics.value = {
-      columnBalance: balanceScore,
-      alignmentConsistency: alignScore,
-      densityScore,
-      visualHierarchy: hierarchyScore
-    }
-
-    const suggestions = []
-    if (balanceScore < 80) suggestions.push({ icon: '', text: '部分列宽偏离建议值较大，建议通过colgroup精确控制各列宽度比例' })
-    if (alignScore < 100) suggestions.push({ icon: '', text: '部分列文本对齐方式与最佳实践不一致：数字列应右对齐，标签列应居中，文本列应左对齐' })
-    if (densityScore < 85) suggestions.push({ icon: '', text: '行高偏小导致内容密度过高，建议增加行内间距(padding)至12px 16px以提升可读性' })
-    if (hierarchyScore < 85) suggestions.push({ icon: '', text: '视觉层级不够清晰，建议使用table-layout:fixed配合colgroup确保列宽稳定' })
-    details.forEach(d => {
-      if (d.statusClass !== 'status-optimal') {
-        suggestions.push({ icon: '', text: `「${d.label}」列当前${d.currentWidth}px，建议调整为${d.optimalWidth}px（${d.statusText}）` })
-      }
-    })
-    if (suggestions.length === 0) {
-      suggestions.push({ icon: '', text: '表格排版已达到最佳状态，各列间距均衡、对齐一致、密度适宜' })
-    }
-    spacingSuggestions.value = suggestions
-  })
+function handleClickOutside(e) {
+  const wrapper = document.querySelector('.column-config-wrapper')
+  if (showColumnConfig.value && wrapper && !wrapper.contains(e.target)) {
+    showColumnConfig.value = false
+  }
 }
 
 onMounted(() => {
   customerStore.initSeedData()
+  document.addEventListener('click', handleClickOutside)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -1209,12 +888,6 @@ onMounted(() => {
 .type-collection { background: var(--color-success-subtle); color: var(--color-success); }
 .type-delivery { background: var(--color-warning-subtle); color: var(--color-warning); }
 .type-manual { background: var(--color-purple-subtle); color: var(--color-purple); }
-.related-doc-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-right: 6px;
-}
 .related-ref {
   color: var(--color-accent);
   cursor: pointer;
@@ -1223,123 +896,17 @@ onMounted(() => {
 .related-ref:hover {
   text-decoration: underline;
 }
-.row-overdue {
-  background: var(--color-danger-subtle);
-}
-.list-view {
+.view-toggle {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-}
-.list-item {
-  padding: var(--space-3);
-  border: 1px solid var(--color-border);
+  gap: 2px;
+  background: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.15s;
+  padding: 2px;
 }
-.list-item:hover {
-  border-color: var(--color-accent);
+.view-toggle .btn.active {
   background: var(--color-accent-subtle);
+  color: var(--color-accent);
 }
-.list-item-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-1);
-}
-.list-item-title {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-}
-.list-item-meta {
-  display: flex;
-  gap: var(--space-4);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-.list-item-related {
-  margin-top: var(--space-1);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.list-related-label {
-  font-weight: 500;
-  color: var(--color-text-secondary);
-}
-.list-related-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-.card-view {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-3);
-  padding: var(--space-3);
-}
-.txn-card {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.txn-card:hover {
-  border-color: var(--color-accent);
-  box-shadow: var(--shadow-sm);
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-2);
-}
-.card-title {
-  font-weight: 700;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-}
-.card-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.card-field {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--font-size-sm);
-}
-.card-label {
-  color: var(--color-text-tertiary);
-  font-size: var(--font-size-xs);
-}
-.card-related-refs {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.card-actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-border);
-}
-.card-type-quotation { border-left: 3px solid var(--color-info); }
-.card-type-contract { border-left: 3px solid var(--color-accent); }
-.card-type-collection { border-left: 3px solid var(--color-success); }
-.card-type-delivery { border-left: 3px solid var(--color-warning); }
-.card-type-manual { border-left: 3px solid var(--color-purple); }
 .detail-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1456,316 +1023,13 @@ onMounted(() => {
   padding: var(--space-4) var(--space-5);
   border-top: 1px solid var(--color-border);
 }
-.form-group {
-  margin-bottom: var(--space-4);
-}
-.form-label {
-  display: block;
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-1);
-}
-.pagination-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  border-top: 1px solid var(--color-border);
-}
-.pagination-btn {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-secondary);
-  padding: 4px 10px;
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.pagination-btn:hover:not(:disabled) {
-  background: var(--color-accent-subtle);
-  color: var(--color-accent);
-}
-.pagination-btn.active {
-  background: var(--color-accent);
-  color: #fff;
-  border-color: var(--color-accent);
-}
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.pagination-info {
-  margin-left: auto;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
 .empty-state {
   text-align: center;
   padding: var(--space-8) var(--space-4);
   color: var(--color-text-tertiary);
 }
-.empty-state-icon {
-  font-size: 2em;
-  margin-bottom: var(--space-2);
-}
 .cell-mono {
   font-family: var(--font-mono);
-}
-.cell-actions {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.cell-placeholder {
-  color: var(--color-text-tertiary);
-}
-
-.table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
-}
-.table-toolbar-info {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-
-.txn-table {
-  table-layout: fixed;
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-size-sm);
-}
-.txn-table col.col-ref { width: 140px; }
-.txn-table col.col-type { width: 80px; }
-.txn-table col.col-customer { width: 140px; }
-.txn-table col.col-date { width: 110px; }
-.txn-table col.col-amount { width: 120px; }
-.txn-table col.col-status { width: 80px; }
-.txn-table col.col-related { width: 205px; }
-.txn-table col.col-actions { width: 230px; }
-
-.txn-table thead th {
-  padding: 10px 12px;
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  color: var(--color-text-secondary);
-  background: var(--color-bg-tertiary);
-  border-bottom: 2px solid var(--color-border);
-  white-space: nowrap;
-  text-transform: none;
-  letter-spacing: 0;
-}
-.th-ref, .th-customer, .th-related { text-align: left; }
-.th-type, .th-date, .th-status, .th-actions { text-align: center; }
-.th-amount { text-align: right; }
-
-.txn-table tbody td {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-  line-height: 1.5;
-}
-.cell-ref {
-  cursor: pointer;
-  color: var(--color-accent);
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cell-ref:hover {
-  text-decoration: underline;
-}
-.cell-type { text-align: center; }
-.cell-customer {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-.cell-date { text-align: center; color: var(--color-text-secondary); }
-.cell-amount { text-align: right; font-weight: 600; }
-.cell-status { text-align: center; }
-.cell-related {
-  max-width: 160px;
-  overflow: hidden;
-}
-.cell-actions {
-  text-align: center;
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.spacing-eval-panel {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  margin: var(--space-3);
-  background: var(--color-surface-elevated);
-  overflow: hidden;
-}
-.spacing-eval-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-3) var(--space-4);
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
-}
-.spacing-eval-title {
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-.spacing-eval-body {
-  padding: var(--space-4);
-}
-.spacing-eval-summary {
-  display: flex;
-  gap: var(--space-6);
-  margin-bottom: var(--space-4);
-  align-items: flex-start;
-}
-.eval-score-card {
-  text-align: center;
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-lg);
-  min-width: 100px;
-}
-.score-excellent { background: #e6f9ee; color: #0d8042; }
-.score-good { background: #e8f4fd; color: #1a73e8; }
-.score-fair { background: #fef7e0; color: #b06000; }
-.score-poor { background: #fce8e6; color: #c5221f; }
-.eval-score-value {
-  font-size: 2rem;
-  font-weight: 800;
-  font-family: var(--font-mono);
-  line-height: 1;
-}
-.eval-score-label {
-  font-size: var(--font-size-xs);
-  margin-top: var(--space-1);
-  opacity: 0.8;
-}
-.eval-metrics {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.eval-metric {
-  display: grid;
-  grid-template-columns: 120px 1fr 48px;
-  align-items: center;
-  gap: var(--space-2);
-}
-.eval-metric-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-.eval-metric-bar {
-  height: 8px;
-  background: var(--color-bg-tertiary);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.eval-metric-fill {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 4px;
-  transition: width 0.4s ease;
-}
-.eval-metric-value {
-  font-size: var(--font-size-xs);
-  font-weight: 600;
-  font-family: var(--font-mono);
-  color: var(--color-text-primary);
-  text-align: right;
-}
-.spacing-eval-columns {
-  margin-bottom: var(--space-4);
-}
-.eval-col-title, .eval-suggest-title {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
-  padding-bottom: var(--space-1);
-  border-bottom: 1px solid var(--color-border);
-}
-.eval-col-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: var(--space-2);
-}
-.eval-col-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-sm);
-  font-size: var(--font-size-xs);
-}
-.eval-col-name {
-  font-weight: 600;
-  color: var(--color-text-primary);
-  min-width: 56px;
-}
-.eval-col-width {
-  font-family: var(--font-mono);
-  color: var(--color-text-secondary);
-}
-.eval-col-optimal {
-  color: var(--color-text-tertiary);
-}
-.eval-col-status {
-  margin-left: auto;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-  font-size: 10px;
-}
-.status-optimal { background: #e6f9ee; color: #0d8042; }
-.status-warning { background: #fce8e6; color: #c5221f; }
-.status-loose { background: #fef7e0; color: #b06000; }
-
-.spacing-eval-suggestions {
-  padding-top: var(--space-2);
-}
-.eval-suggest-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-2) 0;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  line-height: 1.5;
-}
-.eval-suggest-icon {
-  flex-shrink: 0;
-}
-.eval-suggest-text {
-  flex: 1;
-}
-.view-toggle {
-  display: flex;
-  gap: 2px;
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  padding: 2px;
-}
-.view-toggle .btn.active {
-  background: var(--color-accent-subtle);
-  color: var(--color-accent);
 }
 .calendar-view {
   padding: var(--space-3);
@@ -1995,14 +1259,23 @@ onMounted(() => {
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
+.column-config-wrapper { position: relative; }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
+.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
 @media (max-width: 1024px) {
   .stats-grid-5 { grid-template-columns: repeat(3, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: repeat(3, 1fr); }
 }
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .stats-grid-5 { grid-template-columns: repeat(2, 1fr); }
+  .page-header { flex-direction: column; align-items: flex-start; }
   .filter-bar { flex-direction: column; align-items: stretch; }
+  table { font-size: 12px; }
+}
+@media (max-width: 640px) {
+  .stats-grid-5 { grid-template-columns: 1fr; }
   .week-grid { grid-template-columns: 1fr; }
   .calendar-cell { min-height: 60px; }
 }

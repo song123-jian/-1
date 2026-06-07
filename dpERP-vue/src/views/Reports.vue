@@ -6,18 +6,25 @@
         <p class="page-header-subtitle">预置报告、自定义筛选、图表可视化、多格式导出</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-ghost btn-sm" @click="exportAllReports">📥 多格式导出</button>
-        <button class="btn btn-secondary" @click="exportAllReports">📤 导出全部</button>
+        <div class="export-dropdown-wrapper" style="position:relative;display:inline-block">
+          <button class="btn btn-ghost btn-sm" @click="showExportFormatMenu = !showExportFormatMenu"><Icon name="upload" :size="14" /> 多格式导出</button>
+          <div v-if="showExportFormatMenu" class="export-format-menu" style="position:absolute;right:0;top:100%;margin-top:4px;background:var(--color-bg-primary);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:0 4px 12px rgba(0,0,0,0.12);z-index:100;min-width:120px">
+            <button class="export-format-item" style="display:block;width:100%;padding:var(--space-2) var(--space-3);background:none;border:none;cursor:pointer;text-align:left;font-size:var(--font-size-sm);color:var(--color-text-primary)" @click="exportAllReports('csv')">CSV</button>
+            <button class="export-format-item" style="display:block;width:100%;padding:var(--space-2) var(--space-3);background:none;border:none;cursor:pointer;text-align:left;font-size:var(--font-size-sm);color:var(--color-text-primary);border-top:1px solid var(--color-border)" @click="exportAllReports('excel')">Excel</button>
+            <button class="export-format-item" style="display:block;width:100%;padding:var(--space-2) var(--space-3);background:none;border:none;cursor:pointer;text-align:left;font-size:var(--font-size-sm);color:var(--color-text-primary);border-top:1px solid var(--color-border)" @click="exportAllReports('pdf')">PDF</button>
+          </div>
+        </div>
+        <button class="btn btn-secondary" @click="exportAllReports('csv')"><Icon name="upload" :size="14" /> 导出全部</button>
       </div>
     </div>
 
     <div class="content-grid content-grid-2">
       <div class="panel-card report-card" @click="generateReport('sales')" style="cursor:pointer">
         <div class="panel-card-body">
-          <div style="font-size:2rem;margin-bottom:var(--space-3)">📊</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-3)"><Icon name="chart" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">销售分析报告</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">按客户、产品、周期的销售趋势分析与排名</p>
-          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-html="salesSummary"></div>
+          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-safe-html="salesSummary"></div>
           <div style="margin-top:var(--space-3)">
             <span class="status-badge success">可用</span>
           </div>
@@ -26,10 +33,10 @@
 
       <div class="panel-card report-card" @click="generateReport('inventory')" style="cursor:pointer">
         <div class="panel-card-body">
-          <div style="font-size:2rem;margin-bottom:var(--space-3)">📦</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-3)"><Icon name="package" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">库存状态报告</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">含估值的库存明细、周转率分析、低库存预警</p>
-          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-html="inventorySummary"></div>
+          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-safe-html="inventorySummary"></div>
           <div style="margin-top:var(--space-3)">
             <span class="status-badge success">可用</span>
           </div>
@@ -38,10 +45,10 @@
 
       <div class="panel-card report-card" @click="generateReport('finance')" style="cursor:pointer">
         <div class="panel-card-body">
-          <div style="font-size:2rem;margin-bottom:var(--space-3)">💰</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-3)"><Icon name="dollar" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">财务汇总报告</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">营收汇总、应收账款账龄、毛利率分析</p>
-          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-html="financeSummary"></div>
+          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-safe-html="financeSummary"></div>
           <div style="margin-top:var(--space-3)">
             <span class="status-badge success">可用</span>
           </div>
@@ -50,10 +57,10 @@
 
       <div class="panel-card report-card" @click="generateReport('purchase')" style="cursor:pointer">
         <div class="panel-card-body">
-          <div style="font-size:2rem;margin-bottom:var(--space-3)">🛒</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-3)"><Icon name="shoppingCart" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">采购支出分析</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">按类别、供应商、周期的采购支出统计</p>
-          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-html="purchaseSummary"></div>
+          <div style="margin:var(--space-2) 0;font-size:var(--font-size-sm)" v-safe-html="purchaseSummary"></div>
           <div style="margin-top:var(--space-3)">
             <span class="status-badge success">可用</span>
           </div>
@@ -62,7 +69,7 @@
 
       <div class="panel-card report-card" @click="openCustomReportBuilder" style="cursor:pointer">
         <div class="panel-card-body" style="text-align:center">
-          <div style="font-size:2rem;margin-bottom:var(--space-2)">⚙️</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-2)"><Icon name="setting" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">自定义报告</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">支持字段选择和筛选条件配置</p>
           <div style="margin-top:var(--space-3)">
@@ -73,7 +80,7 @@
 
       <div class="panel-card" style="cursor:pointer;opacity:0.6">
         <div class="panel-card-body" style="text-align:center">
-          <div style="font-size:2rem;margin-bottom:var(--space-2)">⏰</div>
+          <div style="font-size:2rem;margin-bottom:var(--space-2)"><Icon name="clock" :size="28" /></div>
           <div class="panel-card-title" style="margin-bottom:var(--space-2)">定时报告</div>
           <p style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">设置周期报告自动生成和分发</p>
           <div style="margin-top:var(--space-3)">
@@ -107,7 +114,8 @@
           </div>
           <button class="btn btn-primary" @click="generateReportWithParams">生成报表</button>
         </div>
-        <div v-if="paramReportHtml" style="margin-top:var(--space-4)" v-html="paramReportHtml"></div>
+        <div v-if="paramError" style="margin-top:var(--space-2);color:var(--color-danger);font-size:var(--font-size-sm)">{{ paramError }}</div>
+        <div v-if="paramReportHtml" style="margin-top:var(--space-4)" v-safe-html="paramReportHtml"></div>
       </div>
     </div>
 
@@ -155,7 +163,7 @@
       <div class="modal-panel" style="max-width:700px">
         <div class="modal-header">
           <h3>自定义报表</h3>
-          <button class="btn btn-ghost btn-sm" @click="showCustomBuilder = false">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="showCustomBuilder = false"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -178,6 +186,7 @@
             </div>
             <div v-if="customFields.length === 0" style="color:var(--color-text-tertiary)">暂无字段</div>
           </div>
+          <div v-if="customError" style="margin-top:var(--space-2);color:var(--color-danger);font-size:var(--font-size-sm)">{{ customError }}</div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="showCustomBuilder = false">取消</button>
@@ -190,7 +199,7 @@
       <div class="modal-panel" style="max-width:800px">
         <div class="modal-header">
           <h3>{{ exportTitle }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="showExportDialog = false">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="showExportDialog = false"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div class="table-container">
@@ -210,7 +219,22 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="showExportDialog = false">关闭</button>
-          <button class="btn btn-primary" @click="doExportCSV">📥 导出CSV</button>
+          <button class="btn btn-primary" @click="doExportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="reportDialog.show" class="modal-overlay" @click.self="reportDialog.show = false">
+      <div class="modal-panel" style="max-width:600px">
+        <div class="modal-header">
+          <h3>{{ reportDialog.title }}</h3>
+          <button class="btn btn-ghost btn-sm" @click="reportDialog.show = false"><Icon name="close" :size="14" /></button>
+        </div>
+        <div class="modal-body">
+          <p style="white-space:pre-line;color:var(--color-text-secondary)">{{ reportDialog.content }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" @click="reportDialog.show = false">确定</button>
         </div>
       </div>
     </div>
@@ -218,7 +242,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useQuotationStore } from '@/stores/quotation'
 import { useCustomerStore } from '@/stores/customer'
 import { useInventoryStore } from '@/stores/inventory'
@@ -247,6 +271,10 @@ const showExportDialog = ref(false)
 const exportTitle = ref('')
 const exportHeaders = ref([])
 const exportData = ref([])
+const reportDialog = ref({ show: false, title: '', content: '' })
+const paramError = ref('')
+const customError = ref('')
+const showExportFormatMenu = ref(false)
 
 const salesSummary = computed(() => {
   const q = quotationStore.quotations || []
@@ -326,15 +354,32 @@ function formatChartValue(val) {
 function generateReport(type) {
   const summaries = { sales: salesSummary, inventory: inventorySummary, finance: financeSummary, purchase: purchaseSummary }
   const labels = { sales: '销售分析报告', inventory: '库存状态报告', finance: '财务汇总报告', purchase: '采购支出分析' }
-  alert(labels[type] + ' 已生成\n\n' + summaries[type]?.value?.replace(/<[^>]+>/g, ' '))
+  reportDialog.value = {
+    show: true,
+    title: labels[type] + ' 已生成',
+    content: summaries[type]?.value?.replace(/<[^>]+>/g, ' ') || ''
+  }
 }
 
 function generateReportWithParams() {
-  if (!dateFrom.value || !dateTo.value) { alert('请选择开始日期和结束日期'); return }
-  if (dateFrom.value > dateTo.value) { alert('开始日期不能晚于结束日期'); return }
+  paramError.value = ''
+  if (!dateFrom.value || !dateTo.value) {
+    paramError.value = '请选择开始日期和结束日期'
+    setTimeout(() => { paramError.value = '' }, 3000)
+    return
+  }
+  if (dateFrom.value > dateTo.value) {
+    paramError.value = '开始日期不能晚于结束日期'
+    setTimeout(() => { paramError.value = '' }, 3000)
+    return
+  }
   const fromTime = new Date(dateFrom.value).getTime()
   const toTime = new Date(dateTo.value).getTime() + 86400000
-  if (toTime - fromTime > 366 * 86400000) { alert('日期范围不能超过1年'); return }
+  if (toTime - fromTime > 366 * 86400000) {
+    paramError.value = '日期范围不能超过1年'
+    setTimeout(() => { paramError.value = '' }, 3000)
+    return
+  }
 
   const type = reportType.value
   function filterByDate(arr, dateField) {
@@ -410,7 +455,12 @@ function updateCustomFields() {
 }
 
 function generateCustomReport() {
-  if (selectedFields.value.length === 0) { alert('请至少选择一个字段'); return }
+  customError.value = ''
+  if (selectedFields.value.length === 0) {
+    customError.value = '请至少选择一个字段'
+    setTimeout(() => { customError.value = '' }, 3000)
+    return
+  }
   const sourceMap = {
     quotations: quotationStore.quotations,
     customers: customerStore.customers,
@@ -420,7 +470,11 @@ function generateCustomReport() {
     costAnalysis: costStore.records
   }
   const data = sourceMap[customSource.value] || []
-  if (data.length === 0) { alert('所选数据源没有数据'); return }
+  if (data.length === 0) {
+    customError.value = '所选数据源没有数据'
+    setTimeout(() => { customError.value = '' }, 3000)
+    return
+  }
   exportHeaders.value = selectedFields.value.map(f => ({ key: f, label: f }))
   exportData.value = data.map(item => {
     const row = {}
@@ -432,7 +486,8 @@ function generateCustomReport() {
   showExportDialog.value = true
 }
 
-function exportAllReports() {
+function exportAllReports(format = 'csv') {
+  showExportFormatMenu.value = false
   const types = ['sales', 'inventory', 'finance', 'purchase']
   const labels = { sales: '销售分析', inventory: '库存状态', finance: '财务汇总', purchase: '采购支出' }
   const headers = [
@@ -474,7 +529,15 @@ function exportAllReports() {
   exportHeaders.value = headers
   exportData.value = rows
   exportTitle.value = '全部报表汇总'
-  showExportDialog.value = true
+  if (format === 'csv') {
+    doExportCSV()
+  } else if (format === 'excel') {
+    doExportExcel()
+  } else if (format === 'pdf') {
+    doExportPDF()
+  } else {
+    showExportDialog.value = true
+  }
 }
 
 function doExportCSV() {
@@ -485,13 +548,52 @@ function doExportCSV() {
   for (const row of list) {
     csv += headers.map(h => '"' + String(row[h.key] ?? '').replace(/"/g, '""') + '"').join(',') + '\n'
   }
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
   a.download = exportTitle.value + '_' + new Date().toISOString().split('T')[0] + '.csv'
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function doExportExcel() {
+  const list = exportData.value
+  const headers = exportHeaders.value
+  if (list.length === 0) return
+  let html = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Sheet1</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table>'
+  html += '<tr>' + headers.map(h => '<th>' + h.label + '</th>').join('') + '</tr>'
+  for (const row of list) {
+    html += '<tr>' + headers.map(h => '<td>' + String(row[h.key] ?? '').replace(/</g, '&lt;') + '</td>').join('') + '</tr>'
+  }
+  html += '</table></body></html>'
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = exportTitle.value + '_' + new Date().toISOString().split('T')[0] + '.xls'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function doExportPDF() {
+  const list = exportData.value
+  const headers = exportHeaders.value
+  if (list.length === 0) return
+  let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + exportTitle.value + '</title><style>body{font-family:sans-serif;padding:20px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f5f5f5}h1{font-size:18px}</style></head><body>'
+  html += '<h1>' + exportTitle.value + '</h1>'
+  html += '<p>生成时间：' + new Date().toLocaleString() + '</p>'
+  html += '<table><thead><tr>' + headers.map(h => '<th>' + h.label + '</th>').join('') + '</tr></thead><tbody>'
+  for (const row of list) {
+    html += '<tr>' + headers.map(h => '<td>' + String(row[h.key] ?? '').replace(/</g, '&lt;') + '</td>').join('') + '</tr>'
+  }
+  html += '</tbody></table></body></html>'
+  const printWindow = window.open('', '_blank')
+  if (printWindow) {
+    printWindow.document.write(html)
+    printWindow.document.close()
+    printWindow.print()
+  }
 }
 
 onMounted(() => {
@@ -502,10 +604,25 @@ onMounted(() => {
   collectionStore.initSeedData()
   costStore.initSeedData()
   dataStore.initSeedData()
+  document.addEventListener('click', closeExportMenuOnClickOutside)
+})
+
+function closeExportMenuOnClickOutside(e) {
+  const wrapper = document.querySelector('.export-dropdown-wrapper')
+  if (wrapper && !wrapper.contains(e.target)) {
+    showExportFormatMenu.value = false
+  }
+}
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeExportMenuOnClickOutside)
 })
 </script>
 
 <style scoped>
+.export-format-item:hover {
+  background: var(--color-bg-secondary);
+}
 .report-card {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -570,6 +687,11 @@ onMounted(() => {
   font-size: 9px;
   color: var(--color-text-secondary);
   white-space: nowrap;
+}
+@media (max-width: 1024px) {
+  .content-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 @media (max-width: 768px) {
   .content-grid-2 {

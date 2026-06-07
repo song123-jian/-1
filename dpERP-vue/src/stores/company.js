@@ -95,6 +95,21 @@ export const useCompanyStore = defineStore('company', () => {
     return true
   }
 
+  function replaceData(newData) {
+    if (newData.branches) {
+      branches.value = newData.branches
+      _persistBranches()
+    }
+    if (newData.departments) {
+      departments.value = newData.departments
+      _persistDepts()
+    }
+    if (newData.companyInfo) {
+      companyInfo.value = newData.companyInfo
+      _persistCompany()
+    }
+  }
+
   function initSeedData() {
     if (localStorage.getItem(INIT_KEY)) return
     companyInfo.value = {
@@ -138,6 +153,6 @@ export const useCompanyStore = defineStore('company', () => {
     saveCompanyInfo,
     addBranch, updateBranch, deleteBranch,
     addDepartment, updateDepartment, deleteDepartment,
-    initSeedData
+    replaceData, initSeedData
   }
 })

@@ -1,5 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useInventoryStore } from './inventory'
+import { useQuotationStore } from './quotation'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_todos'
 const INIT_KEY = 'gj_erp_todos_initialized'
@@ -33,11 +40,23 @@ function persist(todos) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(todos))
   } catch (e) {
-    console.error('[TodoStore] 保存失败:', e)
+    if (e.name === 'QuotaExceededError') {
+      console.error('[todo] localStorage容量不足，数据可能丢失！')
+    }
   }
 }
 
 export const useTodoStore = defineStore('todo', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const todos = ref(loadTodos())
   const deletedAutoIds = ref(loadDeletedAutoIds())
 
@@ -75,63 +94,53 @@ export const useTodoStore = defineStore('todo', () => {
     const now = new Date()
     const t = today.value
 
-    const rawInv = localStorage.getItem('gj_erp_inventory')
-    if (rawInv) {
-      try {
-        const inv = JSON.parse(rawInv)
-        inv.forEach(item => {
-          if (item.quantity <= (item.minStock || item.safetyStock || 10)) {
-            const isCritical = item.quantity <= (item.minStock || item.safetyStock || 10) * 0.5
-            result.push({
-              id: 'auto_inv_' + item.id,
-              title: '补货 ' + item.name + '（库存不足）',
-              type: 'stock',
-              priority: isCritical ? 'high' : 'medium',
-              source: 'inventory',
-              sourceId: item.id,
-              status: 'pending',
-              dueDate: '',
-              createdAt: t,
-              completedAt: null,
-              notes: '库存' + item.quantity + ' / 安全' + (item.minStock || item.safetyStock || 10),
-              auto: true
-            })
-          }
+    const inv = useInventoryStore().inventory
+    inv.forEach(item => {
+      if (item.quantity <= (item.minStock || item.safetyStock || 10)) {
+        const isCritical = item.quantity <= (item.minStock || item.safetyStock || 10) * 0.5
+        result.push({
+          id: 'auto_inv_' + item.id,
+          title: '补货 ' + item.name + '（库存不足）',
+          type: 'stock',
+          priority: isCritical ? 'high' : 'medium',
+          source: 'inventory',
+          sourceId: item.id,
+          status: 'pending',
+          dueDate: '',
+          createdAt: t,
+          completedAt: null,
+          notes: '库存' + item.quantity + ' / 安全' + (item.minStock || item.safetyStock || 10),
+          auto: true
         })
-      } catch (e) {}
-    }
+      }
+    })
 
-    const rawQuo = localStorage.getItem('gj_erp_quotations')
-    if (rawQuo) {
-      try {
-        const quo = JSON.parse(rawQuo)
-        quo.forEach(q => {
-          if (q.status === 'pending') {
-            result.push({
-              id: 'auto_quo_pending_' + q.id,
-              title: '审核报价单 ' + (q.quotationNo || q.quoteNo || ''),
-              type: 'review',
-              priority: 'high',
-              source: 'quotations',
-              sourceId: q.id,
-              status: 'pending',
-              dueDate: q.expiryDate || '',
-              createdAt: q.createdAt || q.date || '',
-              completedAt: null,
-              notes: (q.customerName || '') + ' ¥' + ((q.amount || q.total || 0)).toLocaleString(),
-              auto: true
-            })
-          }
+    const quo = useQuotationStore().quotations
+    quo.forEach(q => {
+      if (q.status === 'pending') {
+        result.push({
+          id: 'auto_quo_pending_' + q.id,
+          title: '审核报价单 ' + (q.quotationNo || q.quoteNo || ''),
+          type: 'review',
+          priority: 'high',
+          source: 'quotations',
+          sourceId: q.id,
+          status: 'pending',
+          dueDate: q.expiryDate || '',
+          createdAt: q.createdAt || q.date || '',
+          completedAt: null,
+          notes: (q.customerName || '') + ' ¥' + ((q.amount || q.total || 0)).toLocaleString(),
+          auto: true
         })
-      } catch (e) {}
-    }
+      }
+    })
 
     return result
   }
 
   function addTodo(todo) {
     const newTodo = {
-      id: 't' + Date.now(),
+      id: generateId('t'),
       title: '',
       type: 'custom',
       priority: 'medium',
@@ -140,6 +149,7 @@ export const useTodoStore = defineStore('todo', () => {
       status: 'pending',
       dueDate: '',
       startDate: '',
+      createdBy: getCurrentUser(),
       createdAt: new Date().toISOString(),
       completedAt: null,
       notes: '',
@@ -183,7 +193,7 @@ export const useTodoStore = defineStore('todo', () => {
         todo.completedAt = null
       } else {
         todo.status = 'completed'
-        todo.completedAt = now
+        todo.completedAt = new Date().toISOString()
       }
       persist(todos.value)
       return { action: todo.status === 'completed' ? 'completed' : 'restored', id }
@@ -195,6 +205,8 @@ export const useTodoStore = defineStore('todo', () => {
     const todo = todos.value.find(t => t.id === id)
     if (todo) {
       todos.value = todos.value.filter(t => t.id !== id)
+      const syncEngine = useSyncEngine()
+      syncEngine.recordDeletedId('todos', id)
       persist(todos.value)
     } else {
       deletedAutoIds.value.add(id)
@@ -229,6 +241,8 @@ export const useTodoStore = defineStore('todo', () => {
       }
     })
     todos.value = todos.value.filter(t => !t._deleted)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('todos', ids)
     persist(todos.value)
     persistDeletedAutoIds(deletedAutoIds.value)
   }
@@ -272,7 +286,7 @@ export const useTodoStore = defineStore('todo', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     const t = today.value
     const seed = [
       { id: 't1', title: '跟进上海贸易合同续签', type: 'followup', priority: 'high', status: 'pending', dueDate: '2026-06-05', startDate: '2026-05-28', createdAt: '2026-05-28T09:00:00Z', notes: '合同即将到期，需尽快沟通续签事宜', tag: '商务', reminder: '提前3天', progress: 30, remark: '重要客户', subtasks: [{ id: 's1', title: '准备续签方案', completed: true }, { id: 's2', title: '联系客户确认', completed: false }, { id: 's3', title: '法务审核', completed: false }] },
@@ -286,13 +300,27 @@ export const useTodoStore = defineStore('todo', () => {
     ]
     todos.value = seed
     persist(todos.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(todos.value, items, 'id')
+    todos.value = merged
+    persist(todos.value)
+  }
+
+  function replaceData(newData) {
+    todos.value = newData
+    persist(todos.value)
   }
 
   return {
     todos, allTodos, stats, allTags, today,
     addTodo, updateTodo, toggleTodo, deleteTodo,
     batchComplete, batchDelete, clearCompleted, completeAll,
-    toggleSubtask, initSeedData
+    toggleSubtask, initSeedData,
+    replaceData, mergeRemoteItems,
+    persist
   }
 })

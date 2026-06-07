@@ -1,12 +1,16 @@
 <template>
-  <div class="app-container" :data-theme="themeStore.currentTheme" :data-preset="themeStore.currentPreset">
-    <AppSidebar />
-    <div class="app-main">
-      <AppTopbar />
+  <div class="app-container" :data-theme="themeStore.currentTheme" :data-preset="themeStore.currentPreset" :data-mode="themeStore.currentMode"
+       :data-device="deviceType" :data-layout="layoutMode">
+    <!-- 移动端遮罩层 -->
+    <div v-if="mobileMenuOpen" class="sidebar-overlay" @click="closeMobileMenu"></div>
+    <AppSidebar :collapsed="sidebarCollapsed" :mobile-open="mobileMenuOpen"
+                @toggle-collapse="toggleSidebarCollapse" @close-mobile="closeMobileMenu" />
+    <div class="app-main" :class="{ 'sidebar-collapsed': sidebarCollapsed, 'no-sidebar': !isDesktop }">
+      <AppTopbar :show-hamburger="shouldUseHamburger" :sidebar-collapsed="sidebarCollapsed" @toggle-menu="toggleMobileMenu" />
       <main class="app-content">
-        <router-view v-slot="{ Component }">
+        <router-view v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" :key="route.path" />
           </transition>
         </router-view>
       </main>
@@ -15,11 +19,110 @@
 </template>
 
 <script setup>
+import { onMounted, onUnmounted, watch, ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
+import { useSessionStore } from '@/stores/session'
+import { SupabaseClient } from '@/lib/supabase'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { useDataCenterStore } from '@/stores/dataCenter'
+import { useResponsive } from '@/utils/responsive'
+import autoSave from '@/utils/autoSave'
 import AppSidebar from '@/layouts/AppSidebar.vue'
 import AppTopbar from '@/layouts/AppTopbar.vue'
 
+const router = useRouter()
 const themeStore = useThemeStore()
+const sessionStore = useSessionStore()
+const syncEngine = useSyncEngine()
+const dataCenter = useDataCenterStore()
+const { isDesktop, isMobile, deviceType, layoutMode, shouldUseHamburger, responsive } = useResponsive()
+
+/* 侧边栏状态 */
+const sidebarCollapsed = ref(false)
+const mobileMenuOpen = ref(false)
+
+/* 切换侧边栏折叠 */
+function toggleSidebarCollapse() {
+  sidebarCollapsed.value = !sidebarCollapsed.value
+  autoSave.saveLayoutState({ sidebarCollapsed: sidebarCollapsed.value })
+}
+
+/* 切换移动端菜单 */
+function toggleMobileMenu() {
+  mobileMenuOpen.value = !mobileMenuOpen.value
+}
+
+/* 关闭移动端菜单 */
+function closeMobileMenu() {
+  mobileMenuOpen.value = false
+}
+
+/* 将主题属性同步到 <html> 元素 */
+function syncThemeToHtml() {
+  const html = document.documentElement
+  html.setAttribute('data-mode', themeStore.currentMode)
+  html.setAttribute('data-theme', themeStore.currentTheme)
+  html.setAttribute('data-preset', themeStore.currentPreset)
+}
+watch(() => [themeStore.currentMode, themeStore.currentTheme, themeStore.currentPreset], syncThemeToHtml, { immediate: true })
+
+/* 监听设备类型变化，自动调整布局 */
+watch(deviceType, (newType) => {
+  if (newType === 'mobile' || newType === 'tablet') {
+    mobileMenuOpen.value = false
+  }
+})
+
+/* 监听路由变化，保存视图状态和当前路由 */
+router.afterEach((to) => {
+  autoSave.saveSessionState()
+  closeMobileMenu()
+})
+
+/* 应用启动时恢复会话并初始化 */
+onMounted(async () => {
+  /* 初始化响应式管理器 */
+  responsive.init()
+
+  /* 初始化自动保存管理器 */
+  autoSave.init({ router })
+
+  /* 恢复布局状态 */
+  const layoutState = autoSave.restoreLayoutState()
+  if (layoutState.sidebarCollapsed !== undefined) {
+    sidebarCollapsed.value = layoutState.sidebarCollapsed
+  }
+
+  /* 恢复会话 */
+  sessionStore.restoreSession()
+
+  /* 初始化数据管理中心 */
+  await dataCenter.init()
+
+  /* 恢复上次的路由 */
+  const lastRoute = autoSave.restoreLastRoute()
+  if (lastRoute && lastRoute !== '/' && router.currentRoute.value.path === '/') {
+    try {
+      await router.replace(lastRoute)
+    } catch (e) {
+      /* 路由可能不存在，忽略 */
+    }
+  }
+
+  /* 如果已连接 Supabase，订阅 Presence 并启动自动同步 */
+  if (SupabaseClient.isConnected() && sessionStore.isLoggedIn) {
+    sessionStore.subscribePresence(SupabaseClient.getClient())
+    syncEngine.initAutoSync()
+  }
+})
+
+/* 应用卸载时清理 */
+onUnmounted(() => {
+  syncEngine.stopAutoSync()
+  autoSave.destroy()
+  responsive.destroy()
+})
 </script>
 
 <style scoped>
@@ -28,20 +131,49 @@ const themeStore = useThemeStore()
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  position: relative;
 }
+
+/* 侧边栏遮罩层（移动端） */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 998;
+  transition: opacity 300ms;
+}
+
 .app-main {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: var(--sidebar-width);
+  margin-left: var(--sidebar-width, 260px);
   transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
 }
+
+.app-main.sidebar-collapsed {
+  margin-left: var(--sidebar-collapsed-width, 52px);
+}
+
+/* 移动端无侧边栏偏移 */
+.app-main.no-sidebar {
+  margin-left: 0;
+}
+
 .app-content {
   flex: 1;
   overflow-y: auto;
-  padding: var(--space-6);
-  padding-top: calc(var(--topbar-height) + var(--space-6));
+  overflow-x: hidden;
+  padding: var(--content-padding, var(--space-6));
+  padding-top: calc(var(--topbar-height, 56px) + var(--content-padding, var(--space-6)));
+  width: 100%;
+  box-sizing: border-box;
 }
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 200ms ease;
@@ -49,5 +181,21 @@ const themeStore = useThemeStore()
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+/* 移动端适配 */
+@media (max-width: 767px) {
+  .app-content {
+    padding: var(--space-3);
+    padding-top: calc(var(--topbar-height, 48px) + var(--space-3));
+  }
+}
+
+/* 平板适配 */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .app-content {
+    padding: var(--space-4);
+    padding-top: calc(var(--topbar-height, 52px) + var(--space-4));
+  }
 }
 </style>

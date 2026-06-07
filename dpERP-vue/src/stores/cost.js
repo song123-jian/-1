@@ -1,25 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_costAnalysis'
 const INIT_KEY = 'gj_erp_cost_initialized'
 
-function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
-  return fallback
-}
-
-function persist(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
-}
-
 export const useCostStore = defineStore('cost', () => {
-  const records = ref(load(STORAGE_KEY, []))
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
+  const records = ref(safeGetJSON(STORAGE_KEY) || [])
 
   const statusLabels = { completed: '已完成', approved: '已审批', pending: '待处理', cancelled: '已取消' }
   const statusBadgeMap = { completed: 'success', approved: 'info', pending: 'warning', cancelled: 'neutral' }
@@ -42,7 +43,7 @@ export const useCostStore = defineStore('cost', () => {
 
   function addRecord(data) {
     const item = {
-      id: data.id || 'ca_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      id: data.id || generateId('cost'),
       poNo: data.poNo || '',
       supplierId: data.supplierId || '',
       supplierName: data.supplierName || '',
@@ -56,10 +57,11 @@ export const useCostStore = defineStore('cost', () => {
         ? Math.round(((parseFloat(data.actualCost) || 0) - (parseFloat(data.standardCost) || 0)) / (parseFloat(data.standardCost) || 1) * 1000) / 10
         : 0,
       status: data.status || 'pending',
+      createdBy: getCurrentUser(),
       createdAt: data.createdAt || new Date().toISOString()
     }
     records.value.push(item)
-    persist(STORAGE_KEY, records.value)
+    safeSetJSON(STORAGE_KEY, records.value)
     return item
   }
 
@@ -72,7 +74,7 @@ export const useCostStore = defineStore('cost', () => {
       ? Math.round(item.variance / parseFloat(item.standardCost) * 1000) / 10
       : 0
     records.value[idx] = item
-    persist(STORAGE_KEY, records.value)
+    safeSetJSON(STORAGE_KEY, records.value)
     return item
   }
 
@@ -80,7 +82,9 @@ export const useCostStore = defineStore('cost', () => {
     const idx = records.value.findIndex(r => r.id === id)
     if (idx === -1) return false
     records.value.splice(idx, 1)
-    persist(STORAGE_KEY, records.value)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('cost_records', id)
+    safeSetJSON(STORAGE_KEY, records.value)
     return true
   }
 
@@ -135,7 +139,7 @@ export const useCostStore = defineStore('cost', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     const now = new Date()
     const y = now.getFullYear()
     const m = String(now.getMonth() + 1).padStart(2, '0')
@@ -152,8 +156,20 @@ export const useCostStore = defineStore('cost', () => {
       { id: 'ca6', poNo: 'PO-2024-0083', supplierId: 's3', supplierName: '广东有色金属有限公司', date: `${y}-${m}-02`, materialName: '铜合金H59', quantity: 80, actualCost: 41600, standardCost: 41600, variance: 0, varianceRate: 0, status: 'completed' }
     ]
     records.value = seeds
-    persist(STORAGE_KEY, records.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetJSON(STORAGE_KEY, records.value)
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(records.value, items, 'id')
+    records.value = merged
+    safeSetJSON(STORAGE_KEY, records.value)
+  }
+
+  function replaceData(newData) {
+    records.value = newData
+    safeSetJSON(STORAGE_KEY, records.value)
   }
 
   return {
@@ -162,6 +178,7 @@ export const useCostStore = defineStore('cost', () => {
     completedCount, approvedCount, pendingCount,
     getById, addRecord, updateRecord, deleteRecord,
     getFilteredRecords, getMonthlyTrend, getSupplierBreakdown,
-    initSeedData
+    initSeedData,
+    replaceData, mergeRemoteItems
   }
 })

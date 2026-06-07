@@ -1,17 +1,27 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_PREFIX = 'gj_erp_'
 const INVENTORY_KEY = STORAGE_PREFIX + 'inventory'
 const WAREHOUSE_ORDER_KEY = STORAGE_PREFIX + 'warehouseOrders'
 const SUPPLIER_KEY = STORAGE_PREFIX + 'suppliers'
 const ATTACHMENT_KEY = STORAGE_PREFIX + 'inventoryAttachments_'
+const RECYCLE_BIN_KEY = STORAGE_PREFIX + 'recycleBin'
+const AUDIT_LOG_KEY = STORAGE_PREFIX + 'auditLogs'
 const INIT_KEY = 'gj_erp_inventory_initialized'
 
 function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (parsed !== null && parsed !== undefined) return parsed
+    }
   } catch (e) {
     console.warn('[inventoryStore] load failed:', key, e)
   }
@@ -73,7 +83,7 @@ const OUTBOUND_TYPES = [
 
 const INBOUND_STATUS_LABELS = {
   draft: '草稿', pending: '待审核', inspecting: '质检中',
-  confirmed: '已入库', cancelled: '已取消'
+  confirmed: '已入库', cancelled: '已取消', reversed: '已冲销'
 }
 
 const OUTBOUND_STATUS_LABELS = {
@@ -83,7 +93,7 @@ const OUTBOUND_STATUS_LABELS = {
 }
 
 const ALERT_STATUS_MAP = {
-  exhausted: '耗尽', low: '低库存', ok: '正常', over: '超量'
+  exhausted: '库存耗尽', low: '低于安全库存', ok: '库存正常', over: '超量库存'
 }
 
 const ALERT_STATUS_COLORS = {
@@ -94,11 +104,24 @@ const ALERT_STATUS_COLORS = {
 }
 
 export const useInventoryStore = defineStore('inventory', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const inventory = ref(load(INVENTORY_KEY, []))
   const warehouseOrders = ref(load(WAREHOUSE_ORDER_KEY, []))
   const suppliers = ref(load(SUPPLIER_KEY, []))
+  const recycleBin = ref(load(RECYCLE_BIN_KEY, []))
+  const auditLogs = ref(load(AUDIT_LOG_KEY, []))
 
   const enrichedInventory = computed(() => {
+    if (!Array.isArray(inventory.value)) return []
     return inventory.value.map(item => {
       const alertStatus = computeAlertStatus(item)
       let lastInboundDate = ''
@@ -207,7 +230,7 @@ export const useInventoryStore = defineStore('inventory', () => {
 
   function addInventoryItem(data) {
     const item = {
-      id: 'i' + Date.now(),
+      id: generateId('i'),
       code: '',
       name: '',
       category: 'raw',
@@ -245,11 +268,15 @@ export const useInventoryStore = defineStore('inventory', () => {
 
   function deleteInventoryItem(id) {
     inventory.value = inventory.value.filter(i => i.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('inventory', id)
     persist()
   }
 
   function batchDeleteInventory(ids) {
     inventory.value = inventory.value.filter(i => !ids.includes(i.id))
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('inventory', ids)
     persist()
   }
 
@@ -284,10 +311,14 @@ export const useInventoryStore = defineStore('inventory', () => {
     if (validCount === 0) errors.push('请至少添加一条有效的入库明细')
     if (errors.length > 0) return { success: false, errors }
 
+    const orderNo = data.orderNo || generateOrderNo(warehouseOrders.value, 'RK')
+    const dupOrder = warehouseOrders.value.find(o => o.orderNo === orderNo && o.id !== (data.id || ''))
+    if (dupOrder) return { success: false, errors: ['入库单号 ' + orderNo + ' 已存在，请检查'] }
+
     const totalQty = items.reduce((s, it) => s + (it.qty || 0), 0)
     const order = {
-      id: data.id || ('w' + Date.now()),
-      orderNo: data.orderNo || generateOrderNo(warehouseOrders.value, 'RK'),
+      id: data.id || generateId('w'),
+      orderNo,
       type: data.type,
       date: data.date,
       counterpartyId: data.counterpartyId || '',
@@ -351,7 +382,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     if (newItems.length > 0) {
       for (const ni of newItems) {
         inventory.value.push({
-          id: 'i' + Date.now() + Math.random().toString(36).substr(2, 5),
+          id: generateId('i'),
           code: ni.code,
           name: ni.name || ni.code,
           category: 'raw',
@@ -393,8 +424,102 @@ export const useInventoryStore = defineStore('inventory', () => {
   }
 
   function deleteInboundOrder(id) {
-    warehouseOrders.value = warehouseOrders.value.filter(o => o.id !== id)
+    const idx = warehouseOrders.value.findIndex(o => o.id === id)
+    if (idx !== -1) {
+      const removed = warehouseOrders.value.splice(idx, 1)[0]
+      recycleBin.value.push({ ...removed, _deletedAt: new Date().toISOString(), _type: 'inbound' })
+      persistRecycleBin()
+      const syncEngine = useSyncEngine()
+      syncEngine.recordDeletedId('inbound_orders', id)
+    }
     persistOrders()
+  }
+
+  function batchDeleteInboundOrders(ids) {
+    const removed = []
+    for (const id of ids) {
+      const idx = warehouseOrders.value.findIndex(o => o.id === id)
+      if (idx !== -1) {
+        const item = warehouseOrders.value.splice(idx, 1)[0]
+        removed.push({ ...item, _deletedAt: new Date().toISOString(), _type: 'inbound' })
+      }
+    }
+    if (removed.length > 0) {
+      recycleBin.value.push(...removed)
+      persistRecycleBin()
+    }
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('inbound_orders', ids)
+    persistOrders()
+    return removed.length
+  }
+
+  function copyInboundOrder(id) {
+    const src = warehouseOrders.value.find(o => o.id === id)
+    if (!src) return null
+    const newOrder = {
+      ...JSON.parse(JSON.stringify(src)),
+      id: generateId('w'),
+      orderNo: generateOrderNo(warehouseOrders.value, 'RK'),
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    warehouseOrders.value.push(newOrder)
+    persistOrders()
+    addAuditLog('create', 'inbound', '复制入库单: ' + newOrder.orderNo, { orderNo: newOrder.orderNo, sourceOrderNo: src.orderNo })
+    return newOrder
+  }
+
+  function restoreFromRecycleBin(id) {
+    const idx = recycleBin.value.findIndex(r => r.id === id)
+    if (idx === -1) return false
+    const item = recycleBin.value.splice(idx, 1)[0]
+    const { _deletedAt, _type, ...rest } = item
+    warehouseOrders.value.push(rest)
+    /* 手动恢复时清除墓碑，允许后续同步正常合并 */
+    const syncEngine = useSyncEngine()
+    const tableName = _type === 'outbound' ? 'outbound_orders' : 'inbound_orders'
+    syncEngine.clearDeletedId(tableName, id)
+    persistRecycleBin()
+    persistOrders()
+    return true
+  }
+
+  function permanentDeleteFromRecycleBin(id) {
+    recycleBin.value = recycleBin.value.filter(r => r.id !== id)
+    persistRecycleBin()
+  }
+
+  function emptyRecycleBin() {
+    recycleBin.value = []
+    persistRecycleBin()
+  }
+
+  function persistRecycleBin() {
+    save(RECYCLE_BIN_KEY, recycleBin.value)
+  }
+
+  function addAuditLog(action, module, detail, extra) {
+    auditLogs.value.unshift({
+      id: generateId('log'),
+      time: new Date().toISOString(),
+      user: getCurrentUser(),
+      action,
+      module,
+      detail,
+      ...extra
+    })
+    if (auditLogs.value.length > 500) auditLogs.value = auditLogs.value.slice(0, 500)
+    persistAuditLogs()
+  }
+
+  function persistAuditLogs() {
+    save(AUDIT_LOG_KEY, auditLogs.value)
+  }
+
+  function generateInboundNo() {
+    return generateOrderNo(warehouseOrders.value, 'RK')
   }
 
   function submitOutboundOrder(data) {
@@ -412,7 +537,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     if (errors.length > 0) return { success: false, errors }
 
     const order = {
-      id: data.id || ('wo' + Date.now()),
+      id: data.id || generateId('wo'),
       orderNo: data.orderNo || '',
       outboundNo: data.outboundNo || generateOrderNo(warehouseOrders.value, 'CK'),
       type: data.outType || data.type || 'sales',
@@ -456,7 +581,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
     warehouseOrders.value[idx].outStatus = 'approved'
     warehouseOrders.value[idx].status = 'approved'
-    warehouseOrders.value[idx].approvedBy = '当前用户'
+    warehouseOrders.value[idx].approvedBy = getCurrentUser()
     warehouseOrders.value[idx].approvedAt = new Date().toISOString()
     warehouseOrders.value[idx].updatedAt = new Date().toISOString()
     persistOrders()
@@ -484,7 +609,7 @@ export const useInventoryStore = defineStore('inventory', () => {
     }
     warehouseOrders.value[idx].outStatus = 'confirmed'
     warehouseOrders.value[idx].status = 'confirmed'
-    warehouseOrders.value[idx].confirmedBy = '当前用户'
+    warehouseOrders.value[idx].confirmedBy = getCurrentUser()
     warehouseOrders.value[idx].confirmedAt = new Date().toISOString()
     warehouseOrders.value[idx].updatedAt = new Date().toISOString()
     persistOrders()
@@ -504,8 +629,118 @@ export const useInventoryStore = defineStore('inventory', () => {
   }
 
   function deleteOutboundOrder(id) {
-    warehouseOrders.value = warehouseOrders.value.filter(o => o.id !== id)
+    const idx = warehouseOrders.value.findIndex(o => o.id === id)
+    if (idx !== -1) {
+      const removed = warehouseOrders.value.splice(idx, 1)[0]
+      recycleBin.value.push({ ...removed, _deletedAt: new Date().toISOString(), _type: 'outbound' })
+      persistRecycleBin()
+      const syncEngine = useSyncEngine()
+      syncEngine.recordDeletedId('outbound_orders', id)
+    }
     persistOrders()
+  }
+
+  function reverseOutboundOrder(orderId) {
+    const idx = warehouseOrders.value.findIndex(o => o.id === orderId)
+    if (idx === -1) return { success: false, error: '未找到出库单' }
+    const order = warehouseOrders.value[idx]
+    const oStatus = order.outStatus || order.status
+    if (oStatus !== 'confirmed') return { success: false, error: '仅已出库单据可冲销' }
+    const reverseOrder = {
+      id: generateId('w'),
+      outboundNo: 'RV' + order.outboundNo,
+      orderNo: 'RV' + order.outboundNo,
+      outType: order.outType, type: order.outType,
+      materialCode: order.materialCode, materialName: order.materialName,
+      grade: order.grade || '', color: order.color || '',
+      outDate: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0],
+      outQty: -order.outQty, totalQuantity: -order.outQty,
+      unitPrice: order.unitPrice || 0, outAmount: -(order.outAmount || 0),
+      batchNo: order.batchNo || '', referenceId: order.outboundNo,
+      outStatus: 'confirmed', status: 'confirmed',
+      notes: '冲销出库单: ' + order.outboundNo,
+      reversedFrom: order.id,
+      counterpartyId: '', counterpartyName: '',
+      warehouseId: order.warehouseId || 'main',
+      items: order.items,
+      createdBy: getCurrentUser(), createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    warehouseOrders.value.push(reverseOrder)
+    warehouseOrders.value[idx].outStatus = 'reversed'
+    warehouseOrders.value[idx].status = 'reversed'
+    warehouseOrders.value[idx].updatedAt = new Date().toISOString()
+    const invIdx = inventory.value.findIndex(i => i.code === order.materialCode)
+    if (invIdx !== -1) {
+      inventory.value[invIdx].quantity = Math.max(0, (parseFloat(inventory.value[invIdx].quantity) || 0) + order.outQty)
+      inventory.value[invIdx].totalValue = inventory.value[invIdx].quantity * (parseFloat(inventory.value[invIdx].unitCost) || 0)
+      persist()
+    }
+    persistOrders()
+    return { success: true, reverseOrder }
+  }
+
+  function batchApproveOutbound(ids) {
+    const orders = warehouseOrders.value
+    let count = 0
+    for (const id of ids) {
+      const idx = orders.findIndex(o => o.id === id)
+      if (idx === -1) continue
+      const oStatus = orders[idx].outStatus || orders[idx].status
+      if (oStatus !== 'pending_review' && oStatus !== 'pending') continue
+      const invItem = inventory.value.find(i => i.code === orders[idx].materialCode)
+      if (invItem && orders[idx].outQty > (parseFloat(invItem.quantity) || 0)) continue
+      orders[idx].outStatus = 'approved'
+      orders[idx].status = 'approved'
+      orders[idx].approvedBy = getCurrentUser()
+      orders[idx].approvedAt = new Date().toISOString()
+      orders[idx].updatedAt = new Date().toISOString()
+      count++
+    }
+    persistOrders()
+    return count
+  }
+
+  function batchConfirmOutbound(ids) {
+    let count = 0
+    let needPersist = false
+    for (const id of ids) {
+      const idx = warehouseOrders.value.findIndex(o => o.id === id)
+      if (idx === -1) continue
+      const oStatus = warehouseOrders.value[idx].outStatus || warehouseOrders.value[idx].status
+      if (oStatus !== 'approved') continue
+      const order = warehouseOrders.value[idx]
+      const invIdx = inventory.value.findIndex(i => i.code === order.materialCode)
+      if (invIdx !== -1) {
+        const invItem = inventory.value[invIdx]
+        if (order.outQty > (parseFloat(invItem.quantity) || 0)) continue
+        inventory.value[invIdx].quantity = Math.max(0, (parseFloat(invItem.quantity) || 0) - order.outQty)
+        inventory.value[invIdx].totalValue = inventory.value[invIdx].quantity * (parseFloat(inventory.value[invIdx].unitCost) || 0)
+        needPersist = true
+      }
+      warehouseOrders.value[idx].outStatus = 'confirmed'
+      warehouseOrders.value[idx].status = 'confirmed'
+      warehouseOrders.value[idx].confirmedBy = getCurrentUser()
+      warehouseOrders.value[idx].confirmedAt = new Date().toISOString()
+      warehouseOrders.value[idx].updatedAt = new Date().toISOString()
+      count++
+    }
+    if (needPersist) persist()
+    persistOrders()
+    return count
+  }
+
+  function generateOutboundNo() {
+    return generateOrderNo(warehouseOrders.value, 'CK')
+  }
+
+  function updateOutboundOrder(id, data) {
+    const idx = warehouseOrders.value.findIndex(o => o.id === id)
+    if (idx === -1) return { success: false, error: '未找到出库单' }
+    Object.assign(warehouseOrders.value[idx], data, { updatedAt: new Date().toISOString() })
+    persistOrders()
+    return { success: true }
   }
 
   function getAttachments(orderId) {
@@ -515,13 +750,13 @@ export const useInventoryStore = defineStore('inventory', () => {
   function addAttachment(orderId, file) {
     const attachments = getAttachments(orderId)
     attachments.push({
-      id: 'att' + Date.now(),
+      id: generateId('att'),
       name: file.name,
       size: file.size,
       type: file.type,
       data: file.data || '',
       uploadedAt: new Date().toISOString(),
-      uploadedBy: '当前用户'
+      uploadedBy: getCurrentUser()
     })
     save(ATTACHMENT_KEY + orderId, attachments)
   }
@@ -533,7 +768,7 @@ export const useInventoryStore = defineStore('inventory', () => {
 
   function addSupplier(data) {
     const sup = {
-      id: 's' + Date.now(),
+      id: generateId('s'),
       name: '',
       shortName: '',
       contact: '',
@@ -561,6 +796,8 @@ export const useInventoryStore = defineStore('inventory', () => {
 
   function deleteSupplier(id) {
     suppliers.value = suppliers.value.filter(s => s.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('inventory', id)
     persistSuppliers()
   }
 
@@ -594,11 +831,134 @@ export const useInventoryStore = defineStore('inventory', () => {
       { id: 'w4', orderNo: 'RK20260519002', type: 'purchase', referenceId: 'PO-2026-0032', counterpartyId: 's3', counterpartyName: '广东有色金属有限公司', supplierCode: 'SUP-003', warehouseId: 'main', date: '2026-05-19', totalQuantity: 500, status: 'draft', items: '[]', qualityStatus: 'pending', createdAt: '2026-05-19T08:00:00Z', updatedAt: '2026-05-19T08:00:00Z' }
     ]
     persistOrders()
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(inventory.value, items, 'id')
+    inventory.value = merged
+    persist()
+  }
+
+  function mergeInboundOrders(items) {
+    if (!Array.isArray(items)) return
+    const inboundTypes = ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift']
+    const nonInbound = warehouseOrders.value.filter(o => !inboundTypes.includes(o.type) || o.outType || o.outboundNo)
+    const existingInbound = warehouseOrders.value.filter(o => inboundTypes.includes(o.type) && !o.outType && !o.outboundNo)
+    const merged = mergeArrays(existingInbound, items, 'id')
+    warehouseOrders.value = [...nonInbound, ...merged]
+    persistOrders()
+  }
+
+  function mergeOutboundOrders(items) {
+    if (!Array.isArray(items)) return
+    const inboundTypes = ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift']
+    const inboundOnly = warehouseOrders.value.filter(o => inboundTypes.includes(o.type) && !o.outType && !o.outboundNo)
+    const existingOutbound = warehouseOrders.value.filter(o => !inboundTypes.includes(o.type) || o.outType || o.outboundNo)
+    const merged = mergeArrays(existingOutbound, items, 'id')
+    warehouseOrders.value = [...inboundOnly, ...merged]
+    persistOrders()
+  }
+
+  function replaceData(newData) {
+    inventory.value = newData
+    persist()
+  }
+
+  function replaceInbound(newData) {
+    const inboundTypes = ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift']
+    const nonInbound = warehouseOrders.value.filter(o => !inboundTypes.includes(o.type) || o.outType || o.outboundNo)
+    warehouseOrders.value = [...nonInbound, ...newData]
+    persistOrders()
+  }
+
+  function replaceOutbound(newData) {
+    const inboundTypes = ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift']
+    const inboundOnly = warehouseOrders.value.filter(o => inboundTypes.includes(o.type) && !o.outType && !o.outboundNo)
+    warehouseOrders.value = [...inboundOnly, ...newData]
+    persistOrders()
+  }
+
+  function batchApproveInbound(ids) {
+    let count = 0
+    for (const id of ids) {
+      const idx = warehouseOrders.value.findIndex(o => o.id === id)
+      if (idx === -1) continue
+      if (warehouseOrders.value[idx].status !== 'pending') continue
+      warehouseOrders.value[idx].status = 'inspecting'
+      warehouseOrders.value[idx].updatedAt = new Date().toISOString()
+      count++
+    }
+    persistOrders()
+    return count
+  }
+
+  function batchConfirmInbound(ids) {
+    let count = 0
+    for (const id of ids) {
+      const idx = warehouseOrders.value.findIndex(o => o.id === id)
+      if (idx === -1) continue
+      if (warehouseOrders.value[idx].status !== 'inspecting') continue
+      const result = confirmInbound(id)
+      if (result.success) count++
+    }
+    return count
+  }
+
+  function reverseInboundOrder(orderId) {
+    const idx = warehouseOrders.value.findIndex(o => o.id === orderId)
+    if (idx === -1) return { success: false, error: '未找到入库单' }
+    const order = warehouseOrders.value[idx]
+    if (order.status !== 'confirmed') return { success: false, error: '仅已入库单据可冲销' }
+
+    /* 扣回库存 */
+    let items = []
+    try {
+      items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || [])
+    } catch (e) { /* ignore */ }
+
+    for (const item of items) {
+      if (!item.code) continue
+      const invIdx = inventory.value.findIndex(i => i.code === item.code)
+      if (invIdx !== -1) {
+        inventory.value[invIdx].quantity = Math.max(0, (parseFloat(inventory.value[invIdx].quantity) || 0) - (item.qty || 0))
+        inventory.value[invIdx].totalValue = inventory.value[invIdx].quantity * (parseFloat(inventory.value[invIdx].unitCost) || 0)
+        inventory.value[invIdx].status = computeAlertStatus(inventory.value[invIdx]) === 'ok' ? 'normal' : computeAlertStatus(inventory.value[invIdx])
+      }
+    }
+
+    /* 生成冲销记录 */
+    const reverseOrder = {
+      id: generateId('w'),
+      orderNo: 'RV' + order.orderNo,
+      type: order.type,
+      date: new Date().toISOString().split('T')[0],
+      counterpartyId: order.counterpartyId || '',
+      counterpartyName: order.counterpartyName || '',
+      supplierCode: order.supplierCode || '',
+      totalQuantity: -(order.totalQuantity || 0),
+      status: 'reversed',
+      notes: '冲销入库单: ' + order.orderNo,
+      items: order.items,
+      warehouseId: order.warehouseId || 'main',
+      reversedFrom: order.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+    warehouseOrders.value.push(reverseOrder)
+
+    /* 标记原单为已冲销 */
+    warehouseOrders.value[idx].status = 'reversed'
+    warehouseOrders.value[idx].updatedAt = new Date().toISOString()
+
+    persist()
+    persistOrders()
+    return { success: true, reverseOrder }
   }
 
   return {
-    inventory, warehouseOrders, suppliers,
+    inventory, warehouseOrders, suppliers, recycleBin, auditLogs,
     enrichedInventory, lowStockCount, exhaustedCount, overStockCount, normalStockCount,
     totalStockWeight, totalStockValue, alertItems,
     inboundOrders, outboundOrders,
@@ -609,9 +969,17 @@ export const useInventoryStore = defineStore('inventory', () => {
     lookupByBarcode, lookupSupplier,
     addInventoryItem, updateInventoryItem, deleteInventoryItem, batchDeleteInventory, adjustStock,
     submitInboundOrder, saveInboundDraft, confirmInbound, changeInboundStatus, deleteInboundOrder,
+    batchDeleteInboundOrders, copyInboundOrder, generateInboundNo,
+    batchApproveInbound, batchConfirmInbound, reverseInboundOrder,
+    restoreFromRecycleBin, permanentDeleteFromRecycleBin, emptyRecycleBin,
+    addAuditLog,
     submitOutboundOrder, approveOutbound, confirmOutbound, cancelOutbound, deleteOutboundOrder,
+    reverseOutboundOrder, batchApproveOutbound, batchConfirmOutbound, generateOutboundNo, updateOutboundOrder,
     getAttachments, addAttachment, deleteAttachment,
     addSupplier, updateSupplier, deleteSupplier,
-    initSeedData
+    initSeedData,
+    replaceData, replaceInbound, replaceOutbound,
+    mergeRemoteItems, mergeInboundOrders, mergeOutboundOrders,
+    persist, persistOrders
   }
 })

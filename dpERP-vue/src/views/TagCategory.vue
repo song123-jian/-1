@@ -6,29 +6,29 @@
         <p class="page-header-subtitle">客户标签分类管理，支持分组、颜色、新增、编辑、删除</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-primary" @click="openAddModal">➕ 新增标签</button>
-        <button class="btn btn-ghost" @click="openAddGroupModal">📁 新增分组</button>
+        <button class="btn btn-primary" @click="openAddModal">[+] 新增标签</button>
+        <button class="btn btn-ghost" @click="openAddGroupModal"><Icon name="folder" :size="14" /> 新增分组</button>
       </div>
     </div>
 
     <div class="stats-row" style="margin-bottom:var(--space-4)">
       <div class="stat-card">
-        <div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">🏷️</div>
+        <div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)"><Icon name="tag" :size="14" /></div>
         <div class="stat-card-value">{{ customerStore.tags.length }}</div>
         <div class="stat-card-label">标签总数</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">📁</div>
+        <div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)"><Icon name="folder" :size="14" /></div>
         <div class="stat-card-value">{{ tagGroups.length }}</div>
         <div class="stat-card-label">分组数量</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">🏢</div>
+        <div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)"><Icon name="building" :size="14" /></div>
         <div class="stat-card-value">{{ taggedCustomerCount }}</div>
         <div class="stat-card-label">已标签客户</div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-icon" style="background:var(--color-purple-subtle);color:var(--color-purple)">📊</div>
+        <div class="stat-card-icon" style="background:var(--color-purple-subtle);color:var(--color-purple)"><Icon name="table" :size="14" /></div>
         <div class="stat-card-value">{{ untaggedCustomerCount }}</div>
         <div class="stat-card-label">未标签客户</div>
       </div>
@@ -36,7 +36,7 @@
 
     <div class="tag-toolbar">
       <div class="tag-search">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><Icon name="search" :size="14" /></span>
         <input v-model="searchText" type="text" class="search-input" placeholder="搜索标签名称..." />
       </div>
       <div class="tag-filters">
@@ -51,7 +51,7 @@
       <div class="tag-group-header">
         <span class="tag-group-name">{{ group.name }}</span>
         <span class="tag-group-count">{{ group.tags.length }} 个标签</span>
-        <button class="btn btn-ghost btn-sm" @click="confirmDeleteGroup(group.name)" title="删除分组">🗑️</button>
+        <button class="btn btn-ghost btn-sm" @click="confirmDeleteGroup(group.name)" title="删除分组"><Icon name="delete" :size="14" /></button>
       </div>
       <div class="tag-group-body">
         <div v-if="group.tags.length === 0" class="empty-hint">该分组暂无标签</div>
@@ -62,8 +62,8 @@
           </div>
           <div class="tag-item-right">
             <span class="tag-item-cust-count">{{ getTagCustomerCount(tag.id) }} 位客户</span>
-            <button class="btn btn-ghost btn-sm" @click="openEditModal(tag)">✏️ 编辑</button>
-            <button class="btn btn-ghost btn-sm danger" @click="confirmDeleteTag(tag)">🗑️ 删除</button>
+            <button class="btn btn-ghost btn-sm" @click="openEditModal(tag)"><Icon name="edit" :size="14" /> 编辑</button>
+            <button class="btn btn-ghost btn-sm danger" @click="confirmDeleteTag(tag)"><Icon name="delete" :size="14" /> 删除</button>
           </div>
         </div>
       </div>
@@ -71,7 +71,7 @@
 
     <div v-if="filteredTags.length === 0" class="panel-card" style="margin-top:var(--space-4)">
       <div class="panel-card-body" style="text-align:center;padding:var(--space-8)">
-        <div style="font-size:48px;margin-bottom:var(--space-4)">🏷️</div>
+        <div style="font-size:48px;margin-bottom:var(--space-4)"><Icon name="tag" :size="14" /></div>
         <div style="color:var(--color-text-secondary)">暂无标签数据，点击"新增标签"开始创建</div>
       </div>
     </div>
@@ -81,7 +81,7 @@
         <div class="modal-dialog">
           <div class="modal-header">
             <h3>{{ editingTag ? '编辑标签' : '新增标签' }}</h3>
-            <button class="modal-close" @click="showTagModal = false">✕</button>
+            <button class="modal-close" @click="showTagModal = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -124,7 +124,7 @@
         <div class="modal-dialog modal-sm">
           <div class="modal-header">
             <h3>新增分组</h3>
-            <button class="modal-close" @click="showGroupModal = false">✕</button>
+            <button class="modal-close" @click="showGroupModal = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
             <div class="form-group">
@@ -145,7 +145,7 @@
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-dialog modal-sm">
           <div class="modal-body" style="text-align:center;padding:32px 20px">
-            <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+            <div style="font-size:48px;margin-bottom:12px"><Icon name="warning" :size="14" /></div>
             <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
@@ -358,7 +358,7 @@ function confirmAction() {
 .form-group { margin-bottom: var(--space-4); }
 .form-label { display: block; font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-secondary); margin-bottom: var(--space-1); }
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+.modal-overlay { backdrop-filter: blur(4px); }
 .modal-dialog { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-xl); width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
 .modal-dialog.modal-sm { max-width: 400px; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); }
@@ -370,4 +370,56 @@ function confirmAction() {
 
 .btn-danger { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
 .btn-danger:hover { background: #dc2626; border-color: #dc2626; }
+
+/* 响应式适配 */
+@media (max-width: 1024px) {
+  .stats-row {
+    flex-wrap: wrap;
+  }
+  .stats-row .stat-card {
+    min-width: 140px;
+  }
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .tag-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tag-search {
+    min-width: unset;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .stats-row {
+    flex-direction: column;
+  }
+  .stats-row .stat-card {
+    min-width: unset;
+  }
+  .tag-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .tag-item-right {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  .tag-group-header {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .color-picker-row {
+    justify-content: flex-start;
+  }
+}
 </style>

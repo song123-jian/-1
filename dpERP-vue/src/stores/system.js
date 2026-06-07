@@ -12,7 +12,11 @@ function load(key, fallback) {
   return fallback
 }
 function persist(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) { /* ignore */ }
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      console.error('[system] localStorage容量不足，数据可能丢失！')
+    }
+  }
 }
 function genId(prefix) { return prefix + Date.now() + '_' + Math.random().toString(36).slice(2, 6) }
 
@@ -182,6 +186,25 @@ export const useSystemStore = defineStore('system', () => {
     persist('gj_erp_opHistory', operationHistory.value)
   }
 
+  function replaceData(newData) {
+    if (newData.themes) {
+      themes.value = newData.themes
+      _persistThemes()
+    }
+    if (newData.users) {
+      users.value = newData.users
+      _persistUsers()
+    }
+    if (newData.dictionaries) {
+      dictionaries.value = newData.dictionaries
+      _persistDicts()
+    }
+    if (newData.dataBackups) {
+      dataBackups.value = newData.dataBackups
+      _persistData()
+    }
+  }
+
   function initSeedData() {
     if (localStorage.getItem(INIT_KEY)) return
 
@@ -236,6 +259,6 @@ export const useSystemStore = defineStore('system', () => {
     addTheme, updateTheme, deleteTheme, activateTheme, saveThemeSettings,
     addUser, updateUser, deleteUser,
     addDictionary, updateDictionary, deleteDictionary, addDictEntry, removeDictEntry,
-    createBackup, deleteBackup, addOperationRecord, initSeedData
+    createBackup, deleteBackup, addOperationRecord, replaceData, initSeedData
   }
 })

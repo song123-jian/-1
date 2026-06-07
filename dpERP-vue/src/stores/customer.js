@@ -1,28 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_customers'
 const TAGS_KEY = 'gj_erp_customerTags'
 const INIT_KEY = 'gj_erp_customers_initialized'
 
-function load(key) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) {
-    console.warn('[CustomerStore] localStorage加载失败:', e)
-  }
-  return []
-}
-
 function loadAsync(key) {
   return new Promise((resolve) => {
-    try {
-      const raw = localStorage.getItem(key)
-      if (raw) { resolve(JSON.parse(raw)); return }
-    } catch (e) {
-      console.warn('[CustomerStore] localStorage加载失败，尝试IndexedDB:', e)
-    }
+    const data = safeGetJSON(key)
+    if (data) { resolve(data); return }
     try {
       const dbRequest = indexedDB.open('dp-erp-storage', 1)
       dbRequest.onupgradeneeded = (event) => {
@@ -79,8 +70,18 @@ function persist(key, data) {
 }
 
 export const useCustomerStore = defineStore('customer', () => {
-  const customers = ref(load(STORAGE_KEY))
-  const tags = ref(load(TAGS_KEY))
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
+  const customers = ref(safeGetJSON(STORAGE_KEY) || [])
+  const tags = ref(safeGetJSON(TAGS_KEY) || [])
 
   const activeCount = computed(() => customers.value.filter(c => c.status === 'active').length)
   const dormantCount = computed(() => customers.value.filter(c => c.status === 'dormant').length)
@@ -121,7 +122,7 @@ export const useCustomerStore = defineStore('customer', () => {
 
   function addCustomer(data) {
     const customer = {
-      id: 'c' + Date.now(),
+      id: generateId('c'),
       customerNo: generateCustomerNo(),
       fullName: '',
       name: '',
@@ -141,6 +142,7 @@ export const useCustomerStore = defineStore('customer', () => {
       address: '',
       status: 'active',
       tags: [],
+      createdBy: getCurrentUser(),
       createdAt: new Date().toISOString().split('T')[0],
       ...data
     }
@@ -154,18 +156,22 @@ export const useCustomerStore = defineStore('customer', () => {
   function updateCustomer(id, updates) {
     const idx = customers.value.findIndex(c => c.id === id)
     if (idx !== -1) {
-      customers.value[idx] = { ...customers.value[idx], ...updates }
+      customers.value[idx] = { ...customers.value[idx], ...updates, updatedBy: getCurrentUser() }
       persist(STORAGE_KEY, customers.value)
     }
   }
 
   function deleteCustomer(id) {
     customers.value = customers.value.filter(c => c.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('customers', id)
     persist(STORAGE_KEY, customers.value)
   }
 
   function batchDelete(ids) {
     customers.value = customers.value.filter(c => !ids.includes(c.id))
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('customers', ids)
     persist(STORAGE_KEY, customers.value)
   }
 
@@ -247,7 +253,7 @@ export const useCustomerStore = defineStore('customer', () => {
       if (dedupeKey !== '|') existingKeys.add(dedupeKey)
       maxNo++
       newCustomers.push({
-        id: 'c' + Date.now() + '_' + idx + '_' + Math.random().toString(36).slice(2, 6),
+        id: generateId('c'),
         customerNo: item.customerNo || `KH-${new Date().getFullYear()}-${String(maxNo).padStart(4, '0')}`,
         fullName,
         name: fullName,
@@ -305,7 +311,7 @@ export const useCustomerStore = defineStore('customer', () => {
         if (dedupeKey !== '|') existingKeys.add(dedupeKey)
         maxNo++
         newBatch.push({
-          id: 'c' + Date.now() + '_' + globalIdx + '_' + Math.random().toString(36).slice(2, 6),
+          id: generateId('c'),
           customerNo: item.customerNo || `KH-${new Date().getFullYear()}-${String(maxNo).padStart(4, '0')}`,
           fullName,
           name: fullName,
@@ -338,7 +344,7 @@ export const useCustomerStore = defineStore('customer', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     customers.value = [
       { id: 'c1', customerNo: 'KH-2024-0001', name: '上海贸易有限公司', fullName: '上海贸易有限公司', shortName: '上海贸易', contact: '张经理', contactName: '张经理', phone: '021-5888XXXX', email: 'zhang@shanghai-trade.com', region: '华东', level: 'A', decisionAuthority: '决策者', coreConcerns: '交货速度', creditLimit: 500000, balance: 125000, address: '上海市浦东新区陆家嘴环路1000号', status: 'active', tags: ['VIP', '长期合作'], createdAt: '2024-01-15' },
       { id: 'c2', customerNo: 'KH-2024-0002', name: '北京科技发展集团', fullName: '北京科技发展集团', shortName: '北京科技', contact: '李总', contactName: '李总', phone: '010-6222XXXX', email: 'li@beijing-tech.com', region: '华北', level: 'B', decisionAuthority: '影响者', coreConcerns: '产品质量', creditLimit: 300000, balance: 85000, address: '北京市海淀区中关村科技园', status: 'active', tags: ['潜力客户'], createdAt: '2024-03-20' },
@@ -358,7 +364,19 @@ export const useCustomerStore = defineStore('customer', () => {
       { id: '回款慢', name: '回款慢', color: '#94a3b8', group: '风险' }
     ]
     persist(TAGS_KEY, tags.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(customers.value, items, 'id')
+    customers.value = merged
+    persist(STORAGE_KEY, customers.value)
+  }
+
+  function replaceData(newData) {
+    customers.value = newData
+    persist(STORAGE_KEY, customers.value)
   }
 
   return {
@@ -368,6 +386,8 @@ export const useCustomerStore = defineStore('customer', () => {
     addCustomer, updateCustomer, deleteCustomer,
     batchDelete, batchUpdateLevel,
     addTag, deleteTag, updateTag, addTagToCustomer, removeTagFromCustomer,
-    getCustomerById, importCustomers, importCustomersBatch, generateCustomerNo, initSeedData
+    getCustomerById, importCustomers, importCustomersBatch, generateCustomerNo, initSeedData,
+    replaceData, mergeRemoteItems,
+    persist
   }
 })

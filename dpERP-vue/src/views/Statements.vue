@@ -13,21 +13,30 @@
             class="btn btn-outline"
             :class="{ active: currentView === v.key }"
             @click="currentView = v.key"
-            :title="v.label"
-          >{{ v.label }}</button>
+            :title="v.icon + ' ' + v.label"
+          ><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
         </div>
-        <div class="export-dropdown-wrapper">
-          <button class="btn btn-outline" @click="showExportMenu = !showExportMenu">导出 ▼</button>
+        <div v-if="canExport" class="export-dropdown-wrapper">
+          <button class="btn btn-outline" @click="showExportMenu = !showExportMenu">导出 <Icon name="chevronDown" :size="14" /></button>
           <div v-if="showExportMenu" class="export-dropdown-menu">
             <div class="export-dropdown-item" @click="exportCSV(); showExportMenu = false">导出 CSV</div>
             <div class="export-dropdown-item" @click="exportXLSX(); showExportMenu = false">导出 Excel (.xlsx)</div>
             <div class="export-dropdown-item" @click="exportPDF(); showExportMenu = false">导出 PDF</div>
           </div>
+          <div v-if="exportError" class="inline-error" style="position:absolute;top:calc(100% + 28px);left:0;white-space:nowrap;z-index:101">{{ exportError }}</div>
         </div>
         <button class="btn btn-outline" @click="resetFilters">重置</button>
+        <div class="column-config-wrapper">
+          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
+              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            </label>
+          </div>
+        </div>
         <button class="btn btn-outline" @click="handleBatchPrint" :disabled="selectedIds.length === 0">批量打印</button>
-        <button class="btn btn-outline" @click="handleBatchDelete" :disabled="selectedIds.length === 0">批量删除</button>
-        <button class="btn btn-primary" @click="openEditor()">+ 新增对账单</button>
+        <button v-if="canDelete" class="btn btn-outline" @click="handleBatchDelete" :disabled="selectedIds.length === 0">批量删除</button>
+        <button v-if="canCreate" class="btn btn-primary" @click="openEditor()">+ 新增对账单</button>
       </div>
     </div>
 
@@ -97,15 +106,15 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="min-width:120px">对账单号</th>
-                <th style="min-width:100px">日期</th>
-                <th style="min-width:140px">采购方</th>
-                <th style="min-width:140px">供应商</th>
-                <th style="min-width:90px">单价</th>
-                <th style="min-width:70px">数量</th>
-                <th style="min-width:100px">总金额</th>
-                <th style="min-width:80px">状态</th>
-                <th style="min-width:100px">创建日期</th>
+                <th v-if="columnVisible.statementNo" style="min-width:120px">对账单号</th>
+                <th v-if="columnVisible.date" style="min-width:100px">日期</th>
+                <th v-if="columnVisible.buyer" style="min-width:140px">采购方</th>
+                <th v-if="columnVisible.supplier" style="min-width:140px">供应商</th>
+                <th v-if="columnVisible.unitPrice" style="min-width:90px">单价</th>
+                <th v-if="columnVisible.quantity" style="min-width:70px">数量</th>
+                <th v-if="columnVisible.totalAmount" style="min-width:100px">总金额</th>
+                <th v-if="columnVisible.status" style="min-width:80px">状态</th>
+                <th v-if="columnVisible.createdAt" style="min-width:100px">创建日期</th>
                 <th style="min-width:180px">操作</th>
               </tr>
             </thead>
@@ -116,19 +125,19 @@
                 </td>
               </tr>
               <tr v-for="s in filteredStatements" :key="s.id">
-                <td class="cell-mono" style="cursor:pointer;color:var(--color-accent)" @click="viewDetail(s.id)">{{ s.statementNo }}</td>
-                <td>{{ s.reconDate || '-' }}</td>
-                <td>{{ s.buyerName || '-' }}</td>
-                <td>{{ s.sellerName || '-' }}</td>
-                <td class="cell-mono">¥{{ formatMoney(getFirstItemPrice(s)) }}</td>
-                <td class="cell-mono">{{ getFirstItemQty(s) }}</td>
-                <td class="cell-mono">¥{{ formatMoney(s.totalAmount) }}</td>
-                <td>
+                <td v-if="columnVisible.statementNo" class="cell-mono" style="cursor:pointer;color:var(--color-accent)" @click="viewDetail(s.id)">{{ s.statementNo }}</td>
+                <td v-if="columnVisible.date">{{ s.reconDate || '-' }}</td>
+                <td v-if="columnVisible.buyer">{{ s.buyerName || '-' }}</td>
+                <td v-if="columnVisible.supplier">{{ s.sellerName || '-' }}</td>
+                <td v-if="columnVisible.unitPrice" class="cell-mono">¥{{ formatMoney(getFirstItemPrice(s)) }}</td>
+                <td v-if="columnVisible.quantity" class="cell-mono">{{ getFirstItemQty(s) }}</td>
+                <td v-if="columnVisible.totalAmount" class="cell-mono">¥{{ formatMoney(s.totalAmount) }}</td>
+                <td v-if="columnVisible.status">
                   <span class="status-badge" :class="statementStore.statusBadgeMap[s.status] || 'neutral'">
                     {{ statementStore.statusLabels[s.status] || s.status }}
                   </span>
                 </td>
-                <td style="font-size:var(--font-size-xs)">{{ s.createdAt || '-' }}</td>
+                <td v-if="columnVisible.createdAt" style="font-size:var(--font-size-xs)">{{ s.createdAt || '-' }}</td>
                 <td class="cell-actions">
                   <button class="btn btn-sm btn-outline" @click="viewDetail(s.id)" title="查看">查看</button>
                   <button
@@ -138,14 +147,14 @@
                     title="编辑"
                   >编辑</button>
                   <button
-                    v-if="s.status === 'pending'"
+                    v-if="canConfirm && s.status === 'pending'"
                     class="btn btn-sm btn-outline"
                     style="color:var(--color-success)"
                     @click="handleConfirm(s.id)"
                     title="确认"
                   >确认</button>
                   <button
-                    v-if="s.status === 'pending'"
+                    v-if="canConfirm && s.status === 'pending'"
                     class="btn btn-sm btn-outline"
                     style="color:var(--color-danger)"
                     @click="handleVoid(s.id)"
@@ -166,7 +175,7 @@
                   >重新打开</button>
                   <button class="btn btn-sm btn-outline" @click="handlePrint(s.id)" title="打印">打印</button>
                   <button
-                    v-if="s.status === 'pending' || s.status === 'draft'"
+                    v-if="canDelete && (s.status === 'pending' || s.status === 'draft')"
                     class="btn btn-sm btn-outline"
                     style="color:var(--color-danger)"
                     @click="handleDelete(s.id)"
@@ -224,422 +233,61 @@
             </div>
             <div class="card-actions">
               <button class="btn btn-sm btn-outline" @click.stop="viewDetail(s.id)">查看</button>
-              <button v-if="s.status === 'pending'" class="btn btn-sm btn-outline" style="color:var(--color-success)" @click.stop="handleConfirm(s.id)">确认</button>
+              <button v-if="canConfirm && s.status === 'pending'" class="btn btn-sm btn-outline" style="color:var(--color-success)" @click.stop="handleConfirm(s.id)">确认</button>
             </div>
           </div>
           <div v-if="filteredStatements.length === 0" class="empty-state">
             暂无对账单
           </div>
         </div>
-      </div>
-    </div>
 
-    <div v-if="showEditor" class="modal-overlay" @click.self="closeEditor">
-      <div class="modal-content modal-wide">
-        <div class="modal-header">
-          <h3 class="modal-title">{{ editingId ? '编辑对账单' : '新建对账单' }}</h3>
-          <button class="modal-close" @click="closeEditor">✕</button>
-        </div>
-        <div class="modal-body">
-          <!-- 步骤指示器 -->
-          <div class="wizard-steps">
-            <div class="wizard-step" :class="{ active: editorStep === 1, completed: editorStep > 1 }">
-              <div class="step-number">1</div>
-              <div class="step-label">基本信息</div>
-            </div>
-            <div class="wizard-step-line" :class="{ completed: editorStep > 1 }"></div>
-            <div class="wizard-step" :class="{ active: editorStep === 2, completed: editorStep > 2 }">
-              <div class="step-number">2</div>
-              <div class="step-label">交易双方</div>
-            </div>
-            <div class="wizard-step-line" :class="{ completed: editorStep > 2 }"></div>
-            <div class="wizard-step" :class="{ active: editorStep === 3, completed: editorStep > 3 }">
-              <div class="step-number">3</div>
-              <div class="step-label">交易明细</div>
-            </div>
-            <div class="wizard-step-line" :class="{ completed: editorStep > 3 }"></div>
-            <div class="wizard-step" :class="{ active: editorStep === 4 }">
-              <div class="step-number">4</div>
-              <div class="step-label">付款条款</div>
-            </div>
+        <!-- 周视图 -->
+        <div v-else-if="currentView === 'week'" class="week-view">
+          <div class="week-nav">
+            <button class="btn btn-ghost btn-sm" @click="weekPrev"><Icon name="chevronLeft" :size="14" /></button>
+            <span class="week-range-label">{{ weekRangeLabel }}</span>
+            <button class="btn btn-ghost btn-sm" @click="weekNext"><Icon name="chevronRight" :size="14" /></button>
+            <button class="btn btn-ghost btn-sm" @click="weekToday" style="margin-left:var(--space-2)">本周</button>
           </div>
-
-          <!-- 步骤1：基本信息 -->
-          <div v-if="editorStep === 1" class="wizard-content">
-            <div class="form-row form-row-3">
-              <div class="form-group">
-                <label class="form-label">对账单号</label>
-                <input type="text" class="form-input" v-model="editorData.statementNo" readonly>
-              </div>
-              <div class="form-group">
-                <label class="form-label">账单期间</label>
-                <input type="month" class="form-input" v-model="editorData.period" @change="onPeriodChange">
-              </div>
-              <div class="form-group">
-                <label class="form-label">对账日期</label>
-                <input type="date" class="form-input" v-model="editorData.reconDate">
-              </div>
+          <div class="week-grid">
+            <div class="week-header" v-for="(d, i) in weekDays" :key="d">
+              <span>{{ d }}</span>
+              <span class="week-header-date">{{ weekDates[i] }}</span>
             </div>
-            <div class="form-row form-row-3">
-              <div class="form-group">
-                <label class="form-label">联系方式</label>
-                <input type="text" class="form-input" v-model="editorData.contactPhone" placeholder="联系电话">
-              </div>
-              <div class="form-group">
-                <label class="form-label">制单人</label>
-                <input type="text" class="form-input" v-model="editorData.preparer" placeholder="制单人">
-              </div>
-              <div class="form-group">
-                <label class="form-label">审核人</label>
-                <select class="form-select" v-model="editorData.reviewer">
-                  <option value="">请选择</option>
-                  <option value="admin">管理员</option>
-                  <option value="finance">财务主管</option>
-                </select>
+            <div v-for="(day, idx) in weekDaysData" :key="idx" class="week-col" :class="{ 'week-col-today': day.isToday }">
+              <div v-if="day.statements.length === 0" class="week-empty">无对账单</div>
+              <div v-for="s in day.statements" :key="s.id" class="week-event" :class="'stmt-' + s.status" @click="viewDetail(s.id)">
+                <div class="week-event-title">{{ s.statementNo }}</div>
+                <div class="week-event-meta">¥{{ formatMoney(s.totalAmount) }} · {{ s.buyerName }}</div>
               </div>
             </div>
           </div>
-
-          <!-- 步骤2：交易双方 -->
-          <div v-if="editorStep === 2" class="wizard-content">
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">采购方</label>
-                <select class="form-select" v-model="editorData.buyerId" @change="onBuyerChange">
-                  <option value="">请选择采购方</option>
-                  <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">{{ c.name || c.fullName || c.companyName }}</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">供应商</label>
-                <select class="form-select" v-model="editorData.sellerId" @change="onSellerChange">
-                  <option value="">请选择供应商</option>
-                  <option v-for="s in dataStore.suppliers" :key="s.id" :value="s.id">{{ s.name || s.shortName }}</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">采购方地址</label>
-                <input type="text" class="form-input" v-model="editorData.buyerAddress">
-              </div>
-              <div class="form-group">
-                <label class="form-label">供应商地址</label>
-                <input type="text" class="form-input" v-model="editorData.sellerAddress">
-              </div>
-            </div>
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">采购方联系人</label>
-                <input type="text" class="form-input" v-model="editorData.buyerContact">
-              </div>
-              <div class="form-group">
-                <label class="form-label">供应商联系人</label>
-                <input type="text" class="form-input" v-model="editorData.sellerContact">
-              </div>
-            </div>
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">采购方电话</label>
-                <input type="text" class="form-input" v-model="editorData.buyerPhone">
-              </div>
-              <div class="form-group">
-                <label class="form-label">供应商电话</label>
-                <input type="text" class="form-input" v-model="editorData.sellerPhone">
-              </div>
-            </div>
-          </div>
-
-          <!-- 步骤3：交易明细 -->
-          <div v-if="editorStep === 3" class="wizard-content">
-            <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-3)">
-              <button class="btn btn-sm btn-outline" @click="addItemRow">+ 添加一行</button>
-              <button class="btn btn-sm btn-outline" @click="autoFetchTransactions">自动拉取交易</button>
-              <button class="btn btn-sm btn-outline" @click="clearItems" style="color:var(--color-danger)">清空</button>
-              <span style="margin-left:auto;font-size:var(--font-size-sm);color:var(--color-text-secondary)">共 {{ editorItems.length }} 条</span>
-            </div>
-            <div class="table-container" style="max-height:300px;overflow-y:auto">
-              <table class="data-table" style="font-size:var(--font-size-xs)">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>日期</th>
-                    <th>货物名称</th>
-                    <th>料号</th>
-                    <th>规格</th>
-                    <th>单位</th>
-                    <th>数量</th>
-                    <th>单价</th>
-                    <th>金额</th>
-                    <th>备注</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="editorItems.length === 0">
-                    <td colspan="11" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-3)">暂无明细，请点击"添加一行"</td>
-                  </tr>
-                  <tr v-for="(item, idx) in editorItems" :key="idx">
-                    <td style="text-align:center">{{ idx + 1 }}</td>
-                    <td><input type="date" class="form-input form-input-xs" v-model="item.date"></td>
-                    <td><input class="form-input form-input-xs" v-model="item.name" placeholder="名称"></td>
-                    <td><input class="form-input form-input-xs" style="width:80px" v-model="item.code" placeholder="料号"></td>
-                    <td><input class="form-input form-input-xs" v-model="item.spec" placeholder="规格"></td>
-                    <td>
-                      <select class="form-select form-input-xs" style="width:65px" v-model="item.unit">
-                        <option value="个">个</option>
-                        <option value="件">件</option>
-                        <option value="kg">kg</option>
-                        <option value="米">米</option>
-                        <option value="箱">箱</option>
-                        <option value="台">台</option>
-                        <option value="套">套</option>
-                      </select>
-                    </td>
-                    <td><input type="number" class="form-input form-input-xs" style="width:70px;text-align:right" v-model.number="item.qty" step="0.01" min="0" @input="calcItemAmount(idx)"></td>
-                    <td><input type="number" class="form-input form-input-xs" style="width:80px;text-align:right" v-model.number="item.price" step="0.01" min="0" @input="calcItemAmount(idx)"></td>
-                    <td style="text-align:right;font-weight:600">¥{{ formatMoney(item.amount) }}</td>
-                    <td><input class="form-input form-input-xs" style="width:60px" v-model="item.remark" placeholder="备注"></td>
-                    <td><button class="btn btn-sm btn-outline" style="color:var(--color-danger);padding:0 4px" @click="removeItemRow(idx)">删除</button></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="editor-section" style="margin-top:var(--space-4)">
-              <h4 class="editor-section-title">金额合计</h4>
-              <div class="form-row form-row-3">
-                <div class="form-group">
-                  <label class="form-label">税率(%)</label>
-                  <input type="number" class="form-input" v-model.number="editorData.taxRate" @input="calcAmounts">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">小计</label>
-                  <input type="text" class="form-input" :value="'¥' + formatMoney(calcSubtotal)" readonly>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">税额</label>
-                  <input type="text" class="form-input" :value="'¥' + formatMoney(calcTaxAmount)" readonly>
-                </div>
-              </div>
-              <div class="form-row form-row-2">
-                <div class="form-group">
-                  <label class="form-label">合计</label>
-                  <input type="text" class="form-input" :value="'¥' + formatMoney(calcTotalAmount)" readonly style="color:var(--color-danger);font-weight:700">
-                </div>
-                <div class="form-group">
-                  <label class="form-label">大写金额</label>
-                  <input type="text" class="form-input" :value="calcTotalChinese" readonly style="color:var(--color-danger)">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 步骤4：付款条款 -->
-          <div v-if="editorStep === 4" class="wizard-content">
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">付款方式</label>
-                <select class="form-select" v-model="editorData.paymentMethod">
-                  <option value="">请选择</option>
-                  <option value="银行转账">银行转账</option>
-                  <option value="承兑汇票">承兑汇票</option>
-                  <option value="现金">现金</option>
-                  <option value="月结">月结</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">付款期限</label>
-                <select class="form-select" v-model="editorData.paymentTerm">
-                  <option value="">请选择</option>
-                  <option value="月结30天">月结30天</option>
-                  <option value="月结60天">月结60天</option>
-                  <option value="票到15天">票到15天</option>
-                  <option value="票到30天">票到30天</option>
-                  <option value="货到付款">货到付款</option>
-                </select>
-              </div>
-            </div>
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">开户银行</label>
-                <input type="text" class="form-input" v-model="editorData.bankName">
-              </div>
-              <div class="form-group">
-                <label class="form-label">银行账号</label>
-                <input type="text" class="form-input" v-model="editorData.bankAccount">
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">账户名称</label>
-              <input type="text" class="form-input" v-model="editorData.bankHolder">
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" @click="prevStep" v-if="editorStep > 1">上一步</button>
-          <button class="btn btn-outline" @click="closeEditor">取消</button>
-          <button class="btn btn-primary" @click="nextStep" v-if="editorStep < 4">下一步</button>
-          <button class="btn btn-outline" @click="saveDraft" v-if="editorStep === 4">保存草稿</button>
-          <button class="btn btn-primary" @click="submitStatement" v-if="editorStep === 4">提交审核</button>
         </div>
       </div>
     </div>
 
-    <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail">
-      <div class="modal-content" style="max-width:800px">
-        <div class="modal-header">
-          <h3>对账单详情 - {{ detailData.statementNo }}</h3>
-          <button class="btn btn-sm btn-outline" @click="closeDetail">关闭</button>
-        </div>
-        <div class="modal-body" style="max-height:70vh;overflow-y:auto">
-          <div class="detail-section">
-            <div class="detail-section-header">
-              <span>账单抬头信息</span>
-              <span class="status-badge" :class="statementStore.statusBadgeMap[detailData.status]">
-                {{ statementStore.statusLabels[detailData.status] }}
-              </span>
-            </div>
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-label">账单编号</span><span class="detail-value cell-mono">{{ detailData.statementNo }}</span></div>
-              <div class="detail-item"><span class="detail-label">账单类型</span><span class="detail-value">{{ detailData.type || '月度对账单' }}</span></div>
-              <div class="detail-item"><span class="detail-label">账单期间</span><span class="detail-value">{{ formatPeriod(detailData.period) }}</span></div>
-              <div class="detail-item"><span class="detail-label">对账日期</span><span class="detail-value">{{ detailData.reconDate || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">制单人</span><span class="detail-value">{{ detailData.preparer || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">审核人</span><span class="detail-value">{{ detailData.reviewer || '-' }}</span></div>
-            </div>
-          </div>
+    <!-- 新建/编辑对账单弹窗 -->
+    <StatementFormModal
+      v-if="showFormModal"
+      :showModal="showFormModal"
+      :editingStatement="editingStatement"
+      @close="showFormModal = false; editingStatement = null"
+      @saved="onFormSaved"
+    />
 
-          <div class="detail-section">
-            <div class="detail-section-header"><span>交易双方</span></div>
-            <div class="detail-parties">
-              <div class="detail-party">
-                <h5 style="color:var(--color-accent);margin:0 0 var(--space-2) 0">采购方</h5>
-                <div><strong>公司：</strong>{{ detailData.buyerName || '-' }}</div>
-                <div><strong>地址：</strong>{{ detailData.buyerAddress || '-' }}</div>
-                <div><strong>联系人：</strong>{{ detailData.buyerContact || '-' }}</div>
-                <div><strong>电话：</strong>{{ detailData.buyerPhone || '-' }}</div>
-                <div><strong>邮箱：</strong>{{ detailData.buyerEmail || '-' }}</div>
-              </div>
-              <div class="detail-party">
-                <h5 style="color:var(--color-accent);margin:0 0 var(--space-2) 0">供应商</h5>
-                <div><strong>公司：</strong>{{ detailData.sellerName || '-' }}</div>
-                <div><strong>地址：</strong>{{ detailData.sellerAddress || '-' }}</div>
-                <div><strong>联系人：</strong>{{ detailData.sellerContact || '-' }}</div>
-                <div><strong>电话：</strong>{{ detailData.sellerPhone || '-' }}</div>
-                <div><strong>邮箱：</strong>{{ detailData.sellerEmail || '-' }}</div>
-              </div>
-            </div>
-          </div>
+    <!-- 对账单详情预览 -->
+    <StatementPreview
+      v-if="showDetail"
+      :showModal="showDetail"
+      :statementId="previewStatementId"
+      @close="closeDetail"
+      @edit="onPreviewEdit"
+      @confirm="handleConfirm"
+      @markPaid="handleMarkPaid"
+      @print="handlePrint"
+    />
 
-          <div class="detail-section">
-            <div class="detail-section-header"><span>交易明细</span></div>
-            <div class="table-container">
-              <table class="data-table" style="font-size:var(--font-size-sm)">
-                <thead>
-                  <tr>
-                    <th>#</th><th>日期</th><th>名称</th><th>料号</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th><th>备注</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-if="!detailData.items || detailData.items.length === 0">
-                    <td colspan="10" style="text-align:center;color:var(--color-text-tertiary)">暂无明细</td>
-                  </tr>
-                  <tr v-for="(it, idx) in (detailData.items || [])" :key="idx">
-                    <td>{{ idx + 1 }}</td>
-                    <td>{{ it.date || '-' }}</td>
-                    <td>{{ it.name }}</td>
-                    <td class="cell-mono">{{ it.code }}</td>
-                    <td>{{ it.spec || '-' }}</td>
-                    <td>{{ it.unit || '-' }}</td>
-                    <td class="cell-mono">{{ (it.qty || 0).toFixed(2) }}</td>
-                    <td class="cell-mono">{{ (it.price || 0).toFixed(2) }}</td>
-                    <td class="cell-mono" style="font-weight:600">¥{{ formatMoney(it.amount) }}</td>
-                    <td>{{ it.remark || '-' }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <div class="detail-section-header"><span>金额合计</span></div>
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-label">小计</span><span class="detail-value">¥{{ formatMoney(detailData.subtotal) }}</span></div>
-              <div class="detail-item"><span class="detail-label">税率</span><span class="detail-value">{{ detailData.taxRate || 0 }}%</span></div>
-              <div class="detail-item"><span class="detail-label">税额</span><span class="detail-value">¥{{ formatMoney(detailData.taxAmount) }}</span></div>
-              <div class="detail-item"><span class="detail-label">合计</span><span class="detail-value" style="color:var(--color-danger);font-weight:700;font-size:var(--font-size-lg)">¥{{ formatMoney(detailData.totalAmount) }}</span></div>
-            </div>
-            <div style="margin-top:var(--space-2)"><strong>大写：</strong><span style="color:var(--color-danger)">{{ detailData.totalChinese || statementStore.numberToChinese(detailData.totalAmount || 0) }}</span></div>
-          </div>
-
-          <div class="detail-section" v-if="discrepancy">
-            <div class="detail-section-header"><span>对账差异分析</span></div>
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-label">对账单小计</span><span class="detail-value">¥{{ formatMoney(discrepancy.statementSubtotal) }}</span></div>
-              <div class="detail-item"><span class="detail-label">交易总额</span><span class="detail-value">¥{{ formatMoney(discrepancy.transactionTotal) }}</span></div>
-              <div class="detail-item">
-                <span class="detail-label">差异</span>
-                <span class="detail-value" :style="{ color: discrepancy.isBalanced ? 'var(--color-success)' : 'var(--color-warning)', fontWeight: 600 }">
-                  ¥{{ formatMoney(discrepancy.difference) }} {{ discrepancy.isBalanced ? '对账平衡' : '存在差异' }}
-                </span>
-              </div>
-              <div class="detail-item"><span class="detail-label">匹配</span><span class="detail-value">交易 {{ discrepancy.matchedCount }} 条 · 明细 {{ discrepancy.itemCount }} 条</span></div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <div class="detail-section-header"><span>付款条款</span></div>
-            <div class="detail-grid">
-              <div class="detail-item"><span class="detail-label">付款方式</span><span class="detail-value">{{ detailData.paymentMethod || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">付款期限</span><span class="detail-value">{{ detailData.paymentTerm || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">开户银行</span><span class="detail-value">{{ detailData.bankName || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">银行账号</span><span class="detail-value">{{ detailData.bankAccount || '-' }}</span></div>
-              <div class="detail-item"><span class="detail-label">账户名称</span><span class="detail-value">{{ detailData.bankHolder || '-' }}</span></div>
-              <div class="detail-item" v-if="detailData.status === 'confirmed'">
-                <span class="detail-label">已付/应付</span>
-                <span class="detail-value">¥{{ formatMoney(detailData.paidAmount) }} / ¥{{ formatMoney(detailData.totalAmount) }}</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <div class="detail-section-header"><span>确认签字</span></div>
-            <div class="detail-parties">
-              <div class="detail-party">
-                <h5 style="margin:0 0 var(--space-2) 0">采购方确认</h5>
-                <div><strong>签字：</strong>{{ detailData.buyerSign || '__________' }}</div>
-                <div><strong>日期：</strong>{{ detailData.buyerSignDate || '____年__月__日' }}</div>
-              </div>
-              <div class="detail-party">
-                <h5 style="margin:0 0 var(--space-2) 0">供应商确认</h5>
-                <div><strong>签字：</strong>{{ detailData.sellerSign || '__________' }}</div>
-                <div><strong>日期：</strong>{{ detailData.sellerSignDate || '____年__月__日' }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-outline" @click="closeDetail">关闭</button>
-          <button class="btn btn-outline" @click="handlePrint(detailData.id)">打印</button>
-          <button
-            v-if="detailData.status === 'pending' || detailData.status === 'draft'"
-            class="btn btn-outline"
-            @click="openEditor(detailData); closeDetail()"
-          >编辑</button>
-          <button
-            v-if="detailData.status === 'pending'"
-            class="btn btn-primary"
-            @click="handleConfirm(detailData.id); closeDetail()"
-          >确认</button>
-          <button
-            v-if="detailData.status === 'confirmed'"
-            class="btn btn-primary"
-            @click="handleMarkPaid(detailData); closeDetail()"
-          >记录付款</button>
-        </div>
-      </div>
-    </div>
-
+    <!-- 记录付款弹窗 -->
     <div v-if="showPaidDialog" class="modal-overlay" @click.self="showPaidDialog = false">
       <div class="modal-content" style="max-width:400px">
         <div class="modal-header">
@@ -664,11 +312,29 @@
           <div class="form-group">
             <label class="form-label">本次付款金额</label>
             <input type="number" class="form-input" v-model.number="paidAmount" min="0.01" step="0.01">
+            <div v-if="paidError" class="inline-error">{{ paidError }}</div>
           </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-outline" @click="showPaidDialog = false">取消</button>
           <button class="btn btn-primary" @click="confirmPaid">确认付款</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自定义确认弹窗 -->
+    <div v-if="confirmDialog.show" class="modal-overlay" @click.self="onConfirmDialogCancel">
+      <div class="modal-content" style="max-width:400px">
+        <div class="modal-header">
+          <h3>{{ confirmDialog.title }}</h3>
+          <button class="btn btn-sm btn-outline" @click="onConfirmDialogCancel">关闭</button>
+        </div>
+        <div class="modal-body">
+          <p>{{ confirmDialog.message }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" @click="onConfirmDialogCancel">取消</button>
+          <button class="btn btn-primary" @click="onConfirmDialogOk">确认</button>
         </div>
       </div>
     </div>
@@ -680,31 +346,66 @@ import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useStatementStore } from '@/stores/statement'
 import { useCustomerStore } from '@/stores/customer'
 import { useDataStore } from '@/stores/data'
+import { usePermission } from '@/utils/permissionGuard'
 import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
+import StatementFormModal from '@/components/statements/StatementFormModal.vue'
+import StatementPreview from '@/components/statements/StatementPreview.vue'
 
 const statementStore = useStatementStore()
 const customerStore = useCustomerStore()
 const dataStore = useDataStore()
+const perm = usePermission()
+
+const canCreate = perm.isAllowed('statement', 'statementCreate')
+const canEdit = perm.isAllowed('statement', 'statementUpdate')
+const canDelete = perm.isAllowed('statement', 'statementDelete')
+const canConfirm = perm.isAllowed('statement', 'statementConfirm')
+const canExport = perm.isAllowed('statement', 'statementExport')
 
 const currentView = ref('table')
-const showEditor = ref(false)
+const showFormModal = ref(false)
+const editingStatement = ref(null)
 const showDetail = ref(false)
+const previewStatementId = ref(null)
 const showPaidDialog = ref(false)
-const editingId = ref(null)
-const detailData = ref({})
 const paidTarget = ref({})
 const paidAmount = ref(0)
-const discrepancy = ref(null)
 const selectedIds = ref([])
-const editorStep = ref(1)
 const showExportMenu = ref(false)
+const confirmDialog = ref({ show: false, title: '', message: '', onConfirm: null })
+const exportError = ref('')
+const paidError = ref('')
+
+const columnDefs = [
+  { key: 'statementNo', label: '对账单号' },
+  { key: 'date', label: '日期' },
+  { key: 'buyer', label: '采购方' },
+  { key: 'supplier', label: '供应商' },
+  { key: 'unitPrice', label: '单价' },
+  { key: 'quantity', label: '数量' },
+  { key: 'totalAmount', label: '总金额' },
+  { key: 'status', label: '状态' },
+  { key: 'createdAt', label: '创建日期' },
+  { key: 'actions', label: '操作', hideable: false }
+]
+const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const showColumnConfig = ref(false)
+const colDropdownStyle = ref({})
+function toggleColumnConfig(event) {
+  showColumnConfig.value = !showColumnConfig.value
+  if (showColumnConfig.value) {
+    const rect = event.target.getBoundingClientRect()
+    colDropdownStyle.value = { top: rect.bottom + 8 + 'px', left: rect.left + 'px' }
+  }
+}
 
 const viewOptions = [
-  { key: 'table', label: '表格' },
-  { key: 'list', label: '列表' },
-  { key: 'card', label: '卡片' }
+  { key: 'table', icon: 'chart', label: '表格' },
+  { key: 'list', icon: 'list', label: '列表' },
+  { key: 'card', icon: 'archive', label: '卡片' },
+  { key: 'week', icon: 'calendar', label: '周视图' }
 ]
 
 const filters = reactive({
@@ -712,35 +413,6 @@ const filters = reactive({
   period: '',
   status: ''
 })
-
-const editorData = reactive({
-  statementNo: '',
-  period: '',
-  reconDate: '',
-  contactPhone: '',
-  preparer: 'admin',
-  reviewer: '',
-  buyerId: '',
-  buyerName: '',
-  buyerAddress: '',
-  buyerContact: '',
-  buyerPhone: '',
-  buyerEmail: '',
-  sellerId: '',
-  sellerName: '',
-  sellerAddress: '',
-  sellerContact: '',
-  sellerPhone: '',
-  sellerEmail: '',
-  taxRate: 13,
-  paymentMethod: '',
-  paymentTerm: '',
-  bankName: '',
-  bankAccount: '',
-  bankHolder: ''
-})
-
-const editorItems = ref([])
 
 const alerts = computed(() => statementStore.checkAlerts())
 
@@ -754,22 +426,6 @@ const filteredStatements = computed(() => {
     if (filters.status && s.status !== filters.status) return false
     return true
   })
-})
-
-const calcSubtotal = computed(() => {
-  return editorItems.value.reduce((sum, i) => sum + (parseFloat(i.amount) || 0), 0)
-})
-
-const calcTaxAmount = computed(() => {
-  return calcSubtotal.value * (editorData.taxRate || 0) / 100
-})
-
-const calcTotalAmount = computed(() => {
-  return calcSubtotal.value + calcTaxAmount.value
-})
-
-const calcTotalChinese = computed(() => {
-  return statementStore.numberToChinese(calcTotalAmount.value)
 })
 
 function formatMoney(num) {
@@ -796,6 +452,88 @@ function formatPeriod(period) {
   return period
 }
 
+/* ========== 周视图 ========== */
+const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const weekAnchor = ref(new Date())
+
+const weekRangeLabel = computed(() => {
+  const start = new Date(weekAnchor.value)
+  const day = start.getDay() || 7
+  start.setDate(start.getDate() - day + 1)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  const fmt = d => `${d.getMonth() + 1}/${d.getDate()}`
+  return `${start.getFullYear()}年 ${fmt(start)} - ${fmt(end)}`
+})
+
+const weekDays = computed(() => weekDayNames)
+
+const weekDates = computed(() => {
+  const start = new Date(weekAnchor.value)
+  const day = start.getDay() || 7
+  start.setDate(start.getDate() - day + 1)
+  const dates = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start)
+    d.setDate(d.getDate() + i)
+    dates.push(`${d.getMonth() + 1}/${d.getDate()}`)
+  }
+  return dates
+})
+
+const weekDaysData = computed(() => {
+  const start = new Date(weekAnchor.value)
+  const day = start.getDay() || 7
+  start.setDate(start.getDate() - day + 1)
+  const todayStr = new Date().toISOString().split('T')[0]
+  const days = []
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start)
+    d.setDate(d.getDate() + i)
+    const dateStr = d.toISOString().split('T')[0]
+    days.push({
+      date: dateStr,
+      isToday: dateStr === todayStr,
+      statements: filteredStatements.value.filter(s => s.reconDate === dateStr)
+    })
+  }
+  return days
+})
+
+function weekPrev() {
+  const d = new Date(weekAnchor.value)
+  d.setDate(d.getDate() - 7)
+  weekAnchor.value = d
+}
+function weekNext() {
+  const d = new Date(weekAnchor.value)
+  d.setDate(d.getDate() + 7)
+  weekAnchor.value = d
+}
+function weekToday() {
+  weekAnchor.value = new Date()
+}
+
+function showConfirmDialog(title, message, callback) {
+  confirmDialog.value = { show: true, title, message, onConfirm: callback }
+}
+
+function onConfirmDialogOk() {
+  if (confirmDialog.value.onConfirm) {
+    confirmDialog.value.onConfirm()
+  }
+  confirmDialog.value = { show: false, title: '', message: '', onConfirm: null }
+}
+
+function onConfirmDialogCancel() {
+  confirmDialog.value = { show: false, title: '', message: '', onConfirm: null }
+}
+
+function showExportError(msg) {
+  exportError.value = msg
+  setTimeout(() => { exportError.value = '' }, 3000)
+}
+
 function resetFilters() {
   filters.search = ''
   filters.period = ''
@@ -804,267 +542,44 @@ function resetFilters() {
 
 function openEditor(data) {
   if (data && data.id) {
-    editingId.value = data.id
-    Object.keys(editorData).forEach(k => {
-      editorData[k] = data[k] !== undefined ? data[k] : (typeof editorData[k] === 'number' ? 0 : '')
-    })
-    editorItems.value = (data.items || []).map(i => ({ ...i }))
+    editingStatement.value = data
   } else {
-    editingId.value = null
-    const now = new Date()
-    const curPeriod = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
-    const curDate = now.toISOString().split('T')[0]
-    editorData.statementNo = statementStore.generateStatementNo(curPeriod)
-    editorData.period = curPeriod
-    editorData.reconDate = curDate
-    editorData.contactPhone = ''
-    editorData.preparer = 'admin'
-    editorData.reviewer = ''
-    editorData.buyerId = ''
-    editorData.buyerName = ''
-    editorData.buyerAddress = ''
-    editorData.buyerContact = ''
-    editorData.buyerPhone = ''
-    editorData.buyerEmail = ''
-    editorData.sellerId = ''
-    editorData.sellerName = ''
-    editorData.sellerAddress = ''
-    editorData.sellerContact = ''
-    editorData.sellerPhone = ''
-    editorData.sellerEmail = ''
-    editorData.taxRate = 13
-    editorData.paymentMethod = ''
-    editorData.paymentTerm = ''
-    editorData.bankName = ''
-    editorData.bankAccount = ''
-    editorData.bankHolder = ''
-    editorItems.value = []
+    editingStatement.value = null
   }
-  editorStep.value = 1
-  showEditor.value = true
+  showFormModal.value = true
 }
 
-function closeEditor() {
-  showEditor.value = false
-  editingId.value = null
-  editorStep.value = 1
-}
-
-function prevStep() {
-  if (editorStep.value > 1) {
-    editorStep.value--
-  }
-}
-
-function nextStep() {
-  if (editorStep.value < 4) {
-    editorStep.value++
-  }
-}
-
-function onPeriodChange() {
-  if (editorData.period && !editingId.value) {
-    editorData.statementNo = statementStore.generateStatementNo(editorData.period)
-  }
-}
-
-function onBuyerChange() {
-  const c = customerStore.customers.find(c => c.id === editorData.buyerId)
-  if (c) {
-    editorData.buyerName = c.name || c.fullName || c.companyName
-    editorData.buyerAddress = c.address || ''
-    editorData.buyerContact = c.contact || ''
-    editorData.buyerPhone = c.phone || ''
-    editorData.buyerEmail = c.email || ''
-  }
-}
-
-function onSellerChange() {
-  const s = dataStore.suppliers.find(s => s.id === editorData.sellerId)
-  if (s) {
-    editorData.sellerName = s.name || s.shortName
-    editorData.sellerAddress = s.address || ''
-    editorData.sellerContact = s.contact || ''
-    editorData.sellerPhone = s.phone || ''
-    editorData.sellerEmail = s.email || ''
-    editorData.bankName = s.bankName || ''
-    editorData.bankAccount = s.bankAccount || ''
-    editorData.bankHolder = s.bankHolder || s.name || ''
-  }
-}
-
-function addItemRow() {
-  const period = editorData.period
-  let lastDay = ''
-  if (period) {
-    const parts = period.split('-')
-    const yr = parseInt(parts[0])
-    const mo = parseInt(parts[1])
-    const dt = new Date(yr, mo, 0)
-    lastDay = yr + '-' + String(mo).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0')
-  }
-  editorItems.value.push({
-    date: lastDay,
-    name: '',
-    code: '',
-    spec: '',
-    unit: 'kg',
-    qty: 0,
-    price: 0,
-    amount: 0,
-    remark: ''
-  })
-}
-
-function removeItemRow(idx) {
-  editorItems.value.splice(idx, 1)
-}
-
-function clearItems() {
-  if (editorItems.value.length > 0 && !confirm('确认清空所有明细？')) return
-  editorItems.value = []
-}
-
-function calcItemAmount(idx) {
-  const item = editorItems.value[idx]
-  if (item) {
-    item.amount = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)
-  }
-}
-
-function calcAmounts() {
-  for (const item of editorItems.value) {
-    item.amount = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0)
-  }
-}
-
-function autoFetchTransactions() {
-  if (!editorData.buyerId) { alert('请先选择采购方'); return }
-  if (!editorData.period) { alert('请先选择账单期间'); return }
-  const transactions = dataStore.transactions || []
-  const parts = editorData.period.split('-')
-  const yr = parseInt(parts[0])
-  const mo = parseInt(parts[1])
-  const lastDay = new Date(yr, mo, 0).getDate()
-  const periodStart = editorData.period + '-01'
-  const periodEnd = editorData.period + '-' + String(lastDay).padStart(2, '0')
-  const matched = transactions.filter(t =>
-    t.customerId === editorData.buyerId &&
-    t.type !== 'collection' &&
-    t.date >= periodStart &&
-    t.date <= periodEnd &&
-    (!t.reconciliationStatus || t.reconciliationStatus === '')
-  )
-  if (matched.length === 0) { alert('该期间无未对账交易记录'); return }
-  const existingIds = new Set(editorItems.value.filter(i => i.sourceTransactionId).map(i => i.sourceTransactionId))
-  let added = 0
-  for (const t of matched) {
-    if (!existingIds.has(t.id)) {
-      editorItems.value.push({
-        date: t.date || '',
-        name: t.productName || t.description || '',
-        code: t.productCode || '',
-        spec: t.spec || '',
-        unit: t.unit || 'kg',
-        qty: t.quantity || 0,
-        price: t.unitPrice || 0,
-        amount: t.amount || 0,
-        remark: '自动匹配·' + (t.transactionNo || ''),
-        sourceTransactionId: t.id
-      })
-      added++
-    }
-  }
-  alert('已自动拉取 ' + added + ' 条交易明细')
-}
-
-function collectData() {
-  return {
-    statementNo: editorData.statementNo,
-    type: '月度对账单',
-    period: editorData.period,
-    reconDate: editorData.reconDate,
-    preparer: editorData.preparer,
-    reviewer: editorData.reviewer,
-    contactPhone: editorData.contactPhone,
-    buyerId: editorData.buyerId,
-    buyerName: editorData.buyerName,
-    buyerAddress: editorData.buyerAddress,
-    buyerContact: editorData.buyerContact,
-    buyerPhone: editorData.buyerPhone,
-    buyerEmail: editorData.buyerEmail,
-    sellerId: editorData.sellerId,
-    sellerName: editorData.sellerName,
-    sellerAddress: editorData.sellerAddress,
-    sellerContact: editorData.sellerContact,
-    sellerPhone: editorData.sellerPhone,
-    sellerEmail: editorData.sellerEmail,
-    items: JSON.parse(JSON.stringify(editorItems.value)),
-    subtotal: calcSubtotal.value,
-    taxRate: editorData.taxRate,
-    taxAmount: calcTaxAmount.value,
-    totalAmount: calcTotalAmount.value,
-    totalChinese: calcTotalChinese.value,
-    paymentMethod: editorData.paymentMethod,
-    paymentTerm: editorData.paymentTerm,
-    bankName: editorData.bankName,
-    bankAccount: editorData.bankAccount,
-    bankHolder: editorData.bankHolder
-  }
-}
-
-function validateData(data) {
-  return []
-}
-
-function saveDraft() {
-  const data = collectData()
-  if (editingId.value) {
-    statementStore.updateStatement(editingId.value, { ...data, status: 'draft' })
-  } else {
-    statementStore.addStatement({ ...data, status: 'draft' })
-  }
-  closeEditor()
-}
-
-function submitStatement() {
-  const data = collectData()
-  const errors = validateData(data)
-  if (errors.length > 0) {
-    alert(errors[0])
-    return
-  }
-  if (editingId.value) {
-    statementStore.updateStatement(editingId.value, { ...data, status: 'pending' })
-  } else {
-    statementStore.addStatement(data)
-  }
-  closeEditor()
+function onFormSaved() {
+  // 表单保存后的回调，无需额外操作，store 已更新
 }
 
 function viewDetail(id) {
-  const stmt = statementStore.getById(id)
-  if (!stmt) return
-  detailData.value = { ...stmt }
-  discrepancy.value = statementStore.analyzeDiscrepancies(id, dataStore.transactions)
+  previewStatementId.value = id
   showDetail.value = true
 }
 
 function closeDetail() {
   showDetail.value = false
-  discrepancy.value = null
+  previewStatementId.value = null
+}
+
+function onPreviewEdit(statement) {
+  showDetail.value = false
+  previewStatementId.value = null
+  editingStatement.value = statement
+  showFormModal.value = true
 }
 
 function handleConfirm(id) {
-  if (confirm('确认此对账单？')) {
+  showConfirmDialog('确认操作', '确认此对账单？', () => {
     statementStore.confirmStatement(id)
-  }
+  })
 }
 
 function handleVoid(id) {
-  if (confirm('确认作废此对账单？')) {
+  showConfirmDialog('确认操作', '确认作废此对账单？', () => {
     statementStore.voidStatement(id)
-  }
+  })
 }
 
 function handleMarkPaid(stmt) {
@@ -1074,28 +589,31 @@ function handleMarkPaid(stmt) {
 }
 
 function confirmPaid() {
+  paidError.value = ''
   if (!paidAmount.value || paidAmount.value <= 0) {
-    alert('请输入有效的付款金额')
+    paidError.value = '请输入有效的付款金额'
+    setTimeout(() => { paidError.value = '' }, 3000)
     return
   }
   const ok = statementStore.markAsPaid(paidTarget.value.id, paidAmount.value)
   if (!ok) {
-    alert('付款金额超出应付总额')
+    paidError.value = '付款金额超出应付总额'
+    setTimeout(() => { paidError.value = '' }, 3000)
     return
   }
   showPaidDialog.value = false
 }
 
 function handleReopen(id) {
-  if (confirm('确认重新打开此对账单？')) {
+  showConfirmDialog('确认操作', '确认重新打开此对账单？', () => {
     statementStore.reopenStatement(id)
-  }
+  })
 }
 
 function handleDelete(id) {
-  if (confirm('确认删除此对账单？删除后不可恢复。')) {
+  showConfirmDialog('确认删除', '确认删除此对账单？删除后不可恢复。', () => {
     statementStore.deleteStatement(id)
-  }
+  })
 }
 
 function handlePrint(id) {
@@ -1124,7 +642,7 @@ function handlePrint(id) {
 
 function exportCSV() {
   const data = filteredStatements.value
-  if (data.length === 0) { alert('暂无数据可导出'); return }
+  if (data.length === 0) { showExportError('暂无数据可导出'); return }
   let csv = '对账单号,日期,采购方,供应商,单价,数量,总金额,状态,创建日期\n'
   for (const s of data) {
     csv += `"${s.statementNo}","${s.reconDate || ''}","${s.buyerName || ''}","${s.sellerName || ''}",${getFirstItemPrice(s)},${getFirstItemQty(s)},${s.totalAmount || 0},"${statementStore.statusLabels[s.status] || s.status}","${s.createdAt || ''}"\n`
@@ -1142,7 +660,7 @@ function exportCSV() {
 
 function exportXLSX() {
   const data = filteredStatements.value
-  if (data.length === 0) { alert('暂无数据可导出'); return }
+  if (data.length === 0) { showExportError('暂无数据可导出'); return }
   const rows = data.map(s => ({
     '对账单号': s.statementNo,
     '日期': s.reconDate || '-',
@@ -1166,7 +684,7 @@ function exportXLSX() {
 
 function exportPDF() {
   const data = filteredStatements.value
-  if (data.length === 0) { alert('暂无数据可导出'); return }
+  if (data.length === 0) { showExportError('暂无数据可导出'); return }
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
   doc.setFontSize(16)
   doc.text('对账单列表', 14, 15)
@@ -1197,11 +715,12 @@ function exportPDF() {
 
 function handleBatchDelete() {
   if (selectedIds.value.length === 0) return
-  if (!confirm(`确定删除选中的 ${selectedIds.value.length} 条对账单？`)) return
-  for (const id of selectedIds.value) {
-    statementStore.deleteStatement(id)
-  }
-  selectedIds.value = []
+  showConfirmDialog('批量删除', `确定删除选中的 ${selectedIds.value.length} 条对账单？`, () => {
+    for (const id of selectedIds.value) {
+      statementStore.deleteStatement(id)
+    }
+    selectedIds.value = []
+  })
 }
 
 function handleBatchPrint() {
@@ -1230,22 +749,29 @@ function closeExportMenu(e) {
   }
 }
 
+function closeColumnConfig(e) {
+  if (!e.target.closest('.column-config-wrapper')) {
+    showColumnConfig.value = false
+  }
+}
+
 onMounted(() => {
   customerStore.initSeedData()
   dataStore.initSeedData()
   statementStore.initSeedData()
   document.addEventListener('click', closeExportMenu)
+  document.addEventListener('click', closeColumnConfig)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', closeExportMenu)
+  document.removeEventListener('click', closeColumnConfig)
 })
 </script>
 
 <style scoped>
 .statement-page {
-  max-width: 1600px;
-  margin: 0 auto;
+  width: 100%;
 }
 .stats-grid-5 {
   display: grid;
@@ -1363,98 +889,6 @@ onUnmounted(() => {
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
 }
-.editor-section {
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-.editor-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-.editor-section-title {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  margin: 0 0 var(--space-3) 0;
-  color: var(--color-accent);
-}
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-.form-input-xs {
-  padding: 2px 4px;
-  font-size: var(--font-size-xs);
-}
-.wizard-steps {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: var(--space-4);
-  padding: var(--space-3) 0;
-}
-.wizard-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.wizard-step .step-number {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  background: var(--color-surface);
-  border: 2px solid var(--color-border);
-  color: var(--color-text-tertiary);
-  transition: all 0.2s;
-}
-.wizard-step .step-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-tertiary);
-  transition: all 0.2s;
-}
-.wizard-step.active .step-number {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  color: #fff;
-}
-.wizard-step.active .step-label {
-  color: var(--color-accent);
-  font-weight: 600;
-}
-.wizard-step.completed .step-number {
-  background: var(--color-success);
-  border-color: var(--color-success);
-  color: #fff;
-}
-.wizard-step.completed .step-label {
-  color: var(--color-success);
-}
-.wizard-step-line {
-  flex: 1;
-  height: 2px;
-  background: var(--color-border);
-  max-width: 60px;
-  margin: 0 var(--space-2);
-  transition: all 0.2s;
-}
-.wizard-step-line.completed {
-  background: var(--color-success);
-}
-.wizard-content {
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 .export-dropdown-wrapper {
   position: relative;
 }
@@ -1481,58 +915,6 @@ onUnmounted(() => {
 .export-dropdown-item:hover {
   background: var(--color-surface-hover);
 }
-.detail-section {
-  margin-bottom: var(--space-4);
-  padding-bottom: var(--space-4);
-  border-bottom: 1px solid var(--color-border);
-}
-.detail-section:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-.detail-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  margin-bottom: var(--space-3);
-  color: var(--color-accent);
-}
-.detail-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-3);
-}
-.detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.detail-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-.detail-value {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-}
-.detail-parties {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-4);
-}
-.detail-party {
-  font-size: var(--font-size-sm);
-}
-.detail-party div {
-  margin-bottom: var(--space-1);
-}
-@media (max-width: 1024px) {
-  .stats-grid-5 { grid-template-columns: repeat(3, 1fr); }
-  .detail-grid { grid-template-columns: 1fr; }
-  .detail-parties { grid-template-columns: 1fr; }
-}
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -1557,8 +939,50 @@ onUnmounted(() => {
 .data-table tbody tr:hover {
   background: var(--color-surface-hover);
 }
+.column-config-wrapper { position: relative; }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
+.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+
+/* 内联错误提示 */
+.inline-error {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-danger-subtle, rgba(239,68,68,0.1));
+  border-radius: var(--radius-sm);
+}
+
+/* 周视图 */
+.week-view { padding: var(--space-3); }
+.week-nav { display: flex; align-items: center; justify-content: center; gap: var(--space-2); margin-bottom: var(--space-3); }
+.week-range-label { font-weight: 600; font-size: var(--font-size-lg); color: var(--color-text-primary); min-width: 180px; text-align: center; }
+.week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
+.week-header { background: var(--color-surface-elevated); padding: var(--space-2); text-align: center; font-weight: 600; color: var(--color-text-primary); border-bottom: 1px solid var(--color-border); border-right: 1px solid var(--color-border); }
+.week-header:last-child { border-right: none; }
+.week-header-date { display: block; font-size: var(--font-size-xs); color: var(--color-text-secondary); font-weight: 400; margin-top: 2px; }
+.week-col { min-height: 120px; padding: var(--space-2); background: var(--color-surface); border-right: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.week-col:nth-child(7n) { border-right: none; }
+.week-col-today { background: color-mix(in srgb, var(--color-accent) 8%, var(--color-surface)); }
+.week-empty { color: var(--color-text-tertiary); font-size: var(--font-size-sm); text-align: center; padding-top: var(--space-4); }
+.week-event { padding: var(--space-1) var(--space-2); margin-bottom: var(--space-1); border-radius: var(--radius-sm); font-size: var(--font-size-xs); cursor: pointer; transition: transform 0.15s; border-left: 3px solid transparent; }
+.week-event:hover { transform: translateX(2px); }
+.week-event-title { font-weight: 600; margin-bottom: 2px; }
+.week-event-meta { color: var(--color-text-secondary); font-size: 11px; }
+.stmt-pending { background: var(--color-warning-subtle); border-left-color: var(--color-warning); }
+.stmt-confirmed { background: var(--color-success-subtle); border-left-color: var(--color-success); }
+.stmt-paid { background: var(--color-info-subtle); border-left-color: var(--color-info); }
+.stmt-voided { background: var(--color-danger-subtle); border-left-color: var(--color-danger); }
+@media (max-width: 1024px) {
+  .stats-grid-5 { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+  .week-grid { grid-template-columns: 1fr; }
+  .week-header { border-right: none; }
+  .week-col { border-right: none; }
+}
 @media (max-width: 640px) {
   .stats-grid-5 { grid-template-columns: repeat(2, 1fr); }
-  .form-row { grid-template-columns: 1fr; }
 }
 </style>

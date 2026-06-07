@@ -2,23 +2,50 @@
   <div class="permission-page">
     <div class="page-header">
       <div>
-        <h2 class="page-header-title">销售权限配置</h2>
+        <h2 class="page-header-title">客户权限配置</h2>
         <p class="page-header-subtitle">配置客户数据的访问权限、编辑权限和操作权限</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-primary" @click="saveAll">💾 保存配置</button>
-        <button class="btn btn-ghost" @click="resetAll">🔄 重置</button>
-        <button class="btn btn-ghost" @click="addRole">＋ 新增角色</button>
-        <button class="btn btn-ghost" @click="doExport">📥 导出</button>
-        <button class="btn btn-ghost" @click="showImportModal = true">📤 导入</button>
+        <button class="btn btn-primary" @click="saveAll"><Icon name="save" :size="14" /> 保存修改</button>
+        <button class="btn btn-secondary" @click="resetAll"><Icon name="chevronLeft" :size="14" /> 重置</button>
+        <button class="btn btn-ghost" @click="openAddRoleModal">＋ 新增角色</button>
+        <div style="position:relative;display:inline-block">
+          <button class="btn btn-ghost" @click="showTemplateDropdown = !showTemplateDropdown"><Icon name="list" :size="14" /> 权限模板 ▾</button>
+          <div v-if="showTemplateDropdown" style="position:absolute;right:0;top:100%;z-index:100;background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);min-width:200px">
+            <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--color-border)" @click="applyTemplate('strict');showTemplateDropdown=false">
+              <div style="font-weight:600">[锁定] 严格模式</div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">仅管理员全权限，其他角色仅查看</div>
+            </div>
+            <div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--color-border)" @click="applyTemplate('standard');showTemplateDropdown=false">
+              <div style="font-weight:600">[平衡] 标准模式</div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">按角色分级授权，推荐使用</div>
+            </div>
+            <div style="padding:8px 12px;cursor:pointer" @click="applyTemplate('loose');showTemplateDropdown=false">
+              <div style="font-weight:600">[解锁] 宽松模式</div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">全部角色全部权限</div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-ghost" @click="doExport"><Icon name="download" :size="14" /> 导出</button>
+        <button class="btn btn-ghost" @click="showImportModal = true"><Icon name="upload" :size="14" /> 导入</button>
+        <button class="btn btn-ghost" style="border-radius:50%;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center" @click="showHelp = !showHelp">?</button>
       </div>
     </div>
 
     <div class="stats-row" style="margin-bottom:var(--space-4)">
-      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">👥</div><div class="stat-card-value">{{ permStore.roleCount }}</div><div class="stat-card-label">角色数</div></div>
-      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">🔑</div><div class="stat-card-value">{{ permStore.totalPerms }}</div><div class="stat-card-label">权限项总数</div></div>
-      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">✏️</div><div class="stat-card-value">{{ permStore.changeCount }}</div><div class="stat-card-label">未保存变更</div></div>
-      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">🕐</div><div class="stat-card-value" style="font-size:var(--font-size-sm)">{{ permStore.lastSaved || '未保存' }}</div><div class="stat-card-label">上次保存</div></div>
+      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">用户</div><div class="stat-card-value">{{ permStore.roleCount }}</div><div class="stat-card-label">角色总数</div></div>
+      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">权限</div><div class="stat-card-value">{{ permStore.totalPerms }}</div><div class="stat-card-label">权限项数</div></div>
+      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">编辑</div><div class="stat-card-value">{{ permStore.changeCount }}</div><div class="stat-card-label">待保存变更</div></div>
+      <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">时间</div><div class="stat-card-value" style="font-size:var(--font-size-sm)">{{ permStore.lastSaved || '未保存' }}</div><div class="stat-card-label">最近修改时间</div></div>
+    </div>
+
+    <!-- 角色标签列表 -->
+    <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;margin-bottom:var(--space-4)">
+      <span v-for="role in permStore.roles" :key="role" class="role-chip">
+        {{ role }}
+        <span v-if="permStore.getRolePermStats(role)" style="font-size:10px;color:var(--color-text-tertiary);margin-left:4px">{{ permStore.getRolePermStats(role).percentage }}%</span>
+        <button v-if="!['管理员', '总经理'].includes(role)" class="role-chip-remove" @click="removeRole(role)"><Icon name="close" :size="14" /></button>
+      </span>
     </div>
 
     <div class="filter-bar" style="margin-bottom:var(--space-4)">
@@ -32,33 +59,15 @@
         <option value="delivery">送货</option>
         <option value="cost">成本核算</option>
       </select>
-    </div>
-
-    <div class="panel-card" style="margin-bottom:var(--space-4)">
-      <div class="panel-card-header">
-        <span class="panel-card-title">快速模板</span>
-      </div>
-      <div class="panel-card-body" style="display:flex;gap:var(--space-3);flex-wrap:wrap">
-        <button class="btn btn-ghost btn-sm" @click="applyTemplate('strict')">🔒 严格模式 — 仅管理员和总经理有完整权限</button>
-        <button class="btn btn-ghost btn-sm" @click="applyTemplate('standard')">📋 标准模式 — 按角色分级授权</button>
-        <button class="btn btn-ghost btn-sm" @click="applyTemplate('loose')">🔓 宽松模式 — 全部角色开放</button>
-      </div>
-    </div>
-
-    <div class="panel-card" style="margin-bottom:var(--space-4)">
-      <div class="panel-card-header">
-        <span class="panel-card-title">角色管理</span>
-      </div>
-      <div class="panel-card-body" style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center">
-        <span v-for="role in permStore.roles" :key="role" class="role-chip">
-          {{ role }}
-          <button v-if="!['管理员', '总经理'].includes(role)" class="role-chip-remove" @click="removeRole(role)">✕</button>
-        </span>
-        <div style="display:flex;gap:var(--space-2);align-items:center">
-          <input type="text" class="form-input" v-model="newRoleName" placeholder="新角色名称" style="width:120px" @keyup.enter="addRole">
-          <button class="btn btn-ghost btn-sm" @click="addRole">➕ 添加</button>
-        </div>
-      </div>
+      <!-- 批量操作 -->
+      <select class="form-select" v-model="batchAction" style="width:auto">
+        <option value="">批量操作</option>
+        <option value="enableView">开启所有查看权限</option>
+        <option value="enableCreate">开启所有创建权限</option>
+        <option value="disableDelete">关闭所有删除权限</option>
+        <option value="disableExport">关闭所有导出权限</option>
+      </select>
+      <button class="btn btn-ghost btn-sm" @click="doBatchAction" :disabled="!batchAction">应用</button>
     </div>
 
     <div class="panel-card">
@@ -72,21 +81,31 @@
             <thead>
               <tr>
                 <th style="min-width:120px;position:sticky;left:0;background:var(--color-surface-elevated);z-index:1">模块 / 权限</th>
-                <th v-for="role in permStore.roles" :key="role" style="min-width:100px;text-align:center">{{ role }}</th>
+                <th v-for="role in permStore.roles" :key="role" style="min-width:100px;text-align:center">
+                  <div>{{ role }}</div>
+                  <div style="font-size:9px;color:var(--color-text-tertiary);font-weight:400">{{ getRolePermPercent(role) }}%</div>
+                </th>
               </tr>
             </thead>
             <tbody>
               <template v-for="mod in filteredModules" :key="mod.key">
-                <tr class="module-header-row">
-                  <td style="font-weight:600;position:sticky;left:0;background:var(--color-surface-elevated);z-index:1">{{ mod.label }}</td>
+                <tr class="module-header-row" style="cursor:pointer" @click="toggleModuleExpand(mod.key)">
+                  <td style="font-weight:600;position:sticky;left:0;background:var(--color-surface-elevated);z-index:1">
+                    {{ mod.label }} ({{ mod.perms.length }}项)
+                    <span style="margin-left:4px;font-size:10px;color:var(--color-text-tertiary)">{{ getModulePermPercent(mod.key) }}%</span>
+                    <span style="float:right">{{ expandedModules.has(mod.key) ? '▾' : '▸' }}</span>
+                  </td>
                   <td v-for="role in permStore.roles" :key="role" style="text-align:center">
                     <label style="cursor:pointer" @click.prevent="toggleModuleAll(role, mod)">
                       <input type="checkbox" :checked="isModuleAllChecked(role, mod)" :indeterminate.prop="isModulePartial(role, mod)">
                     </label>
                   </td>
                 </tr>
-                <tr v-for="perm in mod.perms" :key="mod.key + '.' + perm">
-                  <td style="padding-left:var(--space-6);position:sticky;left:0;background:var(--color-surface);z-index:1">{{ permStore.permLabels[perm] || perm }}</td>
+                <tr v-for="perm in mod.perms" :key="mod.key + '.' + perm" v-show="expandedModules.has(mod.key)">
+                  <td style="padding-left:var(--space-6);position:sticky;left:0;background:var(--color-surface);z-index:1">
+                    {{ permStore.permLabels[perm] || perm }}
+                    <span class="perm-category-badge" :class="getPermCategory(perm)">{{ getPermCategoryLabel(perm) }}</span>
+                  </td>
                   <td v-for="role in permStore.roles" :key="role" style="text-align:center">
                     <label style="cursor:pointer">
                       <input type="checkbox" :checked="permStore.getPerm(role, mod.key, perm)" @change="onPermChange(role, mod.key, perm, $event.target.checked)">
@@ -100,6 +119,7 @@
       </div>
     </div>
 
+    <!-- 权限详情面板 -->
     <div class="panel-card" style="margin-top:var(--space-4)">
       <div class="panel-card-header">
         <span class="panel-card-title">权限详情</span>
@@ -107,24 +127,61 @@
       <div class="panel-card-body">
         <div v-if="!selectedPermDetail" style="color:var(--color-text-secondary);font-size:var(--font-size-sm)">点击权限矩阵中的复选框查看权限详情</div>
         <div v-else>
-          <div style="font-weight:600;margin-bottom:var(--space-2)">{{ selectedPermDetail.role }} — {{ selectedPermDetail.module }} — {{ selectedPermDetail.perm }}</div>
-          <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">
-            <div>状态: <span :style="{ color: selectedPermDetail.checked ? 'var(--color-success)' : 'var(--color-danger)' }">{{ selectedPermDetail.checked ? '已授权' : '未授权' }}</span></div>
-            <div>模块: {{ selectedPermDetail.module }}</div>
-            <div>权限项: {{ selectedPermDetail.perm }}</div>
-            <div>角色: {{ selectedPermDetail.role }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-4)">
+            <div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">权限项</div>
+              <div style="font-weight:600">{{ selectedPermDetail.perm }}</div>
+            </div>
+            <div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">角色</div>
+              <div style="font-weight:600">{{ selectedPermDetail.role }}</div>
+            </div>
+            <div>
+              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">模块</div>
+              <div style="font-weight:600">{{ selectedPermDetail.module }}</div>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-2)">
+            状态: <span :style="{ color: selectedPermDetail.checked ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }">{{ selectedPermDetail.checked ? '允许' : '禁止' }}</span>
+            <span v-if="selectedPermDetail.category" style="margin-left:var(--space-2)">
+              · 分类: <span class="perm-category-badge" :class="selectedPermDetail.category">{{ categoryLabels[selectedPermDetail.category] || selectedPermDetail.category }}</span>
+            </span>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- 导入弹窗 -->
     <div v-if="showImportModal" class="modal-overlay" @click.self="showImportModal = false">
       <div class="modal-dialog" @click.stop>
-        <div class="modal-header"><span class="modal-title">导入权限配置</span><button class="modal-close" @click="showImportModal = false">✕</button></div>
+        <div class="modal-header"><span class="modal-title">导入权限配置</span><button class="modal-close" @click="showImportModal = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body">
           <div class="form-group"><label class="form-label">粘贴JSON配置</label><textarea class="form-input" v-model="importJson" rows="10" placeholder="粘贴导出的JSON配置..."></textarea></div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-warning)">注意：导入将覆盖当前所有权限配置，请确保已备份。</div>
         </div>
         <div class="modal-footer"><button class="btn btn-secondary" @click="showImportModal = false">取消</button><button class="btn btn-primary" @click="doImport">导入</button></div>
+      </div>
+    </div>
+
+    <!-- 新增角色弹窗 -->
+    <div v-if="showAddRoleModal" class="modal-overlay" @click.self="showAddRoleModal = false">
+      <div class="modal-dialog" @click.stop>
+        <div class="modal-header"><span class="modal-title">新增角色</span><button class="modal-close" @click="showAddRoleModal = false"><Icon name="close" :size="14" /></button></div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">角色名称 <span style="color:var(--color-danger)">*</span></label>
+            <input type="text" class="form-input" v-model="newRoleName" placeholder="请输入角色名称">
+          </div>
+          <div class="form-group">
+            <label class="form-label">继承权限自</label>
+            <select class="form-select" v-model="newRoleBase">
+              <option value="">不继承（空白权限）</option>
+              <option v-for="role in permStore.roles" :key="role" :value="role">{{ role }}</option>
+            </select>
+          </div>
+          <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">继承后可在权限矩阵中进一步调整该角色的权限。</div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-secondary" @click="showAddRoleModal = false">取消</button><button class="btn btn-primary" @click="doAddRole">创建角色</button></div>
       </div>
     </div>
   </div>
@@ -136,17 +193,38 @@ import { usePermissionStore } from '@/stores/permission'
 
 const permStore = usePermissionStore()
 
+const showHelp = ref(false)
 const newRoleName = ref('')
+const newRoleBase = ref('')
+const showAddRoleModal = ref(false)
 const showImportModal = ref(false)
 const importJson = ref('')
 const permSearch = ref('')
 const permModuleFilter = ref('')
 const selectedPermDetail = ref(null)
+const showTemplateDropdown = ref(false)
+const batchAction = ref('')
+
+const expandedModules = ref(new Set())
+
+const categoryLabels = {
+  view: '查看', create: '创建', approve: '审批', delete: '删除',
+  export: '导出', print: '打印', edit: '编辑', import: '导入', special: '特殊'
+}
+
+function toggleModuleExpand(key) {
+  if (expandedModules.value.has(key)) {
+    expandedModules.value.delete(key)
+  } else {
+    expandedModules.value.add(key)
+  }
+  expandedModules.value = new Set(expandedModules.value)
+}
 
 const moduleFilterMap = {
-  quote_contract: ['quotation', 'contract'],
-  inbound: ['inventory'],
-  outbound: ['delivery'],
+  quote_contract: ['quote_contract'],
+  inbound: ['inbound'],
+  outbound: ['outbound'],
   statement: ['statement'],
   delivery: ['delivery'],
   cost: ['cost']
@@ -180,7 +258,8 @@ function onPermChange(role, modKey, perm, checked) {
     role,
     module: permStore.defaultModules.find(m => m.key === modKey)?.label || modKey,
     perm: permStore.permLabels[perm] || perm,
-    checked
+    checked,
+    category: getPermCategory(perm)
   }
 }
 
@@ -204,24 +283,36 @@ function saveAll() {
 }
 
 function resetAll() {
-  if (confirm('确认重置所有权限配置？')) permStore.resetPermissions()
+  if (confirm('确认重置所有权限配置？将恢复为标准模式默认配置。')) permStore.resetPermissions()
 }
 
 function applyTemplate(template) {
-  permStore.applyTemplate(template)
+  if (confirm('应用模板将覆盖当前所有权限配置，确认继续？')) {
+    permStore.applyTemplate(template)
+  }
 }
 
-function addRole() {
+function openAddRoleModal() {
+  newRoleName.value = ''
+  newRoleBase.value = ''
+  showAddRoleModal.value = true
+}
+
+function doAddRole() {
   if (!newRoleName.value.trim()) { alert('请输入角色名称'); return }
-  if (permStore.addRole(newRoleName.value.trim())) {
+  if (permStore.addRole(newRoleName.value.trim(), newRoleBase.value || null)) {
+    showAddRoleModal.value = false
     newRoleName.value = ''
+    newRoleBase.value = ''
   } else {
     alert('角色已存在')
   }
 }
 
 function removeRole(role) {
-  if (confirm('确认删除角色 "' + role + '"？')) permStore.removeRole(role)
+  if (confirm('确认删除角色 "' + role + '"？删除后该角色的所有权限配置将丢失。')) {
+    permStore.removeRole(role)
+  }
 }
 
 function doExport() {
@@ -235,16 +326,62 @@ function doExport() {
 
 function doImport() {
   if (!importJson.value.trim()) { alert('请粘贴JSON配置'); return }
-  if (permStore.importPermissions(importJson.value)) {
-    showImportModal.value = false
-    importJson.value = ''
-    alert('导入成功')
-  } else {
-    alert('导入失败，请检查JSON格式')
+  if (confirm('导入将覆盖当前所有权限配置，确认继续？')) {
+    if (permStore.importPermissions(importJson.value)) {
+      showImportModal.value = false
+      importJson.value = ''
+      alert('导入成功')
+    } else {
+      alert('导入失败，请检查JSON格式（需包含roles和matrix字段）')
+    }
   }
 }
 
-onMounted(() => { permStore.initSeedData() })
+// 批量操作
+function doBatchAction() {
+  if (!batchAction.value) return
+  const allRoles = [...permStore.roles]
+  if (batchAction.value === 'enableView') {
+    permStore.batchSetPermissions(allRoles, permStore.permCategories.view, true)
+  } else if (batchAction.value === 'enableCreate') {
+    permStore.batchSetPermissions(allRoles, permStore.permCategories.create, true)
+  } else if (batchAction.value === 'disableDelete') {
+    permStore.batchSetPermissions(allRoles, permStore.permCategories.delete, false)
+  } else if (batchAction.value === 'disableExport') {
+    permStore.batchSetPermissions(allRoles, permStore.permCategories.export, false)
+  }
+  batchAction.value = ''
+}
+
+// 权限分类
+function getPermCategory(perm) {
+  for (const [cat, perms] of Object.entries(permStore.permCategories)) {
+    if (perms.includes(perm)) return cat
+  }
+  return 'other'
+}
+
+function getPermCategoryLabel(perm) {
+  const cat = getPermCategory(perm)
+  return categoryLabels[cat] || cat
+}
+
+// 角色权限百分比
+function getRolePermPercent(role) {
+  const stats = permStore.getRolePermStats(role)
+  return stats ? stats.percentage : 0
+}
+
+// 模块权限百分比
+function getModulePermPercent(moduleKey) {
+  const stats = permStore.getModulePermStats(moduleKey)
+  return stats ? stats.percentage : 0
+}
+
+onMounted(() => {
+  permStore.initSeedData()
+  permStore.defaultModules.forEach(m => expandedModules.value.add(m.key))
+})
 </script>
 
 <style scoped>
@@ -277,5 +414,56 @@ onMounted(() => { permStore.initSeedData() })
 .perm-matrix-table td,
 .perm-matrix-table th {
   white-space: nowrap;
+}
+.perm-category-badge {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 600;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.perm-category-badge.view { background: var(--color-cyan-subtle); color: var(--color-info); }
+.perm-category-badge.create { background: var(--color-success-subtle); color: var(--color-success); }
+.perm-category-badge.approve { background: var(--color-purple-subtle); color: var(--color-purple); }
+.perm-category-badge.delete { background: var(--color-danger-subtle); color: var(--color-danger); }
+.perm-category-badge.export { background: var(--color-info-subtle); color: var(--color-accent); }
+.perm-category-badge.print { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
+.perm-category-badge.edit { background: var(--color-warning-subtle); color: var(--color-warning); }
+.perm-category-badge.import { background: var(--color-orange-subtle); color: var(--color-accent); }
+.perm-category-badge.special { background: var(--color-pink-subtle); color: var(--color-accent); }
+.perm-category-badge.other { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
+
+/* 响应式适配 */
+@media (max-width: 1024px) {
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .stats-row {
+    flex-wrap: wrap;
+  }
+  .filter-bar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .stats-row {
+    flex-direction: column;
+  }
+  .filter-bar {
+    flex-direction: column;
+  }
+  table {
+    font-size: 12px;
+  }
 }
 </style>

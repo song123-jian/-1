@@ -6,8 +6,7 @@
         <p class="page-header-subtitle">移动应用启动页与UI设计方案展示 · 5套完整方案</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-primary" @click="openPageModal">➕ 新建页面</button>
-        <button class="btn btn-ghost" @click="previewAll">👁️ 预览全部</button>
+        <button class="btn btn-ghost" style="border-radius:50%;width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center" @click="showHelp = !showHelp">?</button>
       </div>
     </div>
 
@@ -17,10 +16,10 @@
       </div>
       <div style="display:flex;gap:var(--space-2);align-items:center;margin-left:auto">
         <div style="display:flex;gap:4px;background:var(--color-bg-tertiary);border-radius:var(--radius-md);padding:2px">
-          <button v-for="d in devices" :key="d.key" class="btn btn-ghost btn-sm" :class="{ 'active-device': activeDevice === d.key }" style="padding:4px 8px;font-size:12px" @click="activeDevice = d.key" :title="d.title">{{ d.label }}</button>
+          <button v-for="d in devices" :key="d.key" class="btn btn-ghost btn-sm" :class="{ 'active-device': activeDevice === d.key }" style="padding:4px 8px;font-size:12px" @click="activeDevice = d.key" :title="d.title"><Icon :name="d.icon" :size="14" /> {{ d.label }}</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px;background:var(--color-bg-tertiary);border-radius:var(--radius-md);padding:4px 10px">
-          <span style="font-size:12px;color:var(--color-text-secondary)">设计稿</span>
+          <span style="font-size:12px;color:var(--color-text-secondary)">设计稿预览</span>
           <label style="position:relative;display:inline-block;width:36px;height:20px;cursor:pointer">
             <input type="checkbox" v-model="realtimePreview" style="opacity:0;width:0;height:0">
             <span style="position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--color-border);border-radius:20px;transition:0.3s"></span>
@@ -28,197 +27,118 @@
           </label>
           <span style="font-size:12px;color:var(--color-text-secondary)">实时预览</span>
         </div>
-        <button class="btn btn-secondary btn-sm" @click="exportDesignSpec" title="导出设计规格">📥 导出设计规格</button>
+        <button class="btn btn-secondary btn-sm" @click="exportDesignSpec" title="导出设计规格"><Icon name="download" :size="14" /> 导出设计规格</button>
       </div>
     </div>
 
-    <div class="tab-bar">
-      <button v-for="tab in tabs" :key="tab.key" class="tab-btn" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">{{ tab.label }}</button>
-    </div>
-
-    <div v-if="activeTab === 'pages'">
-      <div class="stats-row" style="margin-bottom:var(--space-4)">
-        <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">📱</div><div class="stat-card-value">{{ mdStore.pageCount }}</div><div class="stat-card-label">页面总数</div></div>
-        <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">✅</div><div class="stat-card-value">{{ mdStore.publishedCount }}</div><div class="stat-card-label">已发布</div></div>
-        <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">📝</div><div class="stat-card-value">{{ mdStore.draftCount }}</div><div class="stat-card-label">草稿</div></div>
-        <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">🧭</div><div class="stat-card-value">{{ mdStore.navCount }}</div><div class="stat-card-label">导航项</div></div>
-      </div>
-      <div class="page-grid">
-        <div v-if="mdStore.pages.length === 0" style="grid-column:1/-1;text-align:center;padding:var(--space-8);color:var(--color-text-tertiary)">暂无页面，点击"新建页面"开始设计</div>
-        <div v-for="page in mdStore.pages" :key="page.id" class="page-card">
-          <div class="page-card-header">
-            <span class="page-card-type">{{ mdStore.pageTypeLabels[page.type] || page.type }}</span>
-            <span class="status-badge" :class="page.status === 'published' ? 'success' : 'warning'">{{ page.status === 'published' ? '已发布' : '草稿' }}</span>
-          </div>
-          <div class="page-card-body">
-            <div class="page-card-title">{{ page.name }}</div>
-            <div class="page-card-meta">布局: {{ page.layout === 'single' ? '单列' : page.layout === 'grid' ? '网格' : '自由' }} · 组件: {{ page.components.length }}个</div>
-            <div class="page-card-components">
-              <span v-for="comp in page.components.slice(0, 3)" :key="comp" class="comp-badge">{{ comp }}</span>
-              <span v-if="page.components.length > 3" class="comp-badge comp-badge-more">+{{ page.components.length - 3 }}</span>
-            </div>
-          </div>
-          <div class="page-card-footer">
-            <span style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">更新: {{ page.updatedAt }}</span>
-            <div style="display:flex;gap:var(--space-1)">
-              <button class="btn btn-ghost btn-sm" @click="editPage(page)">编辑</button>
-              <button v-if="page.status === 'draft'" class="btn btn-ghost btn-sm" style="color:var(--color-success)" @click="publishPage(page.id)">发布</button>
-              <button v-else class="btn btn-ghost btn-sm" style="color:var(--color-warning)" @click="unpublishPage(page.id)">下线</button>
-              <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="deletePage(page.id)">删除</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="activeTab === 'nav'">
-      <div class="content-grid content-grid-2-1">
+    <div style="display:flex;gap:var(--space-4);align-items:flex-start">
+      <div style="flex:1;min-width:0">
         <div class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">导航栏配置</span></div>
-          <div class="panel-card-body">
-            <div class="nav-list">
-              <div v-if="sortedNavItems.length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm)">暂无导航项</div>
-              <div v-for="(item, idx) in sortedNavItems" :key="item.id" class="nav-item-row">
-                <span class="nav-item-order">{{ idx + 1 }}</span>
-                <span class="nav-item-icon">{{ item.icon }}</span>
-                <span class="nav-item-label">{{ item.label }}</span>
-                <span class="nav-item-page">{{ getPageName(item.pageId) }}</span>
-                <span class="status-badge" :class="item.visible ? 'success' : 'neutral'">{{ item.visible ? '显示' : '隐藏' }}</span>
-                <div class="nav-item-actions">
-                  <button v-if="idx > 0" class="btn btn-ghost btn-sm" @click="moveNavUp(idx)">↑</button>
-                  <button v-if="idx < sortedNavItems.length - 1" class="btn btn-ghost btn-sm" @click="moveNavDown(idx)">↓</button>
-                  <button class="btn btn-ghost btn-sm" @click="toggleNavVisible(item)">{{ item.visible ? '隐藏' : '显示' }}</button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="deleteNavItem(item.id)">删除</button>
-                </div>
-              </div>
-            </div>
-            <div style="margin-top:var(--space-4);display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
-              <input type="text" class="form-input" v-model="navForm.label" placeholder="导航名称" style="width:120px">
-              <input type="text" class="form-input" v-model="navForm.icon" placeholder="图标(emoji)" style="width:80px">
-              <select class="form-select" v-model="navForm.pageId" style="width:auto">
-                <option value="">选择页面</option>
-                <option v-for="p in mdStore.pages" :key="p.id" :value="p.id">{{ p.name }}</option>
-              </select>
-              <button class="btn btn-primary btn-sm" @click="addNavItem">➕ 添加</button>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="phone-preview">
-            <div class="phone-frame">
-              <div class="phone-status-bar"><span>9:41</span><span>📶 🔋</span></div>
-              <div class="phone-content">
-                <div style="padding:var(--space-3);font-size:var(--font-size-sm);color:var(--color-text-tertiary);text-align:center">页面预览区域</div>
-              </div>
-              <div class="phone-nav-bar">
-                <div v-for="item in visibleNavItems" :key="item.id" class="phone-nav-item">
-                  <span class="phone-nav-icon">{{ item.icon }}</span>
-                  <span class="phone-nav-label">{{ item.label }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="activeTab === 'theme'">
-      <div class="content-grid content-grid-2-1">
-        <div class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">🎨 主题定制</span></div>
-          <div class="panel-card-body">
-            <div class="form-group">
-              <label class="form-label">主色调</label>
-              <div style="display:flex;gap:var(--space-2);align-items:center">
-                <input type="color" v-model="editTheme.primaryColor" style="width:40px;height:32px;border:none;cursor:pointer">
-                <input type="text" class="form-input" v-model="editTheme.primaryColor" style="width:100px">
-              </div>
-            </div>
-            <div class="form-row form-row-2">
-              <div class="form-group">
-                <label class="form-label">字体大小 (px)</label>
-                <input type="number" class="form-input" v-model.number="editTheme.fontSize" min="12" max="20">
-              </div>
-              <div class="form-group">
-                <label class="form-label">圆角 (px)</label>
-                <input type="number" class="form-input" v-model.number="editTheme.borderRadius" min="0" max="24">
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">字体</label>
-              <select class="form-select" v-model="editTheme.fontFamily">
-                <option value="system">系统默认</option>
-                <option value="sans">Sans-serif</option>
-                <option value="serif">Serif</option>
-                <option value="mono">Monospace</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label"><input type="checkbox" v-model="editTheme.darkMode"> 深色模式</label>
-            </div>
-            <div class="form-group">
-              <label class="form-label"><input type="checkbox" v-model="editTheme.compactMode"> 紧凑模式</label>
-            </div>
-            <div style="display:flex;gap:var(--space-2);margin-top:var(--space-4)">
-              <button class="btn btn-primary" @click="saveTheme">💾 保存主题</button>
-              <button class="btn btn-ghost" @click="resetTheme">🔄 重置</button>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="phone-preview">
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="palette" :size="14" /> 方案预览 · {{ currentProposalName }}</span></div>
+          <div class="panel-card-body" style="display:flex;justify-content:center;padding:var(--space-6)">
             <div class="phone-frame" :style="phoneFrameStyle">
-              <div class="phone-status-bar"><span>9:41</span><span>📶 🔋</span></div>
+              <div class="phone-status-bar"><span>9:41</span><span>[信号] [电池]</span></div>
               <div class="phone-content" :style="phoneContentStyle">
-                <div style="padding:var(--space-3);text-align:center">
-                  <div :style="{ background: editTheme.primaryColor, color: '#fff', padding: '8px', borderRadius: editTheme.borderRadius + 'px', marginBottom: '8px', fontSize: editTheme.fontSize + 'px' }">主题预览</div>
-                  <div :style="{ border: '2px solid ' + editTheme.primaryColor, borderRadius: editTheme.borderRadius + 'px', padding: '8px', fontSize: (editTheme.fontSize - 2) + 'px' }">边框样式</div>
+                <div style="padding:16px;height:100%;overflow-y:auto">
+                  <div :style="{ background: currentSpec.colors.primary, color: '#fff', padding: '12px 16px', borderRadius: currentSpec.components.borderRadius, marginBottom: '12px', fontWeight: 600 }">dpERP 移动端</div>
+                  <div style="background:var(--color-bg-tertiary);border-radius:8px;padding:16px;margin-bottom:12px">
+                    <div :style="{ color: currentSpec.colors.text, fontWeight: 600, marginBottom: '8px' }">客户列表</div>
+                    <div :style="{ color: currentSpec.colors.text, opacity: 0.7, fontSize: '13px', padding: '8px 0', borderBottom: '1px solid var(--color-border)' }">上海某某有限公司</div>
+                    <div :style="{ color: currentSpec.colors.text, opacity: 0.7, fontSize: '13px', padding: '8px 0', borderBottom: '1px solid var(--color-border)' }">深圳某某科技有限公司</div>
+                    <div :style="{ color: currentSpec.colors.text, opacity: 0.7, fontSize: '13px', padding: '8px 0' }">东莞某某贸易公司</div>
+                  </div>
+                  <div style="background:var(--color-bg-tertiary);border-radius:8px;padding:16px;margin-bottom:12px">
+                    <div :style="{ color: currentSpec.colors.text, fontWeight: 600, marginBottom: '8px' }">库存概览</div>
+                    <div style="display:flex;gap:8px">
+                      <div style="flex:1;text-align:center;padding:8px;background:var(--color-bg-secondary);border-radius:6px">
+                        <div :style="{ fontSize: '18px', fontWeight: 700, color: currentSpec.colors.primary }">128</div>
+                        <div style="font-size:11px;color:var(--color-text-tertiary)">物料数</div>
+                      </div>
+                      <div style="flex:1;text-align:center;padding:8px;background:var(--color-bg-secondary);border-radius:6px">
+                        <div :style="{ fontSize: '18px', fontWeight: 700, color: currentSpec.colors.warning }">5</div>
+                        <div style="font-size:11px;color:var(--color-text-tertiary)">低库存</div>
+                      </div>
+                    </div>
+                  </div>
+                  <button :style="{ width: '100%', height: currentSpec.components.buttonHeight, background: currentSpec.colors.primary, color: '#fff', border: 'none', borderRadius: currentSpec.components.borderRadius, fontSize: '14px', cursor: 'pointer' }">新建送货单</button>
                 </div>
               </div>
-              <div class="phone-nav-bar" :style="{ background: editTheme.darkMode ? '#1a1a2e' : '#fff' }">
-                <div v-for="item in visibleNavItems.slice(0, 5)" :key="item.id" class="phone-nav-item">
-                  <span class="phone-nav-icon">{{ item.icon }}</span>
-                  <span class="phone-nav-label" :style="{ color: editTheme.primaryColor }">{{ item.label }}</span>
-                </div>
+              <div class="phone-nav-bar" :style="{ background: currentSpec.colors.darkMode ? '#1a1a2e' : '#fff' }">
+                <div class="phone-nav-item"><span class="phone-nav-icon">[首页]</span><span class="phone-nav-label" :style="{ color: currentSpec.colors.primary }">首页</span></div>
+                <div class="phone-nav-item"><span class="phone-nav-icon"><Icon name="package" :size="14" /></span><span class="phone-nav-label" :style="{ color: currentSpec.colors.primary }">产品</span></div>
+                <div class="phone-nav-item"><span class="phone-nav-icon"><Icon name="list" :size="14" /></span><span class="phone-nav-label" :style="{ color: currentSpec.colors.primary }">订单</span></div>
+                <div class="phone-nav-item"><span class="phone-nav-icon"><Icon name="table" :size="14" /></span><span class="phone-nav-label" :style="{ color: currentSpec.colors.primary }">报表</span></div>
+                <div class="phone-nav-item"><span class="phone-nav-icon"><Icon name="checkCircle" :size="14" /></span><span class="phone-nav-label" :style="{ color: currentSpec.colors.primary }">审批</span></div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <div v-if="showPageModal" class="modal-overlay" @click.self="showPageModal = false">
-      <div class="modal-dialog" @click.stop>
-        <div class="modal-header"><span class="modal-title">{{ editingPage ? '编辑页面' : '新建页面' }}</span><button class="modal-close" @click="showPageModal = false">✕</button></div>
-        <div class="modal-body">
-          <div class="form-group"><label class="form-label">页面名称 <span class="required">*</span></label><input type="text" class="form-input" v-model="pageForm.name" placeholder="页面名称"></div>
-          <div class="form-row form-row-2">
-            <div class="form-group"><label class="form-label">页面类型</label><select class="form-select" v-model="pageForm.type"><option v-for="(label, key) in mdStore.pageTypeLabels" :key="key" :value="key">{{ label }}</option></select></div>
-            <div class="form-group"><label class="form-label">布局方式</label><select class="form-select" v-model="pageForm.layout"><option value="single">单列</option><option value="grid">网格</option><option value="free">自由布局</option></select></div>
+      <div style="width:320px;flex-shrink:0;position:sticky;top:80px;max-height:calc(100vh - 100px);overflow-y:auto">
+        <div class="panel-card">
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="palette" :size="14" /> 设计规格 · {{ currentProposalName }}</span></div>
+          <div class="panel-card-body">
+            <div style="margin-bottom:var(--space-3)">
+              <div style="font-weight:600;font-size:13px;margin-bottom:8px">色彩系统</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                <div v-for="(color, key) in currentSpec.colors" :key="key" style="display:flex;align-items:center;gap:6px">
+                  <div :style="{ width: '20px', height: '20px', borderRadius: '4px', background: color, border: '1px solid var(--color-border)', flexShrink: 0 }"></div>
+                  <div style="font-size:11px">
+                    <div style="color:var(--color-text-secondary)">{{ colorLabels[key] || key }}</div>
+                    <div style="font-family:monospace;color:var(--color-text-primary)">{{ color }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom:var(--space-3)">
+              <div style="font-weight:600;font-size:13px;margin-bottom:8px">排版规范</div>
+              <div v-for="(val, key) in currentSpec.typography" :key="key" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
+                <span style="color:var(--color-text-secondary)">{{ typoLabels[key] || key }}</span>
+                <span style="font-family:monospace;color:var(--color-text-primary)">{{ val.split('/')[0] }} / {{ val.split('/')[1] || '400' }}</span>
+              </div>
+            </div>
+            <div style="margin-bottom:var(--space-3)">
+              <div style="font-weight:600;font-size:13px;margin-bottom:8px">间距系统</div>
+              <div style="display:flex;gap:4px;align-items:flex-end">
+                <div v-for="(val, key) in currentSpec.spacing" :key="key" style="text-align:center;flex:1">
+                  <div :style="{ height: Math.max(8, parseInt(val)) + 'px', background: 'var(--color-accent)', borderRadius: '2px', margin: '0 auto 4px', width: Math.max(12, parseInt(val)) + 'px' }"></div>
+                  <div style="font-size:10px;color:var(--color-text-secondary)">{{ spaceLabels[key] || key }}</div>
+                  <div style="font-size:10px;font-family:monospace;color:var(--color-text-primary)">{{ val }}</div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-bottom:var(--space-3)">
+              <div style="font-weight:600;font-size:13px;margin-bottom:8px">组件规范</div>
+              <div v-for="(val, key) in currentSpec.components" :key="key" style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
+                <span style="color:var(--color-text-secondary)">{{ compLabels[key] || key }}</span>
+                <span style="font-family:monospace;color:var(--color-text-primary)">{{ val }}</span>
+              </div>
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:13px;margin-bottom:8px">动画参数</div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
+                <span style="color:var(--color-text-secondary)">持续时间</span>
+                <span style="font-family:monospace;color:var(--color-text-primary)">{{ currentSpec.animation.duration }}</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
+                <span style="color:var(--color-text-secondary)">缓动函数</span>
+                <span style="font-family:monospace;color:var(--color-text-primary);font-size:10px">{{ currentSpec.animation.easing }}</span>
+              </div>
+            </div>
           </div>
-          <div class="form-group"><label class="form-label">组件（逗号分隔）</label><input type="text" class="form-input" v-model="pageForm.componentsStr" placeholder="组件1,组件2,组件3"></div>
         </div>
-        <div class="modal-footer"><button class="btn btn-secondary" @click="showPageModal = false">取消</button><button class="btn btn-primary" @click="submitPage">保存</button></div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useMobileDesignStore } from '@/stores/mobileDesign'
 
 const mdStore = useMobileDesignStore()
 
-const tabs = [
-  { key: 'pages', label: '📱 页面管理' },
-  { key: 'nav', label: '🧭 导航配置' },
-  { key: 'theme', label: '🎨 主题定制' }
-]
-
-const activeTab = ref('pages')
-const showPageModal = ref(false)
-const editingPage = ref(null)
+const showHelp = ref(false)
 const activeProposal = ref(1)
 const activeDevice = ref('iphone')
 const realtimePreview = ref(false)
@@ -232,106 +152,48 @@ const proposals = [
 ]
 
 const devices = [
-  { key: 'iphone', label: '📱 iPhone', title: 'iPhone 375x812' },
-  { key: 'android', label: '📱 Android', title: 'Android 360x800' },
-  { key: 'ipad', label: '📱 iPad', title: 'iPad 768x1024' }
+  { key: 'iphone', icon: 'mobile', label: 'iPhone', title: 'iPhone 375x812' },
+  { key: 'android', icon: 'mobile', label: 'Android', title: 'Android 360x800' },
+  { key: 'ipad', icon: 'mobile', label: 'iPad', title: 'iPad 768x1024' }
 ]
 
-const pageForm = reactive({ name: '', type: 'custom', layout: 'single', componentsStr: '' })
-const navForm = reactive({ label: '', icon: '📄', pageId: '' })
-const editTheme = reactive({ ...mdStore.theme })
+const designSpecs = {
+  1: { name: '极简商务', colors: { primary: '#3b82f6', secondary: '#1e293b', accent: '#60a5fa', success: '#22c55e', warning: '#f59e0b', danger: '#ef4444', bg: '#f8fafc', text: '#0f172a' }, typography: { heading: '20px/700', body: '14px/400', caption: '12px/400' }, spacing: { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px' }, components: { buttonHeight: '44px', inputHeight: '40px', cardPadding: '16px', borderRadius: '8px' }, animation: { duration: '250ms', easing: 'cubic-bezier(0.4, 0, 0.2, 1)' } },
+  2: { name: '科技活力', colors: { primary: '#7c4dff', secondary: '#0a0a1a', accent: '#00e5ff', success: '#00e676', warning: '#ffd740', danger: '#ff1744', bg: '#0a0a1a', text: '#e0e0e0' }, typography: { heading: '22px/700', body: '14px/400', caption: '11px/400' }, spacing: { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px' }, components: { buttonHeight: '46px', inputHeight: '42px', cardPadding: '14px', borderRadius: '12px' }, animation: { duration: '200ms', easing: 'cubic-bezier(0.4, 0, 0.2, 1)' } },
+  3: { name: '温暖企业', colors: { primary: '#8d6e63', secondary: '#4e342e', accent: '#ffcc80', success: '#66bb6a', warning: '#ffa726', danger: '#ef5350', bg: '#faf6f1', text: '#3e2723' }, typography: { heading: '20px/600', body: '15px/400', caption: '12px/400' }, spacing: { xs: '6px', sm: '10px', md: '18px', lg: '26px', xl: '34px' }, components: { buttonHeight: '44px', inputHeight: '40px', cardPadding: '18px', borderRadius: '10px' }, animation: { duration: '300ms', easing: 'cubic-bezier(0.4, 0, 0.2, 1)' } },
+  4: { name: '暗色高端', colors: { primary: '#d4af37', secondary: '#0d0d0d', accent: '#f5e6a3', success: '#4caf50', warning: '#ff9800', danger: '#f44336', bg: '#0d0d0d', text: '#d4af37' }, typography: { heading: '21px/300', body: '14px/400', caption: '11px/300' }, spacing: { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '36px' }, components: { buttonHeight: '48px', inputHeight: '44px', cardPadding: '20px', borderRadius: '6px' }, animation: { duration: '350ms', easing: 'cubic-bezier(0.4, 0, 0.2, 1)' } },
+  5: { name: '清新自然', colors: { primary: '#43a047', secondary: '#1b5e20', accent: '#a5d6a7', success: '#66bb6a', warning: '#ffb74d', danger: '#e57373', bg: '#f1f8e9', text: '#1b5e20' }, typography: { heading: '20px/600', body: '14px/400', caption: '12px/400' }, spacing: { xs: '4px', sm: '8px', md: '16px', lg: '24px', xl: '32px' }, components: { buttonHeight: '44px', inputHeight: '40px', cardPadding: '16px', borderRadius: '12px' }, animation: { duration: '250ms', easing: 'cubic-bezier(0.4, 0, 0.2, 1)' } }
+}
 
-const sortedNavItems = computed(() => [...mdStore.navItems].sort((a, b) => a.order - b.order))
-const visibleNavItems = computed(() => sortedNavItems.value.filter(n => n.visible))
+const colorLabels = { primary: '主色', secondary: '辅色', accent: '强调色', success: '成功', warning: '警告', danger: '危险', bg: '背景', text: '文本' }
+const typoLabels = { heading: '标题', body: '正文', caption: '辅助' }
+const spaceLabels = { xs: 'XS', sm: 'SM', md: 'MD', lg: 'LG', xl: 'XL' }
+const compLabels = { buttonHeight: '按钮高度', inputHeight: '输入框高度', cardPadding: '卡片内距', borderRadius: '圆角' }
 
-const phoneFrameStyle = computed(() => ({
-  background: editTheme.darkMode ? '#0f0f1a' : '#f5f5f5'
-}))
+const currentSpec = computed(() => designSpecs[activeProposal.value] || designSpecs[1])
+const currentProposalName = computed(() => currentSpec.value.name)
+
+const phoneFrameStyle = computed(() => {
+  const size = { iphone: { w: 375, h: 812 }, android: { w: 360, h: 800 }, ipad: { w: 768, h: 1024 } }
+  const s = size[activeDevice.value] || size.iphone
+  const scale = activeDevice.value === 'ipad' ? 0.55 : 1
+  return {
+    width: (s.w * scale) + 'px',
+    height: (s.h * scale) + 'px',
+    borderColor: currentSpec.value.colors.secondary
+  }
+})
 
 const phoneContentStyle = computed(() => ({
-  background: editTheme.darkMode ? '#1a1a2e' : '#fff',
-  color: editTheme.darkMode ? '#e0e0e0' : '#333',
-  fontFamily: editTheme.fontFamily === 'system' ? 'system-ui' : editTheme.fontFamily,
-  fontSize: editTheme.fontSize + 'px'
+  background: currentSpec.value.colors.bg,
+  color: currentSpec.value.colors.text
 }))
-
-function getPageName(pageId) {
-  const page = mdStore.pages.find(p => p.id === pageId)
-  return page ? page.name : '-'
-}
-
-function openPageModal() {
-  editingPage.value = null
-  Object.assign(pageForm, { name: '', type: 'custom', layout: 'single', componentsStr: '' })
-  showPageModal.value = true
-}
-
-function editPage(page) {
-  editingPage.value = page
-  Object.assign(pageForm, { name: page.name, type: page.type, layout: page.layout, componentsStr: page.components.join(',') })
-  showPageModal.value = true
-}
-
-function submitPage() {
-  if (!pageForm.name) { alert('请填写页面名称'); return }
-  const data = { name: pageForm.name, type: pageForm.type, layout: pageForm.layout, components: pageForm.componentsStr ? pageForm.componentsStr.split(',').map(s => s.trim()).filter(Boolean) : [] }
-  if (editingPage.value) {
-    mdStore.updatePage(editingPage.value.id, data)
-  } else {
-    mdStore.addPage(data)
-  }
-  showPageModal.value = false
-}
-
-function publishPage(id) { mdStore.publishPage(id) }
-function unpublishPage(id) { mdStore.unpublishPage(id) }
-function deletePage(id) { if (confirm('确认删除该页面？')) mdStore.deletePage(id) }
-
-function addNavItem() {
-  if (!navForm.label) { alert('请填写导航名称'); return }
-  mdStore.addNavItem({ label: navForm.label, icon: navForm.icon, pageId: navForm.pageId })
-  Object.assign(navForm, { label: '', icon: '📄', pageId: '' })
-}
-
-function deleteNavItem(id) { mdStore.deleteNavItem(id) }
-
-function toggleNavVisible(item) { mdStore.updateNavItem(item.id, { visible: !item.visible }) }
-
-function moveNavUp(idx) {
-  const items = sortedNavItems.value
-  if (idx <= 0) return
-  const newOrder = items.map(i => i.id)
-  ;[newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]]
-  mdStore.reorderNav(newOrder)
-}
-
-function moveNavDown(idx) {
-  const items = sortedNavItems.value
-  if (idx >= items.length - 1) return
-  const newOrder = items.map(i => i.id)
-  ;[newOrder[idx], newOrder[idx + 1]] = [newOrder[idx + 1], newOrder[idx]]
-  mdStore.reorderNav(newOrder)
-}
-
-function saveTheme() {
-  mdStore.saveTheme({ ...editTheme })
-  alert('主题已保存')
-}
-
-function resetTheme() {
-  mdStore.resetTheme()
-  Object.assign(editTheme, mdStore.theme)
-}
-
-function previewAll() { alert('预览功能：将打开移动端预览窗口') }
 
 function exportDesignSpec() {
   const spec = {
     proposal: proposals.find(p => p.id === activeProposal.value),
     device: devices.find(d => d.key === activeDevice.value),
-    theme: { ...editTheme },
-    pages: mdStore.pages.map(p => ({ name: p.name, type: p.type, layout: p.layout, components: p.components, status: p.status })),
-    navItems: sortedNavItems.value.map(n => ({ label: n.label, icon: n.icon, pageId: n.pageId, visible: n.visible, order: n.order })),
+    designSpec: currentSpec.value,
     exportTime: new Date().toISOString()
   }
   const data = JSON.stringify(spec, null, 2)
@@ -346,59 +208,10 @@ onMounted(() => { mdStore.initSeedData() })
 </script>
 
 <style scoped>
-.tab-bar {
-  display: flex; gap: var(--space-1); margin-bottom: var(--space-4);
-  border-bottom: 2px solid var(--color-border); flex-wrap: wrap;
-}
-.tab-btn {
-  padding: var(--space-2) var(--space-4); background: none; border: none;
-  color: var(--color-text-secondary); font-size: var(--font-size-sm); cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all var(--transition-fast);
-}
 .active-device {
   background: var(--color-accent) !important;
   color: #fff !important;
 }
-.tab-btn:hover { color: var(--color-text-primary); }
-.tab-btn.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
-.page-grid {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-4);
-}
-.page-card {
-  background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: var(--radius-md); overflow: hidden; transition: box-shadow var(--transition-fast);
-}
-.page-card:hover { box-shadow: var(--shadow-md); }
-.page-card-header {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: var(--space-3); border-bottom: 1px solid var(--color-border);
-}
-.page-card-type { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
-.page-card-body { padding: var(--space-3); }
-.page-card-title { font-weight: 600; margin-bottom: var(--space-1); }
-.page-card-meta { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-2); }
-.page-card-components { display: flex; flex-wrap: wrap; gap: 4px; }
-.comp-badge {
-  display: inline-block; padding: 1px 6px; background: var(--color-accent-subtle);
-  color: var(--color-accent); border-radius: var(--radius-sm); font-size: 10px;
-}
-.comp-badge-more { background: var(--color-bg-tertiary); color: var(--color-text-tertiary); }
-.page-card-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border);
-}
-.content-grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-4); }
-.nav-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.nav-item-row {
-  display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3);
-  background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-sm);
-}
-.nav-item-order { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: var(--color-bg-tertiary); border-radius: var(--radius-sm); font-size: var(--font-size-xs); }
-.nav-item-icon { font-size: 18px; }
-.nav-item-label { font-weight: 600; font-size: var(--font-size-sm); flex: 1; }
-.nav-item-page { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
-.nav-item-actions { display: flex; gap: 2px; }
-.phone-preview { display: flex; justify-content: center; padding: var(--space-4); }
 .phone-frame {
   width: 280px; height: 500px; border: 2px solid var(--color-border); border-radius: 24px;
   overflow: hidden; display: flex; flex-direction: column; background: #f5f5f5;
@@ -415,7 +228,31 @@ onMounted(() => { mdStore.initSeedData() })
 .phone-nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .phone-nav-icon { font-size: 16px; }
 .phone-nav-label { font-size: 9px; }
+
+/* 响应式适配 */
+@media (max-width: 1024px) {
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .filter-bar {
+    flex-wrap: wrap;
+  }
+}
+
 @media (max-width: 768px) {
-  .content-grid-2-1 { grid-template-columns: 1fr; }
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .page-header-actions {
+    flex-wrap: wrap;
+  }
+  .filter-bar {
+    flex-direction: column;
+  }
+  .phone-frame {
+    width: 240px;
+    height: 420px;
+  }
 }
 </style>

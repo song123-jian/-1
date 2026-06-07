@@ -1,28 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
-const STORAGE_KEY = 'quotations'
-const TEMPLATE_KEY = 'quoteTemplates'
-const VERSION_PREFIX = 'quoteVersions_'
-const STORAGE_PREFIX = 'gj_erp_'
+const STORAGE_KEY = 'gj_erp_quotations'
+const TEMPLATE_KEY = 'gj_erp_quoteTemplates'
+const VERSION_PREFIX = 'gj_erp_quoteVersions_'
 const INIT_KEY = 'gj_erp_quotations_initialized'
 
 function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(STORAGE_PREFIX + key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) {
-    console.warn('[quotationStore] load failed:', key, e)
-  }
-  return fallback
+  const data = safeGetJSON(key)
+  return data !== null ? data : fallback
 }
 
 function save(key, data) {
-  try {
-    localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data))
-  } catch (e) {
-    console.error('[quotationStore] save failed:', key, e)
-  }
+  safeSetJSON(key, data)
 }
 
 function generateQuoteNo(existing) {
@@ -41,6 +36,16 @@ function generateQuoteNo(existing) {
 }
 
 export const useQuotationStore = defineStore('quotation', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const quotations = ref(load(STORAGE_KEY, []))
   const templates = ref(load(TEMPLATE_KEY, []))
 
@@ -99,7 +104,7 @@ export const useQuotationStore = defineStore('quotation', () => {
 
   function addQuotation(data) {
     const q = {
-      id: 'q' + Date.now(),
+      id: generateId('q'),
       quoteNo: generateQuoteNo(quotations.value),
       customerId: '',
       customerName: '',
@@ -148,11 +153,15 @@ export const useQuotationStore = defineStore('quotation', () => {
 
   function deleteQuotation(id) {
     quotations.value = quotations.value.filter(q => q.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('quotations', id)
     persist()
   }
 
   function batchDelete(ids) {
     quotations.value = quotations.value.filter(q => !ids.includes(q.id))
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('quotations', ids)
     persist()
   }
 
@@ -179,7 +188,7 @@ export const useQuotationStore = defineStore('quotation', () => {
     if (!src) return null
     const dup = {
       ...JSON.parse(JSON.stringify(src)),
-      id: 'q' + Date.now(),
+      id: generateId('q'),
       quoteNo: generateQuoteNo(quotations.value),
       status: 'draft',
       followUps: [],
@@ -206,7 +215,7 @@ export const useQuotationStore = defineStore('quotation', () => {
     versions.push({
       version: versions.length + 1,
       data: JSON.parse(JSON.stringify(q)),
-      changedBy: '当前用户',
+      changedBy: getCurrentUser(),
       changedAt: new Date().toISOString(),
       changeNote: changeNote || ''
     })
@@ -235,14 +244,14 @@ export const useQuotationStore = defineStore('quotation', () => {
       date,
       note,
       createdAt: new Date().toISOString(),
-      createdBy: '当前用户'
+      createdBy: getCurrentUser()
     })
     persist()
   }
 
   function addTemplate(data) {
     const tpl = {
-      id: 'tpl_' + Date.now(),
+      id: generateId('tpl'),
       name: '',
       createdAt: new Date().toISOString(),
       customerId: '',
@@ -270,7 +279,7 @@ export const useQuotationStore = defineStore('quotation', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
 
     quotations.value = [
       {
@@ -364,7 +373,19 @@ export const useQuotationStore = defineStore('quotation', () => {
       }
     ]
     persist()
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(quotations.value, items, 'id')
+    quotations.value = merged
+    persist()
+  }
+
+  function replaceData(newData) {
+    quotations.value = newData
+    persist()
   }
 
   return {
@@ -378,6 +399,8 @@ export const useQuotationStore = defineStore('quotation', () => {
     getVersions, saveVersion, rollbackVersion,
     addFollowUp,
     addTemplate, deleteTemplate,
-    initSeedData
+    initSeedData,
+    replaceData, mergeRemoteItems,
+    persist
   }
 })

@@ -4,6 +4,7 @@ import { ref, computed } from 'vue'
 export const useThemeStore = defineStore('theme', () => {
   const currentTheme = ref(localStorage.getItem('gj_erp_theme') || 'ocean')
   const currentPreset = ref(localStorage.getItem('gj_erp_activePreset') || '')
+  const currentMode = ref(localStorage.getItem('gj_erp_themeMode') || 'dark')
 
   const themes = [
     { key: 'ocean', name: '海洋蓝', color: '#3b82f6' },
@@ -31,5 +32,15 @@ export const useThemeStore = defineStore('theme', () => {
     localStorage.setItem('gj_erp_activePreset', presetKey)
   }
 
-  return { currentTheme, currentPreset, themes, presets, setTheme, setPreset }
+  function setMode(mode) {
+    currentMode.value = mode
+    localStorage.setItem('gj_erp_themeMode', mode)
+  }
+
+  function toggleMode() {
+    const newMode = currentMode.value === 'dark' ? 'light' : 'dark'
+    setMode(newMode)
+  }
+
+  return { currentTheme, currentPreset, currentMode, themes, presets, setTheme, setPreset, setMode, toggleMode }
 })

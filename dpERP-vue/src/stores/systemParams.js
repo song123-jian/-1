@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useSessionStore } from './session'
 
 const PARAMS_KEY = 'gj_erp_systemParams'
 const LOGS_KEY = 'gj_erp_paramLogs'
@@ -10,7 +11,11 @@ function load(key, fallback) {
   return fallback
 }
 function persist(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) { /* ignore */ }
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      console.error('[systemParams] localStorage容量不足，数据可能丢失！')
+    }
+  }
 }
 
 const defaultParams = {
@@ -26,15 +31,25 @@ const defaultParams = {
 }
 
 export const useSystemParamsStore = defineStore('systemParams', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const params = ref(load(PARAMS_KEY, { ...defaultParams }))
   const logs = ref(load(LOGS_KEY, []))
 
   const paramGroups = computed(() => [
-    { key: 'general', label: '通用设置', icon: '⚙️' },
-    { key: 'security', label: '安全设置', icon: '🔒' },
-    { key: 'backup', label: '备份设置', icon: '💾' },
-    { key: 'notification', label: '通知设置', icon: '📧' },
-    { key: 'performance', label: '性能设置', icon: '🚀' }
+    { key: 'general', label: '通用设置', icon: '[设置]' },
+    { key: 'security', label: '安全设置', icon: '[锁定]' },
+    { key: 'backup', label: '备份设置', icon: '[保存]' },
+    { key: 'notification', label: '通知设置', icon: '[邮件]' },
+    { key: 'performance', label: '性能设置', icon: '[启动]' }
   ])
 
   function _persistParams() { persist(PARAMS_KEY, params.value) }
@@ -43,7 +58,7 @@ export const useSystemParamsStore = defineStore('systemParams', () => {
   function _addLog(action, detail) {
     logs.value.unshift({
       time: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      user: '系统管理员', action, detail
+      user: getCurrentUser(), action, detail
     })
     if (logs.value.length > 200) logs.value = logs.value.slice(0, 200)
     _persistLogs()
@@ -85,6 +100,17 @@ export const useSystemParamsStore = defineStore('systemParams', () => {
     return true
   }
 
+  function replaceData(newData) {
+    if (newData.params) {
+      params.value = newData.params
+      _persistParams()
+    }
+    if (newData.logs) {
+      logs.value = newData.logs
+      _persistLogs()
+    }
+  }
+
   function initSeedData() {
     if (localStorage.getItem(INIT_KEY)) return
     params.value = { ...defaultParams }
@@ -94,6 +120,6 @@ export const useSystemParamsStore = defineStore('systemParams', () => {
 
   return {
     params, logs, paramGroups, defaultParams,
-    saveParams, resetParams, resetGroup, testEmail, testSms, initSeedData
+    saveParams, resetParams, resetGroup, testEmail, testSms, replaceData, initSeedData
   }
 })

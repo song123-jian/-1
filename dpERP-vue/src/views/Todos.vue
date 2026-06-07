@@ -13,18 +13,18 @@
             class="view-btn"
             :class="{ active: currentView === v.key }"
             @click="currentView = v.key"
-          >{{ v.icon }} {{ v.label }}</button>
+          ><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
         </div>
-        <button class="btn btn-primary" @click="openAddModal">+ 新建任务</button>
-          <button class="btn btn-outline" @click="handleBatchComplete" :disabled="selectedIds.length === 0">✅ 批量完成</button>
-          <button class="btn btn-outline btn-danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0">🗑 批量删除</button>
-          <button class="btn btn-outline" @click="handleExport">📥 导出</button>
+        <button v-if="canManage" class="btn btn-primary" @click="openAddModal">+ 新建任务</button>
+          <button v-if="canManage" class="btn btn-outline" @click="handleBatchComplete" :disabled="selectedIds.length === 0"><Icon name="check" :size="14" /> 批量完成</button>
+          <button v-if="canManage" class="btn btn-outline btn-danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
+          <button class="btn btn-outline" @click="handleExport"><Icon name="upload" :size="14" /> 导出</button>
       </div>
     </div>
 
     <div class="todo-toolbar">
       <div class="todo-search">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><Icon name="search" :size="14" /></span>
         <input
           v-model="searchText"
           type="text"
@@ -60,12 +60,12 @@
           class="btn btn-ghost btn-sm"
           @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
           :title="sortDir === 'asc' ? '升序' : '降序'"
-        >{{ sortDir === 'asc' ? '↑' : '↓' }}</button>
+        ><Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" /></button>
       </div>
     </div>
 
     <div class="column-config-wrapper" style="margin-bottom: var(--space-3);">
-      <button class="btn btn-outline" @click="toggleColumnConfig">⚙ 列</button>
+      <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
       <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
         <label v-for="col in columnDefs.filter(c => c.key !== 'check' && c.key !== 'actions')" :key="col.key" class="column-config-item">
           <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
@@ -97,7 +97,7 @@
             <thead>
               <tr>
                 <th class="col-check">
-                  <div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll">✓</div>
+                  <div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll">[√]</div>
                 </th>
                 <th v-if="columnVisible.idx" class="col-idx">#</th>
                 <th v-if="columnVisible.title" class="col-title">任务标题</th>
@@ -117,15 +117,15 @@
             <tbody>
               <tr v-for="(t, idx) in filteredTodos" :key="t.id" :class="{ 'completed-row': isCompleted(t) }">
                 <td class="col-check">
-                  <div class="checkbox" :class="{ checked: selectedIds.includes(t.id) }" @click="toggleSelect(t.id)">✓</div>
+                  <div class="checkbox" :class="{ checked: selectedIds.includes(t.id) }" @click="toggleSelect(t.id)">[√]</div>
                 </td>
                 <td v-if="columnVisible.idx" class="col-idx">{{ idx + 1 }}</td>
                 <td v-if="columnVisible.title" class="col-title" @dblclick="startInlineEdit(t, 'title')">
                   <div v-if="!isInlineEditing(t.id, 'title')" class="title-cell">
                     {{ t.title }}
-                    <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge">🔄</span>
+                    <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge"><Icon name="refresh" :size="14" /></span>
                     <span v-if="t.subtasks && t.subtasks.length > 0" class="subtask-count">
-                      📋 {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}
+                      <Icon name="list" :size="14" /> {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}
                     </span>
                     <span v-if="t.auto" class="auto-badge">自动</span>
                   </div>
@@ -181,7 +181,7 @@
                   <button class="action-btn-sm" @click="handleToggle(t)" :title="isCompleted(t) ? '恢复' : '完成'">
                     {{ isCompleted(t) ? '恢复' : '完成' }}
                   </button>
-                  <button v-if="!t.auto" class="action-btn-sm danger" @click="handleDelete(t)" title="删除">删除</button>
+                  <button v-if="canManage && !t.auto" class="action-btn-sm danger" @click="handleDelete(t)" title="删除">删除</button>
                 </td>
               </tr>
             </tbody>
@@ -194,7 +194,7 @@
     <div v-if="currentView === 'list'" class="todo-list-view">
       <div v-for="t in filteredTodos" :key="t.id" class="list-row" :class="{ 'completed-row': isCompleted(t), ['prio-' + (t.priority || 'medium')]: true }">
         <div class="list-check">
-          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">✓</div>
+          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[√]</div>
         </div>
         <div class="list-body">
           <div class="list-title">{{ t.title }}</div>
@@ -203,12 +203,12 @@
             <span class="priority-badge" :class="'p-' + (t.priority || 'medium')">{{ prioLabel(t.priority) }}</span>
             <span class="status-badge" :class="'s-' + getStatusClass(t)">{{ getStatusLabel(t) }}</span>
             <span v-if="t.tag" class="tag-badge">{{ t.tag }}</span>
-            <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge">🔄</span>
-            <span v-if="t.startDate" class="meta-date">📅 开始 {{ t.startDate }}</span>
-            <span v-if="t.dueDate" class="meta-date">⏰ 截止 {{ t.dueDate }}</span>
+            <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge"><Icon name="refresh" :size="14" /></span>
+            <span v-if="t.startDate" class="meta-date"><Icon name="calendar" :size="14" /> 开始 {{ t.startDate }}</span>
+            <span v-if="t.dueDate" class="meta-date"><Icon name="bell" :size="14" /> 截止 {{ t.dueDate }}</span>
             <span v-if="t.progress > 0" class="meta-progress">进度 {{ t.progress }}%</span>
             <span v-if="t.subtasks && t.subtasks.length > 0" class="meta-sub">
-              📋 {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}
+              <Icon name="list" :size="14" /> {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}
             </span>
           </div>
         </div>
@@ -228,26 +228,26 @@
       <div v-for="t in filteredTodos" :key="t.id" class="todo-card" :class="{ 'completed-card': isCompleted(t) }">
         <div class="card-prio-bar" :class="'prio-' + (t.priority || 'medium')"></div>
         <div class="card-header">
-          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">✓</div>
+          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[√]</div>
           <div class="card-title">{{ t.title }}</div>
         </div>
         <div v-if="t.notes" class="card-desc">{{ t.notes }}</div>
         <div v-if="t.subtasks && t.subtasks.length > 0" class="card-subtasks">
-          <div class="subtask-header">📋 子任务 {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}</div>
+          <div class="subtask-header"><Icon name="list" :size="14" /> 子任务 {{ t.subtasks.filter(s => s.completed).length }}/{{ t.subtasks.length }}</div>
           <div v-for="sub in t.subtasks" :key="sub.id" class="subtask-item" :class="{ completed: sub.completed }">
-            <span class="subtask-check" @click="todoStore.toggleSubtask(t.id, sub.id)">{{ sub.completed ? '☑' : '☐' }}</span>
+            <span class="subtask-check" @click="todoStore.toggleSubtask(t.id, sub.id)">{{ sub.completed ? '[√]' : '[□]' }}</span>
             {{ sub.title }}
           </div>
         </div>
         <div class="card-tags">
           <span class="priority-badge" :class="'p-' + (t.priority || 'medium')">{{ prioLabel(t.priority) }}</span>
           <span v-if="t.tag" class="tag-badge">{{ t.tag }}</span>
-          <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge">🔄</span>
+          <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge"><Icon name="refresh" :size="14" /></span>
         </div>
         <div class="card-info">
-          <div v-if="t.startDate" class="info-item">📅 开始 {{ t.startDate }}</div>
-          <div v-if="t.dueDate" class="info-item">⏰ 截止 {{ t.dueDate }}</div>
-          <div v-if="t.reminder && t.reminder !== '不提醒'" class="info-item">🔔 {{ t.reminder }}</div>
+          <div v-if="t.startDate" class="info-item"><Icon name="calendar" :size="14" /> 开始 {{ t.startDate }}</div>
+          <div v-if="t.dueDate" class="info-item"><Icon name="bell" :size="14" /> 截止 {{ t.dueDate }}</div>
+          <div v-if="t.reminder && t.reminder !== '不提醒'" class="info-item">[提醒] {{ t.reminder }}</div>
         </div>
         <div class="card-progress">
           <div class="progress-bar"><div class="progress-fill" :class="getProgressClass(t)" :style="{ width: getProgress(t) + '%' }"></div></div>
@@ -269,9 +269,9 @@
       <div class="todo-calendar-header">
         <div class="todo-calendar-title">{{ calYear }}年 {{ calMonthNames[calMonth] }}</div>
         <div class="todo-calendar-nav">
-          <button class="btn btn-ghost btn-sm" @click="calPrev">◀ 上月</button>
-          <button class="btn btn-ghost btn-sm" @click="calToday">📍 今天</button>
-          <button class="btn btn-ghost btn-sm" @click="calNext">下月 ▶</button>
+          <button class="btn btn-ghost btn-sm" @click="calPrev"><Icon name="chevronLeft" :size="14" /> 上月</button>
+          <button class="btn btn-ghost btn-sm" @click="calToday"><Icon name="checkCircle" :size="14" /> 今天</button>
+          <button class="btn btn-ghost btn-sm" @click="calNext">下月 <Icon name="chevronRight" :size="14" /></button>
         </div>
       </div>
       <div class="todo-calendar-weekdays">
@@ -304,9 +304,9 @@
       <div class="todo-week-header">
         <div class="todo-week-title">{{ weekTitle }}</div>
         <div class="todo-week-nav">
-          <button class="btn btn-ghost btn-sm" @click="weekPrev">◀ 上周</button>
-          <button class="btn btn-ghost btn-sm" @click="weekToday">📍 本周</button>
-          <button class="btn btn-ghost btn-sm" @click="weekNext">下周 ▶</button>
+          <button class="btn btn-ghost btn-sm" @click="weekPrev"><Icon name="chevronLeft" :size="14" /> 上周</button>
+          <button class="btn btn-ghost btn-sm" @click="weekToday"><Icon name="checkCircle" :size="14" /> 本周</button>
+          <button class="btn btn-ghost btn-sm" @click="weekNext">下周 <Icon name="chevronRight" :size="14" /></button>
         </div>
       </div>
       <div class="todo-week-grid">
@@ -333,7 +333,7 @@
 
     <!-- 空状态 -->
     <div v-if="filteredTodos.length === 0" class="empty-state">
-      <div class="empty-icon">📋</div>
+      <div class="empty-icon"><Icon name="list" :size="14" /></div>
       <div class="empty-text">暂无匹配的待办事项</div>
       <div class="empty-sub">尝试调整筛选条件或添加新任务</div>
     </div>
@@ -344,7 +344,7 @@
         <div class="modal-dialog">
           <div class="modal-header">
             <h3>{{ editingTodo ? '编辑任务' : '新建任务' }}</h3>
-            <button class="modal-close" @click="closeModal">✕</button>
+            <button class="modal-close" @click="closeModal"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
             <div class="form-grid">
@@ -415,9 +415,9 @@
                 <label>子任务</label>
                 <div class="subtask-editor">
                   <div v-for="(sub, idx) in form.subtasks" :key="idx" class="subtask-edit-row">
-                    <span class="subtask-check-edit" @click="sub.completed = !sub.completed">{{ sub.completed ? '☑' : '☐' }}</span>
+                    <span class="subtask-check-edit" @click="sub.completed = !sub.completed">{{ sub.completed ? '[√]' : '[□]' }}</span>
                     <input v-model="sub.title" type="text" class="form-input subtask-input" />
-                    <button class="action-btn danger" @click="form.subtasks.splice(idx, 1)">✕</button>
+                    <button class="action-btn danger" @click="form.subtasks.splice(idx, 1)"><Icon name="close" :size="14" /></button>
                   </div>
                   <div class="subtask-add-row">
                     <input v-model="newSubtaskTitle" type="text" class="form-input" placeholder="添加子任务..." @keyup.enter="addSubtask" />
@@ -440,7 +440,7 @@
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-dialog modal-sm">
           <div class="modal-body" style="text-align:center;padding:32px 20px">
-            <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+            <div style="font-size:48px;margin-bottom:12px"><Icon name="warning" :size="14" /></div>
             <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
@@ -454,10 +454,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive } from 'vue'
 import { useTodoStore } from '@/stores/todo'
+import { useSessionStore } from '@/stores/session'
+
 
 const todoStore = useTodoStore()
+const sessionStore = useSessionStore()
+
+const canManage = !['查看者'].includes(sessionStore.currentRole)
 
 const currentView = ref('table')
 const searchText = ref('')
@@ -507,11 +512,11 @@ function toggleColumnConfig(e) {
 }
 
 const viewModes = [
-  { key: 'table', icon: '📊', label: '表格' },
-  { key: 'list', icon: '📋', label: '列表' },
-  { key: 'card', icon: '🗂', label: '卡片' },
-  { key: 'calendar', icon: '📅', label: '日历' },
-  { key: 'week', icon: '🗓', label: '周视图' }
+  { key: 'table', icon: 'chart', label: '表格' },
+  { key: 'list', icon: 'list', label: '列表' },
+  { key: 'card', icon: 'card', label: '卡片' },
+  { key: 'calendar', icon: 'calendar', label: '日历' },
+  { key: 'week', icon: 'calendar', label: '周视图' }
 ]
 
 const calMonthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']
@@ -942,19 +947,29 @@ function onInlineKeydown(e, todo) {
 
 const reminderOptions = ['不提醒', '提前1天', '提前2天', '提前3天', '提前1周']
 
+function handleClickOutside(e) {
+  if (!e.target.closest('.column-config-wrapper')) {
+    showColumnConfig.value = false
+  }
+}
+function handleResize() {
+  showColumnConfig.value = false
+}
+function handleScroll() {
+  showColumnConfig.value = false
+}
+
 onMounted(() => {
   todoStore.initSeedData()
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.column-config-wrapper')) {
-      showColumnConfig.value = false
-    }
-  })
-  window.addEventListener('resize', () => {
-    showColumnConfig.value = false
-  })
-  window.addEventListener('scroll', () => {
-    showColumnConfig.value = false
-  }, true)
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('scroll', handleScroll, true)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('scroll', handleScroll, true)
 })
 </script>
 
@@ -1153,7 +1168,7 @@ onMounted(() => {
 .empty-sub { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
 
 /* 弹窗 */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; animation: fade-in 200ms ease; }
+.modal-overlay { animation: fade-in 200ms ease; }
 .modal-dialog { background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-xl); width: 90%; max-width: 640px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: slide-up 200ms ease; }
 .modal-sm { max-width: 400px; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); }
@@ -1181,6 +1196,10 @@ onMounted(() => {
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
+@media (max-width: 1024px) {
+  .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .todo-card-view { grid-template-columns: repeat(2, 1fr); }
+}
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
   .todo-card-view { grid-template-columns: 1fr; }

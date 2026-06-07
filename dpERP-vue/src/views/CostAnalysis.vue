@@ -1,13 +1,27 @@
 <template>
   <div class="cost-page">
+    <div v-if="!canView" class="access-denied">
+      <div class="access-denied-icon"><Icon name="lock" :size="48" /></div>
+      <div class="access-denied-title">访问受限</div>
+      <div class="access-denied-desc">您没有成本核算的查看权限，请联系管理员开通。</div>
+    </div>
+    <template v-else>
     <div class="page-header">
       <div>
         <h2 class="page-header-title">成本核算</h2>
         <p class="page-header-subtitle">实际成本 vs 标准成本对比分析，颜色编码差异指示</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-ghost btn-sm" @click="exportCSV">📥 导出CSV</button>
-        <button class="btn btn-primary" @click="openEditor()">+ 新增成本记录</button>
+        <div class="column-config-wrapper">
+          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
+              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            </label>
+          </div>
+        </div>
+        <button v-if="canExport" class="btn btn-primary btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
+        <span v-if="exportError" class="export-error-msg">{{ exportError }}</span>
       </div>
     </div>
 
@@ -45,7 +59,7 @@
         <option value="all">全部供应商</option>
         <option v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.shortName || s.name }}</option>
       </select>
-      <button class="btn btn-ghost btn-sm" @click="resetFilters">重置</button>
+      <button class="btn btn-secondary btn-sm" @click="resetFilters"><Icon name="refresh" :size="14" /> 刷新</button>
     </div>
 
     <div class="panel-card">
@@ -54,52 +68,47 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>采购单号</th>
-                <th>供应商</th>
-                <th>日期</th>
-                <th>物料</th>
-                <th>数量</th>
-                <th>实际成本</th>
-                <th>标准成本</th>
-                <th>差异金额</th>
-                <th>差异率</th>
-                <th>状态</th>
-                <th>操作</th>
+                <th v-if="columnVisible.purchaseNo">采购单号</th>
+                <th v-if="columnVisible.supplier">供应商</th>
+                <th v-if="columnVisible.date">日期</th>
+                <th v-if="columnVisible.material">物料</th>
+                <th v-if="columnVisible.quantity">数量</th>
+                <th v-if="columnVisible.actualCost">实际成本</th>
+                <th v-if="columnVisible.standardCost">标准成本</th>
+                <th v-if="columnVisible.variance">差异金额</th>
+                <th v-if="columnVisible.varianceRate">差异率</th>
+                <th v-if="columnVisible.status">状态</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="filteredRecords.length === 0">
-                <td colspan="11" class="empty-state">
-                  <div class="empty-state-icon">📊</div>暂无成本数据
+                <td colspan="10" class="empty-state">
+                  <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无成本数据
                 </td>
               </tr>
               <tr v-for="r in filteredRecords" :key="r.id"
                 :class="{ 'row-over-budget': r.variance > 0, 'row-under-budget': r.variance < 0 }">
-                <td>{{ r.poNo || '-' }}</td>
-                <td>{{ r.supplierName || '-' }}</td>
-                <td>{{ r.date || '-' }}</td>
-                <td>{{ r.materialName || '-' }}</td>
-                <td>{{ r.quantity || 0 }}</td>
-                <td class="cell-mono">¥{{ formatMoney(r.actualCost) }}</td>
-                <td class="cell-mono">¥{{ formatMoney(r.standardCost) }}</td>
-                <td>
+                <td v-if="columnVisible.purchaseNo">{{ r.poNo || '-' }}</td>
+                <td v-if="columnVisible.supplier">{{ r.supplierName || '-' }}</td>
+                <td v-if="columnVisible.date">{{ r.date || '-' }}</td>
+                <td v-if="columnVisible.material">{{ r.materialName || '-' }}</td>
+                <td v-if="columnVisible.quantity">{{ r.quantity || 0 }}</td>
+                <td v-if="columnVisible.actualCost" class="cell-mono">¥{{ formatMoney(r.actualCost) }}</td>
+                <td v-if="columnVisible.standardCost" class="cell-mono">¥{{ formatMoney(r.standardCost) }}</td>
+                <td v-if="columnVisible.variance">
                   <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
                     {{ r.variance >= 0 ? '+¥' : '-¥' }}{{ formatMoney(Math.abs(r.variance)) }}
                   </span>
                 </td>
-                <td>
+                <td v-if="columnVisible.varianceRate">
                   <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
                     {{ r.varianceRate >= 0 ? '+' : '' }}{{ (r.varianceRate || 0).toFixed(1) }}%
                   </span>
                 </td>
-                <td>
+                <td v-if="columnVisible.status">
                   <span class="status-badge" :class="costStore.statusBadgeMap[r.status] || 'neutral'">
                     {{ costStore.statusLabels[r.status] || r.status }}
                   </span>
-                </td>
-                <td class="cell-actions">
-                  <button class="btn btn-ghost btn-sm" @click="openEditor(r)" title="编辑">✏️</button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(r.id)" title="删除">🗑️</button>
                 </td>
               </tr>
             </tbody>
@@ -110,7 +119,7 @@
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-top:var(--space-4)">
       <div class="panel-card">
-        <div class="panel-card-header"><span class="panel-card-title">📈 成本趋势</span></div>
+        <div class="panel-card-header"><span class="panel-card-title"><Icon name="trendUp" :size="14" /> 成本趋势</span></div>
         <div class="panel-card-body">
           <div v-if="monthlyTrend.length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4)">暂无数据</div>
           <div v-else class="trend-list">
@@ -133,7 +142,7 @@
       </div>
 
       <div class="panel-card">
-        <div class="panel-card-header"><span class="panel-card-title">🏢 供应商成本分布</span></div>
+        <div class="panel-card-header"><span class="panel-card-title"><Icon name="users" :size="14" /> 供应商成本分布</span></div>
         <div class="panel-card-body">
           <div v-if="supplierBreakdown.length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4)">暂无数据</div>
           <div v-else class="supplier-list">
@@ -155,116 +164,58 @@
       </div>
     </div>
 
-    <div v-if="showEditor" class="modal-overlay" @click.self="closeEditor">
-      <div class="modal-panel" style="max-width:600px">
-        <div class="modal-header">
-          <h3>{{ editingId ? '编辑成本记录' : '新增成本记录' }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeEditor">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="form-row form-row-2">
-            <div class="form-group">
-              <label class="form-label">采购单号</label>
-              <input class="form-input" v-model="editorData.poNo">
-            </div>
-            <div class="form-group">
-              <label class="form-label">日期</label>
-              <input class="form-input" type="date" v-model="editorData.date">
-            </div>
-          </div>
-          <div class="form-row form-row-2">
-            <div class="form-group">
-              <label class="form-label">供应商</label>
-              <select class="form-select" v-model="editorData.supplierId" @change="onSupplierChange">
-                <option value="">请选择供应商</option>
-                <option v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.shortName || s.name }}</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">物料名称</label>
-              <input class="form-input" v-model="editorData.materialName">
-            </div>
-          </div>
-          <div class="form-row form-row-3">
-            <div class="form-group">
-              <label class="form-label">数量</label>
-              <input class="form-input" type="number" min="0" step="1" v-model.number="editorData.quantity">
-            </div>
-            <div class="form-group">
-              <label class="form-label">实际成本</label>
-              <input class="form-input" type="number" min="0" step="0.01" v-model.number="editorData.actualCost">
-            </div>
-            <div class="form-group">
-              <label class="form-label">标准成本</label>
-              <input class="form-input" type="number" min="0" step="0.01" v-model.number="editorData.standardCost">
-            </div>
-          </div>
-          <div class="form-row form-row-2">
-            <div class="form-group">
-              <label class="form-label">状态</label>
-              <select class="form-select" v-model="editorData.status">
-                <option value="pending">待处理</option>
-                <option value="approved">已审批</option>
-                <option value="completed">已完成</option>
-                <option value="cancelled">已取消</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">差异预览</label>
-              <div style="padding:var(--space-2) 0;font-size:var(--font-size-sm)">
-                <span :style="{ color: editorVariance > 0 ? 'var(--color-danger)' : editorVariance < 0 ? 'var(--color-success)' : '' }">
-                  {{ editorVariance >= 0 ? '+' : '' }}¥{{ formatMoney(editorVariance) }}
-                  ({{ editorVarianceRate >= 0 ? '+' : '' }}{{ editorVarianceRate.toFixed(1) }}%)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-ghost" @click="closeEditor">取消</button>
-          <button class="btn btn-primary" @click="saveRecord">{{ editingId ? '更新' : '创建' }}</button>
-        </div>
-      </div>
-    </div>
+    </template>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCostStore } from '@/stores/cost'
 import { useDataStore } from '@/stores/data'
+import { usePermission } from '@/utils/permissionGuard'
 
 const costStore = useCostStore()
 const dataStore = useDataStore()
+const perm = usePermission()
+
+const canView = computed(() => perm.isAllowed('cost', 'costView'))
+const canEdit = computed(() => perm.isAllowed('cost', 'costEdit'))
+const canExport = computed(() => perm.isAllowed('cost', 'costExport'))
+
+const exportError = ref('')
+let exportErrorTimer = null
+
+const columnDefs = [
+  { key: 'purchaseNo', label: '采购单号' },
+  { key: 'supplier', label: '供应商' },
+  { key: 'date', label: '日期' },
+  { key: 'material', label: '物料' },
+  { key: 'quantity', label: '数量' },
+  { key: 'actualCost', label: '实际成本' },
+  { key: 'standardCost', label: '标准成本' },
+  { key: 'variance', label: '差异金额' },
+  { key: 'varianceRate', label: '差异率' },
+  { key: 'status', label: '状态' }
+]
+const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const showColumnConfig = ref(false)
+const colDropdownStyle = ref({})
+function toggleColumnConfig(event) {
+  showColumnConfig.value = !showColumnConfig.value
+  if (showColumnConfig.value) {
+    const rect = event.target.getBoundingClientRect()
+    colDropdownStyle.value = { top: rect.bottom + 8 + 'px', left: rect.left + 'px' }
+  }
+}
 
 const periodFilter = ref('month')
 const supplierFilter = ref('all')
-const showEditor = ref(false)
-const editingId = ref(null)
-
-const editorData = reactive({
-  poNo: '',
-  supplierId: '',
-  supplierName: '',
-  date: '',
-  materialName: '',
-  quantity: 0,
-  actualCost: 0,
-  standardCost: 0,
-  status: 'pending'
-})
 
 const supplierOptions = computed(() => dataStore.suppliers || [])
 
 const filteredRecords = computed(() => costStore.getFilteredRecords(periodFilter.value, supplierFilter.value))
 const monthlyTrend = computed(() => costStore.getMonthlyTrend())
 const supplierBreakdown = computed(() => costStore.getSupplierBreakdown())
-
-const editorVariance = computed(() => (parseFloat(editorData.actualCost) || 0) - (parseFloat(editorData.standardCost) || 0))
-const editorVarianceRate = computed(() => {
-  const std = parseFloat(editorData.standardCost) || 0
-  return std > 0 ? editorVariance.value / std * 100 : 0
-})
 
 const maxActual = computed(() => Math.max(...monthlyTrend.value.map(m => m.actualCost || 0), 1))
 
@@ -287,67 +238,14 @@ function resetFilters() {
   supplierFilter.value = 'all'
 }
 
-function onSupplierChange() {
-  const s = supplierOptions.value.find(s => s.id === editorData.supplierId)
-  if (s) editorData.supplierName = s.shortName || s.name
-}
-
-function openEditor(data) {
-  editingId.value = data ? data.id : null
-  if (data) {
-    Object.assign(editorData, {
-      poNo: data.poNo || '',
-      supplierId: data.supplierId || '',
-      supplierName: data.supplierName || '',
-      date: data.date || '',
-      materialName: data.materialName || '',
-      quantity: data.quantity || 0,
-      actualCost: data.actualCost || 0,
-      standardCost: data.standardCost || 0,
-      status: data.status || 'pending'
-    })
-  } else {
-    Object.assign(editorData, {
-      poNo: '',
-      supplierId: '',
-      supplierName: '',
-      date: new Date().toISOString().split('T')[0],
-      materialName: '',
-      quantity: 0,
-      actualCost: 0,
-      standardCost: 0,
-      status: 'pending'
-    })
-  }
-  showEditor.value = true
-}
-
-function closeEditor() {
-  showEditor.value = false
-  editingId.value = null
-}
-
-function saveRecord() {
-  if (!editorData.materialName) { alert('物料名称为必填项'); return }
-  if (!editorData.date) { alert('日期为必填项'); return }
-  const data = { ...editorData }
-  if (editingId.value) {
-    costStore.updateRecord(editingId.value, data)
-  } else {
-    costStore.addRecord(data)
-  }
-  closeEditor()
-}
-
-function handleDelete(id) {
-  if (confirm('确认删除该成本记录？')) {
-    costStore.deleteRecord(id)
-  }
-}
-
 function exportCSV() {
   const list = filteredRecords.value
-  if (list.length === 0) { alert('无数据可导出'); return }
+  if (list.length === 0) {
+    exportError.value = '无数据可导出'
+    if (exportErrorTimer) clearTimeout(exportErrorTimer)
+    exportErrorTimer = setTimeout(() => { exportError.value = '' }, 3000)
+    return
+  }
   let csv = '采购单号,供应商,日期,物料,数量,实际成本,标准成本,差异金额,差异率,状态\n'
   for (const r of list) {
     csv += [
@@ -357,7 +255,7 @@ function exportCSV() {
       costStore.statusLabels[r.status] || r.status || ''
     ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n'
   }
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -366,13 +264,46 @@ function exportCSV() {
   URL.revokeObjectURL(url)
 }
 
+function handleClickOutside(e) {
+  if (showColumnConfig.value && !e.target.closest('.column-config-wrapper')) {
+    showColumnConfig.value = false
+  }
+}
+
 onMounted(() => {
   dataStore.initSeedData()
   costStore.initSeedData()
+  document.addEventListener('click', handleClickOutside)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
 <style scoped>
+.access-denied {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  padding: var(--space-8);
+}
+.access-denied-icon {
+  font-size: 48px;
+  margin-bottom: var(--space-4);
+}
+.access-denied-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+.access-denied-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
 .row-over-budget {
   background: rgba(239, 68, 68, 0.05);
 }
@@ -473,9 +404,20 @@ onMounted(() => {
   border-radius: 3px;
   transition: width 0.3s ease;
 }
+@media (max-width: 1024px) {
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 @media (max-width: 768px) {
   .stats-grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+.column-config-wrapper { position: relative; }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
+.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+.export-error-msg { color: var(--color-danger); font-size: var(--font-size-sm); margin-left: var(--space-2); animation: fadeOut 3s forwards; }
+@keyframes fadeOut { 0%,70% { opacity: 1; } 100% { opacity: 0; } }
 </style>

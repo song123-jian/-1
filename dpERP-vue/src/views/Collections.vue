@@ -13,11 +13,19 @@
             class="btn btn-ghost btn-sm"
             :class="{ active: currentView === v.key }"
             @click="currentView = v.key"
-            :title="v.label"
-          >{{ v.icon }}</button>
+            :title="v.icon + ' ' + v.label"
+          ><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
         </div>
-        <button class="btn btn-ghost btn-sm" @click="exportCSV">📥 导出</button>
-        <button class="btn btn-primary" @click="openForm()">+ 记录回款</button>
+        <div class="column-config-wrapper">
+          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
+              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            </label>
+          </div>
+        </div>
+        <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出</button>
+        <button v-if="canCreate" class="btn btn-primary" @click="openForm()">+ 记录回款</button>
       </div>
     </div>
 
@@ -42,7 +50,7 @@
 
     <div class="panel-card" style="margin-bottom:var(--space-6)">
       <div class="panel-card-header">
-        <span class="panel-card-title">📊 账龄分析</span>
+        <span class="panel-card-title"><Icon name="table" :size="14" /> 账龄分析</span>
       </div>
       <div class="panel-card-body">
         <div class="stats-row stats-grid-4">
@@ -107,21 +115,21 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th>回款编号</th>
-                <th>客户</th>
-                <th>日期</th>
-                <th>金额</th>
-                <th>付款方式</th>
-                <th>回款进度</th>
-                <th>状态</th>
-                <th>逾期</th>
+                <th v-if="columnVisible.collectionNo">回款编号</th>
+                <th v-if="columnVisible.customer">客户</th>
+                <th v-if="columnVisible.date">日期</th>
+                <th v-if="columnVisible.amount">金额</th>
+                <th v-if="columnVisible.paymentMethod">付款方式</th>
+                <th v-if="columnVisible.progress">回款进度</th>
+                <th v-if="columnVisible.status">状态</th>
+                <th v-if="columnVisible.overdue">逾期</th>
                 <th style="min-width:140px">操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="filteredCollections.length === 0">
                 <td colspan="9" class="empty-state">
-                  <div class="empty-state-icon">📭</div>暂无回款记录
+                  <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无回款记录
                 </td>
               </tr>
               <tr
@@ -129,15 +137,15 @@
                 :key="c.id"
                 :style="getRowOverdueStyle(c)"
               >
-                <td class="cell-mono" style="cursor:pointer;color:var(--color-accent)" @click="viewDetail(c)">{{ c.collectionNo }}</td>
-                <td>{{ c.customerName }}</td>
-                <td>{{ c.date || '-' }}</td>
-                <td class="cell-mono">
+                <td v-if="columnVisible.collectionNo" class="cell-mono" style="cursor:pointer;color:var(--color-accent)" @click="viewDetail(c)">{{ c.collectionNo }}</td>
+                <td v-if="columnVisible.customer">{{ c.customerName }}</td>
+                <td v-if="columnVisible.date">{{ c.date || '-' }}</td>
+                <td v-if="columnVisible.amount" class="cell-mono">
                   ¥{{ formatMoney(c.amount) }}
                   <span v-if="c.installments && c.installments.length" style="font-size:10px;color:var(--color-info)"> ({{ c.installments.length }}期)</span>
                 </td>
-                <td>{{ collectionStore.methodLabels[c.method] || c.method || '-' }}</td>
-                <td style="min-width:120px">
+                <td v-if="columnVisible.paymentMethod">{{ collectionStore.methodLabels[c.method] || c.method || '-' }}</td>
+                <td v-if="columnVisible.progress" style="min-width:120px">
                   <div class="progress-wrapper">
                     <div class="progress-bar">
                       <div
@@ -149,26 +157,26 @@
                     <span class="progress-text">{{ collectionStore.getProgress(c) }}%</span>
                   </div>
                 </td>
-                <td>
+                <td v-if="columnVisible.status">
                   <span class="status-badge" :class="collectionStore.statusBadgeMap[c.status] || 'neutral'">
                     {{ collectionStore.statusLabels[c.status] || c.status || '待确认' }}
                   </span>
                 </td>
-                <td>
+                <td v-if="columnVisible.overdue">
                   <span class="badge" :class="getOverdueBadgeClass(c)">{{ getOverdueBadgeText(c) }}</span>
                 </td>
                 <td class="cell-actions">
-                  <button class="btn btn-ghost btn-sm" @click="viewDetail(c)" title="查看详情">👁️</button>
-                  <button class="btn btn-ghost btn-sm" @click="openForm(c)" title="编辑">✏️</button>
-                  <button class="btn btn-ghost btn-sm" @click="openInstallmentManager(c)" title="分期管理" style="color:var(--color-info)">📋</button>
+                  <button class="btn btn-ghost btn-sm" @click="viewDetail(c)" title="查看详情"><Icon name="eye" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" @click="openForm(c)" title="编辑"><Icon name="edit" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" @click="openInstallmentManager(c)" title="分期管理" style="color:var(--color-info)"><Icon name="calendar" :size="14" /></button>
                   <button
                     v-if="c.status === 'pending'"
                     class="btn btn-ghost btn-sm"
                     style="color:var(--color-success)"
                     @click="handleConfirm(c.id)"
                     title="确认"
-                  >✅</button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(c.id)" title="删除">🗑️</button>
+                  ><Icon name="checkCircle" :size="14" /></button>
+                  <button v-if="canDelete" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(c.id)" title="删除"><Icon name="delete" :size="14" /></button>
                 </td>
               </tr>
             </tbody>
@@ -197,7 +205,7 @@
             </div>
           </div>
           <div v-if="filteredCollections.length === 0" class="empty-state">
-            <div class="empty-state-icon">📭</div>暂无回款记录
+            <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无回款记录
           </div>
         </div>
 
@@ -222,13 +230,13 @@
               <div class="card-field"><span class="card-label">日期</span><span>{{ c.date }}</span></div>
             </div>
             <div class="card-actions">
-              <button class="btn btn-ghost btn-sm" @click.stop="openForm(c)">✏️ 编辑</button>
-              <button v-if="c.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-success)" @click.stop="handleConfirm(c.id)">✅ 确认</button>
-              <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click.stop="handleDelete(c.id)">🗑️ 删除</button>
+              <button class="btn btn-ghost btn-sm" @click.stop="openForm(c)"><Icon name="edit" :size="14" /></button>
+              <button v-if="c.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-success)" @click.stop="handleConfirm(c.id)"><Icon name="checkCircle" :size="14" /></button>
+              <button v-if="canDelete" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click.stop="handleDelete(c.id)"><Icon name="delete" :size="14" /></button>
             </div>
           </div>
           <div v-if="filteredCollections.length === 0" class="empty-state">
-            <div class="empty-state-icon">📭</div>暂无回款记录
+            <div class="empty-state-icon"><Icon name="empty" :size="32" /></div>暂无回款记录
           </div>
         </div>
       </div>
@@ -236,48 +244,62 @@
 
     <div class="panel-card" style="margin-top:var(--space-6)">
       <div class="panel-card-header">
-        <span class="panel-card-title">📊 账龄分布图</span>
+        <span class="panel-card-title"><Icon name="chart" :size="14" /> 账龄分布图</span>
+        <div style="display:flex;gap:var(--space-2)">
+          <select class="form-select" v-model="agingChartFilter" style="font-size:12px;height:28px">
+            <option value="">全部客户</option>
+            <option value="high">高风险</option>
+            <option value="medium">中风险</option>
+            <option value="low">低风险</option>
+          </select>
+        </div>
       </div>
       <div class="panel-card-body">
-        <div class="chart-container">
-          <canvas ref="agingChartRef"></canvas>
+        <div style="display:flex;gap:var(--space-4);align-items:flex-end;height:200px;padding:var(--space-2)">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div :style="{ height: agingBarHeight('current') + 'px', background: 'var(--color-success)', borderRadius: '4px 4px 0 0', width: '100%', maxWidth: '60px', transition: 'height 0.3s' }"></div>
+            <span style="font-size:10px;color:var(--color-text-tertiary)">未到期</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div :style="{ height: agingBarHeight('days30') + 'px', background: 'var(--color-warning)', borderRadius: '4px 4px 0 0', width: '100%', maxWidth: '60px', transition: 'height 0.3s' }"></div>
+            <span style="font-size:10px;color:var(--color-text-tertiary)">1-30天</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div :style="{ height: agingBarHeight('days60') + 'px', background: 'var(--color-danger)', borderRadius: '4px 4px 0 0', width: '100%', maxWidth: '60px', transition: 'height 0.3s' }"></div>
+            <span style="font-size:10px;color:var(--color-text-tertiary)">31-60天</span>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div :style="{ height: agingBarHeight('daysOver') + 'px', background: 'var(--color-danger)', borderRadius: '4px 4px 0 0', width: '100%', maxWidth: '60px', transition: 'height 0.3s' }"></div>
+            <span style="font-size:10px;color:var(--color-text-tertiary)">60天+</span>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="panel-card" style="margin-top:var(--space-4)">
       <div class="panel-card-header">
-        <span class="panel-card-title">📋 账龄分析明细</span>
-        <button class="btn btn-ghost btn-sm" @click="exportAgingCSV">📥 导出CSV</button>
+        <span class="panel-card-title"><Icon name="list" :size="14" /> 账龄分析明细</span>
+        <button class="btn btn-ghost btn-sm" @click="exportAgingCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
       </div>
       <div class="panel-card-body no-padding">
         <div class="table-container">
           <table class="data-table">
             <thead>
               <tr>
-                <th>客户</th>
-                <th>余额</th>
-                <th>当期</th>
-                <th>1-30天</th>
-                <th>31-60天</th>
-                <th>61-90天</th>
-                <th>90天+</th>
-                <th>风险</th>
+                <th>客户</th><th>余额</th><th>当期</th><th>1-30天</th><th>31-60天</th><th>61-90天</th><th>90天+</th><th>风险</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-if="agingData.length === 0">
-                <td colspan="8" style="text-align:center;color:var(--color-text-secondary)">暂无账龄数据</td>
-              </tr>
-              <tr v-for="(d, idx) in agingData" :key="idx">
-                <td>{{ d.name }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.balance) }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.current) }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.days30) }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.days60) }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.days90) }}</td>
-                <td style="text-align:right">¥{{ formatMoney(d.daysOver) }}</td>
-                <td><span :style="{ color: d.statusColor, fontWeight: 500 }">{{ d.status }}</span></td>
+              <tr v-if="agingDetailList.length === 0"><td colspan="8" class="empty-state">暂无数据</td></tr>
+              <tr v-for="row in agingDetailList" :key="row.customer">
+                <td>{{ row.customer }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.balance) }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.current) }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.days30) }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.days60) }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.days90) }}</td>
+                <td class="cell-mono">¥{{ formatMoney(row.daysOver) }}</td>
+                <td><span class="status-badge" :class="row.risk === '高' ? 'danger' : row.risk === '中' ? 'warning' : 'success'">{{ row.risk }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -289,7 +311,7 @@
       <div class="modal-content" style="max-width:560px">
         <div class="modal-header">
           <h3>{{ editingCollection ? '编辑回款' : '记录回款' }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeForm">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="closeForm"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -350,7 +372,7 @@
       <div class="modal-content" style="max-width:640px">
         <div class="modal-header">
           <h3>回款详情 - {{ detailData.collectionNo }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeDetail">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="closeDetail"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div class="detail-grid">
@@ -416,7 +438,7 @@
       <div class="modal-content" style="max-width:560px">
         <div class="modal-header">
           <h3>分期管理 - {{ installmentTarget.collectionNo }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeInstallmentManager">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="closeInstallmentManager"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div style="margin-bottom:var(--space-4);padding:var(--space-3);background:var(--color-bg-primary);border-radius:var(--radius-md)">
@@ -445,8 +467,8 @@
                   </span>
                 </td>
                 <td class="cell-actions">
-                  <button v-if="inst.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-success)" @click="markInstallmentPaid(installmentTarget.id, inst.id)">✅</button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDeleteInstallment(installmentTarget.id, inst.id)">🗑️</button>
+                  <button v-if="inst.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-success)" @click="markInstallmentPaid(installmentTarget.id, inst.id)"><Icon name="checkCircle" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDeleteInstallment(installmentTarget.id, inst.id)"><Icon name="delete" :size="14" /></button>
                 </td>
               </tr>
               <tr v-if="!installmentTarget.installments || installmentTarget.installments.length === 0">
@@ -481,15 +503,43 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useCollectionStore } from '@/stores/collection'
 import { useCustomerStore } from '@/stores/customer'
 import { useDataStore } from '@/stores/data'
-import Chart from 'chart.js/auto'
+import { usePermission } from '@/utils/permissionGuard'
 
 const collectionStore = useCollectionStore()
 const customerStore = useCustomerStore()
 const dataStore = useDataStore()
+const perm = usePermission()
+
+const canCreate = perm.isAllowed('statement', 'statementCreate')
+const canEdit = perm.isAllowed('statement', 'statementUpdate')
+const canDelete = perm.isAllowed('statement', 'statementDelete')
+const canExport = perm.isAllowed('statement', 'statementExport')
+
+const columnDefs = [
+  { key: 'collectionNo', label: '回款编号' },
+  { key: 'customer', label: '客户' },
+  { key: 'date', label: '日期' },
+  { key: 'amount', label: '金额' },
+  { key: 'paymentMethod', label: '付款方式' },
+  { key: 'progress', label: '回款进度' },
+  { key: 'status', label: '状态' },
+  { key: 'overdue', label: '逾期' },
+  { key: 'actions', label: '操作', hideable: false }
+]
+const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const showColumnConfig = ref(false)
+const colDropdownStyle = ref({})
+function toggleColumnConfig(event) {
+  showColumnConfig.value = !showColumnConfig.value
+  if (showColumnConfig.value) {
+    const rect = event.target.getBoundingClientRect()
+    colDropdownStyle.value = { top: rect.bottom + 8 + 'px', left: rect.left + 'px' }
+  }
+}
 
 const currentView = ref('table')
 const showForm = ref(false)
@@ -498,13 +548,12 @@ const showInstallmentManager = ref(false)
 const editingCollection = ref(null)
 const detailData = ref({})
 const installmentTarget = ref({})
-const agingChartRef = ref(null)
-let agingChart = null
+const agingChartFilter = ref('')
 
 const viewOptions = [
-  { key: 'table', label: '表格视图', icon: '📊' },
-  { key: 'list', label: '列表视图', icon: '📋' },
-  { key: 'card', label: '卡片视图', icon: '🃏' }
+  { key: 'table', label: '表格视图', icon: 'table' },
+  { key: 'list', label: '列表视图', icon: 'list' },
+  { key: 'card', label: '卡片视图', icon: 'card' }
 ]
 
 const filters = reactive({
@@ -568,6 +617,27 @@ const agingSummary = computed(() => {
     summary.daysOver += d.daysOver
   }
   return summary
+})
+
+const agingDetailList = computed(() => {
+  const map = {}
+  for (const c of collectionStore.collections) {
+    const customer = c.customerName || '未知'
+    if (!map[customer]) map[customer] = { customer, balance: 0, current: 0, days30: 0, days60: 0, days90: 0, daysOver: 0 }
+    const amount = c.amount || 0
+    const overdue = collectionStore.getOverdueDays(c)
+    map[customer].balance += amount
+    if (overdue <= 0) map[customer].current += amount
+    else if (overdue <= 30) map[customer].days30 += amount
+    else if (overdue <= 60) map[customer].days60 += amount
+    else if (overdue <= 90) map[customer].days90 += amount
+    else map[customer].daysOver += amount
+  }
+  return Object.values(map).map(r => {
+    const overdueRatio = r.balance > 0 ? (r.days30 + r.days60 + r.days90 + r.daysOver) / r.balance : 0
+    r.risk = overdueRatio > 0.5 ? '高' : overdueRatio > 0.2 ? '中' : '低'
+    return r
+  })
 })
 
 const totalInstalledAmount = computed(() => {
@@ -784,85 +854,42 @@ function exportCSV() {
   URL.revokeObjectURL(url)
 }
 
+function agingBarHeight(key) {
+  const max = Math.max(agingSummary.value.current, agingSummary.value.days30, agingSummary.value.days60, agingSummary.value.daysOver, 1)
+  return Math.max(4, (agingSummary.value[key] / max) * 160)
+}
+
 function exportAgingCSV() {
-  const data = agingData.value
-  if (data.length === 0) { alert('暂无账龄数据可导出'); return }
-  let csv = '客户名称,余额,当期,1-30天,31-60天,61-90天,90天以上,风险状态\n'
-  for (const d of data) {
-    csv += `"${d.name}",${d.balance},${d.current},${d.days30},${d.days60},${d.days90},${d.daysOver},"${d.status}"\n`
-  }
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const data = agingDetailList.value.map(r => ({
+    客户: r.customer, 余额: r.balance.toFixed(2), 当期: r.current.toFixed(2),
+    '1-30天': r.days30.toFixed(2), '31-60天': r.days60.toFixed(2),
+    '61-90天': r.days90.toFixed(2), '90天+': r.daysOver.toFixed(2), 风险: r.risk
+  }))
+  const json = JSON.stringify(data, null, 2)
+  const blob = new Blob([json], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = '账龄分析报告_' + new Date().toISOString().split('T')[0] + '.csv'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = '账龄分析明细.json'
+  a.click()
   URL.revokeObjectURL(url)
 }
 
-function initAgingChart() {
-  if (!agingChartRef.value) return
-  if (agingChart) agingChart.destroy()
-
-  const data = agingData.value
-  if (data.length === 0) return
-
-  const labels = data.map(d => d.name)
-  const currentData = data.map(d => d.current)
-  const days30Data = data.map(d => d.days30)
-  const days60Data = data.map(d => d.days60)
-  const days90Data = data.map(d => d.days90)
-  const daysOverData = data.map(d => d.daysOver)
-
-  agingChart = new Chart(agingChartRef.value, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: '当期', data: currentData, backgroundColor: 'rgba(34, 197, 94, 0.7)', borderRadius: 2 },
-        { label: '1-30天', data: days30Data, backgroundColor: 'rgba(59, 130, 246, 0.7)', borderRadius: 2 },
-        { label: '31-60天', data: days60Data, backgroundColor: 'rgba(245, 158, 11, 0.7)', borderRadius: 2 },
-        { label: '61-90天', data: days90Data, backgroundColor: 'rgba(249, 115, 22, 0.7)', borderRadius: 2 },
-        { label: '90天+', data: daysOverData, backgroundColor: 'rgba(239, 68, 68, 0.7)', borderRadius: 2 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: { color: '#94a3b8', font: { size: 11 } }
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: 'rgba(51, 65, 85, 0.3)' }
-        },
-        y: {
-          stacked: true,
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: 'rgba(51, 65, 85, 0.3)' }
-        }
-      }
-    }
-  })
+function handleClickOutside(e) {
+  if (showColumnConfig.value && !e.target.closest('.column-config-wrapper')) {
+    showColumnConfig.value = false
+  }
 }
 
-onMounted(async () => {
+onMounted(() => {
   customerStore.initSeedData()
   collectionStore.initSeedData()
   dataStore.initSeedData()
-  await nextTick()
-  initAgingChart()
+  document.addEventListener('click', handleClickOutside)
 })
-
-watch(agingData, () => {
-  nextTick(() => initAgingChart())
-}, { deep: true })
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -1040,8 +1067,18 @@ watch(agingData, () => {
   .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
   .detail-grid { grid-template-columns: 1fr; }
 }
+@media (max-width: 768px) {
+  .stats-grid-4 { grid-template-columns: 1fr 1fr; }
+  .page-header { flex-direction: column; align-items: flex-start; }
+  .filter-bar { flex-direction: column; }
+  table { font-size: 12px; }
+}
 @media (max-width: 640px) {
   .stats-grid-4 { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
 }
+.column-config-wrapper { position: relative; }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
+.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
 </style>

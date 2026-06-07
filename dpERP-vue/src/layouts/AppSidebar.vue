@@ -3,7 +3,7 @@
     <div class="sidebar-header">
       <div class="sidebar-logo">冠</div>
       <span class="sidebar-brand" v-show="!isCollapsed">冠久ERP</span>
-      <button class="sidebar-collapse-btn" @click="toggleCollapse" :title="isCollapsed ? '展开侧边栏' : '折叠侧边栏'">
+      <button class="sidebar-collapse-btn" @click="handleToggleCollapse" :title="isCollapsed ? '展开侧边栏' : '折叠侧边栏'">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
           <path d="M10 3L5 8L10 13"/>
         </svg>
@@ -12,10 +12,10 @@
 
     <div class="sidebar-shortcuts" v-show="!isCollapsed">
       <span class="sidebar-shortcuts-label">快捷入口</span>
-      <button class="sidebar-shortcut-btn" @click="$router.push('/dashboard')" title="仪表盘">📊</button>
-      <button class="sidebar-shortcut-btn" @click="$router.push('/customers')" title="客户管理">🏢</button>
-      <button class="sidebar-shortcut-btn" @click="$router.push('/inventory')" title="库存管理">📦</button>
-      <button class="sidebar-shortcut-btn" @click="$router.push('/quotations')" title="报价管理">📝</button>
+      <button class="sidebar-shortcut-btn" @click="navigateTo('/dashboard')" title="仪表盘"><Icon name="chart" :size="16" /></button>
+      <button class="sidebar-shortcut-btn" @click="navigateTo('/customers')" title="客户管理"><Icon name="users" :size="16" /></button>
+      <button class="sidebar-shortcut-btn" @click="navigateTo('/inbound')" title="入库管理"><Icon name="upload" :size="16" /></button>
+      <button class="sidebar-shortcut-btn" @click="navigateTo('/quotations')" title="报价管理"><Icon name="edit" :size="16" /></button>
     </div>
 
     <nav class="sidebar-nav">
@@ -25,8 +25,8 @@
         data-section="overview"
       >
         <div class="nav-section-title" @click="toggleSection('overview')">
-          概览
-          <span class="section-arrow">{{ sectionCollapsed.overview ? '▶' : '▼' }}</span>
+          <Icon name="chart" :size="14" /> 概览
+          <span class="section-arrow"><Icon :name="sectionCollapsed.overview ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -36,7 +36,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -49,8 +49,8 @@
         data-section="sales"
       >
         <div class="nav-section-title" @click="toggleSection('sales')">
-          销售
-          <span class="section-arrow">{{ sectionCollapsed.sales ? '▶' : '▼' }}</span>
+          <Icon name="dollar" :size="14" /> 销售
+          <span class="section-arrow"><Icon :name="sectionCollapsed.sales ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -60,7 +60,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -73,8 +73,8 @@
         data-section="warehouse"
       >
         <div class="nav-section-title" @click="toggleSection('warehouse')">
-          仓储
-          <span class="section-arrow">{{ sectionCollapsed.warehouse ? '▶' : '▼' }}</span>
+          <Icon name="package" :size="14" /> 仓储
+          <span class="section-arrow"><Icon :name="sectionCollapsed.warehouse ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -84,7 +84,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -97,8 +97,8 @@
         data-section="finance"
       >
         <div class="nav-section-title" @click="toggleSection('finance')">
-          财务与结算
-          <span class="section-arrow">{{ sectionCollapsed.finance ? '▶' : '▼' }}</span>
+          <Icon name="dollar" :size="14" /> 财务与结算
+          <span class="section-arrow"><Icon :name="sectionCollapsed.finance ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -108,7 +108,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -121,8 +121,8 @@
         data-section="resource"
       >
         <div class="nav-section-title" @click="toggleSection('resource')">
-          资源与档案
-          <span class="section-arrow">{{ sectionCollapsed.resource ? '▶' : '▼' }}</span>
+          <Icon name="card" :size="14" /> 资源与档案
+          <span class="section-arrow"><Icon :name="sectionCollapsed.resource ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -132,7 +132,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -145,14 +145,14 @@
         data-section="system"
       >
         <div class="nav-section-title" @click="toggleSection('system')">
-          系统与管理
-          <span class="section-arrow">{{ sectionCollapsed.system ? '▶' : '▼' }}</span>
+          <Icon name="setting" :size="14" /> 系统与管理
+          <span class="section-arrow"><Icon :name="sectionCollapsed.system ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
         </div>
         <div class="nav-section-body">
           <div class="nav-item has-submenu" @click="toggleSettingsSubmenu" :class="{ open: settingsSubmenuOpen }">
-            <span class="nav-item-icon">⚙️</span>
+            <span class="nav-item-icon"><Icon name="setting" :size="16" /></span>
             <span class="nav-item-text">系统设置</span>
-            <span class="nav-item-badge settings-toggle-badge">{{ settingsSubmenuOpen ? '▼' : '▶' }}</span>
+            <span class="nav-item-badge settings-toggle-badge"><Icon :name="settingsSubmenuOpen ? 'chevronDown' : 'chevronRight'" :size="12" /></span>
           </div>
           <div class="nav-submenu" :class="{ collapsed: !settingsSubmenuOpen }">
             <router-link
@@ -162,7 +162,7 @@
               class="nav-item"
               :class="{ active: isItemActive(item) }"
             >
-              <span class="nav-item-icon">{{ item.icon }}</span>
+              <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
               <span class="nav-item-text">{{ item.label }}</span>
             </router-link>
           </div>
@@ -173,7 +173,7 @@
             class="nav-item"
             :class="{ active: isItemActive(item) }"
           >
-            <span class="nav-item-icon">{{ item.icon }}</span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
           </router-link>
         </div>
@@ -181,56 +181,84 @@
     </nav>
 
     <div class="sidebar-fav" v-show="!isCollapsed">
-      <div class="sidebar-fav-label">⭐ 收藏</div>
+      <div class="sidebar-fav-label"><Icon name="star" :size="14" /> 收藏</div>
       <div class="sidebar-fav-list">
         <div v-if="favorites.length === 0" class="sidebar-fav-empty">右键导航项可添加收藏</div>
         <div
           v-for="fav in favorites"
           :key="fav.path"
           class="sidebar-fav-item"
-          @click="$router.push(fav.path)"
+          @click="navigateTo(fav.path)"
         >
-          <span>{{ fav.icon }}</span>
+          <span><Icon :name="fav.icon" :size="14" /></span>
           <span>{{ fav.label }}</span>
-          <span class="fav-remove" @click.stop="removeFavorite(fav.path)">✕</span>
+          <span class="fav-remove" @click.stop="removeFavorite(fav.path)"><Icon name="close" :size="12" /></span>
         </div>
       </div>
     </div>
 
     <div class="sidebar-footer">
-      <div class="sidebar-user">
-        <div class="sidebar-avatar">管</div>
+      <div class="sidebar-user" @click="handleSwitchRole" :title="'点击切换角色'">
+        <div class="sidebar-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
         <div class="sidebar-user-info" v-show="!isCollapsed">
-          <div class="sidebar-user-name">系统管理员</div>
-          <div class="sidebar-user-role">管理员</div>
+          <div class="sidebar-user-name">{{ sessionStore.roleName }}</div>
+          <div class="sidebar-user-role"><Icon name="greenCircle" :size="10" /> 在线 {{ sessionStore.onlineMembers.length }}人 · <Icon name="refresh" :size="10" /> 切换身份</div>
         </div>
       </div>
     </div>
   </aside>
-
-  <div class="sidebar-overlay" :class="{ active: isMobileOpen }" @click="closeMobileSidebar"></div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useTodoStore } from '@/stores/todo'
 import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
 import { useInventoryStore } from '@/stores/inventory'
+import { useSessionStore } from '@/stores/session'
+import { useSyncEngine } from '@/utils/syncEngine'
+import autoSave from '@/utils/autoSave'
+
+const props = defineProps({
+  collapsed: { type: Boolean, default: false },
+  mobileOpen: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(['toggle-collapse', 'close-mobile'])
 
 const route = useRoute()
+const router = useRouter()
 const todoStore = useTodoStore()
 const quotationStore = useQuotationStore()
 const contractStore = useContractStore()
 const inventoryStore = useInventoryStore()
-const isCollapsed = ref(false)
-const isMobileOpen = ref(false)
+const sessionStore = useSessionStore()
 const settingsSubmenuOpen = ref(false)
+
+/* 内部折叠状态，与props同步 */
+const isCollapsed = computed(() => props.collapsed)
+const isMobileOpen = computed(() => props.mobileOpen)
+
+function handleToggleCollapse() {
+  emit('toggle-collapse')
+}
+
+function navigateTo(path) {
+  router.push(path)
+  /* 移动端导航后关闭菜单 */
+  emit('close-mobile')
+}
+
+function handleSwitchRole() {
+  const syncEngine = useSyncEngine()
+  syncEngine.stopAutoSync()
+  sessionStore.clearSession()
+  router.push('/role-select')
+}
 
 const FAV_STORAGE_KEY = 'gj_erp_navFavorites'
 const COLLAPSED_STORAGE_KEY = 'gj_erp_collapsedNavSections'
-const RAIL_STORAGE_KEY = 'gj_erp_sidebarRailMode'
 
 function loadFromStorage(key, fallback) {
   try {
@@ -261,6 +289,8 @@ function toggleSection(section) {
   sectionCollapsed[section] = !sectionCollapsed[section]
   const state = { ...sectionCollapsed }
   saveToStorage(COLLAPSED_STORAGE_KEY, state)
+  /* 自动保存布局状态 */
+  autoSave.saveLayoutState({ navSectionsCollapsed: state })
 }
 
 function toggleSettingsSubmenu() {
@@ -268,10 +298,13 @@ function toggleSettingsSubmenu() {
 }
 
 function isItemActive(item) {
-  if (item.matchPath) {
-    return route.path.startsWith(item.matchPath)
+  if (item.matchPath && !item.tab) {
+    return route.path.startsWith(item.matchPath) && !route.query.tab
   }
-  return route.path === item.path && route.query.tab === (item.tab || undefined || route.query.tab)
+  if (item.tab) {
+    return route.path === '/system' && route.query.tab === item.tab
+  }
+  return route.path === item.path
 }
 
 function addFavorite(item) {
@@ -287,86 +320,67 @@ function removeFavorite(path) {
   saveToStorage(FAV_STORAGE_KEY, favorites.value)
 }
 
-function toggleCollapse() {
-  isCollapsed.value = !isCollapsed.value
-  document.documentElement.style.setProperty(
-    '--sidebar-width',
-    isCollapsed.value ? '52px' : '260px'
-  )
-  saveToStorage(RAIL_STORAGE_KEY, isCollapsed.value)
-}
-
-function closeMobileSidebar() {
-  isMobileOpen.value = false
-}
-
-function initFromStorage() {
+onMounted(() => {
+  /* 恢复导航分区折叠状态 */
   const collapsedState = loadFromStorage(COLLAPSED_STORAGE_KEY, {})
   Object.keys(collapsedState).forEach(key => {
     if (key in sectionCollapsed) {
       sectionCollapsed[key] = collapsedState[key]
     }
   })
-  const isRail = loadFromStorage(RAIL_STORAGE_KEY, false)
-  if (isRail) {
-    isCollapsed.value = true
-    document.documentElement.style.setProperty('--sidebar-width', '52px')
-  }
-}
-
-onMounted(() => {
-  initFromStorage()
 })
 
 const overviewItems = computed(() => [
-  { path: '/dashboard', icon: '📊', label: '仪表盘' },
-  { path: '/todos', icon: '📋', label: '待办事项', badge: todoStore.stats.overdue || null },
+  { path: '/dashboard', icon: 'table', label: '仪表盘' },
+  { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
+  { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' },
 ])
 
 const salesItems = computed(() => [
-  { path: '/customers', icon: '🏢', label: '客户管理', matchPath: '/customers' },
-  { path: '/tag-category', icon: '🏷️', label: '标签分类', matchPath: '/tag-category' },
-  { path: '/project-tracking', icon: '🎯', label: '项目追踪', matchPath: '/project-tracking' },
-  { path: '/quotations', icon: '📝', label: '报价管理', badge: quotationStore.pendingCount || null, matchPath: '/quotations' },
-  { path: '/contracts', icon: '📄', label: '合同管理', badge: contractStore.pendingApprovalCount || null, matchPath: '/contracts' },
-  { path: '/transactions', icon: '💱', label: '交易管理', matchPath: '/transactions' },
-  { path: '/statements', icon: '📑', label: '对账管理', matchPath: '/statements' },
+  { path: '/customers', icon: 'building', label: '客户管理', matchPath: '/customers' },
+  { path: '/tag-category', icon: 'tag', label: '标签分类', matchPath: '/tag-category' },
+  { path: '/project-tracking', icon: 'target', label: '项目追踪', matchPath: '/project-tracking' },
+  { path: '/quotations', icon: 'list', label: '报价管理', badge: quotationStore.pendingCount || null, matchPath: '/quotations' },
+  { path: '/contracts', icon: 'file', label: '合同管理', badge: contractStore.pendingApprovalCount || null, matchPath: '/contracts' },
+  { path: '/transactions', icon: 'dollar', label: '交易管理', matchPath: '/transactions' },
+  { path: '/statements', icon: 'clipboard', label: '对账管理', matchPath: '/statements' },
 ])
 
 const warehouseItems = computed(() => [
-  { path: '/inventory?tab=inbound', icon: '📥', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inventory' },
-  { path: '/inventory?tab=stock', icon: '📦', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
-  { path: '/inventory?tab=outbound', icon: '📤', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/inventory' },
-  { path: '/inventory', icon: '📍', label: '仓位管理', matchPath: '/inventory' },
-  { path: '/deliveries', icon: '🚚', label: '送货管理', matchPath: '/deliveries' },
+  { path: '/inbound', icon: 'upload', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inbound' },
+  { path: '/inventory', icon: 'package', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
+  { path: '/outbound', icon: 'download', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/outbound' },
+  { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理', matchPath: '/warehouse-locations' },
+  { path: '/deliveries', icon: 'truck', label: '送货管理', matchPath: '/deliveries' },
 ])
 
 const financeItems = computed(() => [
-  { path: '/reports', icon: '📅', label: '月度统计', matchPath: '/reports' },
-  { path: '/collections', icon: '💰', label: '回款管理', matchPath: '/collections' },
-  { path: '/cost-analysis', icon: '💹', label: '成本核算', matchPath: '/cost-analysis' },
-  { path: '/reports', icon: '📈', label: '报表中心', matchPath: '/reports' },
+  { path: '/monthly-stats', icon: 'calendar', label: '月度统计', matchPath: '/monthly-stats' },
+  { path: '/collections', icon: 'dollar', label: '回款管理', matchPath: '/collections' },
+  { path: '/cost-analysis', icon: 'calculator', label: '成本核算', matchPath: '/cost-analysis' },
+  { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' },
 ])
 
 const resourceItems = computed(() => [
-  { path: '/archives', icon: '📁', label: '档案管理', matchPath: '/archives' },
-  { path: '/doc-settings', icon: '🔒', label: '资质设置', matchPath: '/doc-settings' },
+  { path: '/archives', icon: 'card', label: '档案管理', matchPath: '/archives' },
+  { path: '/doc-settings', icon: 'award', label: '资质设置', matchPath: '/doc-settings' },
 ])
 
 const settingsItems = computed(() => [
-  { path: '/settings/company', icon: '🏢', label: '公司信息', matchPath: '/settings/company' },
-  { path: '/settings/params', icon: '🔧', label: '系统参数', matchPath: '/settings/params' },
-  { path: '/system', icon: '🎨', label: '主题管理', matchPath: '/system' },
-  { path: '/system', icon: '💾', label: '数据管理', matchPath: '/system' },
-  { path: '/system', icon: '👤', label: '用户管理', matchPath: '/system' },
-  { path: '/system', icon: '📋', label: '数据字典', matchPath: '/system' },
+  { path: '/settings/company', icon: 'building', label: '公司信息', matchPath: '/settings/company' },
+  { path: '/settings/params', icon: 'tool', label: '系统参数', matchPath: '/settings/params' },
+  { path: '/system?tab=themes', icon: 'palette', label: '主题管理', matchPath: '/system', tab: 'themes' },
+  { path: '/system?tab=data', icon: 'save', label: '数据管理', matchPath: '/system', tab: 'data' },
+  { path: '/system?tab=users', icon: 'users', label: '用户管理', matchPath: '/system', tab: 'users' },
+  { path: '/system?tab=dict', icon: 'list', label: '数据字典', matchPath: '/system', tab: 'dict' },
 ])
 
 const systemItems = computed(() => [
-  { path: '/approvals', icon: '✅', label: '审批配置', matchPath: '/approvals' },
-  { path: '/sales-permission', icon: '🛡️', label: '销售权限配置', matchPath: '/sales-permission' },
-  { path: '/logs', icon: '📜', label: '操作日志', matchPath: '/logs' },
-  { path: '/mobile-design', icon: '📱', label: '移动端设计', matchPath: '/mobile-design' },
+  { path: '/approvals', icon: 'check', label: '审批配置', matchPath: '/approvals' },
+  { path: '/sales-permission', icon: 'shield', label: '销售权限配置', matchPath: '/sales-permission' },
+  { path: '/database-connection', icon: 'link', label: '数据库连接', matchPath: '/database-connection' },
+  { path: '/logs', icon: 'list', label: '操作日志', matchPath: '/logs' },
+  { path: '/mobile-design', icon: 'mobile', label: '移动端设计', matchPath: '/mobile-design' },
 ])
 </script>
 
@@ -376,13 +390,13 @@ const systemItems = computed(() => [
   top: 0;
   left: 0;
   bottom: 0;
-  width: var(--sidebar-width);
+  width: var(--sidebar-width, 260px);
   background: var(--color-bg-secondary);
   border-right: 1px solid var(--color-border);
   z-index: 100;
   display: flex;
   flex-direction: column;
-  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 .app-sidebar.collapsed {
@@ -450,16 +464,19 @@ const systemItems = computed(() => [
   justify-content: center;
 }
 
-@media (max-width: 768px) {
+/* 移动端侧边栏 */
+@media (max-width: 1023px) {
   .app-sidebar {
     transform: translateX(-100%);
     z-index: 200;
+    width: 280px;
   }
   .app-sidebar.open {
     transform: translateX(0);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
   }
   .app-sidebar.collapsed {
-    width: var(--sidebar-width);
+    width: 280px;
     transform: translateX(-100%);
   }
   .app-sidebar.collapsed.open {
@@ -472,7 +489,7 @@ const systemItems = computed(() => [
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  height: var(--topbar-height);
+  height: var(--topbar-height, 56px);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
 }
@@ -559,7 +576,6 @@ const systemItems = computed(() => [
   transition: all var(--transition-fast);
   font-size: var(--font-size-xs);
   font-weight: 600;
-  position: relative;
 }
 .sidebar-shortcut-btn:hover {
   background: var(--color-accent-subtle);
@@ -573,6 +589,7 @@ const systemItems = computed(() => [
   flex: 1;
   overflow-y: auto;
   padding: var(--space-2) 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .nav-section {
@@ -854,6 +871,7 @@ const systemItems = computed(() => [
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  cursor: pointer;
 }
 .sidebar-avatar {
   width: 32px;
@@ -884,25 +902,8 @@ const systemItems = computed(() => [
   color: var(--color-text-tertiary);
 }
 
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 99;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition-base);
-}
-.sidebar-overlay.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-@media (max-width: 768px) {
-  .sidebar-overlay {
-    display: block;
-  }
+/* 移动端快捷按钮更紧凑 */
+@media (max-width: 767px) {
   .sidebar-shortcuts {
     padding: var(--space-2) var(--space-3);
   }

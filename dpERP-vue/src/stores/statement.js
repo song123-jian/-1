@@ -1,82 +1,51 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { numberToChinese } from '../utils/numberToChinese.js'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON, safeRemoveItem } from '@/utils/storage'
 
-const STORAGE_KEY = 'statements'
+const OLD_STORAGE_KEY = 'statements'
+const STORAGE_KEY = 'gj_erp_statements'
 const INIT_KEY = 'gj_erp_statements_initialized'
 
-function load(key, fallback) {
+// 数据迁移：将旧key 'statements' 的数据迁移到新key 'gj_erp_statements'
+if (!safeGetItem(STORAGE_KEY) && safeGetItem(OLD_STORAGE_KEY)) {
   try {
-    const raw = localStorage.getItem(key)
-    return raw ? JSON.parse(raw) : fallback
-  } catch { return fallback }
-}
-
-function save(key, data) {
-  localStorage.setItem(key, JSON.stringify(data))
-}
-
-function generateStatementNo(period) {
-  const existing = load(STORAGE_KEY, [])
-  const prefix = 'GJ-DZ-' + (period || '').replace('-', '')
-  let maxSeq = 0
-  for (const s of existing) {
-    if (s.statementNo && s.statementNo.startsWith(prefix)) {
-      const seq = parseInt(s.statementNo.split('-').pop(), 10)
-      if (seq > maxSeq) maxSeq = seq
+    const oldData = safeGetItem(OLD_STORAGE_KEY)
+    if (oldData) {
+      safeSetItem(STORAGE_KEY, oldData)
+      safeRemoveItem(OLD_STORAGE_KEY)
     }
-  }
-  return prefix + '-' + String(maxSeq + 1).padStart(3, '0')
-}
-
-function numberToChinese(num) {
-  if (num === 0) return '零元整'
-  const digits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖']
-  const units = ['', '拾', '佰', '仟']
-  const bigUnits = ['', '万', '亿']
-  const isNeg = num < 0
-  num = Math.abs(num)
-  const intPart = Math.floor(num)
-  const decPart = Math.round((num - intPart) * 100)
-  let jiao = Math.floor(decPart / 10)
-  let fen = decPart % 10
-  let result = isNeg ? '负' : ''
-  if (intPart === 0) {
-    result += '零元'
-  } else {
-    const intStr = String(intPart)
-    const len = intStr.length
-    let zeroFlag = false
-    for (let i = 0; i < len; i++) {
-      const d = parseInt(intStr[i])
-      const pos = len - i - 1
-      const bigUnitIdx = Math.floor(pos / 4)
-      const unitIdx = pos % 4
-      if (d === 0) {
-        zeroFlag = true
-        if (unitIdx === 0 && bigUnitIdx > 0) {
-          result += bigUnits[bigUnitIdx]
-          zeroFlag = false
-        }
-      } else {
-        if (zeroFlag) { result += '零'; zeroFlag = false }
-        result += digits[d] + units[unitIdx]
-        if (unitIdx === 0 && bigUnitIdx > 0) result += bigUnits[bigUnitIdx]
-      }
-    }
-    result += '元'
-  }
-  if (jiao === 0 && fen === 0) {
-    result += '整'
-  } else {
-    if (jiao > 0) result += digits[jiao] + '角'
-    else if (intPart > 0) result += '零'
-    if (fen > 0) result += digits[fen] + '分'
-  }
-  return result
+  } catch (e) { /* 迁移失败不影响正常使用 */ }
 }
 
 export const useStatementStore = defineStore('statement', () => {
-  const statements = ref(load(STORAGE_KEY, []))
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
+  const statements = ref(safeGetJSON(STORAGE_KEY) || [])
+
+  function generateStatementNo(period) {
+    const existing = statements.value
+    const prefix = 'GJ-DZ-' + (period || '').replace('-', '')
+    let maxSeq = 0
+    for (const s of existing) {
+      if (s.statementNo && s.statementNo.startsWith(prefix)) {
+        const seq = parseInt(s.statementNo.split('-').pop(), 10)
+        if (seq > maxSeq) maxSeq = seq
+      }
+    }
+    return prefix + '-' + String(maxSeq + 1).padStart(3, '0')
+  }
 
   const statusLabels = {
     draft: '草稿',
@@ -138,11 +107,12 @@ export const useStatementStore = defineStore('statement', () => {
       status: 'pending',
       paidAmount: 0,
       balance: data.totalAmount || 0,
+      createdBy: getCurrentUser(),
       createdAt: now,
       updatedAt: now
     }
     statements.value.push(stmt)
-    save(STORAGE_KEY, statements.value)
+    safeSetJSON(STORAGE_KEY, statements.value)
     return stmt
   }
 
@@ -159,7 +129,7 @@ export const useStatementStore = defineStore('statement', () => {
         statements.value[idx].balance =
           (updates.totalAmount || 0) - (statements.value[idx].paidAmount || 0)
       }
-      save(STORAGE_KEY, statements.value)
+      safeSetJSON(STORAGE_KEY, statements.value)
     }
   }
 
@@ -167,7 +137,9 @@ export const useStatementStore = defineStore('statement', () => {
     const stmt = getById(id)
     if (stmt && (stmt.status === 'pending' || stmt.status === 'draft')) {
       statements.value = statements.value.filter(s => s.id !== id)
-      save(STORAGE_KEY, statements.value)
+      const syncEngine = useSyncEngine()
+      syncEngine.recordDeletedId('statements', id)
+      safeSetJSON(STORAGE_KEY, statements.value)
     }
   }
 
@@ -179,7 +151,7 @@ export const useStatementStore = defineStore('statement', () => {
     stmt.confirmedAt = now
     stmt.reviewer = stmt.reviewer || 'admin'
     stmt.updatedAt = new Date().toISOString().split('T')[0]
-    save(STORAGE_KEY, statements.value)
+    safeSetJSON(STORAGE_KEY, statements.value)
     return true
   }
 
@@ -192,7 +164,7 @@ export const useStatementStore = defineStore('statement', () => {
     stmt.status = 'voided'
     stmt.voidedAt = now
     stmt.updatedAt = new Date().toISOString().split('T')[0]
-    save(STORAGE_KEY, statements.value)
+    safeSetJSON(STORAGE_KEY, statements.value)
     return true
   }
 
@@ -211,7 +183,7 @@ export const useStatementStore = defineStore('statement', () => {
       stmt.paidAt = new Date().toISOString().replace('T', ' ').substring(0, 19)
     }
     stmt.updatedAt = new Date().toISOString().split('T')[0]
-    save(STORAGE_KEY, statements.value)
+    safeSetJSON(STORAGE_KEY, statements.value)
     return true
   }
 
@@ -224,7 +196,7 @@ export const useStatementStore = defineStore('statement', () => {
     if (stmt.paidAmount) stmt.paidAmount = 0
     stmt.balance = stmt.totalAmount || 0
     stmt.updatedAt = new Date().toISOString().split('T')[0]
-    save(STORAGE_KEY, statements.value)
+    safeSetJSON(STORAGE_KEY, statements.value)
     return true
   }
 
@@ -300,7 +272,7 @@ export const useStatementStore = defineStore('statement', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     statements.value = [
       {
         id: 'st1',
@@ -393,8 +365,20 @@ export const useStatementStore = defineStore('statement', () => {
         updatedAt: '2024-12-05'
       }
     ]
-    save(STORAGE_KEY, statements.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetJSON(STORAGE_KEY, statements.value)
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(statements.value, items, 'id')
+    statements.value = merged
+    safeSetJSON(STORAGE_KEY, statements.value)
+  }
+
+  function replaceData(newData) {
+    statements.value = newData
+    safeSetJSON(STORAGE_KEY, statements.value)
   }
 
   return {
@@ -420,6 +404,7 @@ export const useStatementStore = defineStore('statement', () => {
     analyzeDiscrepancies,
     generateStatementNo,
     numberToChinese,
-    initSeedData
+    initSeedData,
+    replaceData, mergeRemoteItems
   }
 })

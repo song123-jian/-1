@@ -1,6 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
 import { numberToChinese } from '../utils/numberToChinese.js'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_PREFIX = 'gj_erp_'
 const STORAGE_KEY = STORAGE_PREFIX + 'contracts'
@@ -9,24 +14,6 @@ const ATTACHMENT_KEY = STORAGE_PREFIX + 'contractAttachments_'
 const HISTORY_KEY = STORAGE_PREFIX + 'contractHistory_'
 const INIT_KEY = 'gj_erp_contracts_initialized'
 const TEMPLATE_INIT_KEY = 'gj_erp_contract_templates_initialized'
-
-function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) {
-    console.warn('[contractStore] load failed:', key, e)
-  }
-  return fallback
-}
-
-function save(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) {
-    console.error('[contractStore] save failed:', key, e)
-  }
-}
 
 function generateContractNo(existing) {
   const now = new Date()
@@ -57,8 +44,18 @@ function getDefaultTerms() {
 }
 
 export const useContractStore = defineStore('contract', () => {
-  const contracts = ref(load(STORAGE_KEY, []))
-  const templates = ref(load(TEMPLATE_KEY, []))
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
+  const contracts = ref(safeGetJSON(STORAGE_KEY) || [])
+  const templates = ref(safeGetJSON(TEMPLATE_KEY) || [])
 
   const draftCount = computed(() => contracts.value.filter(c => c.status === 'draft').length)
   const pendingApprovalCount = computed(() => contracts.value.filter(c => c.status === 'pending_approval').length)
@@ -139,13 +136,13 @@ export const useContractStore = defineStore('contract', () => {
   })
 
   function persist() {
-    save(STORAGE_KEY, contracts.value)
+    safeSetJSON(STORAGE_KEY, contracts.value)
   }
 
   function addContract(data) {
     const autoNo = generateContractNo(contracts.value)
     const c = {
-      id: 'ct' + Date.now(),
+      id: generateId('ct'),
       contractNo: autoNo,
       contractType: '购销合同',
       partyA: '',
@@ -184,11 +181,15 @@ export const useContractStore = defineStore('contract', () => {
 
   function deleteContract(id) {
     contracts.value = contracts.value.filter(c => c.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('contracts', id)
     persist()
   }
 
   function batchDelete(ids) {
     contracts.value = contracts.value.filter(c => !ids.includes(c.id))
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedIds('contracts', ids)
     persist()
   }
 
@@ -207,19 +208,19 @@ export const useContractStore = defineStore('contract', () => {
     if (newStatus === 'cancelled' && c.status !== 'approved' && c.status !== 'signed') return false
     const updates = { status: newStatus, updatedAt: new Date().toISOString() }
     if (newStatus === 'pending_approval') {
-      updates.submittedBy = '当前用户'
+      updates.submittedBy = getCurrentUser()
       updates.submittedAt = new Date().toISOString()
     }
     if (newStatus === 'approved') {
-      updates.approvedBy = '当前用户'
+      updates.approvedBy = getCurrentUser()
       updates.approvedAt = new Date().toISOString()
     }
     if (newStatus === 'signed') {
-      updates.signedBy = '当前用户'
+      updates.signedBy = getCurrentUser()
       updates.signedAt = new Date().toISOString()
     }
     if (newStatus === 'draft' && c.status === 'pending_approval') {
-      updates.rejectedBy = '当前用户'
+      updates.rejectedBy = getCurrentUser()
       updates.rejectedAt = new Date().toISOString()
       updates.rejectionReason = (extra && extra.reason) || ''
     }
@@ -233,7 +234,7 @@ export const useContractStore = defineStore('contract', () => {
     const source = contracts.value.find(c => c.id === id)
     if (!source) return null
     const cloned = JSON.parse(JSON.stringify(source))
-    cloned.id = 'ct' + Date.now()
+    cloned.id = generateId('ct')
     cloned.contractNo = generateContractNo(contracts.value)
     cloned.status = 'draft'
     cloned.partyAInfo = { address: '', representative: '', contact: '', date: '', seal: '' }
@@ -256,7 +257,7 @@ export const useContractStore = defineStore('contract', () => {
   }
 
   function getHistory(contractId) {
-    return load(HISTORY_KEY + contractId, [])
+    return safeGetJSON(HISTORY_KEY + contractId) || []
   }
 
   function addHistoryEvent(contractId, type, label) {
@@ -264,38 +265,38 @@ export const useContractStore = defineStore('contract', () => {
     events.push({
       type,
       label,
-      user: '当前用户',
+      user: getCurrentUser(),
       time: new Date().toISOString()
     })
-    save(HISTORY_KEY + contractId, events)
+    safeSetJSON(HISTORY_KEY + contractId, events)
   }
 
   function getAttachments(contractId) {
-    return load(ATTACHMENT_KEY + contractId, [])
+    return safeGetJSON(ATTACHMENT_KEY + contractId) || []
   }
 
   function addAttachment(contractId, file) {
     const attachments = getAttachments(contractId)
     attachments.push({
-      id: 'att' + Date.now(),
+      id: generateId('att'),
       name: file.name,
       size: file.size,
       type: file.type,
       data: file.data || '',
       uploadedAt: new Date().toISOString(),
-      uploadedBy: '当前用户'
+      uploadedBy: getCurrentUser()
     })
-    save(ATTACHMENT_KEY + contractId, attachments)
+    safeSetJSON(ATTACHMENT_KEY + contractId, attachments)
   }
 
   function deleteAttachment(contractId, attId) {
     const attachments = getAttachments(contractId).filter(a => a.id !== attId)
-    save(ATTACHMENT_KEY + contractId, attachments)
+    safeSetJSON(ATTACHMENT_KEY + contractId, attachments)
   }
 
   function addTemplate(data) {
     const tpl = {
-      id: 'tpl' + Date.now(),
+      id: generateId('tpl'),
       name: data.name || '未命名模板',
       version: 'v1.0',
       createdAt: new Date().toISOString().split('T')[0],
@@ -305,13 +306,13 @@ export const useContractStore = defineStore('contract', () => {
       ...data
     }
     templates.value.push(tpl)
-    save(TEMPLATE_KEY, templates.value)
+    safeSetJSON(TEMPLATE_KEY, templates.value)
     return tpl
   }
 
   function deleteTemplate(id) {
     templates.value = templates.value.filter(t => t.id !== id)
-    save(TEMPLATE_KEY, templates.value)
+    safeSetJSON(TEMPLATE_KEY, templates.value)
   }
 
   function importFromQuotation(quoteId, quotationStore) {
@@ -352,7 +353,7 @@ export const useContractStore = defineStore('contract', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     const seedContracts = [
       {
         id: 'ct1', contractNo: 'HT202601001', contractType: '购销合同',
@@ -487,14 +488,14 @@ export const useContractStore = defineStore('contract', () => {
       }
     ]
     templates.value = seedTemplates
-    save(TEMPLATE_KEY, templates.value)
+    safeSetJSON(TEMPLATE_KEY, templates.value)
     persist()
-    localStorage.setItem(INIT_KEY, '1')
-    localStorage.setItem(TEMPLATE_INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+    safeSetItem(TEMPLATE_INIT_KEY, '1')
   }
 
   function initTemplateSeedData() {
-    if (localStorage.getItem(TEMPLATE_INIT_KEY)) return
+    if (safeGetItem(TEMPLATE_INIT_KEY)) return
     const seedTemplates = [
       {
         id: 'tpl_seed_1',
@@ -541,8 +542,20 @@ export const useContractStore = defineStore('contract', () => {
       }
     ]
     templates.value = seedTemplates
-    save(TEMPLATE_KEY, templates.value)
-    localStorage.setItem(TEMPLATE_INIT_KEY, '1')
+    safeSetJSON(TEMPLATE_KEY, templates.value)
+    safeSetItem(TEMPLATE_INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(contracts.value, items, 'id')
+    contracts.value = merged
+    persist()
+  }
+
+  function replaceData(newData) {
+    contracts.value = newData
+    persist()
   }
 
   return {
@@ -556,6 +569,8 @@ export const useContractStore = defineStore('contract', () => {
     getAttachments, addAttachment, deleteAttachment,
     addTemplate, deleteTemplate,
     importFromQuotation, numberToChinese, getDefaultTerms,
-    initSeedData, initTemplateSeedData
+    initSeedData, initTemplateSeedData,
+    replaceData, mergeRemoteItems,
+    persist
   }
 })

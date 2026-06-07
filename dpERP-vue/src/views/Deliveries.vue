@@ -9,44 +9,57 @@
         <div class="view-toggle">
           <button v-for="v in viewOptions" :key="v.key"
             class="btn btn-ghost btn-sm" :class="{ active: currentView === v.key }"
-            @click="currentView = v.key" :title="v.label">{{ v.icon }}</button>
+            @click="currentView = v.key" :title="v.icon + ' ' + v.label"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
         </div>
-        <button class="btn btn-ghost btn-sm" @click="showAssessment = true">🔍 自主评估</button>
-        <button class="btn btn-ghost btn-sm" @click="exportCSV">📥 导出</button>
-        <button class="btn btn-primary" @click="openEditor()">+ 新建送货单</button>
+        <div class="column-config-wrapper">
+          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
+              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            </label>
+          </div>
+        </div>
+        <button class="btn btn-secondary" @click="showAssessment = true"><Icon name="search" :size="14" /> 自主评估</button>
+        <button v-if="canCreate" class="btn btn-primary" @click="openEditor()">+ 新建送货单</button>
       </div>
     </div>
 
     <div class="stats-row stats-grid-6">
       <div class="stat-card">
-        <div class="stat-card-value" style="font-size:var(--font-size-xl)">{{ deliveryStore.totalDeliveries }}</div>
-        <div class="stat-card-label">全部送货单</div>
+        <div class="stat-card-icon" style="background:var(--color-bg-tertiary);color:var(--color-text-secondary)"><Icon name="list" :size="14" /></div>
+        <div><div class="stat-card-value" style="font-size:var(--font-size-xl)">{{ deliveryStore.totalDeliveries }}</div>
+        <div class="stat-card-label">全部送货单</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-value" style="color:var(--color-warning);font-size:var(--font-size-xl)">{{ deliveryStore.pendingCount }}</div>
-        <div class="stat-card-label">待发货</div>
+        <div class="stat-card-icon" style="background:var(--color-warning-subtle,rgba(245,158,11,0.1));color:var(--color-warning)"><Icon name="warning" :size="14" /></div>
+        <div><div class="stat-card-value" style="color:var(--color-warning);font-size:var(--font-size-xl)">{{ deliveryStore.pendingCount }}</div>
+        <div class="stat-card-label">待发货</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-value" style="color:var(--color-info);font-size:var(--font-size-xl)">{{ deliveryStore.shippedCount }}</div>
-        <div class="stat-card-label">已发货</div>
+        <div class="stat-card-icon" style="background:var(--color-info-subtle,rgba(6,182,212,0.1));color:var(--color-info)"><Icon name="truck" :size="14" /></div>
+        <div><div class="stat-card-value" style="color:var(--color-info);font-size:var(--font-size-xl)">{{ deliveryStore.shippedCount }}</div>
+        <div class="stat-card-label">已发货</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-value" style="color:var(--color-accent);font-size:var(--font-size-xl)">{{ deliveryStore.transitCount }}</div>
-        <div class="stat-card-label">运输中</div>
+        <div class="stat-card-icon" style="background:var(--color-accent-subtle,rgba(59,130,246,0.1));color:var(--color-accent)"><Icon name="mapPin" :size="14" /></div>
+        <div><div class="stat-card-value" style="color:var(--color-accent);font-size:var(--font-size-xl)">{{ deliveryStore.transitCount }}</div>
+        <div class="stat-card-label">运输中</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-value" style="color:var(--color-success);font-size:var(--font-size-xl)">{{ deliveryStore.receivedCount }}</div>
-        <div class="stat-card-label">已签收</div>
+        <div class="stat-card-icon" style="background:var(--color-success-subtle,rgba(16,185,129,0.1));color:var(--color-success)"><Icon name="checkCircle" :size="14" /></div>
+        <div><div class="stat-card-value" style="color:var(--color-success);font-size:var(--font-size-xl)">{{ deliveryStore.receivedCount }}</div>
+        <div class="stat-card-label">已签收</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-card-value" style="color:var(--color-danger);font-size:var(--font-size-xl)">{{ deliveryStore.exceptionCount }}</div>
-        <div class="stat-card-label">异常处理中</div>
+        <div class="stat-card-icon" style="background:var(--color-danger-subtle,rgba(239,68,68,0.1));color:var(--color-danger)"><Icon name="warning" :size="14" /></div>
+        <div><div class="stat-card-value" style="color:var(--color-danger);font-size:var(--font-size-xl)">{{ deliveryStore.exceptionCount }}</div>
+        <div class="stat-card-label">异常处理中</div></div>
       </div>
     </div>
 
     <div v-if="deliveryStore.overdueCount > 0" class="panel-card" style="margin-bottom:var(--space-4);border-left:3px solid var(--color-danger)">
       <div class="panel-card-body" style="display:flex;align-items:center;gap:var(--space-3)">
-        <span style="font-size:1.2em">⚠️</span>
+        <span style="font-size:1.2em"><Icon name="warning" :size="14" /></span>
         <span>有 <strong>{{ deliveryStore.overdueCount }}</strong> 单送货已超过预计送达日期但尚未签收，请优先处理。</span>
       </div>
     </div>
@@ -84,6 +97,19 @@
       <button class="btn btn-ghost btn-sm" @click="resetFilters">重置</button>
     </div>
 
+    <div v-if="statusConfirmId" class="modal-overlay" @click.self="cancelStatusChange">
+      <div class="modal-panel" style="max-width:400px">
+        <div class="modal-header"><h3>确认状态流转</h3></div>
+        <div class="modal-body">
+          <p>确认将状态从「{{ deliveryStore.statusLabels[deliveryStore.getById(statusConfirmId)?.status] }}」流转到「{{ deliveryStore.statusLabels[statusConfirmNext] || statusConfirmNext }}」？</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" @click="cancelStatusChange">取消</button>
+          <button class="btn btn-primary" @click="confirmStatusChange">确认流转</button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="currentView === 'table'" class="panel-card">
       <div class="panel-card-body no-padding">
         <div class="table-container">
@@ -91,52 +117,52 @@
             <thead>
               <tr>
                 <th style="width:36px"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-                <th>送货单号</th>
-                <th>购货单位</th>
-                <th>关联采购单号</th>
-                <th>发货日期</th>
-                <th>预计送达</th>
-                <th>运输方式</th>
-                <th>承运单位</th>
-                <th>金额</th>
-                <th>紧急程度</th>
-                <th>状态</th>
+                <th v-if="columnVisible.deliveryNo" @click="toggleSort('deliveryNo')" style="cursor:pointer">送货单号 <span class="sort-icon"><Icon :name="sortField === 'deliveryNo' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.customer" @click="toggleSort('customerName')" style="cursor:pointer">购货单位 <span class="sort-icon"><Icon :name="sortField === 'customerName' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.purchaseNo">关联采购单号</th>
+                <th v-if="columnVisible.shipDate" @click="toggleSort('date')" style="cursor:pointer">发货日期 <span class="sort-icon"><Icon :name="sortField === 'date' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.expectedDate">预计送达</th>
+                <th v-if="columnVisible.transportMode">运输方式</th>
+                <th v-if="columnVisible.carrier">承运单位</th>
+                <th v-if="columnVisible.amount" @click="toggleSort('totalAmount')" style="cursor:pointer">金额 <span class="sort-icon"><Icon :name="sortField === 'totalAmount' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.urgency">紧急程度</th>
+                <th v-if="columnVisible.status">状态</th>
                 <th>操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-if="pagedDeliveries.length === 0">
                 <td colspan="12" class="empty-state">
-                  <div class="empty-state-icon">📭</div>暂无送货记录
+                  <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
                 </td>
               </tr>
               <tr v-for="d in pagedDeliveries" :key="d.id"
                 :style="d.hasException === '1' ? 'border-left:3px solid var(--color-danger)' : ''">
                 <td><input type="checkbox" :value="d.id" v-model="selectedIds"></td>
-                <td class="cell-mono" style="font-weight:600;color:var(--color-accent);cursor:pointer" @click="viewDetail(d.id)">{{ d.deliveryNo }}</td>
-                <td>{{ d.customerName || '-' }}</td>
-                <td class="cell-mono">{{ d.orderId || '-' }}</td>
-                <td>{{ d.date || '-' }}</td>
-                <td :style="isOverdue(d) ? 'color:var(--color-danger);font-weight:600' : ''">{{ d.expectedArrivalDate || d.expectedDate || '-' }}</td>
-                <td>{{ deliveryStore.transportLabels[d.transportMethod] || '-' }}</td>
-                <td>{{ d.carrier || '-' }}</td>
-                <td class="cell-mono">¥{{ formatMoney(d.totalAmount) }}</td>
-                <td>
+                <td v-if="columnVisible.deliveryNo" class="cell-mono" style="font-weight:600;color:var(--color-accent);cursor:pointer" @click="viewDetail(d.id)">{{ d.deliveryNo }}</td>
+                <td v-if="columnVisible.customer">{{ d.customerName || '-' }}</td>
+                <td v-if="columnVisible.purchaseNo" class="cell-mono">{{ d.orderId || '-' }}</td>
+                <td v-if="columnVisible.shipDate">{{ d.date || '-' }}</td>
+                <td v-if="columnVisible.expectedDate" :style="isOverdue(d) ? 'color:var(--color-danger);font-weight:600' : ''">{{ d.expectedArrivalDate || d.expectedDate || '-' }}</td>
+                <td v-if="columnVisible.transportMode">{{ deliveryStore.transportLabels[d.transportMethod] || '-' }}</td>
+                <td v-if="columnVisible.carrier">{{ d.carrier || '-' }}</td>
+                <td v-if="columnVisible.amount" class="cell-mono">¥{{ formatMoney(d.totalAmount) }}</td>
+                <td v-if="columnVisible.urgency">
                   <span class="status-badge" :class="deliveryStore.urgencyBadgeMap[d.urgency] || 'neutral'">
                     {{ deliveryStore.urgencyLabels[d.urgency] || d.urgency }}
                   </span>
                 </td>
-                <td>
+                <td v-if="columnVisible.status">
                   <span class="status-badge" :class="deliveryStore.statusBadgeMap[d.status] || 'neutral'">
                     {{ deliveryStore.statusLabels[d.status] || d.status }}
                   </span>
                 </td>
                 <td class="cell-actions">
-                  <button class="btn btn-ghost btn-sm" @click="viewDetail(d.id)" title="查看">👁️</button>
-                  <button class="btn btn-ghost btn-sm" @click="handleChangeStatus(d.id)" title="状态流转" style="color:var(--color-accent)">🔄</button>
-                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" @click="openEditor(d)" title="编辑">✏️</button>
-                  <button class="btn btn-ghost btn-sm" @click="handlePrint(d.id)" title="打印">🖨️</button>
-                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(d.id)" title="删除">🗑️</button>
+                  <button class="btn btn-ghost btn-sm" @click="viewDetail(d.id)" title="查看"><Icon name="eye" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" @click="handleChangeStatus(d.id)" title="状态流转" style="color:var(--color-accent)"><Icon name="refresh" :size="14" /></button>
+                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" @click="openEditor(d)" title="编辑"><Icon name="edit" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" @click="handlePrint(d.id)" title="打印"><Icon name="print" :size="14" /></button>
+                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(d.id)" title="删除"><Icon name="delete" :size="14" /></button>
                 </td>
               </tr>
             </tbody>
@@ -144,12 +170,26 @@
         </div>
       </div>
       <div class="panel-card-footer" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4)">
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">
-          共 {{ filteredDeliveries.length }} 条，第 {{ currentPage }}/{{ totalPages }} 页
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">每页</span>
+          <select class="form-select" v-model.number="pageSize" style="width:70px;padding:2px 6px;font-size:var(--font-size-xs)">
+            <option :value="10">10</option>
+            <option :value="15">15</option>
+            <option :value="20">20</option>
+            <option :value="50">50</option>
+          </select>
+          <span style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">条</span>
         </div>
-        <div style="display:flex;gap:var(--space-1)">
-          <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">上一页</button>
-          <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">下一页</button>
+        <div style="display:flex;align-items:center;gap:var(--space-1)">
+          <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
+          <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
+          <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+          <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
+          <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:var(--space-2)">
+          <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出Excel</button>
+          <button v-if="canDelete && selectedIds.length > 0" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="batchDelete"><Icon name="delete" :size="14" /> 批量删除({{ selectedIds.length }})</button>
         </div>
       </div>
     </div>
@@ -157,15 +197,15 @@
     <div v-if="currentView === 'list'" class="panel-card">
       <div class="panel-card-body">
         <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-3)">共 {{ filteredDeliveries.length }} 条</div>
-        <div v-if="filteredDeliveries.length === 0" class="empty-state">
-          <div class="empty-state-icon">📭</div>暂无送货记录
+        <div v-if="pagedDeliveries.length === 0" class="empty-state">
+          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
         </div>
-        <div v-for="d in filteredDeliveries" :key="d.id" class="list-item" @click="viewDetail(d.id)" style="cursor:pointer">
+        <div v-for="d in pagedDeliveries" :key="d.id" class="list-item" @click="viewDetail(d.id)" style="cursor:pointer">
           <div class="list-item-main">
             <div class="list-item-title">
               <span style="font-weight:600;color:var(--color-accent)">{{ d.deliveryNo }}</span>
-              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger);font-weight:700;margin-left:4px">🔴</span>
-              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px">⚠️</span>
+              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
+              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
             </div>
             <div class="list-item-desc">{{ d.customerName || '-' }} · {{ d.date || '-' }}</div>
           </div>
@@ -178,15 +218,25 @@
         </div>
       </div>
     </div>
+    <div v-if="currentView === 'list' && totalPages > 1" class="pagination-bar">
+      <span class="page-info">共 {{ filteredDeliveries.length }} 条</span>
+      <div style="display:flex;align-items:center;gap:var(--space-1)">
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
+        <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
+      </div>
+    </div>
 
     <div v-if="currentView === 'card'" class="panel-card">
       <div class="panel-card-body">
         <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-3)">共 {{ filteredDeliveries.length }} 条</div>
-        <div v-if="filteredDeliveries.length === 0" class="empty-state">
-          <div class="empty-state-icon">📭</div>暂无送货记录
+        <div v-if="pagedDeliveries.length === 0" class="empty-state">
+          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
         </div>
         <div class="card-grid">
-          <div v-for="d in filteredDeliveries" :key="d.id" class="card-item" @click="viewDetail(d.id)" style="cursor:pointer">
+          <div v-for="d in pagedDeliveries" :key="d.id" class="card-item" @click="viewDetail(d.id)" style="cursor:pointer">
             <div class="card-item-header">
               <span style="font-weight:600;color:var(--color-accent)">{{ d.deliveryNo }}</span>
               <span class="status-badge" :class="deliveryStore.statusBadgeMap[d.status] || 'neutral'">
@@ -194,13 +244,23 @@
               </span>
             </div>
             <div class="card-item-body">
-              <div>🏢 {{ d.customerName || '-' }}</div>
-              <div>💰 ¥{{ formatMoney(d.totalAmount) }}</div>
-              <div>⚡ {{ deliveryStore.urgencyLabels[d.urgency] || '普通' }}</div>
-              <div>📅 {{ d.date || '-' }}</div>
+              <div><Icon name="users" :size="14" /> {{ d.customerName || '-' }}</div>
+              <div><Icon name="dollar" :size="14" /> ¥{{ formatMoney(d.totalAmount) }}</div>
+              <div><Icon name="warning" :size="14" /> {{ deliveryStore.urgencyLabels[d.urgency] || '普通' }}</div>
+              <div><Icon name="calendar" :size="14" /> {{ d.date || '-' }}</div>
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    <div v-if="currentView === 'card' && totalPages > 1" class="pagination-bar">
+      <span class="page-info">共 {{ filteredDeliveries.length }} 条</span>
+      <div style="display:flex;align-items:center;gap:var(--space-1)">
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
+        <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
       </div>
     </div>
 
@@ -217,10 +277,10 @@
           <div v-for="d in kanbanItems(col.key)" :key="d.id" class="kanban-card"
             draggable="true" @dragstart="onDragStart($event, d.id)" @dragend="onDragEnd">
             <div class="kanban-card-title">
-              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger)">🔴</span>
-              <span v-if="d.urgency === 'high'" style="color:var(--color-warning)">🟡</span>
+              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger)"><Icon name="warning" :size="14" /></span>
+              <span v-if="d.urgency === 'high'" style="color:var(--color-warning)"><Icon name="warning" :size="14" /></span>
               {{ d.deliveryNo }}
-              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px">⚠️</span>
+              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
             </div>
             <div class="kanban-card-meta">{{ d.customerName || '-' }}</div>
             <div class="kanban-card-footer">
@@ -236,8 +296,8 @@
     <div v-if="showAssessment" class="modal-overlay" @click.self="showAssessment = false">
       <div class="modal-panel" style="max-width:800px">
         <div class="modal-header">
-          <h3>🔍 送货单自主评估报告</h3>
-          <button class="btn btn-ghost btn-sm" @click="showAssessment = false">✕</button>
+          <h3><Icon name="search" :size="14" /> 送货单自主评估报告</h3>
+          <button class="btn btn-ghost btn-sm" @click="showAssessment = false"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-4)">
@@ -263,13 +323,13 @@
             </div>
           </div>
           <div v-if="assessment.overdueCount > 0" style="padding:var(--space-3);background:var(--color-danger-subtle,rgba(239,68,68,0.1));border-radius:var(--radius-md);margin-bottom:var(--space-3)">
-            <strong style="color:var(--color-danger)">⚠️ 逾期预警：</strong>有 {{ assessment.overdueCount }} 单送货已超过预计送达日期但尚未签收，请优先处理。
+            <strong style="color:var(--color-danger)"><Icon name="warning" :size="14" /> 逾期预警：</strong>有 {{ assessment.overdueCount }} 单送货已超过预计送达日期但尚未签收，请优先处理。
           </div>
           <div v-if="assessment.exceptionCount > 0" style="padding:var(--space-3);background:var(--color-warning-subtle,rgba(245,158,11,0.1));border-radius:var(--radius-md);margin-bottom:var(--space-3)">
-            <strong style="color:var(--color-warning)">⚠️ 异常提醒：</strong>有 {{ assessment.exceptionCount }} 单存在异常情况，请及时跟进处理。
+            <strong style="color:var(--color-warning)"><Icon name="warning" :size="14" /> 异常提醒：</strong>有 {{ assessment.exceptionCount }} 单存在异常情况，请及时跟进处理。
           </div>
           <div v-if="assessment.suggestions && assessment.suggestions.length > 0" style="padding:var(--space-3);background:var(--color-info-subtle,rgba(6,182,212,0.1));border-radius:var(--radius-md)">
-            <strong style="color:var(--color-info)">💡 改进建议：</strong>
+            <strong style="color:var(--color-info)"><Icon name="info" :size="14" /> 改进建议：</strong>
             <ul style="margin:var(--space-2) 0 0 var(--space-4);font-size:var(--font-size-sm)">
               <li v-for="(s, i) in assessment.suggestions" :key="i">{{ s }}</li>
             </ul>
@@ -282,10 +342,10 @@
       <div class="modal-panel" style="max-width:1000px;max-height:90vh;overflow-y:auto">
         <div class="modal-header">
           <h3>{{ editingId ? '编辑送货单' : '新建送货单' }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="closeEditor">✕</button>
+          <button class="btn btn-ghost btn-sm" @click="closeEditor"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
-          <div class="form-section-title">📋 基本信息</div>
+          <div class="form-section-title"><Icon name="list" :size="14" /> 基本信息</div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">单据编号</label>
@@ -310,22 +370,11 @@
                 <option value="urgent">紧急</option>
               </select>
             </div>
-            <div class="form-group">
-              <label class="form-label">订单状态</label>
-              <select class="form-select" v-model="editorData.status">
-                <option value="created">已创建</option>
-                <option value="pending">待发货</option>
-                <option value="shipped">已发货</option>
-                <option value="transit">运输中</option>
-                <option value="received">已签收</option>
-                <option value="accepted">已验收</option>
-                <option value="exception">异常处理中</option>
-              </select>
-            </div>
+            <div class="form-group"></div>
             <div class="form-group"></div>
           </div>
 
-          <div class="form-section-title">🏢 购货单位信息</div>
+          <div class="form-section-title"><Icon name="users" :size="14" /> 购货单位信息</div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">购货单位名称 <span class="required">*</span></label>
@@ -350,7 +399,7 @@
             </div>
           </div>
 
-          <div class="form-section-title">🚚 送货计划</div>
+          <div class="form-section-title"><Icon name="download" :size="14" /> 送货计划</div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">预计送货日期</label>
@@ -399,7 +448,7 @@
             </div>
           </div>
 
-          <div class="form-section-title">📦 产品明细</div>
+          <div class="form-section-title"><Icon name="package" :size="14" /> 产品明细</div>
           <div style="overflow-x:auto">
             <table class="data-table" style="font-size:var(--font-size-xs)">
               <thead>
@@ -431,7 +480,7 @@
                   <td class="cell-mono" style="text-align:right">{{ formatMoney(it.amount || 0) }}</td>
                   <td><input class="form-input" type="number" min="0" max="100" step="1" style="width:55px" v-model.number="it.taxRate" @input="calcItemAmount(idx)"></td>
                   <td class="cell-mono" style="text-align:right">{{ formatMoney(it.taxAmount || 0) }}</td>
-                  <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="removeItemRow(idx)">✕</button></td>
+                  <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="removeItemRow(idx)"><Icon name="close" :size="14" /></button></td>
                 </tr>
               </tbody>
               <tfoot>
@@ -456,7 +505,7 @@
             <button class="btn btn-ghost btn-sm" @click="addItemRow">+ 添加产品行</button>
           </div>
 
-          <div class="form-section-title">✅ 收货确认</div>
+          <div class="form-section-title"><Icon name="check" :size="14" /> 收货确认</div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">实际送达日期</label>
@@ -487,7 +536,7 @@
             </div>
           </div>
 
-          <div class="form-section-title">⚠️ 异常处理</div>
+          <div class="form-section-title"><Icon name="warning" :size="14" /> 异常处理</div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">是否有异常</label>
@@ -523,7 +572,7 @@
             </div>
           </div>
 
-          <div class="form-section-title">📝 签章确认</div>
+          <div class="form-section-title"><Icon name="list" :size="14" /> 签章确认</div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">审核人</label>
@@ -553,10 +602,13 @@
             </div>
           </div>
 
-          <div class="form-section-title">📌 备注</div>
+          <div class="form-section-title"><Icon name="checkCircle" :size="14" /> 备注</div>
           <div class="form-group">
             <textarea class="form-textarea" rows="2" v-model="editorData.remarks" placeholder="其他补充说明..."></textarea>
           </div>
+        </div>
+        <div v-if="editorErrors.length > 0" class="form-errors">
+          <div v-for="(err, idx) in editorErrors" :key="idx" class="form-error"><Icon name="warning" :size="14" /> {{ err }}</div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="closeEditor">取消</button>
@@ -570,14 +622,14 @@
         <div class="modal-header">
           <h3>送货单详情</h3>
           <div style="display:flex;gap:var(--space-2)">
-            <button class="btn btn-primary btn-sm" @click="handlePrint(detailData.id)">🖨️ 打印</button>
-            <button class="btn btn-ghost btn-sm" @click="closeDetail">✕</button>
+            <button class="btn btn-primary btn-sm" @click="handlePrint(detailData.id)"><Icon name="print" :size="14" /> 打印</button>
+            <button class="btn btn-ghost btn-sm" @click="closeDetail"><Icon name="close" :size="14" /></button>
           </div>
         </div>
         <div class="modal-body">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
             <div class="panel-card">
-              <div class="panel-card-header">📋 基本信息</div>
+              <div class="panel-card-header"><Icon name="list" :size="14" /> 基本信息</div>
               <div class="panel-card-body" style="font-size:var(--font-size-sm)">
                 <div><strong>单据编号：</strong>{{ detailData.deliveryNo }}</div>
                 <div><strong>发货日期：</strong>{{ detailData.date || '-' }}</div>
@@ -591,7 +643,7 @@
               </div>
             </div>
             <div class="panel-card">
-              <div class="panel-card-header">🏢 购货单位</div>
+              <div class="panel-card-header"><Icon name="users" :size="14" /> 购货单位</div>
               <div class="panel-card-body" style="font-size:var(--font-size-sm)">
                 <div><strong>单位名称：</strong>{{ detailData.customerName || '-' }}</div>
                 <div><strong>地址：</strong>{{ detailData.address || '-' }}</div>
@@ -602,7 +654,7 @@
           </div>
 
           <div class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header">🚚 送货计划</div>
+            <div class="panel-card-header"><Icon name="download" :size="14" /> 送货计划</div>
             <div class="panel-card-body" style="font-size:var(--font-size-sm)">
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)">
                 <div><strong>预计送货日期：</strong>{{ detailData.expectedDate || '-' }}</div>
@@ -619,7 +671,7 @@
           </div>
 
           <div v-if="detailData.items && detailData.items.length > 0" class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header">📦 产品明细</div>
+            <div class="panel-card-header"><Icon name="package" :size="14" /> 产品明细</div>
             <div class="panel-card-body no-padding">
               <div class="table-container">
                 <table class="data-table" style="font-size:var(--font-size-xs)">
@@ -653,7 +705,7 @@
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
             <div class="panel-card">
-              <div class="panel-card-header">✅ 收货确认</div>
+              <div class="panel-card-header"><Icon name="check" :size="14" /> 收货确认</div>
               <div class="panel-card-body" style="font-size:var(--font-size-sm)">
                 <div><strong>实际送达日期：</strong>{{ detailData.actualDate || '-' }}</div>
                 <div><strong>验收情况：</strong>{{ deliveryStore.acceptanceLabels[detailData.acceptanceResult] || '未验收' }}</div>
@@ -663,7 +715,7 @@
               </div>
             </div>
             <div class="panel-card">
-              <div class="panel-card-header">{{ detailData.hasException === '1' ? '⚠️ 异常处理' : '✅ 异常处理' }}</div>
+              <div class="panel-card-header"><Icon v-if="detailData.hasException === '1'" name="warning" :size="14" style="color:var(--color-danger)" /><Icon v-else name="checkCircle" :size="14" style="color:var(--color-success)" /> 异常处理</div>
               <div class="panel-card-body" style="font-size:var(--font-size-sm)">
                 <template v-if="detailData.hasException === '1'">
                   <div><strong>异常类型：</strong><span style="color:var(--color-danger)">{{ deliveryStore.exceptionTypeLabels[detailData.exceptionType] || '-' }}</span></div>
@@ -677,7 +729,7 @@
           </div>
 
           <div class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header">📝 签章确认</div>
+            <div class="panel-card-header"><Icon name="list" :size="14" /> 签章确认</div>
             <div class="panel-card-body" style="font-size:var(--font-size-sm)">
               <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)">
                 <div><strong>审核人：</strong>{{ detailData.reviewer || '-' }}</div>
@@ -691,7 +743,7 @@
           </div>
 
           <div v-if="detailData.remarks" class="panel-card">
-            <div class="panel-card-header">📌 备注</div>
+            <div class="panel-card-header"><Icon name="checkCircle" :size="14" /> 备注</div>
             <div class="panel-card-body" style="font-size:var(--font-size-sm)">{{ detailData.remarks }}</div>
           </div>
         </div>
@@ -701,12 +753,44 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted } from 'vue'
+import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useDeliveryStore } from '@/stores/delivery'
 import { useCustomerStore } from '@/stores/customer'
+import { usePermission } from '@/utils/permissionGuard'
 
 const deliveryStore = useDeliveryStore()
 const customerStore = useCustomerStore()
+const perm = usePermission()
+
+const canCreate = perm.isAllowed('delivery', 'deliveryCreate')
+const canEdit = perm.isAllowed('delivery', 'deliveryEdit')
+const canDelete = perm.isAllowed('delivery', 'deliveryDelete')
+const canExport = perm.isAllowed('delivery', 'deliveryExport')
+
+const columnDefs = [
+  { key: 'check', label: '选择', hideable: false },
+  { key: 'deliveryNo', label: '送货单号' },
+  { key: 'customer', label: '购货单位' },
+  { key: 'purchaseNo', label: '关联采购单号' },
+  { key: 'shipDate', label: '发货日期' },
+  { key: 'expectedDate', label: '预计送达' },
+  { key: 'transportMode', label: '运输方式' },
+  { key: 'carrier', label: '承运单位' },
+  { key: 'amount', label: '金额' },
+  { key: 'urgency', label: '紧急程度' },
+  { key: 'status', label: '状态' },
+  { key: 'actions', label: '操作', hideable: false }
+]
+const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const showColumnConfig = ref(false)
+const colDropdownStyle = ref({})
+function toggleColumnConfig(event) {
+  showColumnConfig.value = !showColumnConfig.value
+  if (showColumnConfig.value) {
+    const rect = event.target.getBoundingClientRect()
+    colDropdownStyle.value = { top: rect.bottom + 8 + 'px', left: rect.left + 'px' }
+  }
+}
 
 const currentView = ref('table')
 const showEditor = ref(false)
@@ -717,15 +801,20 @@ const detailData = ref({})
 const selectedIds = ref([])
 const selectAll = ref(false)
 const currentPage = ref(1)
-const pageSize = 15
+const pageSize = ref(15)
+const sortField = ref('')
+const sortDir = ref('asc')
 
 const dragId = ref(null)
+const statusConfirmId = ref(null)
+const statusConfirmNext = ref('')
+const editorErrors = ref([])
 
 const viewOptions = [
-  { key: 'table', label: '表格视图', icon: '📊' },
-  { key: 'list', label: '列表视图', icon: '📋' },
-  { key: 'card', label: '卡片视图', icon: '🃏' },
-  { key: 'kanban', label: '看板视图', icon: '📌' }
+  { key: 'table', label: '表格视图', icon: 'chart' },
+  { key: 'list', label: '列表视图', icon: 'list' },
+  { key: 'card', label: '卡片视图', icon: 'card' },
+  { key: 'kanban', label: '看板视图', icon: 'checkCircle' }
 ]
 
 const filters = reactive({
@@ -788,13 +877,36 @@ const filteredDeliveries = computed(() => {
   if (filters.transport) list = list.filter(d => d.transportMethod === filters.transport)
   if (filters.dateFrom) list = list.filter(d => d.date >= filters.dateFrom)
   if (filters.dateTo) list = list.filter(d => d.date <= filters.dateTo)
+  if (sortField.value) {
+    list = [...list].sort((a, b) => {
+      let va = a[sortField.value] || ''
+      let vb = b[sortField.value] || ''
+      if (sortField.value === 'totalAmount') {
+        va = parseFloat(va) || 0
+        vb = parseFloat(vb) || 0
+      }
+      if (va < vb) return sortDir.value === 'asc' ? -1 : 1
+      if (va > vb) return sortDir.value === 'asc' ? 1 : -1
+      return 0
+    })
+  }
   return list
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredDeliveries.value.length / pageSize)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredDeliveries.value.length / pageSize.value)))
 const pagedDeliveries = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredDeliveries.value.slice(start, start + pageSize)
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredDeliveries.value.slice(start, start + pageSize.value)
+})
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const start = Math.max(1, current - 2)
+  const end = Math.min(total, current + 2)
+  const pages = []
+  for (let i = start; i <= end; i++) pages.push(i)
+  return pages
 })
 
 const assessment = computed(() => deliveryStore.runAssessment())
@@ -807,13 +919,15 @@ const gradeColor = computed(() => {
 })
 
 const kanbanColumns = [
-  { key: 'created', label: '📋 已创建', color: 'var(--color-text-secondary)' },
-  { key: 'pending', label: '📦 待发货', color: 'var(--color-warning)' },
-  { key: 'shipped', label: '🚚 已发货', color: 'var(--color-info)' },
-  { key: 'transit', label: '✈️ 运输中', color: 'var(--color-accent)' },
-  { key: 'received', label: '✅ 已签收', color: 'var(--color-success)' },
-  { key: 'accepted', label: '✔️ 已验收', color: '#1b5e20' },
-  { key: 'exception', label: '⚠️ 异常', color: 'var(--color-danger)' }
+  { key: 'created', label: '已创建', color: 'var(--color-text-secondary)' },
+  { key: 'pending', label: '待发货', color: 'var(--color-warning)' },
+  { key: 'shipped', label: '已发货', color: 'var(--color-info)' },
+  { key: 'transit', label: '运输中', color: 'var(--color-accent)' },
+  { key: 'received', label: '已签收', color: 'var(--color-success)' },
+  { key: 'partial', label: '部分签收', color: 'var(--color-warning)' },
+  { key: 'accepted', label: '已验收', color: '#1b5e20' },
+  { key: 'exception', label: '异常', color: 'var(--color-danger)' },
+  { key: 'returned', label: '退回', color: '#795548' }
 ]
 
 const calcTotalQuantity = computed(() => editorItems.value.reduce((s, it) => s + (parseFloat(it.quantity) || 0), 0))
@@ -822,7 +936,7 @@ const calcTotalTax = computed(() => editorItems.value.reduce((s, it) => s + (par
 const calcGrandTotal = computed(() => calcTotalAmount.value + calcTotalTax.value)
 
 function kanbanItems(status) {
-  return deliveryStore.deliveries.filter(d => d.status === status)
+  return filteredDeliveries.value.filter(d => d.status === status)
 }
 
 function formatMoney(num) {
@@ -854,7 +968,27 @@ function toggleSelectAll() {
   }
 }
 
+function toggleSort(field) {
+  if (sortField.value === field) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortField.value = field
+    sortDir.value = 'asc'
+  }
+}
+
+function batchDelete() {
+  if (selectedIds.value.length === 0) return
+  if (!confirm('确认批量删除选中的 ' + selectedIds.value.length + ' 条送货记录？')) return
+  for (const id of selectedIds.value) {
+    deliveryStore.deleteDelivery(id)
+  }
+  selectedIds.value = []
+  selectAll.value = false
+}
+
 function openEditor(data) {
+  editorErrors.value = []
   editingId.value = data ? data.id : null
   if (data) {
     Object.keys(editorData).forEach(k => { editorData[k] = data[k] || (k === 'hasException' ? '0' : '') })
@@ -930,18 +1064,15 @@ function calcItemAmount(idx) {
 }
 
 function saveDelivery() {
-  const errors = []
-  if (!editorData.customerName) errors.push('购货单位名称为必填项')
-  if (!editorData.date) errors.push('发货日期为必填项')
+  editorErrors.value = []
+  if (!editorData.customerName) editorErrors.value.push('购货单位名称为必填项')
+  if (!editorData.date) editorErrors.value.push('发货日期为必填项')
   const validItems = editorItems.value.filter(it => it.productName && it.quantity > 0)
-  if (validItems.length === 0) errors.push('至少需要一条有效的产品明细（名称非空且数量大于0）')
+  if (validItems.length === 0) editorErrors.value.push('至少需要一条有效的产品明细（名称非空且数量大于0）')
   if (editorData.date && editorData.expectedArrivalDate && editorData.expectedArrivalDate < editorData.date) {
-    errors.push('预计送达日期不能早于发货日期')
+    editorErrors.value.push('预计送达日期不能早于发货日期')
   }
-  if (errors.length > 0) {
-    alert('表单验证失败：\n' + errors.join('\n'))
-    return
-  }
+  if (editorErrors.value.length > 0) return
 
   const items = validItems.map((it, i) => ({
     seq: i + 1,
@@ -994,13 +1125,22 @@ function handleChangeStatus(id) {
   if (!d) return
   const flow = deliveryStore.STATUS_FLOW[d.status]
   if (!flow || flow.next.length === 0) {
-    alert('当前状态「' + (deliveryStore.statusLabels[d.status] || d.status) + '」不允许流转')
+    editorErrors.value = ['当前状态「' + (deliveryStore.statusLabels[d.status] || d.status) + '」不允许流转']
     return
   }
-  const nextStatus = flow.next[0]
-  if (confirm('确认将状态从「' + (deliveryStore.statusLabels[d.status] || d.status) + '」流转到「' + (deliveryStore.statusLabels[nextStatus] || nextStatus) + '」？')) {
-    deliveryStore.changeStatus(id, nextStatus)
+  statusConfirmId.value = id
+  statusConfirmNext.value = flow.next[0]
+}
+function confirmStatusChange() {
+  if (statusConfirmId.value) {
+    deliveryStore.changeStatus(statusConfirmId.value, statusConfirmNext.value)
   }
+  statusConfirmId.value = null
+  statusConfirmNext.value = ''
+}
+function cancelStatusChange() {
+  statusConfirmId.value = null
+  statusConfirmNext.value = ''
 }
 
 function handleDelete(id) {
@@ -1023,9 +1163,13 @@ function handlePrint(id) {
 <div class="info-grid"><div>发货日期：${d.date || '-'}</div><div>关联采购单号：${d.orderId || '-'}</div><div>紧急程度：${deliveryStore.urgencyLabels[d.urgency] || '-'}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div></div>
 <div class="section-title">购货单位</div>
 <div class="info-grid"><div>单位名称：${d.customerName || '-'}</div><div>地址：${d.address || '-'}</div><div>联系人：${d.contact || '-'}</div><div>联系电话：${d.phone || '-'}</div></div>
+<div class="section-title">送货计划</div>
+<div class="info-grid"><div>预计送货日期：${d.expectedDate || '-'}</div><div>预计送达日期：${d.expectedArrivalDate || '-'}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div><div>承运单位：${d.carrier || '-'}</div><div>送货人员：${d.driver || '-'}</div><div>物流单号：${d.trackingNo || '-'}</div></div>
 <div class="section-title">产品明细</div>
 <table><thead><tr><th>序号</th><th>产品名称</th><th>料号</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead><tbody>${itemsHtml}</tbody></table>
 <div style="text-align:right;font-weight:700">金额合计：¥${formatMoney(d.totalAmount || 0)} · 税额合计：¥${formatMoney(d.totalTax || 0)} · 价税合计：¥${formatMoney(d.grandTotal || 0)}</div>
+${d.actualDate ? '<div class="section-title">收货确认</div><div class="info-grid"><div>实际送达日期：' + d.actualDate + '</div><div>验收情况：' + (deliveryStore.acceptanceLabels[d.acceptanceResult] || '未验收') + '</div><div>验收人员：' + (d.acceptPerson || '-') + '</div></div>' : ''}
+${d.hasException === '1' ? '<div class="section-title">异常处理</div><div class="info-grid"><div>异常类型：' + (deliveryStore.exceptionTypeLabels[d.exceptionType] || '-') + '</div><div>异常原因：' + (d.exceptionReason || '-') + '</div><div>处理方案：' + (d.exceptionSolution || '-') + '</div><div>责任人：' + (d.exceptionResponsible || '-') + '</div></div>' : ''}
 <div class="section-title">签章确认</div>
 <div class="info-grid"><div>审核人：${d.reviewer || '-'}</div><div>制表人：${d.creator || '-'}</div><div>送货人签字：${d.deliverySigner || '-'}</div><div>签章日期：${d.signDate || '-'}</div></div>
 <script>window.onload=function(){window.print()}<\/script></body></html>`
@@ -1074,7 +1218,7 @@ function exportCSV() {
       csv += row.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',') + '\n'
     }
   }
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -1107,13 +1251,28 @@ function onDropCard(e, newStatus) {
   dragId.value = null
 }
 
+function handleClickOutside(e) {
+  if (showColumnConfig.value && !e.target.closest('.column-config-wrapper')) {
+    showColumnConfig.value = false
+  }
+}
+
 onMounted(() => {
   customerStore.initSeedData()
   deliveryStore.initSeedData()
+  document.addEventListener('click', handleClickOutside)
+})
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
 <style scoped>
+.sort-icon {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  margin-left: 2px;
+}
 .kanban-board {
   display: flex;
   gap: var(--space-3);
@@ -1244,6 +1403,20 @@ onMounted(() => {
 .stats-grid-6 {
   grid-template-columns: repeat(6, 1fr);
 }
+.stat-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
 .form-section-title {
   font-size: 14px;
   font-weight: 700;
@@ -1254,6 +1427,11 @@ onMounted(() => {
 }
 .form-section-title:not(:first-child) {
   margin-top: 16px;
+}
+@media (max-width: 1024px) {
+  .stats-grid-6 {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 @media (max-width: 768px) {
   .stats-grid-6 {
@@ -1266,5 +1444,53 @@ onMounted(() => {
     flex: none;
     min-height: 200px;
   }
+}
+.column-config-wrapper { position: relative; }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
+.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  margin-top: var(--space-3);
+}
+.page-info {
+  font-size: var(--font-size-base);
+  color: var(--color-text-tertiary);
+}
+.form-errors {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-danger-subtle, rgba(239,68,68,0.1));
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.form-error {
+  font-size: var(--font-size-base);
+  color: var(--color-danger);
+  padding: 2px 0;
+}
+.form-textarea {
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  resize: vertical;
+  width: 100%;
+}
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle);
+}
+.form-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-tertiary);
 }
 </style>

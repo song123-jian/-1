@@ -81,7 +81,7 @@ export const useMobileDesignStore = defineStore('mobileDesign', () => {
     const item = {
       id: genId('nav'),
       label: data.label || '',
-      icon: data.icon || '📄',
+      icon: data.icon || '[文档]',
       pageId: data.pageId || '',
       order: data.order ?? navItems.value.length + 1,
       visible: data.visible !== false
@@ -125,6 +125,17 @@ export const useMobileDesignStore = defineStore('mobileDesign', () => {
     _persistTheme()
   }
 
+  function replaceData(newData) {
+    if (newData.pages) {
+      pages.value = newData.pages
+      _persistPages()
+    }
+    if (newData.navItems) {
+      navItems.value = newData.navItems
+      _persistNav()
+    }
+  }
+
   function initSeedData() {
     if (localStorage.getItem(INIT_KEY)) return
     pages.value = [
@@ -138,11 +149,11 @@ export const useMobileDesignStore = defineStore('mobileDesign', () => {
 
     if (navItems.value.length === 0) {
       navItems.value = [
-        { id: 'nav1', label: '首页', icon: '🏠', pageId: 'mp1', order: 1, visible: true },
-        { id: 'nav2', label: '产品', icon: '📦', pageId: 'mp2', order: 2, visible: true },
-        { id: 'nav3', label: '订单', icon: '📋', pageId: 'mp3', order: 3, visible: true },
-        { id: 'nav4', label: '报表', icon: '📊', pageId: 'mp4', order: 4, visible: true },
-        { id: 'nav5', label: '审批', icon: '✅', pageId: 'mp5', order: 5, visible: true }
+        { id: 'nav1', label: '首页', icon: '[首页]', pageId: 'mp1', order: 1, visible: true },
+        { id: 'nav2', label: '产品', icon: '[库存]', pageId: 'mp2', order: 2, visible: true },
+        { id: 'nav3', label: '订单', icon: '[列表]', pageId: 'mp3', order: 3, visible: true },
+        { id: 'nav4', label: '报表', icon: '[统计]', pageId: 'mp4', order: 4, visible: true },
+        { id: 'nav5', label: '审批', icon: '[确认]', pageId: 'mp5', order: 5, visible: true }
       ]
       _persistNav()
     }
@@ -155,6 +166,6 @@ export const useMobileDesignStore = defineStore('mobileDesign', () => {
     pageCount, publishedCount, draftCount, navCount,
     addPage, updatePage, deletePage, publishPage, unpublishPage,
     addNavItem, updateNavItem, deleteNavItem, reorderNav,
-    saveTheme, resetTheme, initSeedData
+    saveTheme, resetTheme, replaceData, initSeedData
   }
 })

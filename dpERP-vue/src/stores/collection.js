@@ -1,41 +1,42 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_collections'
 const INIT_KEY = 'gj_erp_collections_initialized'
 
-function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
-  return fallback
-}
-
-function persist(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
-}
-
-function generateCollectionNo() {
-  const now = new Date()
-  const prefix = 'COL-' + now.getFullYear() + '-'
-  const existing = load(STORAGE_KEY, [])
-  let maxSeq = 0
-  for (let i = 0; i < existing.length; i++) {
-    const no = existing[i].collectionNo || ''
-    if (no.startsWith(prefix)) {
-      const parts = no.split('-')
-      const seq = parseInt(parts[parts.length - 1]) || 0
-      if (seq > maxSeq) maxSeq = seq
+export const useCollectionStore = defineStore('collection', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
     }
   }
-  return prefix + String(maxSeq + 1).padStart(4, '0')
-}
 
-export const useCollectionStore = defineStore('collection', () => {
-  const collections = ref(load(STORAGE_KEY, []))
+  const collections = ref(safeGetJSON(STORAGE_KEY) || [])
+
+  function generateCollectionNo() {
+    const now = new Date()
+    const prefix = 'COL-' + now.getFullYear() + '-'
+    const existing = collections.value
+    let maxSeq = 0
+    for (let i = 0; i < existing.length; i++) {
+      const no = existing[i].collectionNo || ''
+      if (no.startsWith(prefix)) {
+        const parts = no.split('-')
+        const seq = parseInt(parts[parts.length - 1]) || 0
+        if (seq > maxSeq) maxSeq = seq
+      }
+    }
+    return prefix + String(maxSeq + 1).padStart(4, '0')
+  }
 
   const methodLabels = {
     bank_transfer: '银行转账',
@@ -61,7 +62,7 @@ export const useCollectionStore = defineStore('collection', () => {
   }
 
   function _save() {
-    persist(STORAGE_KEY, collections.value)
+    safeSetJSON(STORAGE_KEY, collections.value)
   }
 
   const totalCollected = computed(() => {
@@ -200,7 +201,7 @@ export const useCollectionStore = defineStore('collection', () => {
 
   function addCollection(data) {
     const item = {
-      id: 'col_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      id: generateId('cl'),
       collectionNo: generateCollectionNo(),
       customerId: data.customerId || '',
       customerName: data.customerName || '',
@@ -215,6 +216,7 @@ export const useCollectionStore = defineStore('collection', () => {
       notes: data.notes || '',
       status: 'pending',
       installments: [],
+      createdBy: getCurrentUser(),
       createdAt: new Date().toISOString()
     }
     collections.value.push(item)
@@ -232,6 +234,8 @@ export const useCollectionStore = defineStore('collection', () => {
 
   function deleteCollection(id) {
     collections.value = collections.value.filter(c => c.id !== id)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('collections', id)
     _save()
   }
 
@@ -259,7 +263,7 @@ export const useCollectionStore = defineStore('collection', () => {
     if (!col.installments) col.installments = []
 
     const inst = {
-      id: 'inst_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      id: generateId('inst'),
       period: installment.period || (col.installments.length + 1),
       amount: parseFloat(installment.amount) || 0,
       date: installment.date || new Date().toISOString().split('T')[0],
@@ -323,7 +327,7 @@ export const useCollectionStore = defineStore('collection', () => {
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     collections.value = [
       {
         id: 'col1', collectionNo: 'COL-2024-0034', customerId: 'c2',
@@ -372,7 +376,19 @@ export const useCollectionStore = defineStore('collection', () => {
       }
     ]
     _save()
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(collections.value, items, 'id')
+    collections.value = merged
+    _save()
+  }
+
+  function replaceData(newData) {
+    collections.value = newData
+    _save()
   }
 
   return {
@@ -397,6 +413,8 @@ export const useCollectionStore = defineStore('collection', () => {
     addInstallment,
     updateInstallmentStatus,
     deleteInstallment,
-    initSeedData
+    initSeedData,
+    replaceData, mergeRemoteItems,
+    _save
   }
 })

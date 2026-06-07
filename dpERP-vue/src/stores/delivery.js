@@ -1,33 +1,43 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { mergeArrays } from '@/utils/conflictResolver'
+import { useSessionStore } from './session'
+import { generateId } from '@/utils/uid'
+import { useSyncEngine } from '@/utils/syncEngine'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_deliveries'
 const INIT_KEY = 'gj_erp_deliveries_initialized'
 
 function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
-  return fallback
+  const data = safeGetJSON(key)
+  return data !== null ? data : fallback
 }
 
 function persist(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
-}
-
-function generateDeliveryNo() {
-  const now = new Date()
-  const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
-  const deliveries = load(STORAGE_KEY, [])
-  const todayCount = deliveries.filter(d => d.deliveryNo && d.deliveryNo.indexOf(dateStr) !== -1).length
-  return 'GJXC-' + dateStr + '-' + String(todayCount + 1).padStart(4, '0')
+  safeSetJSON(key, data)
 }
 
 export const useDeliveryStore = defineStore('delivery', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const deliveries = ref(load(STORAGE_KEY, []))
+
+  function generateDeliveryNo() {
+    const now = new Date()
+    const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
+    const allDeliveries = deliveries.value
+    const todayCount = allDeliveries.filter(d => d.deliveryNo && d.deliveryNo.indexOf(dateStr) !== -1).length
+    return 'GJXC-' + dateStr + '-' + String(todayCount + 1).padStart(4, '0')
+  }
 
   const STATUS_FLOW = {
     created: { next: ['pending'], label: '已创建' },
@@ -89,7 +99,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
 
   function addDelivery(data) {
     const item = {
-      id: data.id || 'dlv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+      id: data.id || generateId('dl'),
       deliveryNo: data.deliveryNo || generateDeliveryNo(),
       date: data.date || new Date().toISOString().split('T')[0],
       orderId: data.orderId || '',
@@ -130,6 +140,7 @@ export const useDeliveryStore = defineStore('delivery', () => {
       receiverSeal: data.receiverSeal || '',
       signDate: data.signDate || '',
       remarks: data.remarks || '',
+      createdBy: getCurrentUser(),
       createdAt: data.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     }
@@ -159,6 +170,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
     const idx = deliveries.value.findIndex(d => d.id === id)
     if (idx === -1) return false
     deliveries.value.splice(idx, 1)
+    const syncEngine = useSyncEngine()
+    syncEngine.recordDeletedId('deliveries', id)
     persist(STORAGE_KEY, deliveries.value)
     return true
   }
@@ -304,7 +317,19 @@ export const useDeliveryStore = defineStore('delivery', () => {
     ]
     deliveries.value = seeds
     persist(STORAGE_KEY, deliveries.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetItem(INIT_KEY, '1')
+  }
+
+  function mergeRemoteItems(items) {
+    if (!Array.isArray(items)) return
+    const merged = mergeArrays(deliveries.value, items, 'id')
+    deliveries.value = merged
+    persist(STORAGE_KEY, deliveries.value)
+  }
+
+  function replaceData(newData) {
+    deliveries.value = newData
+    persist(STORAGE_KEY, deliveries.value)
   }
 
   return {
@@ -317,6 +342,8 @@ export const useDeliveryStore = defineStore('delivery', () => {
     getById, canTransition,
     addDelivery, updateDelivery, deleteDelivery,
     changeStatus, runAssessment, generateDeliveryNo,
-    initSeedData
+    initSeedData,
+    replaceData, mergeRemoteItems,
+    persist
   }
 })

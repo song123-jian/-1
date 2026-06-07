@@ -6,67 +6,64 @@
         <p class="page-header-subtitle">汽车/非汽车项目全生命周期管理 — 风险跟踪与数据统计分析</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-outline" @click="backupData" title="数据备份">💾 备份</button>
-        <button class="btn btn-outline" @click="triggerRestore" title="数据恢复">📂 恢复</button>
-        <input type="file" ref="restoreFileRef" accept=".json" style="display:none" @change="restoreData">
-        <button class="btn btn-outline" @click="printView" title="打印报表">🖨 打印</button>
-        <button class="btn btn-outline" @click="showOpLogModal = true" title="操作日志">📝 日志</button>
-        <button v-if="activeTab !== 'stats'" class="btn btn-outline" @click="exportCSV">📥 导出</button>
-        <button v-if="activeTab !== 'stats'" class="btn btn-outline" @click="triggerImport">📤 导入</button>
-        <input type="file" ref="importFileRef" accept=".csv" style="display:none" @change="importCSV">
+        <button class="btn btn-outline" @click="printView" title="打印报表"><Icon name="print" :size="14" /> 打印</button>
+        <button class="btn btn-outline" @click="showOpLogModal = true" title="操作日志"><Icon name="edit" :size="14" /> 日志</button>
+        <button v-if="activeTab !== 'stats'" class="btn btn-outline" @click="exportCSV"><Icon name="download" :size="14" /> 导出</button>
+        <button v-if="activeTab !== 'stats'" class="btn btn-outline" @click="triggerImport"><Icon name="upload" :size="14" /> 导入</button>
+        <input type="file" ref="importFileRef" style="display:none" @change="importCSV">
         <button v-if="activeTab !== 'stats'" class="btn btn-primary" @click="openAddModal">{{ addBtnLabel }}</button>
       </div>
     </div>
 
     <div class="tab-bar">
-      <button class="tab-btn" :class="{ active: activeTab === 'auto' }" @click="activeTab = 'auto'">🚗 汽车项目</button>
-      <button class="tab-btn" :class="{ active: activeTab === 'nonauto' }" @click="activeTab = 'nonauto'">🏭 非汽车项目</button>
-      <button class="tab-btn" :class="{ active: activeTab === 'risk' }" @click="activeTab = 'risk'">⚠️ 风险跟踪</button>
-      <button class="tab-btn" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'">📈 统计报表</button>
+      <button class="tab-btn" :class="{ active: activeTab === 'auto' }" @click="activeTab = 'auto'">[汽车] 汽车项目</button>
+      <button class="tab-btn" :class="{ active: activeTab === 'nonauto' }" @click="activeTab = 'nonauto'"><Icon name="building" :size="14" /> 非汽车项目</button>
+      <button class="tab-btn" :class="{ active: activeTab === 'risk' }" @click="activeTab = 'risk'"><Icon name="warning" :size="14" /> 风险跟踪</button>
+      <button class="tab-btn" :class="{ active: activeTab === 'stats' }" @click="activeTab = 'stats'"><Icon name="trendUp" :size="14" /> 统计报表</button>
     </div>
 
     <div class="tab-content-scroll">
       <!-- ==================== 汽车项目Tab ==================== -->
       <div v-show="activeTab === 'auto'">
         <div class="stats-row">
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">🚗</div><div class="stat-card-body"><div class="stat-card-value">{{ autoProjects.length }}</div><div class="stat-card-label">汽车项目总数</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">🔄</div><div class="stat-card-body"><div class="stat-card-value">{{ autoActiveCount }}</div><div class="stat-card-label">进行中</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">✅</div><div class="stat-card-body"><div class="stat-card-value">{{ autoMassCount }}</div><div class="stat-card-label">已量产</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-danger-subtle);color:var(--color-danger)">⚠️</div><div class="stat-card-body"><div class="stat-card-value">{{ autoRiskCount }}</div><div class="stat-card-label">有风险</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:#fef3c7;color:#b45309">🔔</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ autoOverdueCount }}</div><div class="stat-card-label">逾期跟进</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">[汽车]</div><div class="stat-card-body"><div class="stat-card-value">{{ autoProjects.length }}</div><div class="stat-card-label">汽车项目总数</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)"><Icon name="refresh" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ autoActiveCount }}</div><div class="stat-card-label">进行中</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)"><Icon name="check" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ autoMassCount }}</div><div class="stat-card-label">已量产</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-danger-subtle);color:var(--color-danger)"><Icon name="warning" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ autoRiskCount }}</div><div class="stat-card-label">有风险</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">[提醒]</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ autoOverdueCount }}</div><div class="stat-card-label">逾期跟进</div></div></div>
         </div>
         <div class="quick-filters">
-          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'overdue' }" @click="toggleAutoQuickFilter('overdue')">🔔 逾期跟进 <span v-if="autoOverdueCount" class="qf-badge">{{ autoOverdueCount }}</span></button>
-          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'sopThisMonth' }" @click="toggleAutoQuickFilter('sopThisMonth')">📅 本月SOP</button>
-          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'hasRisk' }" @click="toggleAutoQuickFilter('hasRisk')">🔴 有风险</button>
-          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'notQuoted' }" @click="toggleAutoQuickFilter('notQuoted')">💰 未报价</button>
-          <button v-if="autoQuickFilter" class="quick-filter-tag clear" @click="autoQuickFilter = ''">✕ 清除筛选</button>
+          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'overdue' }" @click="toggleAutoQuickFilter('overdue')">[提醒] 逾期跟进 <span v-if="autoOverdueCount" class="qf-badge">{{ autoOverdueCount }}</span></button>
+          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'sopThisMonth' }" @click="toggleAutoQuickFilter('sopThisMonth')"><Icon name="calendar" :size="14" /> 本月SOP</button>
+          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'hasRisk' }" @click="toggleAutoQuickFilter('hasRisk')">[红色] 有风险</button>
+          <button class="quick-filter-tag" :class="{ active: autoQuickFilter === 'notQuoted' }" @click="toggleAutoQuickFilter('notQuoted')"><Icon name="dollar" :size="14" /> 未报价</button>
+          <button v-if="autoQuickFilter" class="quick-filter-tag clear" @click="autoQuickFilter = ''"><Icon name="close" :size="14" /> 清除筛选</button>
         </div>
         <div class="filter-bar">
           <input type="text" class="form-input" v-model="autoSearch" placeholder="搜索客户/主机厂/零件/编号..." style="min-width:180px">
           <select class="form-select" v-model="autoStageFilter"><option value="">全部阶段</option><option v-for="s in stages" :key="s" :value="s">{{ s }}</option></select>
           <select class="form-select" v-model="autoQuoteFilter"><option value="">全部报价状态</option><option v-for="s in quoteStatuses" :key="s" :value="s">{{ s }}</option></select>
           <select class="form-select" v-model="autoOwnerFilter"><option value="">全部负责人</option><option v-for="o in autoOwners" :key="o" :value="o">{{ o }}</option></select>
-          <button v-if="autoSelected.length > 0" class="btn btn-outline btn-danger" @click="confirmBatchDeleteAuto">🗑 批量删除({{ autoSelected.length }})</button>
+          <button v-if="autoSelected.length > 0" class="btn btn-outline btn-danger" @click="confirmBatchDeleteAuto"><Icon name="delete" :size="14" /> 批量删除({{ autoSelected.length }})</button>
           <select v-if="autoSelected.length > 0" class="form-select" style="max-width:160px" v-model="batchStageVal" @change="batchChangeStage"><option value="">批量修改阶段...</option><option v-for="s in stages" :key="s" :value="s">{{ s }}</option></select>
           <div class="column-config-wrapper">
-            <button class="btn btn-outline" @click="toggleAutoColumnConfig">⚙ 列</button>
+            <button class="btn btn-outline" @click="toggleAutoColumnConfig"><Icon name="setting" :size="14" /> 列</button>
             <div v-if="showAutoColumnConfig" class="column-config-dropdown" :style="autoColDropdownStyle">
               <label v-for="col in autoColumnDefs" :key="col.key" class="column-config-item"><input type="checkbox" v-model="autoColumnVisible[col.key]">{{ col.label }}</label>
             </div>
           </div>
           <div class="view-switcher">
-            <button class="view-btn" :class="{ active: autoView === 'table' }" @click="autoView = 'table'" title="📊 表格视图">📊 表格</button>
-            <button class="view-btn" :class="{ active: autoView === 'list' }" @click="autoView = 'list'" title="📋 列表视图">📋 列表</button>
-            <button class="view-btn" :class="{ active: autoView === 'card' }" @click="autoView = 'card'" title="🗂 卡片视图">🗂 卡片</button>
-            <button class="view-btn" :class="{ active: autoView === 'calendar' }" @click="autoView = 'calendar'" title="📅 日历视图">📅 日历</button>
-            <button class="view-btn" :class="{ active: autoView === 'week' }" @click="autoView = 'week'" title="🗓 周视图">🗓 周视图</button>
-            <button class="view-btn" :class="{ active: autoView === 'gantt' }" @click="autoView = 'gantt'" title="📊 甘特图">📊 甘特图</button>
+            <button class="view-btn" :class="{ active: autoView === 'table' }" @click="autoView = 'table'" title="表格视图"><Icon name="table" :size="14" /> 表格</button>
+            <button class="view-btn" :class="{ active: autoView === 'list' }" @click="autoView = 'list'" title="列表视图"><Icon name="list" :size="14" /> 列表</button>
+            <button class="view-btn" :class="{ active: autoView === 'card' }" @click="autoView = 'card'" title="卡片视图"><Icon name="card" :size="14" /> 卡片</button>
+            <button class="view-btn" :class="{ active: autoView === 'calendar' }" @click="autoView = 'calendar'" title="日历视图"><Icon name="calendar" :size="14" /> 日历</button>
+            <button class="view-btn" :class="{ active: autoView === 'week' }" @click="autoView = 'week'" title="周视图"><Icon name="calendar" :size="14" /> 周视图</button>
+            <button class="view-btn" :class="{ active: autoView === 'gantt' }" @click="autoView = 'gantt'" title="甘特图"><Icon name="table" :size="14" /> 甘特图</button>
           </div>
         </div>
-        <!-- 📊 表格视图 -->
+        <!-- <Icon name="table" :size="14" /> 表格视图 -->
         <div v-show="autoView === 'table'" class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">📊 表格 — 汽车项目列表</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="table" :size="14" /> 表格 — 汽车项目列表</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
           <div class="panel-card-body no-padding"><div class="table-container"><table class="data-table"><thead><tr>
             <th style="width:30px"><input type="checkbox" :checked="autoSelected.length === filteredAutoProjects.length && filteredAutoProjects.length > 0" @change="toggleAutoSelectAll"></th>
             <th v-if="autoColumnVisible.projectId" style="width:100px">项目编码</th><th v-if="autoColumnVisible.customer" style="width:100px">客户单位</th><th v-if="autoColumnVisible.oem" style="width:100px">主机厂商</th><th v-if="autoColumnVisible.vehicleModels" style="width:120px">配套车型型号</th><th v-if="autoColumnVisible.partName" style="width:110px">零部件名称</th><th v-if="autoColumnVisible.material" style="width:100px">所用材料</th><th v-if="autoColumnVisible.stage" style="width:120px">项目所处阶段</th><th v-if="autoColumnVisible.quoteStatus" style="width:120px">报价跟进状态</th><th v-if="autoColumnVisible.massStatus" style="width:120px">量产执行状态</th><th v-if="autoColumnVisible.owner" style="width:100px">项目负责人</th><th v-if="autoColumnVisible.followUp" style="width:90px">跟进</th><th style="width:100px">操作</th>
@@ -125,9 +122,9 @@
             <tr v-if="filteredAutoProjects.length === 0"><td :colspan="autoVisibleColCount + 2" class="empty-cell">暂无数据</td></tr>
           </tbody></table></div></div>
         </div>
-        <!-- 📋 列表视图 -->
+        <!-- <Icon name="list" :size="14" /> 列表视图 -->
         <div v-show="autoView === 'list'" class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">📋 列表 — 汽车项目</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="list" :size="14" /> 列表 — 汽车项目</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
           <div class="panel-card-body no-padding">
             <div v-for="p in filteredAutoProjects" :key="p.id" class="list-item" :class="{ 'list-item-overdue': p.nextFollowUp && p.nextFollowUp < today && p.stage !== '量产' }" @click="openAutoDetail(p)">
               <div class="list-item-main"><span class="project-id">{{ p.projectId }}</span><span class="list-item-title">{{ p.customer }} - {{ p.partName }}</span><span class="stage-tag" :class="'stage-' + stageIdx(p.stage)">{{ p.stage }}</span><span v-if="p.nextFollowUp && p.nextFollowUp < today && p.stage !== '量产'" class="overdue-badge">逾期</span></div>
@@ -136,9 +133,9 @@
             <div v-if="filteredAutoProjects.length === 0" class="empty-cell" style="padding:var(--space-8)">暂无数据</div>
           </div>
         </div>
-        <!-- 🗂 卡片视图 -->
-        <div v-show="autoView === 'card'" class="card-view-area">
-          <div class="card-view-header"><span class="panel-card-title">🗂 卡片 — 汽车项目</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
+        <!-- <Icon name="card" :size="14" /> 卡片视图 -->
+        <div v-show="autoView === 'card'" class="panel-card">
+          <div class="card-view-header"><span class="panel-card-title"><Icon name="card" :size="14" /> 卡片 — 汽车项目</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 条</span></div>
           <div class="pt-card-grid">
             <div v-for="p in filteredAutoProjects" :key="p.id" class="pt-card" :class="{ 'pt-card-overdue': p.nextFollowUp && p.nextFollowUp < today && p.stage !== '量产' }" @click="openAutoDetail(p)">
               <div class="pt-card-header-row"><span class="stage-tag" :class="'stage-' + stageIdx(p.stage)">{{ p.stage }}</span><span class="project-id">{{ p.projectId }}</span><span v-if="p.nextFollowUp && p.nextFollowUp < today && p.stage !== '量产'" class="overdue-badge">逾期</span></div>
@@ -154,19 +151,19 @@
           </div>
           <div v-if="filteredAutoProjects.length === 0" class="empty-cell" style="padding:var(--space-8)">暂无数据</div>
         </div>
-        <!-- 📅 日历视图 -->
+        <!-- <Icon name="calendar" :size="14" /> 日历视图 -->
         <div v-show="autoView === 'calendar'" class="panel-card">
-          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="calPrev">◀</button><span class="panel-card-title">📅 日历 — {{ calYear }}年{{ calMonth }}月</span><button class="btn btn-ghost btn-sm" @click="calNext">▶</button><button class="btn btn-ghost btn-sm" @click="calToday" style="margin-left:var(--space-2)">今天</button></div>
+          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="calPrev"><Icon name="chevronLeft" :size="14" /></button><span class="panel-card-title"><Icon name="calendar" :size="14" /> 日历 — {{ calYear }}年{{ calMonth }}月</span><button class="btn btn-ghost btn-sm" @click="calNext"><Icon name="chevronRight" :size="14" /></button><button class="btn btn-ghost btn-sm" @click="calToday" style="margin-left:var(--space-2)">今天</button></div>
           <div class="panel-card-body no-padding"><div class="cal-grid"><div class="cal-header" v-for="d in weekDays" :key="d">{{ d }}</div><div v-for="(cell, idx) in calCells" :key="idx" class="cal-cell" :class="{ today: cell.isToday, hasEvent: cell.events.length > 0 }"><div class="cal-date">{{ cell.day || '' }}</div><div class="cal-events"><div v-for="e in cell.events.slice(0, 2)" :key="e.id" class="cal-event" :class="'evt-' + e.type" @click="openAutoDetail(autoProjects.find(p => p.id === e.id))">{{ e.label }}</div><div v-if="cell.events.length > 2" class="cal-more">+{{ cell.events.length - 2 }}</div></div></div></div></div>
         </div>
-        <!-- 🗓 周视图 -->
+        <!-- <Icon name="calendar" :size="14" /> 周视图 -->
         <div v-show="autoView === 'week'" class="panel-card">
-          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="weekPrev">◀</button><span class="panel-card-title">🗓 周视图 — {{ weekRangeLabel }}</span><button class="btn btn-ghost btn-sm" @click="weekNext">▶</button><button class="btn btn-ghost btn-sm" @click="weekToday" style="margin-left:var(--space-2)">本周</button></div>
+          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="weekPrev"><Icon name="chevronLeft" :size="14" /></button><span class="panel-card-title"><Icon name="calendar" :size="14" /> 周视图 — {{ weekRangeLabel }}</span><button class="btn btn-ghost btn-sm" @click="weekNext"><Icon name="chevronRight" :size="14" /></button><button class="btn btn-ghost btn-sm" @click="weekToday" style="margin-left:var(--space-2)">本周</button></div>
           <div class="panel-card-body no-padding"><div class="week-grid"><div class="week-header" v-for="(d, i) in weekDays" :key="d"><span>{{ d }}</span><span class="week-header-date">{{ weekDates[i] }}</span></div><div v-for="(day, idx) in weekDaysData" :key="idx" class="week-col" :class="{ 'week-col-today': day.isToday }"><div v-if="day.events.length === 0" class="week-empty">无事项</div><div v-for="e in day.events" :key="e.id" class="week-event" :class="'evt-' + e.type" @click="openAutoDetail(autoProjects.find(p => p.id === e.id))"><div class="week-event-title">{{ e.label }}</div><div class="week-event-meta">{{ e.meta || '' }}</div></div></div></div></div>
         </div>
-        <!-- 📊 甘特图视图 -->
+        <!-- <Icon name="table" :size="14" /> 甘特图视图 -->
         <div v-show="autoView === 'gantt'" class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">📊 甘特图 — 项目阶段时间线</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 个项目</span></div>
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="table" :size="14" /> 甘特图 — 项目阶段时间线</span><span class="panel-card-count">共 {{ filteredAutoProjects.length }} 个项目</span></div>
           <div class="panel-card-body no-padding"><div class="gantt-container"><div class="gantt-header"><div class="gantt-label-col">项目</div><div class="gantt-bars-col"><div class="gantt-stages-header"><div v-for="s in stages" :key="s" class="gantt-stage-col" :title="s">{{ s.slice(0, 2) }}</div></div></div></div><div v-for="p in filteredAutoProjects" :key="p.id" class="gantt-row" @click="openAutoDetail(p)"><div class="gantt-label-col"><span class="project-id">{{ p.projectId }}</span> {{ p.partName }}</div><div class="gantt-bars-col"><div class="gantt-stages-row"><div v-for="(s, i) in stages" :key="s" class="gantt-stage-cell" :class="{ 'gantt-passed': i < stages.indexOf(p.stage), 'gantt-current': s === p.stage, 'gantt-future': i > stages.indexOf(p.stage) }"></div></div></div></div><div v-if="filteredAutoProjects.length === 0" class="gantt-empty">暂无项目数据</div></div></div>
         </div>
       </div>
@@ -174,38 +171,38 @@
       <!-- ==================== 非汽车项目Tab ==================== -->
       <div v-show="activeTab === 'nonauto'">
         <div class="stats-row">
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)">🏭</div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoProjects.length }}</div><div class="stat-card-label">非汽车项目总数</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">🔄</div><div class="stat-card-body"><div class="stat-card-value">{{ napActiveCount }}</div><div class="stat-card-label">进行中</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">💰</div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoTotalAmount }}</div><div class="stat-card-label">合同总额(万)</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">📦</div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoMonthlyQty }}</div><div class="stat-card-label">月订单量(吨)</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:#fef3c7;color:#b45309">🔔</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ napOverdueCount }}</div><div class="stat-card-label">逾期跟进</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-accent-subtle);color:var(--color-accent)"><Icon name="building" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoProjects.length }}</div><div class="stat-card-label">非汽车项目总数</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)"><Icon name="refresh" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ napActiveCount }}</div><div class="stat-card-label">进行中</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)"><Icon name="dollar" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoTotalAmount }}</div><div class="stat-card-label">合同总额(万)</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)"><Icon name="package" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ nonAutoMonthlyQty }}</div><div class="stat-card-label">月订单量(吨)</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">[提醒]</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ napOverdueCount }}</div><div class="stat-card-label">逾期跟进</div></div></div>
         </div>
         <div class="quick-filters">
-          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'overdue' }" @click="toggleNapQuickFilter('overdue')">🔔 逾期跟进 <span v-if="napOverdueCount" class="qf-badge">{{ napOverdueCount }}</span></button>
-          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'hasRisk' }" @click="toggleNapQuickFilter('hasRisk')">🔴 有风险</button>
-          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'notQuoted' }" @click="toggleNapQuickFilter('notQuoted')">💰 未报价</button>
-          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'unpaid' }" @click="toggleNapQuickFilter('unpaid')">💳 未回款</button>
-          <button v-if="napQuickFilter" class="quick-filter-tag clear" @click="napQuickFilter = ''">✕ 清除筛选</button>
+          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'overdue' }" @click="toggleNapQuickFilter('overdue')">[提醒] 逾期跟进 <span v-if="napOverdueCount" class="qf-badge">{{ napOverdueCount }}</span></button>
+          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'hasRisk' }" @click="toggleNapQuickFilter('hasRisk')">[红色] 有风险</button>
+          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'notQuoted' }" @click="toggleNapQuickFilter('notQuoted')"><Icon name="dollar" :size="14" /> 未报价</button>
+          <button class="quick-filter-tag" :class="{ active: napQuickFilter === 'unpaid' }" @click="toggleNapQuickFilter('unpaid')">[支付] 未回款</button>
+          <button v-if="napQuickFilter" class="quick-filter-tag clear" @click="napQuickFilter = ''"><Icon name="close" :size="14" /> 清除筛选</button>
         </div>
         <div class="filter-bar">
           <input type="text" class="form-input" v-model="nonAutoSearch" placeholder="搜索客户/编号..." style="min-width:180px">
           <select class="form-select" v-model="nonAutoStageFilter"><option value="">全部阶段</option><option v-for="s in napStages" :key="s" :value="s">{{ s }}</option></select>
           <select class="form-select" v-model="nonAutoPaymentFilter"><option value="">全部回款状态</option><option value="未回款">未回款</option><option value="部分回款">部分回款</option><option value="已回款">已回款</option></select>
           <div class="column-config-wrapper">
-            <button class="btn btn-outline" @click="toggleNapColumnConfig">⚙ 列</button>
+            <button class="btn btn-outline" @click="toggleNapColumnConfig"><Icon name="setting" :size="14" /> 列</button>
             <div v-if="showNapColumnConfig" class="column-config-dropdown" :style="napColDropdownStyle"><label v-for="col in napColumnDefs" :key="col.key" class="column-config-item"><input type="checkbox" v-model="napColumnVisible[col.key]">{{ col.label }}</label></div>
           </div>
           <div class="view-switcher">
-            <button class="view-btn" :class="{ active: nonAutoView === 'table' }" @click="nonAutoView = 'table'" title="📊 表格视图">📊 表格</button>
-            <button class="view-btn" :class="{ active: nonAutoView === 'list' }" @click="nonAutoView = 'list'" title="📋 列表视图">📋 列表</button>
-            <button class="view-btn" :class="{ active: nonAutoView === 'card' }" @click="nonAutoView = 'card'" title="🗂 卡片视图">🗂 卡片</button>
-            <button class="view-btn" :class="{ active: nonAutoView === 'calendar' }" @click="nonAutoView = 'calendar'" title="📅 日历视图">📅 日历</button>
-            <button class="view-btn" :class="{ active: nonAutoView === 'week' }" @click="nonAutoView = 'week'" title="🗓 周视图">🗓 周视图</button>
+            <button class="view-btn" :class="{ active: nonAutoView === 'table' }" @click="nonAutoView = 'table'" title="表格视图"><Icon name="table" :size="14" /> 表格</button>
+            <button class="view-btn" :class="{ active: nonAutoView === 'list' }" @click="nonAutoView = 'list'" title="列表视图"><Icon name="list" :size="14" /> 列表</button>
+            <button class="view-btn" :class="{ active: nonAutoView === 'card' }" @click="nonAutoView = 'card'" title="卡片视图"><Icon name="card" :size="14" /> 卡片</button>
+            <button class="view-btn" :class="{ active: nonAutoView === 'calendar' }" @click="nonAutoView = 'calendar'" title="日历视图"><Icon name="calendar" :size="14" /> 日历</button>
+            <button class="view-btn" :class="{ active: nonAutoView === 'week' }" @click="nonAutoView = 'week'" title="周视图"><Icon name="calendar" :size="14" /> 周视图</button>
           </div>
         </div>
-        <!-- 📊 表格视图 -->
+        <!-- <Icon name="table" :size="14" /> 表格视图 -->
         <div v-show="nonAutoView === 'table'" class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">📊 表格 — 非汽车项目列表</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="table" :size="14" /> 表格 — 非汽车项目列表</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
           <div class="panel-card-body no-padding"><div class="table-container"><table class="data-table"><thead><tr>
             <th v-if="napColumnVisible.projectId" style="width:100px">项目ID</th><th v-if="napColumnVisible.customerName" style="width:100px">客户名称</th><th v-if="napColumnVisible.techRequirements" style="width:120px">技术要求</th><th v-if="napColumnVisible.monthlyOrderQty" style="width:110px">月订单量(吨)</th><th v-if="napColumnVisible.contractAmount" style="width:110px">合同金额(万)</th><th v-if="napColumnVisible.stage" style="width:100px">项目阶段</th><th v-if="napColumnVisible.quoteStatus" style="width:100px">报价状态</th><th v-if="napColumnVisible.contractStatus" style="width:100px">合同状态</th><th v-if="napColumnVisible.paymentStatus" style="width:100px">回款状态</th><th v-if="napColumnVisible.owner" style="width:90px">负责人</th><th v-if="napColumnVisible.followUp" style="width:90px">跟进</th><th style="width:100px">操作</th>
           </tr></thead><tbody>
@@ -262,9 +259,9 @@
             <tr v-if="filteredNonAutoProjects.length === 0"><td :colspan="napVisibleColCount + 1" class="empty-cell">暂无数据</td></tr>
           </tbody></table></div></div>
         </div>
-        <!-- 📋 列表视图 -->
+        <!-- <Icon name="list" :size="14" /> 列表视图 -->
         <div v-show="nonAutoView === 'list'" class="panel-card">
-          <div class="panel-card-header"><span class="panel-card-title">📋 列表 — 非汽车项目</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
+          <div class="panel-card-header"><span class="panel-card-title"><Icon name="list" :size="14" /> 列表 — 非汽车项目</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
           <div class="panel-card-body no-padding">
             <div v-for="p in filteredNonAutoProjects" :key="p.id" class="list-item" :class="{ 'list-item-overdue': p.nextFollowUp && p.nextFollowUp < today && p.stage !== '完成' }" @click="openNonAutoDetail(p)">
               <div class="list-item-main"><span class="project-id">{{ p.projectId }}</span><span class="list-item-title">{{ p.customerName }}</span><span class="stage-tag" :class="'stage-' + napStageIdx(p.stage)">{{ p.stage }}</span><span class="payment-tag" :class="'ps-' + (p.paymentStatus || '')">{{ p.paymentStatus }}</span><span v-if="p.nextFollowUp && p.nextFollowUp < today && p.stage !== '完成'" class="overdue-badge">逾期</span></div>
@@ -273,9 +270,9 @@
             <div v-if="filteredNonAutoProjects.length === 0" class="empty-cell" style="padding:var(--space-8)">暂无数据</div>
           </div>
         </div>
-        <!-- 🗂 卡片视图 -->
-        <div v-show="nonAutoView === 'card'" class="card-view-area">
-          <div class="card-view-header"><span class="panel-card-title">🗂 卡片 — 非汽车项目</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
+        <!-- <Icon name="card" :size="14" /> 卡片视图 -->
+        <div v-show="nonAutoView === 'card'" class="panel-card">
+          <div class="card-view-header"><span class="panel-card-title"><Icon name="card" :size="14" /> 卡片 — 非汽车项目</span><span class="panel-card-count">共 {{ filteredNonAutoProjects.length }} 条</span></div>
           <div class="pt-card-grid">
             <div v-for="p in filteredNonAutoProjects" :key="p.id" class="pt-card" :class="{ 'pt-card-overdue': p.nextFollowUp && p.nextFollowUp < today && p.stage !== '完成' }" @click="openNonAutoDetail(p)">
               <div class="pt-card-header-row"><span class="stage-tag" :class="'stage-' + napStageIdx(p.stage)">{{ p.stage }}</span><span class="project-id">{{ p.projectId }}</span><span v-if="p.nextFollowUp && p.nextFollowUp < today && p.stage !== '完成'" class="overdue-badge">逾期</span></div>
@@ -290,14 +287,14 @@
           </div>
           <div v-if="filteredNonAutoProjects.length === 0" class="empty-cell" style="padding:var(--space-8)">暂无数据</div>
         </div>
-        <!-- 📅 日历视图 -->
+        <!-- <Icon name="calendar" :size="14" /> 日历视图 -->
         <div v-show="nonAutoView === 'calendar'" class="panel-card">
-          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="napCalPrev">◀</button><span class="panel-card-title">📅 日历 — {{ napCalYear }}年{{ napCalMonth }}月</span><button class="btn btn-ghost btn-sm" @click="napCalNext">▶</button><button class="btn btn-ghost btn-sm" @click="napCalToday" style="margin-left:var(--space-2)">今天</button></div>
+          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="napCalPrev"><Icon name="chevronLeft" :size="14" /></button><span class="panel-card-title"><Icon name="calendar" :size="14" /> 日历 — {{ napCalYear }}年{{ napCalMonth }}月</span><button class="btn btn-ghost btn-sm" @click="napCalNext"><Icon name="chevronRight" :size="14" /></button><button class="btn btn-ghost btn-sm" @click="napCalToday" style="margin-left:var(--space-2)">今天</button></div>
           <div class="panel-card-body no-padding"><div class="cal-grid"><div class="cal-header" v-for="d in weekDays" :key="d">{{ d }}</div><div v-for="(cell, idx) in napCalCells" :key="idx" class="cal-cell" :class="{ today: cell.isToday, hasEvent: cell.events.length > 0 }"><div class="cal-date">{{ cell.day || '' }}</div><div class="cal-events"><div v-for="e in cell.events.slice(0, 2)" :key="e.id" class="cal-event" :class="'evt-' + e.type" @click="openNonAutoDetail(nonAutoProjects.find(p => p.id === e.id))">{{ e.label }}</div><div v-if="cell.events.length > 2" class="cal-more">+{{ cell.events.length - 2 }}</div></div></div></div></div>
         </div>
-        <!-- 🗓 周视图 -->
+        <!-- <Icon name="calendar" :size="14" /> 周视图 -->
         <div v-show="nonAutoView === 'week'" class="panel-card">
-          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="napWeekPrev">◀</button><span class="panel-card-title">🗓 周视图 — {{ napWeekRangeLabel }}</span><button class="btn btn-ghost btn-sm" @click="napWeekNext">▶</button><button class="btn btn-ghost btn-sm" @click="napWeekToday" style="margin-left:var(--space-2)">本周</button></div>
+          <div class="panel-card-header"><button class="btn btn-ghost btn-sm" @click="napWeekPrev"><Icon name="chevronLeft" :size="14" /></button><span class="panel-card-title"><Icon name="calendar" :size="14" /> 周视图 — {{ napWeekRangeLabel }}</span><button class="btn btn-ghost btn-sm" @click="napWeekNext"><Icon name="chevronRight" :size="14" /></button><button class="btn btn-ghost btn-sm" @click="napWeekToday" style="margin-left:var(--space-2)">本周</button></div>
           <div class="panel-card-body no-padding"><div class="week-grid"><div class="week-header" v-for="(d, i) in weekDays" :key="d"><span>{{ d }}</span><span class="week-header-date">{{ napWeekDates[i] }}</span></div><div v-for="(day, idx) in napWeekDaysData" :key="idx" class="week-col" :class="{ 'week-col-today': day.isToday }"><div v-if="day.events.length === 0" class="week-empty">无事项</div><div v-for="e in day.events" :key="e.id" class="week-event" :class="'evt-' + e.type" @click="openNonAutoDetail(nonAutoProjects.find(p => p.id === e.id))"><div class="week-event-title">{{ e.label }}</div><div class="week-event-meta">{{ e.meta || '' }}</div></div></div></div></div>
         </div>
       </div>
@@ -305,10 +302,10 @@
       <!-- ==================== 风险跟踪Tab ==================== -->
       <div v-show="activeTab === 'risk'">
         <div class="stats-row">
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-danger-subtle);color:var(--color-danger)">⚠️</div><div class="stat-card-body"><div class="stat-card-value">{{ projectRisks.length }}</div><div class="stat-card-label">风险总数</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:#fef3c7;color:#b45309">🔴</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ activeRiskCount }}</div><div class="stat-card-label">活跃风险</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)">🔄</div><div class="stat-card-body"><div class="stat-card-value">{{ processingRiskCount }}</div><div class="stat-card-label">处理中</div></div></div>
-          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)">✅</div><div class="stat-card-body"><div class="stat-card-value">{{ resolvedRiskCount }}</div><div class="stat-card-label">已解决</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-danger-subtle);color:var(--color-danger)"><Icon name="warning" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ projectRisks.length }}</div><div class="stat-card-label">风险总数</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-warning-subtle);color:var(--color-warning)">[红色]</div><div class="stat-card-body"><div class="stat-card-value" style="color:var(--color-danger)">{{ activeRiskCount }}</div><div class="stat-card-label">活跃风险</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)"><Icon name="refresh" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ processingRiskCount }}</div><div class="stat-card-label">处理中</div></div></div>
+          <div class="stat-card"><div class="stat-card-icon" style="background:var(--color-success-subtle);color:var(--color-success)"><Icon name="check" :size="14" /></div><div class="stat-card-body"><div class="stat-card-value">{{ resolvedRiskCount }}</div><div class="stat-card-label">已解决</div></div></div>
         </div>
         <div class="filter-bar">
           <input type="text" class="form-input" v-model="riskSearch" placeholder="搜索项目ID/名称/描述..." style="min-width:180px">
@@ -318,7 +315,7 @@
         </div>
         <div class="content-grid content-grid-2-1">
           <div class="panel-card">
-            <div class="panel-card-header"><span class="panel-card-title">⚠️ 风险列表</span><span class="panel-card-count">共 {{ filteredRisks.length }} 条</span></div>
+            <div class="panel-card-header"><span class="panel-card-title"><Icon name="warning" :size="14" /> 风险列表</span><span class="panel-card-count">共 {{ filteredRisks.length }} 条</span></div>
             <div class="panel-card-body no-padding"><div class="table-container"><table class="data-table"><thead><tr>
               <th style="width:100px">项目ID</th><th style="width:100px">项目名称</th><th style="width:120px">风险描述</th><th style="width:70px">等级</th><th style="width:80px">状态</th><th style="width:90px">责任人</th><th style="width:100px">操作</th>
             </tr></thead><tbody>
@@ -357,7 +354,7 @@
             </tbody></table></div></div>
           </div>
           <div class="panel-card">
-            <div class="panel-card-header"><span class="panel-card-title">🔻 风险矩阵</span></div>
+            <div class="panel-card-header"><span class="panel-card-title">[漏斗] 风险矩阵</span></div>
             <div class="panel-card-body">
               <div class="risk-matrix">
                 <div class="rm-row"><div class="rm-cell rm-high" :class="{ 'rm-has': rmCount('高','高') }" title="高概率×高影响">{{ rmCount('高','高') }}</div><div class="rm-cell rm-med" :class="{ 'rm-has': rmCount('中','高') }" title="中概率×高影响">{{ rmCount('中','高') }}</div><div class="rm-cell rm-low" :class="{ 'rm-has': rmCount('低','高') }" title="低概率×高影响">{{ rmCount('低','高') }}</div><div class="rm-row-label">影响 高</div></div>
@@ -374,9 +371,9 @@
       <!-- ==================== 统计报表Tab ==================== -->
       <div v-show="activeTab === 'stats'">
         <div class="content-grid content-grid-2-1" style="margin-bottom:var(--space-4)">
-          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">📊 项目阶段分布</span></div><div class="panel-card-body" style="min-height:300px"><canvas ref="stageChartRef"></canvas></div></div>
+          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title"><Icon name="table" :size="14" /> 项目阶段分布</span></div><div class="panel-card-body" style="min-height:300px"><canvas ref="stageChartRef"></canvas></div></div>
           <div>
-            <div class="panel-card" style="margin-bottom:var(--space-3)"><div class="panel-card-header"><span class="panel-card-title">📈 统计概览</span></div><div class="panel-card-body">
+            <div class="panel-card" style="margin-bottom:var(--space-3)"><div class="panel-card-header"><span class="panel-card-title"><Icon name="trendUp" :size="14" /> 统计概览</span></div><div class="panel-card-body">
               <div class="stat-overview-item"><span class="stat-overview-label">汽车项目总数</span><span class="stat-overview-value">{{ autoProjects.length }}</span></div>
               <div class="stat-overview-item"><span class="stat-overview-label">非汽车项目总数</span><span class="stat-overview-value">{{ nonAutoProjects.length }}</span></div>
               <div class="stat-overview-item"><span class="stat-overview-label">活跃风险数</span><span class="stat-overview-value" style="color:var(--color-danger)">{{ activeRiskCount }}</span></div>
@@ -384,20 +381,20 @@
               <div class="stat-overview-item"><span class="stat-overview-label">合同总额(万)</span><span class="stat-overview-value">{{ nonAutoTotalAmount }}</span></div>
               <div class="stat-overview-item"><span class="stat-overview-label">逾期跟进</span><span class="stat-overview-value" style="color:var(--color-danger)">{{ autoOverdueCount + napOverdueCount }}</span></div>
             </div></div>
-            <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">📉 月度订单量趋势</span></div><div class="panel-card-body" style="min-height:200px"><canvas ref="trendChartRef"></canvas></div></div>
+            <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title"><Icon name="chevronDown" :size="14" /> 月度订单量趋势</span></div><div class="panel-card-body" style="min-height:200px"><canvas ref="trendChartRef"></canvas></div></div>
           </div>
         </div>
         <div class="content-grid content-grid-3" style="margin-bottom:var(--space-4)">
-          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">🥧 客户分布</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="customerChartRef"></canvas></div></div>
-          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">📊 负责人项目数</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="ownerChartRef"></canvas></div></div>
-          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">🔻 阶段转化漏斗</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="funnelChartRef"></canvas></div></div>
+          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">[饼图] 客户分布</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="customerChartRef"></canvas></div></div>
+          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title"><Icon name="table" :size="14" /> 负责人项目数</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="ownerChartRef"></canvas></div></div>
+          <div class="panel-card"><div class="panel-card-header"><span class="panel-card-title">[漏斗] 阶段转化漏斗</span></div><div class="panel-card-body" style="min-height:260px"><canvas ref="funnelChartRef"></canvas></div></div>
         </div>
       </div>
 
       <!-- ==================== 详情面板 ==================== -->
       <div v-if="showDetailPanel" class="detail-panel-overlay" @click.self="showDetailPanel = false">
         <div class="detail-panel">
-          <div class="detail-panel-header"><h3 class="detail-panel-title">{{ detailData?.projectId }} — {{ detailData?.partName || detailData?.customerName }}</h3><button class="modal-close" @click="showDetailPanel = false">✕</button></div>
+          <div class="detail-panel-header"><h3 class="detail-panel-title">{{ detailData?.projectId }} — {{ detailData?.partName || detailData?.customerName }}</h3><button class="modal-close" @click="showDetailPanel = false"><Icon name="close" :size="14" /></button></div>
           <div class="detail-panel-body">
             <div class="stage-progress-full"><div v-for="(s, i) in (detailType === 'auto' ? stages : napStages)" :key="s" class="spf-item" :class="{ active: i <= (detailType === 'auto' ? stages : napStages).indexOf(detailData?.stage), current: s === detailData?.stage }"><div class="spf-dot"></div><span class="spf-label">{{ s }}</span></div></div>
             <div v-if="detailType === 'auto'" class="detail-grid">
@@ -443,7 +440,7 @@
     <!-- ==================== 汽车项目弹窗 ==================== -->
     <div v-if="showAutoModal" class="modal-overlay" @click.self="showAutoModal = false">
       <div class="modal-content modal-wide">
-        <div class="modal-header"><h3 class="modal-title">{{ isAutoEditing ? '编辑汽车项目' : '新建汽车项目' }}</h3><button class="modal-close" @click="showAutoModal = false">✕</button></div>
+        <div class="modal-header"><h3 class="modal-title">{{ isAutoEditing ? '编辑汽车项目' : '新建汽车项目' }}</h3><button class="modal-close" @click="showAutoModal = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body">
           <div class="form-row form-row-3"><div class="form-group"><label class="form-label">客户</label><select class="form-select" v-model="autoForm.customer"><option value="">请选择</option><option v-for="c in customerStore.customers" :key="c.id" :value="c.fullName || c.name">{{ c.fullName || c.name }}</option></select></div><div class="form-group"><label class="form-label">主机厂</label><input class="form-input" v-model="autoForm.oem"></div><div class="form-group"><label class="form-label">配套车型</label><input class="form-input" v-model="autoForm.vehicleModels" placeholder="多车型用/分隔"></div></div>
           <div class="form-row form-row-3"><div class="form-group"><label class="form-label">零件名称</label><input class="form-input" v-model="autoForm.partName"></div><div class="form-group"><label class="form-label">材料</label><input class="form-input" v-model="autoForm.material" placeholder="如 FRPA66+35GF"></div><div class="form-group"><label class="form-label">材料牌号</label><input class="form-input" v-model="autoForm.materialGrade"></div></div>
@@ -459,7 +456,7 @@
     <!-- ==================== 非汽车项目弹窗 ==================== -->
     <div v-if="showNapModal" class="modal-overlay" @click.self="showNapModal = false">
       <div class="modal-content modal-wide">
-        <div class="modal-header"><h3 class="modal-title">{{ isNapEditing ? '编辑非汽车项目' : '新建非汽车项目' }}</h3><button class="modal-close" @click="showNapModal = false">✕</button></div>
+        <div class="modal-header"><h3 class="modal-title">{{ isNapEditing ? '编辑非汽车项目' : '新建非汽车项目' }}</h3><button class="modal-close" @click="showNapModal = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body">
           <div class="form-row form-row-3"><div class="form-group"><label class="form-label">客户名称</label><select class="form-select" v-model="napForm.customerName"><option value="">请选择</option><option v-for="c in customerStore.customers" :key="c.id" :value="c.fullName || c.name">{{ c.fullName || c.name }}</option></select></div><div class="form-group"><label class="form-label">项目阶段</label><select class="form-select" v-model="napForm.stage"><option v-for="s in napStages" :key="s" :value="s">{{ s }}</option></select></div><div class="form-group"><label class="form-label">报价状态</label><select class="form-select" v-model="napForm.quoteStatus"><option v-for="s in quoteStatuses" :key="s" :value="s">{{ s }}</option></select></div></div>
           <div class="form-row form-row-3"><div class="form-group"><label class="form-label">合同金额(万)</label><input class="form-input" type="number" v-model.number="napForm.contractAmount"></div><div class="form-group"><label class="form-label">月订单量(吨)</label><input class="form-input" type="number" v-model.number="napForm.monthlyOrderQty"></div><div class="form-group"><label class="form-label">回款状态</label><select class="form-select" v-model="napForm.paymentStatus"><option value="未回款">未回款</option><option value="部分回款">部分回款</option><option value="已回款">已回款</option></select></div></div>
@@ -474,7 +471,7 @@
     <!-- ==================== 风险弹窗 ==================== -->
     <div v-if="showRiskModal" class="modal-overlay" @click.self="showRiskModal = false">
       <div class="modal-content">
-        <div class="modal-header"><h3 class="modal-title">{{ isRiskEditing ? '编辑风险' : '新增风险' }}</h3><button class="modal-close" @click="showRiskModal = false">✕</button></div>
+        <div class="modal-header"><h3 class="modal-title">{{ isRiskEditing ? '编辑风险' : '新增风险' }}</h3><button class="modal-close" @click="showRiskModal = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body">
           <div class="form-row form-row-2"><div class="form-group"><label class="form-label">项目ID</label><input class="form-input" v-model="riskForm.projectId"></div><div class="form-group"><label class="form-label">项目名称</label><input class="form-input" v-model="riskForm.projectName"></div></div>
           <div class="form-row form-row-3"><div class="form-group"><label class="form-label">责任人</label><input class="form-input" v-model="riskForm.owner"></div><div class="form-group"><label class="form-label">等级</label><select class="form-select" v-model="riskForm.level"><option value="高">高</option><option value="中">中</option><option value="低">低</option></select></div><div class="form-group"><label class="form-label">状态</label><select class="form-select" v-model="riskForm.status"><option value="未处理">未处理</option><option value="处理中">处理中</option><option value="已解决">已解决</option><option value="已关闭">已关闭</option></select></div></div>
@@ -489,7 +486,7 @@
     <!-- ==================== 操作日志弹窗 ==================== -->
     <div v-if="showOpLogModal" class="modal-overlay" @click.self="showOpLogModal = false">
       <div class="modal-content modal-wide">
-        <div class="modal-header"><h3 class="modal-title">📝 操作日志</h3><button class="modal-close" @click="showOpLogModal = false">✕</button></div>
+        <div class="modal-header"><h3 class="modal-title"><Icon name="edit" :size="14" /> 操作日志</h3><button class="modal-close" @click="showOpLogModal = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body" style="max-height:500px;overflow-y:auto">
           <div v-if="opLogs.length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-8)">暂无操作记录</div>
           <div v-for="log in opLogs" :key="log.id" class="op-log-item"><span class="op-log-time">{{ log.time }}</span><span class="op-log-action" :class="'ola-' + log.action">{{ log.actionLabel }}</span><span class="op-log-detail">{{ log.detail }}</span></div>
@@ -501,7 +498,7 @@
     <!-- ==================== 确认弹窗 ==================== -->
     <div v-if="showConfirmDialog" class="modal-overlay" @click.self="showConfirmDialog = false">
       <div class="modal-content" style="max-width:420px">
-        <div class="modal-header"><h3 class="modal-title">⚠️ 确认操作</h3><button class="modal-close" @click="showConfirmDialog = false">✕</button></div>
+        <div class="modal-header"><h3 class="modal-title"><Icon name="warning" :size="14" /> 确认操作</h3><button class="modal-close" @click="showConfirmDialog = false"><Icon name="close" :size="14" /></button></div>
         <div class="modal-body"><p>{{ confirmMsg }}</p></div>
         <div class="modal-footer"><button class="btn btn-ghost" @click="showConfirmDialog = false">取消</button><button class="btn btn-danger" @click="doConfirm">确认</button></div>
       </div>
@@ -510,7 +507,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useCustomerStore } from '@/stores/customer'
 import { Chart, registerables } from 'chart.js'
 Chart.register(...registerables)
@@ -823,9 +820,7 @@ function openAutoDetail(p) { detailType.value = 'auto'; detailData.value = { ...
 function openNonAutoDetail(p) { detailType.value = 'nonauto'; detailData.value = { ...p }; showDetailPanel.value = true }
 
 const importFileRef = ref(null)
-const restoreFileRef = ref(null)
 function triggerImport() { importFileRef.value?.click() }
-function triggerRestore() { restoreFileRef.value?.click() }
 
 function exportCSV() {
   const isAuto = activeTab.value === 'auto'
@@ -854,27 +849,6 @@ function importCSV(e) {
     }
     persistLS(isAuto ? AUTO_KEY : NONAUTO_KEY, isAuto ? autoProjects.value : nonAutoProjects.value)
     addOpLog('import', '导入', `导入${isAuto ? '汽车' : '非汽车'}项目CSV`)
-  }; reader.readAsText(file); e.target.value = ''
-}
-
-function backupData() {
-  const data = { autoProjects: autoProjects.value, nonAutoProjects: nonAutoProjects.value, projectRisks: projectRisks.value, opLogs: opLogs.value, exportedAt: new Date().toISOString() }
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `项目追踪备份_${today}.json`; a.click(); URL.revokeObjectURL(a.href)
-  addOpLog('backup', '备份', '数据备份')
-}
-
-function restoreData(e) {
-  const file = e.target.files[0]; if (!file) return
-  const reader = new FileReader(); reader.onload = (ev) => {
-    try {
-      const data = JSON.parse(ev.target.result)
-      if (data.autoProjects) { autoProjects.value = data.autoProjects; persistLS(AUTO_KEY, autoProjects.value) }
-      if (data.nonAutoProjects) { nonAutoProjects.value = data.nonAutoProjects; persistLS(NONAUTO_KEY, nonAutoProjects.value) }
-      if (data.projectRisks) { projectRisks.value = data.projectRisks; persistLS(RISK_KEY, projectRisks.value) }
-      if (data.opLogs) { opLogs.value = data.opLogs; persistOpLogs() }
-      addOpLog('restore', '恢复', '数据恢复'); alert('数据恢复成功')
-    } catch { alert('备份文件格式错误') }
   }; reader.readAsText(file); e.target.value = ''
 }
 
@@ -1005,22 +979,32 @@ function initCharts() {
 }
 
 watch(activeTab, (v) => { if (v === 'stats') nextTick(() => initCharts()) })
+function handleClickOutside(e) {
+  if (!e.target.closest('.column-config-wrapper')) {
+    showAutoColumnConfig.value = false
+    showNapColumnConfig.value = false
+  }
+}
+function handleResize() {
+  showAutoColumnConfig.value = false
+  showNapColumnConfig.value = false
+}
+function handleScroll() {
+  showAutoColumnConfig.value = false
+  showNapColumnConfig.value = false
+}
+
 onMounted(() => {
   if (activeTab.value === 'stats') nextTick(() => initCharts())
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.column-config-wrapper')) {
-      showAutoColumnConfig.value = false
-      showNapColumnConfig.value = false
-    }
-  })
-  window.addEventListener('resize', () => {
-    showAutoColumnConfig.value = false
-    showNapColumnConfig.value = false
-  })
-  window.addEventListener('scroll', () => {
-    showAutoColumnConfig.value = false
-    showNapColumnConfig.value = false
-  }, true)
+  document.addEventListener('click', handleClickOutside)
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('scroll', handleScroll, true)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('scroll', handleScroll, true)
 })
 </script>
 
@@ -1068,39 +1052,39 @@ onMounted(() => {
 .data-table td { padding:12px 16px; border-bottom:1px solid var(--color-border); color:var(--color-text-primary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .data-table td.wrap-cell { white-space:normal; word-break:break-all; }
 .data-table tr:hover td { background:var(--color-surface-hover); }
-.row-overdue td { background:rgba(239,68,68,0.05); }
+.row-overdue td { background: var(--color-danger-subtle); }
 .project-id { font-family:var(--font-mono); font-size:var(--font-size-sm); color:var(--color-accent); }
 .stage-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:500; }
-.stage-0 { background:rgba(148,163,184,0.15); color:#94a3b8; }
-.stage-1 { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.stage-2 { background:rgba(168,85,247,0.15); color:#c084fc; }
-.stage-3 { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.stage-4 { background:rgba(6,182,212,0.15); color:#22d3ee; }
-.stage-5 { background:rgba(34,197,94,0.15); color:#4ade80; }
-.stage-6 { background:rgba(34,197,94,0.25); color:#22c55e; font-weight:600; }
-.stage-7 { background:rgba(239,68,68,0.15); color:#f87171; }
+.stage-0 { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
+.stage-1 { background: var(--color-info-subtle); color: var(--color-accent); }
+.stage-2 { background: var(--color-purple-subtle); color: var(--color-purple); }
+.stage-3 { background: var(--color-warning-subtle); color: var(--color-warning); }
+.stage-4 { background: var(--color-cyan-subtle); color: var(--color-info); }
+.stage-5 { background: var(--color-success-subtle); color: var(--color-success); }
+.stage-6 { background: var(--color-success-subtle); color: var(--color-success); font-weight: 600; }
+.stage-7 { background: var(--color-danger-subtle); color: var(--color-danger); }
 .quote-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; }
-.qs-未报价 { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.qs-报价中 { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.qs-已报价 { background:rgba(34,197,94,0.15); color:#4ade80; }
-.qs-落选 { background:rgba(239,68,68,0.15); color:#f87171; }
+.qs-未报价 { background: var(--color-warning-subtle); color: var(--color-warning); }
+.qs-报价中 { background: var(--color-info-subtle); color: var(--color-accent); }
+.qs-已报价 { background: var(--color-success-subtle); color: var(--color-success); }
+.qs-落选 { background: var(--color-danger-subtle); color: var(--color-danger); }
 .mass-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; }
-.ms-未量产 { background:rgba(148,163,184,0.15); color:#94a3b8; }
-.ms-小批量 { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.ms-量产 { background:rgba(34,197,94,0.25); color:#22c55e; font-weight:600; }
+.ms-未量产 { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
+.ms-小批量 { background: var(--color-info-subtle); color: var(--color-accent); }
+.ms-量产 { background: var(--color-success-subtle); color: var(--color-success); font-weight: 600; }
 .payment-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; }
-.ps-未回款 { background:rgba(239,68,68,0.15); color:#f87171; }
-.ps-部分回款 { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.ps-已回款 { background:rgba(34,197,94,0.15); color:#4ade80; }
+.ps-未回款 { background: var(--color-danger-subtle); color: var(--color-danger); }
+.ps-部分回款 { background: var(--color-warning-subtle); color: var(--color-warning); }
+.ps-已回款 { background: var(--color-success-subtle); color: var(--color-success); }
 .risk-level-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; font-weight:500; }
-.rl-高 { background:rgba(239,68,68,0.15); color:#f87171; }
-.rl-中 { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.rl-低 { background:rgba(34,197,94,0.15); color:#4ade80; }
+.rl-高 { background: var(--color-danger-subtle); color: var(--color-danger); }
+.rl-中 { background: var(--color-warning-subtle); color: var(--color-warning); }
+.rl-低 { background: var(--color-success-subtle); color: var(--color-success); }
 .risk-status-tag { display:inline-block; padding:2px 10px; border-radius:10px; font-size:12px; }
-.rs-未处理 { background:rgba(239,68,68,0.15); color:#f87171; }
-.rs-处理中 { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.rs-已解决 { background:rgba(34,197,94,0.15); color:#4ade80; }
-.rs-已关闭 { background:rgba(148,163,184,0.15); color:#94a3b8; }
+.rs-未处理 { background: var(--color-danger-subtle); color: var(--color-danger); }
+.rs-处理中 { background: var(--color-info-subtle); color: var(--color-accent); }
+.rs-已解决 { background: var(--color-success-subtle); color: var(--color-success); }
+.rs-已关闭 { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
 .overdue { color:var(--color-danger) !important; }
 .overdue-badge { background:var(--color-danger); color:#fff; padding:2px 8px; border-radius:8px; font-size:12px; font-weight:600; }
 .action-btns { display:flex; gap:var(--space-1); }
@@ -1117,9 +1101,9 @@ onMounted(() => {
 .risk-matrix { display:grid; grid-template-columns:repeat(3, 1fr) auto; gap:4px; }
 .rm-row { display:contents; }
 .rm-cell { padding:var(--space-3); text-align:center; border-radius:var(--radius-sm); font-weight:600; font-size:var(--font-size-lg); color:var(--color-text-primary); min-height:50px; display:flex; align-items:center; justify-content:center; }
-.rm-high { background:rgba(239,68,68,0.15); }
-.rm-med { background:rgba(245,158,11,0.15); }
-.rm-low { background:rgba(34,197,94,0.15); }
+.rm-high { background: var(--color-danger-subtle); }
+.rm-med { background: var(--color-warning-subtle); }
+.rm-low { background: var(--color-success-subtle); }
 .rm-has { box-shadow:inset 0 0 0 2px var(--color-accent); }
 .rm-row-label { display:flex; align-items:center; font-size:var(--font-size-sm); color:var(--color-text-secondary); padding-left:var(--space-2); }
 .rm-blank { grid-column:1/-1; height:4px; }
@@ -1148,19 +1132,19 @@ onMounted(() => {
 .cal-grid { display:grid; grid-template-columns:repeat(7, 1fr); }
 .cal-header { padding:var(--space-2); text-align:center; font-weight:600; font-size:var(--font-size-sm); color:var(--color-text-secondary); border-bottom:1px solid var(--color-border); }
 .cal-cell { min-height:80px; padding:var(--space-1); border:1px solid var(--color-border); border-top:none; }
-.cal-cell.today { background:rgba(59,130,246,0.08); }
+.cal-cell.today { background: var(--color-accent-subtle); }
 .cal-date { font-size:var(--font-size-sm); color:var(--color-text-secondary); margin-bottom:2px; }
 .cal-events { display:flex; flex-direction:column; gap:2px; }
 .cal-event { font-size:12px; padding:1px 4px; border-radius:3px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.evt-follow { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.evt-sop { background:rgba(245,158,11,0.15); color:#fbbf24; }
+.evt-follow { background: var(--color-info-subtle); color: var(--color-accent); }
+.evt-sop { background: var(--color-warning-subtle); color: var(--color-warning); }
 .cal-more { font-size:11px; color:var(--color-text-tertiary); }
 .week-grid { display:grid; grid-template-columns:repeat(7, 1fr); }
 .week-header { padding:var(--space-2); text-align:center; border-bottom:1px solid var(--color-border); }
 .week-header span:first-child { display:block; font-weight:600; font-size:var(--font-size-sm); color:var(--color-text-secondary); }
 .week-header-date { font-size:var(--font-size-sm); color:var(--color-text-tertiary); }
 .week-col { min-height:120px; padding:var(--space-2); border:1px solid var(--color-border); border-top:none; }
-.week-col-today { background:rgba(59,130,246,0.05); }
+.week-col-today { background: var(--color-accent-subtle); }
 .week-empty { text-align:center; color:var(--color-text-tertiary); font-size:var(--font-size-sm); padding-top:var(--space-4); }
 .week-event { padding:var(--space-1) var(--space-2); border-radius:var(--radius-sm); margin-bottom:var(--space-1); cursor:pointer; }
 .week-event-title { font-size:var(--font-size-sm); font-weight:500; }
@@ -1175,7 +1159,7 @@ onMounted(() => {
 .gantt-row:hover { background:var(--color-surface-hover); }
 .gantt-stages-row { display:flex; }
 .gantt-stage-cell { flex:1; height:32px; border-left:1px solid var(--color-border); }
-.gantt-passed { background:rgba(34,197,94,0.15); }
+.gantt-passed { background: var(--color-success-subtle); }
 .gantt-current { background:var(--color-accent-subtle); border:2px solid var(--color-accent); }
 .gantt-future { background:transparent; }
 .gantt-empty { text-align:center; color:var(--color-text-tertiary); padding:var(--space-8); }
@@ -1218,20 +1202,25 @@ onMounted(() => {
 .op-log-item { display:flex; gap:var(--space-3); padding:var(--space-2) 0; border-bottom:1px solid var(--color-border); font-size:var(--font-size-sm); align-items:center; }
 .op-log-time { color:var(--color-text-tertiary); font-size:var(--font-size-sm); white-space:nowrap; min-width:140px; }
 .op-log-action { padding:2px 10px; border-radius:10px; font-size:12px; font-weight:500; white-space:nowrap; }
-.ola-add { background:rgba(34,197,94,0.15); color:#4ade80; }
-.ola-edit { background:rgba(59,130,246,0.15); color:#60a5fa; }
-.ola-delete { background:rgba(239,68,68,0.15); color:#f87171; }
-.ola-export { background:rgba(168,85,247,0.15); color:#c084fc; }
-.ola-import { background:rgba(6,182,212,0.15); color:#22d3ee; }
-.ola-backup { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.ola-restore { background:rgba(245,158,11,0.15); color:#fbbf24; }
-.ola-print { background:rgba(148,163,184,0.15); color:#94a3b8; }
-.ola-batchDelete { background:rgba(239,68,68,0.15); color:#f87171; }
-.ola-batchEdit { background:rgba(59,130,246,0.15); color:#60a5fa; }
+.ola-add { background: var(--color-success-subtle); color: var(--color-success); }
+.ola-edit { background: var(--color-info-subtle); color: var(--color-accent); }
+.ola-delete { background: var(--color-danger-subtle); color: var(--color-danger); }
+.ola-export { background: var(--color-purple-subtle); color: var(--color-purple); }
+.ola-import { background: var(--color-cyan-subtle); color: var(--color-info); }
+.ola-backup { background: var(--color-warning-subtle); color: var(--color-warning); }
+.ola-restore { background: var(--color-warning-subtle); color: var(--color-warning); }
+.ola-print { background: var(--color-gray-subtle); color: var(--color-text-secondary); }
+.ola-batchDelete { background: var(--color-danger-subtle); color: var(--color-danger); }
+.ola-batchEdit { background: var(--color-info-subtle); color: var(--color-accent); }
 .op-log-detail { color:var(--color-text-primary); flex:1; }
 .inline-input { width:100%; padding:4px 8px; border:2px solid var(--color-accent); border-radius:var(--radius-sm); background:var(--color-surface); color:var(--color-text-primary); font-size:14px; font-family:inherit; outline:none; box-shadow:0 0 0 3px rgba(0, 123, 255, 0.15); }
 .inline-select { width:100%; padding:4px 6px; border:2px solid var(--color-accent); border-radius:var(--radius-sm); background:var(--color-surface); color:var(--color-text-primary); font-size:14px; font-family:inherit; outline:none; box-shadow:0 0 0 3px rgba(0, 123, 255, 0.15); cursor:pointer; }
 .cell-editable { cursor:pointer; }
+@media (max-width: 1024px) {
+  .content-grid-2-1, .content-grid-3 { grid-template-columns: 1fr 1fr; }
+  .stats-row { flex-wrap: wrap; }
+  .stat-card { min-width: 140px; }
+}
 @media (max-width: 768px) {
   .page-header { flex-direction:column; }
   .page-header-actions { width:100%; }

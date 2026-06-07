@@ -32,263 +32,53 @@
           @click="selectedRange = r.key"
         >{{ r.label }}</button>
       </div>
-      <button class="btn btn-ghost" @click="refreshData">🔄 刷新</button>
+      <button class="btn btn-ghost" @click="refreshData"><Icon name="refresh" :size="14" /> 刷新</button>
     </div>
 
-    <div class="dash-highlight-grid stats-grid-4">
-      <div class="dash-stat-card" style="--card-color: var(--color-accent)">
-        <div class="dash-stat-label">本月营收</div>
-        <div class="dash-stat-value" style="color: var(--color-accent)">¥{{ formatNumber(totalRevenue) }}</div>
-        <div class="dash-stat-sub">
-          <span :style="{ color: revenueGrowth >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }">
-            {{ revenueGrowth >= 0 ? '↑' : '↓' }} {{ Math.abs(revenueGrowth) }}%
-          </span>
-          较上月
-        </div>
-      </div>
-      <div class="dash-stat-card" style="--card-color: var(--color-success)">
-        <div class="dash-stat-label">回款率</div>
-        <div class="dash-stat-value" style="color: var(--color-success)">{{ collectionRate }}%</div>
-        <div class="dash-stat-sub">本月回款: ¥{{ formatNumber(monthCollected) }}</div>
-      </div>
-      <div class="dash-stat-card" style="--card-color: var(--color-warning)">
-        <div class="dash-stat-label">待处理</div>
-        <div class="dash-stat-value" style="color: var(--color-warning)">
-          {{ quotationStore.pendingCount }} 报价 / {{ contractStore.pendingApprovalCount }} 合同
-        </div>
-      </div>
-      <div class="dash-stat-card" style="--card-color: var(--color-danger)">
-        <div class="dash-stat-label">预警</div>
-        <div class="dash-stat-value" style="color: var(--color-danger)">
-          {{ inventoryStore.lowStockCount + inventoryStore.exhaustedCount }} 低库存 / {{ todoStore.stats.overdue }} 逾期
-        </div>
-      </div>
-    </div>
+    <DashStatsCards
+      :total-revenue="totalRevenue"
+      :revenue-growth="revenueGrowth"
+      :collection-rate="collectionRate"
+      :month-collected="monthCollected"
+      :quotation-store="quotationStore"
+      :contract-store="contractStore"
+      :inventory-store="inventoryStore"
+      :todo-store="todoStore"
+      :stat-cards="statCards"
+      :format-number="formatNumber"
+    />
 
-    <div class="stats-row stats-grid-7">
-      <div class="stat-card" v-for="stat in statCards" :key="stat.label">
-        <div class="stat-card-header">
-          <div class="stat-card-icon" :style="{ background: stat.bgColor, color: stat.color }">{{ stat.icon }}</div>
-        </div>
-        <div class="stat-card-value">{{ stat.value }}</div>
-        <div class="stat-card-label">{{ stat.label }}</div>
-        <div class="stat-card-change" :style="{ color: stat.changeColor || 'var(--color-text-tertiary)' }">{{ stat.change }}</div>
-      </div>
-    </div>
+    <DashWeekView
+      :week-days="weekDays"
+      :dp-selected-date="dpSelectedDate"
+      :week-range-label="weekRangeLabel"
+      @dp-select-date="dpSelectDate"
+      @week-prev="weekPrev"
+      @week-next="weekNext"
+      @week-go-today="weekGoToday"
+    />
 
-    <div class="week-view-section">
-      <div class="week-view-header">
-        <span class="panel-card-title">📅 周视图</span>
-        <div class="week-view-nav">
-          <button class="dp-nav-btn" @click="weekPrev">◀ 上一周</button>
-          <button class="dp-today-btn" @click="weekGoToday">本周</button>
-          <button class="dp-nav-btn" @click="weekNext">下一周 ▶</button>
-          <span class="week-view-range">{{ weekRangeLabel }}</span>
-        </div>
-      </div>
-      <div class="week-view-grid">
-        <div
-          v-for="day in weekDays"
-          :key="day.date"
-          class="week-day-col"
-          :class="{ today: day.isToday, selected: day.date === dpSelectedDate }"
-          @click="dpSelectDate(day.date)"
-        >
-          <div class="week-day-header">
-            <div class="week-day-name">{{ day.weekday }}</div>
-            <div class="week-day-num" :class="{ 'is-today': day.isToday }">{{ day.dayNum }}</div>
-          </div>
-          <div class="week-day-todos">
-            <div
-              v-for="todo in day.todos"
-              :key="todo.id"
-              class="week-todo-item"
-              :class="[
-                'priority-' + todo.priority,
-                { completed: todo.status === 'completed', overdue: isOverdue(todo) }
-              ]"
-              @click.stop="todoStore.toggleTodo(todo.id, todo.auto || false)"
-            >
-              <span class="week-todo-dot"></span>
-              <span class="week-todo-title">{{ todo.title }}</span>
-            </div>
-            <div v-if="day.todos.length === 0" class="week-day-empty">-</div>
-          </div>
-          <div v-if="day.todos.length > 0" class="week-day-count">{{ day.todos.length }}项</div>
-        </div>
-      </div>
-    </div>
+    <DashCharts ref="chartsRef" />
 
-    <div class="content-grid content-grid-2">
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">📈 销售/回款趋势（近12月）</span>
-          <select class="form-select" style="width:auto;min-width:100px" v-model="chartMode">
-            <option value="monthly">按月</option>
-            <option value="quarterly">按季</option>
-            <option value="yearly">按年</option>
-          </select>
-        </div>
-        <div class="panel-card-body">
-          <div class="chart-container">
-            <canvas ref="salesChartRef"></canvas>
-          </div>
-        </div>
-      </div>
+    <DashAlerts
+      :alerts="alerts"
+      :recent-activities="recentActivities"
+      @navigate="$router.push($event)"
+    />
 
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">📊 库存分布</span>
-        </div>
-        <div class="panel-card-body">
-          <div class="chart-container">
-            <canvas ref="inventoryChartRef"></canvas>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="content-grid content-grid-2">
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">⚠️ 预警中心</span>
-          <button class="btn btn-ghost btn-sm" @click="$router.push('/inventory')">查看全部</button>
-        </div>
-        <div class="panel-card-body">
-          <div class="alert-list">
-            <div
-              v-for="alert in alerts"
-              :key="alert.id"
-              class="alert-item"
-              :class="'alert-' + alert.level"
-            >
-              <span class="alert-icon">{{ alert.level === 'danger' ? '🔴' : alert.level === 'warning' ? '🟡' : '🔵' }}</span>
-              <div class="alert-content">
-                <div class="alert-title">{{ alert.title }}</div>
-                <div class="alert-desc">{{ alert.desc }}</div>
-              </div>
-              <span class="alert-time">{{ alert.time }}</span>
-            </div>
-            <div v-if="alerts.length === 0" class="alert-empty">暂无预警信息 ✅</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">🕐 最近活动</span>
-        </div>
-        <div class="panel-card-body">
-          <div class="timeline">
-            <div v-for="activity in recentActivities" :key="activity.id" class="timeline-item">
-              <div class="timeline-dot" :style="{ background: activity.color }"></div>
-              <div class="timeline-content">
-                <div class="timeline-text">{{ activity.text }}</div>
-                <div class="timeline-time">{{ activity.time }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="content-grid content-grid-2">
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">💰 回款趋势（近6月）</span>
-        </div>
-        <div class="panel-card-body">
-          <div class="chart-container">
-            <canvas ref="collectionTrendChartRef"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">🏆 客户贡献 TOP5</span>
-        </div>
-        <div class="panel-card-body">
-          <div class="top-customers">
-            <div v-for="(customer, idx) in topCustomers" :key="customer.id" class="top-customer-item">
-              <div class="top-rank" :class="'rank-' + (idx + 1)">{{ idx + 1 }}</div>
-              <div class="top-info">
-                <div class="top-name">{{ customer.name }}</div>
-                <div class="top-bar-container">
-                  <div class="top-bar" :style="{ width: customer.percentage + '%' }"></div>
-                </div>
-              </div>
-              <div class="top-amount">¥{{ formatNumber(customer.balance) }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="content-grid content-grid-2">
-      <div class="panel-card">
-        <div class="panel-card-header">
-          <span class="panel-card-title">⚡ 快速操作</span>
-        </div>
-        <div class="panel-card-body">
-          <div class="quick-actions">
-            <div class="quick-action-card" @click="$router.push('/quotations')">
-              <div class="quick-action-icon">📝</div>
-              <div class="quick-action-label">新建报价</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/contracts')">
-              <div class="quick-action-icon">📄</div>
-              <div class="quick-action-label">新建合同</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/customers')">
-              <div class="quick-action-icon">🏢</div>
-              <div class="quick-action-label">新建客户</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/inventory?tab=inbound')">
-              <div class="quick-action-icon">📥</div>
-              <div class="quick-action-label">入库登记</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/collections')">
-              <div class="quick-action-icon">💰</div>
-              <div class="quick-action-label">记录回款</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/deliveries')">
-              <div class="quick-action-icon">🚚</div>
-              <div class="quick-action-label">创建送货单</div>
-            </div>
-            <div class="quick-action-card" @click="$router.push('/reports')">
-              <div class="quick-action-icon">📈</div>
-              <div class="quick-action-label">查看报表</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel-card ai-insight-panel">
-        <div class="panel-card-header">
-          <span class="panel-card-title"><span class="ai-icon">AI</span> AI 智能分析</span>
-          <button class="btn btn-ghost" @click="refreshInsights">🔄 刷新</button>
-        </div>
-        <div class="panel-card-body">
-          <div v-if="isRefreshingInsights" class="ai-loading">🔄 正在分析中...</div>
-          <template v-else>
-          <div class="ai-summary">{{ aiSummary }}</div>
-          <div class="ai-insights">
-            <div v-for="(insight, idx) in aiInsights" :key="idx" class="ai-insight-item">
-              <span class="ai-insight-icon">{{ insight.icon }}</span>
-              <div class="ai-insight-text">{{ insight.text }}</div>
-            </div>
-          </div>
-          </template>
-        </div>
-      </div>
-    </div>
+    <DashQuickActions
+      :ai-summary="aiSummary"
+      :ai-insights="aiInsights"
+      :is-refreshing-insights="isRefreshingInsights"
+      @navigate="$router.push($event)"
+      @refresh-insights="refreshInsights"
+    />
 
     <div class="date-todo-section">
       <div class="date-picker-container">
         <div class="date-picker-header">
           <div class="dp-header-left">
-            <span class="dp-icon">📅</span>
+            <span class="dp-icon"><Icon name="calendar" :size="14" /></span>
             <div class="dp-year-month-selectors">
               <select class="dp-year-select" v-model="dpYear">
                 <option v-for="y in dpYears" :key="y" :value="y">{{ y }}年</option>
@@ -300,9 +90,9 @@
           </div>
           <div class="date-picker-nav">
             <button @click="dpPrevYear" title="上一年" class="dp-nav-btn">«</button>
-            <button @click="dpPrevMonth" title="上一月" class="dp-nav-btn">◀</button>
+            <button @click="dpPrevMonth" title="上一月" class="dp-nav-btn"><Icon name="chevronLeft" :size="14" /></button>
             <button class="dp-today-btn" @click="dpGoToday">今天</button>
-            <button @click="dpNextMonth" title="下一月" class="dp-nav-btn">▶</button>
+            <button @click="dpNextMonth" title="下一月" class="dp-nav-btn"><Icon name="chevronRight" :size="14" /></button>
             <button @click="dpNextYear" title="下一年" class="dp-nav-btn">»</button>
           </div>
         </div>
@@ -344,7 +134,7 @@
 
       <div class="panel-card todo-panel-wrapper">
         <div class="panel-card-header">
-          <span class="panel-card-title">📋 待办事项</span>
+          <span class="panel-card-title"><Icon name="list" :size="14" /> 待办事项</span>
           <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
             <div class="todo-view-toggle">
               <button
@@ -353,7 +143,7 @@
                 class="todo-view-btn"
                 :class="{ active: todoViewMode === v.key }"
                 @click="todoViewMode = v.key"
-              >{{ v.icon }} {{ v.label }}</button>
+              >{{ v.label }} <Icon :name="v.icon" :size="14" /></button>
             </div>
             <span class="dp-date-label">{{ dpSelectedDate || '今天' }}</span>
             <div class="todo-filters">
@@ -388,12 +178,12 @@
               <div class="todo-priority-btn p-low" :class="{ active: todoPriorityFilter === 'low' }" @click="todoPriorityFilter = 'low'" title="低优先级"></div>
             </div>
             <div class="todo-toolbar-right">
-              <button class="btn btn-ghost btn-sm" @click="completeAllTodos">✅ 全部完成</button>
-              <button class="btn btn-ghost btn-sm" @click="clearCompletedTodos">🗑 清除已完成</button>
+              <button class="btn btn-ghost btn-sm" @click="completeAllTodos"><Icon name="check" :size="14" /> 全部完成</button>
+              <button class="btn btn-ghost btn-sm" @click="clearCompletedTodos"><Icon name="delete" :size="14" /> 清除已完成</button>
             </div>
           </div>
 
-          <!-- 📊 表格视图 -->
+          <!-- <Icon name="table" :size="14" /> 表格视图 -->
           <div v-if="todoViewMode === 'table'" class="todo-table-view">
             <table class="todo-table">
               <thead>
@@ -409,24 +199,25 @@
                 <tr v-for="todo in filteredDpTodos" :key="todo.id" :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }">
                   <td>
                     <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                      {{ todo.status === 'completed' ? '✅' : '⬜' }}
+                      <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                      <span v-else class="todo-uncheck">[未完成]</span>
                     </button>
                   </td>
                   <td class="todo-table-title">{{ todo.title }}</td>
                   <td><span class="todo-priority" :class="'priority-' + todo.priority">{{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}</span></td>
                   <td><span class="todo-due" :class="{ overdue: isOverdue(todo) }">{{ todo.dueDate || '-' }}</span></td>
                   <td>
-                    <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)">🗑</button>
+                    <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)"><Icon name="delete" :size="14" /></button>
                   </td>
                 </tr>
                 <tr v-if="filteredDpTodos.length === 0">
-                  <td colspan="5" class="todo-empty">暂无待办事项 ✅</td>
+                  <td colspan="5" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- 📋 列表视图（默认） -->
+          <!-- <Icon name="list" :size="14" /> 列表视图（默认） -->
           <div v-if="todoViewMode === 'list'" class="todo-list">
             <div
               v-for="todo in filteredDpTodos"
@@ -435,7 +226,8 @@
               :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }"
             >
               <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                {{ todo.status === 'completed' ? '✅' : '⬜' }}
+                <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                <span v-else class="todo-uncheck">[未完成]</span>
               </button>
               <div class="todo-info">
                 <span class="todo-title">{{ todo.title }}</span>
@@ -445,10 +237,10 @@
                 {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
               </span>
             </div>
-            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 ✅</div>
+            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></div>
           </div>
 
-          <!-- 🗂 卡片视图 -->
+          <!-- <Icon name="card" :size="14" /> 卡片视图 -->
           <div v-if="todoViewMode === 'card'" class="todo-card-view">
             <div
               v-for="todo in filteredDpTodos"
@@ -461,7 +253,8 @@
             >
               <div class="todo-card-top">
                 <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                  {{ todo.status === 'completed' ? '✅' : '⬜' }}
+                  <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                  <span v-else class="todo-uncheck">[未完成]</span>
                 </button>
                 <span class="todo-priority" :class="'priority-' + todo.priority">
                   {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
@@ -469,20 +262,20 @@
               </div>
               <div class="todo-card-title">{{ todo.title }}</div>
               <div class="todo-card-meta">
-                <span class="todo-due" :class="{ overdue: isOverdue(todo) }">📅 {{ todo.dueDate || '无截止日期' }}</span>
-                <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)" style="padding:0 4px;font-size:12px">🗑 删除</button>
+                <span class="todo-due" :class="{ overdue: isOverdue(todo) }"><Icon name="calendar" :size="14" /> {{ todo.dueDate || '无截止日期' }}</span>
+                <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)" style="padding:0 4px;font-size:12px"><Icon name="delete" :size="14" /> 删除</button>
               </div>
             </div>
-            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 ✅</div>
+            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></div>
           </div>
 
-          <!-- 📅 日历视图 -->
+          <!-- <Icon name="calendar" :size="14" /> 日历视图 -->
           <div v-if="todoViewMode === 'calendar'" class="todo-calendar-view">
             <div class="todo-cal-nav">
               <button class="dp-nav-btn" @click="todoCalPrevYear">«</button>
-              <button class="dp-nav-btn" @click="todoCalPrevMonth">◀</button>
+              <button class="dp-nav-btn" @click="todoCalPrevMonth"><Icon name="chevronLeft" :size="14" /></button>
               <button class="dp-today-btn" @click="todoCalGoToday">今天</button>
-              <button class="dp-nav-btn" @click="todoCalNextMonth">▶</button>
+              <button class="dp-nav-btn" @click="todoCalNextMonth"><Icon name="chevronRight" :size="14" /></button>
               <button class="dp-nav-btn" @click="todoCalNextYear">»</button>
               <span class="todo-cal-label">{{ todoCalYear }}年{{ todoCalMonth }}月</span>
             </div>
@@ -520,7 +313,8 @@
                   :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }"
                 >
                   <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                    {{ todo.status === 'completed' ? '✅' : '⬜' }}
+                    <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                    <span v-else class="todo-uncheck">[未完成]</span>
                   </button>
                   <div class="todo-info">
                     <span class="todo-title">{{ todo.title }}</span>
@@ -534,12 +328,12 @@
             </div>
           </div>
 
-          <!-- 🗓 周视图 -->
+          <!-- <Icon name="calendar" :size="14" /> 周视图 -->
           <div v-if="todoViewMode === 'week'" class="todo-week-view">
             <div class="todo-week-nav">
-              <button class="dp-nav-btn" @click="todoWeekPrev">◀ 上一周</button>
+              <button class="dp-nav-btn" @click="todoWeekPrev"><Icon name="chevronLeft" :size="14" /> 上一周</button>
               <button class="dp-today-btn" @click="todoWeekGoToday">本周</button>
-              <button class="dp-nav-btn" @click="todoWeekNext">下一周 ▶</button>
+              <button class="dp-nav-btn" @click="todoWeekNext">下一周 <Icon name="chevronRight" :size="14" /></button>
               <span class="todo-cal-label">{{ todoWeekRangeLabel }}</span>
             </div>
             <div class="todo-week-grid">
@@ -583,7 +377,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import { useDataStore } from '@/stores/data'
 import { useTodoStore } from '@/stores/todo'
 import { useCustomerStore } from '@/stores/customer'
@@ -591,7 +385,11 @@ import { useQuotationStore } from '@/stores/quotation'
 import { useContractStore } from '@/stores/contract'
 import { useInventoryStore } from '@/stores/inventory'
 import { useCollectionStore } from '@/stores/collection'
-import Chart from 'chart.js/auto'
+import DashStatsCards from '@/components/dashboard/DashStatsCards.vue'
+import DashWeekView from '@/components/dashboard/DashWeekView.vue'
+import DashCharts from '@/components/dashboard/DashCharts.vue'
+import DashAlerts from '@/components/dashboard/DashAlerts.vue'
+import DashQuickActions from '@/components/dashboard/DashQuickActions.vue'
 
 const dataStore = useDataStore()
 const todoStore = useTodoStore()
@@ -604,13 +402,7 @@ const collectionStore = useCollectionStore()
 const isLoading = ref(true)
 
 const selectedRange = ref('month')
-const chartMode = ref('monthly')
-const salesChartRef = ref(null)
-const inventoryChartRef = ref(null)
-const collectionTrendChartRef = ref(null)
-let salesChart = null
-let inventoryChart = null
-let collectionTrendChart = null
+const chartsRef = ref(null)
 
 const dateRanges = [
   { key: 'month', label: '本月' },
@@ -681,46 +473,46 @@ const todayTransactionAmount = computed(() => {
 
 const statCards = computed(() => [
   {
-    icon: '🏢', label: '客户总数',
+    icon: 'building', label: '客户总数',
     value: customerStore.activeCount,
     change: `共 ${customerStore.customers.length} 个客户`,
     color: 'var(--color-accent)', bgColor: 'var(--color-accent-subtle)'
   },
   {
-    icon: '📝', label: '本月报价',
+    icon: 'edit', label: '本月报价',
     value: dataStore.quotations.length,
     change: `${dataStore.pendingQuotationCount} 待处理`,
     color: 'var(--color-success)', bgColor: 'var(--color-success-subtle)',
     changeColor: 'var(--color-success)'
   },
   {
-    icon: '📦', label: '库存品类',
+    icon: 'package', label: '库存品类',
     value: inventoryStore.enrichedInventory.length,
     change: `${inventoryStore.lowStockCount + inventoryStore.exhaustedCount} 低库存预警`,
     color: 'var(--color-warning)', bgColor: 'var(--color-warning-subtle)',
     changeColor: inventoryStore.lowStockCount + inventoryStore.exhaustedCount > 0 ? 'var(--color-danger)' : undefined
   },
   {
-    icon: '�', label: '本月合同',
+    icon: 'file', label: '本月合同',
     value: contractStore.contracts.filter(c => c.signDate && c.signDate >= getRangeStart() && c.status !== 'cancelled').length,
     change: `${contractStore.signedCount} 已签订`,
     color: 'var(--color-purple)', bgColor: 'var(--color-purple-subtle)'
   },
   {
-    icon: '📋', label: '待办事项',
+    icon: 'list', label: '待办事项',
     value: todoStore.stats.pending,
     change: todoStore.stats.overdue > 0 ? `${todoStore.stats.overdue} 项逾期` : '无逾期',
     color: 'var(--color-danger)', bgColor: 'var(--color-danger-subtle)',
     changeColor: todoStore.stats.overdue > 0 ? 'var(--color-danger)' : undefined
   },
   {
-    icon: '💳', label: '今日交易',
+    icon: 'card', label: '今日交易',
     value: todayTransactionCount,
     change: '¥' + formatNumber(todayTransactionAmount),
     color: 'var(--color-info)', bgColor: 'var(--color-info-subtle)'
   },
   {
-    icon: '⏳', label: '待回款金额',
+    icon: 'clock', label: '待回款金额',
     value: '¥' + formatNumber(Math.max(0, totalRevenue.value - monthCollected.value)),
     change: '应收未收',
     color: 'var(--color-danger)', bgColor: 'var(--color-danger-subtle)'
@@ -813,18 +605,6 @@ const recentActivities = computed(() => {
   }).slice(0, 5)
 })
 
-const topCustomers = computed(() => {
-  const sorted = [...customerStore.customers]
-    .filter(c => c.status === 'active')
-    .sort((a, b) => b.balance - a.balance)
-    .slice(0, 5)
-  const maxBalance = sorted.length > 0 ? sorted[0].balance : 1
-  return sorted.map(c => ({
-    ...c,
-    percentage: Math.round((c.balance / maxBalance) * 100)
-  }))
-})
-
 const aiSummary = computed(() => {
   const parts = []
   const alertCount = inventoryStore.lowStockCount + inventoryStore.exhaustedCount
@@ -839,19 +619,19 @@ const aiInsights = computed(() => {
   const insights = []
   const alertCount = inventoryStore.lowStockCount + inventoryStore.exhaustedCount
   if (alertCount > 0) {
-    insights.push({ icon: '📦', text: `有 ${alertCount} 项物料低于最低库存，建议尽快补货` })
+    insights.push({ icon: 'package', text: `有 ${alertCount} 项物料低于最低库存，建议尽快补货` })
   }
   if (todoStore.stats.overdue > 0) {
-    insights.push({ icon: '⏰', text: `${todoStore.stats.overdue} 项待办已逾期，请及时跟进` })
+    insights.push({ icon: 'bell', text: `${todoStore.stats.overdue} 项待办已逾期，请及时跟进` })
   }
   if (contractStore.pendingApprovalCount > 0) {
-    insights.push({ icon: '📄', text: `${contractStore.pendingApprovalCount} 份合同待审批，可能影响回款周期` })
+    insights.push({ icon: 'file', text: `${contractStore.pendingApprovalCount} 份合同待审批，可能影响回款周期` })
   }
   if (collectionRate.value < 60) {
-    insights.push({ icon: '💰', text: `回款率仅 ${collectionRate.value}%，建议加强催收力度` })
+    insights.push({ icon: 'dollar', text: `回款率仅 ${collectionRate.value}%，建议加强催收力度` })
   }
   if (insights.length === 0) {
-    insights.push({ icon: '✅', text: '所有指标正常，业务运行良好' })
+    insights.push({ icon: 'check', text: '所有指标正常，业务运行良好' })
   }
   return insights
 })
@@ -867,11 +647,9 @@ function formatNumber(num) {
 }
 
 function refreshData() {
-  nextTick(() => {
-    initSalesChart()
-    initInventoryChart()
-    initCollectionTrendChart()
-  })
+  if (chartsRef.value) {
+    chartsRef.value.refreshCharts()
+  }
 }
 
 const isRefreshingInsights = ref(false)
@@ -904,11 +682,11 @@ const todoFilterOptions = [
 ]
 
 const todoViewModes = [
-  { key: 'table', icon: '📊', label: '表格' },
-  { key: 'list', icon: '📋', label: '列表' },
-  { key: 'card', icon: '🗂', label: '卡片' },
-  { key: 'calendar', icon: '📅', label: '日历' },
-  { key: 'week', icon: '🗓', label: '周视图' }
+  { key: 'table', icon: 'table', label: '表格' },
+  { key: 'list', icon: 'list', label: '列表' },
+  { key: 'card', icon: 'card', label: '卡片' },
+  { key: 'calendar', icon: 'calendar', label: '日历' },
+  { key: 'week', icon: 'calendar', label: '周视图' }
 ]
 
 const todoCalYear = ref(new Date().getFullYear())
@@ -1156,220 +934,12 @@ function clearCompletedTodos() {
   todoStore.clearCompleted()
 }
 
-function initSalesChart() {
-  if (!salesChartRef.value) return
-  if (salesChart) salesChart.destroy()
-
-  const ma = contractStore.monthlyAmounts
-  const monthlyMap = {}
-  ma.forEach(m => { monthlyMap[m.month] = m.amount })
-
-  let labels, salesData, collectionData
-
-  if (chartMode.value === 'quarterly') {
-    const quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-    const now = new Date()
-    const year = now.getFullYear()
-    salesData = quarters.map((_, i) => {
-      let sum = 0
-      for (let m = i * 3 + 1; m <= i * 3 + 3; m++) {
-        const key = `${year}-${String(m).padStart(2, '0')}`
-        sum += monthlyMap[key] || 0
-      }
-      return Math.round(sum / 10000)
-    })
-    collectionData = quarters.map((_, i) => {
-      let sum = 0
-      for (let m = i * 3 + 1; m <= i * 3 + 3; m++) {
-        const key = `${year}-${String(m).padStart(2, '0')}`
-        sum += (monthlyMap[key] || 0) * 0.85
-      }
-      return Math.round(sum / 10000)
-    })
-    labels = quarters
-  } else if (chartMode.value === 'yearly') {
-    const yearSet = new Set(ma.map(m => m.month.slice(0, 4)))
-    const years = [...yearSet].sort()
-    salesData = years.map(y => {
-      let sum = 0
-      ma.forEach(m => { if (m.month.startsWith(y)) sum += m.amount })
-      return Math.round(sum / 10000)
-    })
-    collectionData = years.map(y => {
-      let sum = 0
-      ma.forEach(m => { if (m.month.startsWith(y)) sum += m.amount * 0.85 })
-      return Math.round(sum / 10000)
-    })
-    labels = years
-  } else {
-    labels = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-    const now = new Date()
-    const year = now.getFullYear()
-    salesData = labels.map((_, i) => {
-      const key = `${year}-${String(i + 1).padStart(2, '0')}`
-      return Math.round((monthlyMap[key] || 0) / 10000)
-    })
-    collectionData = labels.map((_, i) => {
-      const key = `${year}-${String(i + 1).padStart(2, '0')}`
-      return Math.round((monthlyMap[key] || 0) * 0.85 / 10000)
-    })
-  }
-
-  salesChart = new Chart(salesChartRef.value, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: '销售额(万)',
-          data: salesData,
-          backgroundColor: 'rgba(59, 130, 246, 0.6)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 1,
-          borderRadius: 4
-        },
-        {
-          label: '回款额(万)',
-          data: collectionData,
-          backgroundColor: 'rgba(34, 197, 94, 0.6)',
-          borderColor: 'rgba(34, 197, 94, 1)',
-          borderWidth: 1,
-          borderRadius: 4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          labels: { color: '#94a3b8', font: { size: 11 } }
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: 'rgba(51, 65, 85, 0.3)' }
-        },
-        y: {
-          ticks: { color: '#64748b', font: { size: 10 } },
-          grid: { color: 'rgba(51, 65, 85, 0.3)' }
-        }
-      }
-    }
-  })
-}
-
-function initInventoryChart() {
-  if (!inventoryChartRef.value) return
-  if (inventoryChart) inventoryChart.destroy()
-
-  const categories = {}
-  inventoryStore.enrichedInventory.forEach(item => {
-    if (!categories[item.category]) categories[item.category] = 0
-    categories[item.category] += item.stock
-  })
-
-  const labels = Object.keys(categories)
-  const data = Object.values(categories)
-  const colors = [
-    'rgba(59, 130, 246, 0.8)',
-    'rgba(34, 197, 94, 0.8)',
-    'rgba(245, 158, 11, 0.8)',
-    'rgba(168, 85, 247, 0.8)',
-    'rgba(239, 68, 68, 0.8)',
-    'rgba(6, 182, 212, 0.8)'
-  ]
-
-  inventoryChart = new Chart(inventoryChartRef.value, {
-    type: 'doughnut',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderWidth: 0,
-        hoverOffset: 8
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '65%',
-      plugins: {
-        legend: {
-          position: 'right',
-          labels: { color: '#94a3b8', font: { size: 11 }, padding: 12 }
-        }
-      }
-    }
-  })
-}
-
-function initCollectionTrendChart() {
-  if (!collectionTrendChartRef.value) return
-  if (collectionTrendChart) collectionTrendChart.destroy()
-
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
-  const labels = []
-  const data = []
-  for (let i = 5; i >= 0; i--) {
-    const m = month - i
-    const d = new Date(year, m, 1)
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-    labels.push(`${d.getMonth() + 1}月`)
-    let sum = 0
-    collectionStore.collections
-      .filter(c => c.status !== 'voided' && (c.status === 'confirmed' || c.status === 'completed') && c.date && c.date.startsWith(key))
-      .forEach(c => { sum += parseFloat(c.amount) || 0 })
-    data.push(Math.round(sum / 10000))
-  }
-
-  collectionTrendChart = new Chart(collectionTrendChartRef.value, {
-    type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: '回款额(万)',
-        data,
-        borderColor: 'rgba(34, 197, 94, 1)',
-        backgroundColor: 'rgba(34, 197, 94, 0.1)',
-        fill: true,
-        tension: 0.4,
-        pointRadius: 4,
-        pointHoverRadius: 6
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { labels: { color: '#94a3b8', font: { size: 11 } } }
-      },
-      scales: {
-        x: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(51, 65, 85, 0.3)' } },
-        y: { ticks: { color: '#64748b', font: { size: 10 } }, grid: { color: 'rgba(51, 65, 85, 0.3)' } }
-      }
-    }
-  })
-}
-
 onMounted(async () => {
   customerStore.initSeedData()
   dataStore.initSeedData()
   inventoryStore.initSeedData()
   collectionStore.initSeedData()
   isLoading.value = false
-  await nextTick()
-  initSalesChart()
-  initInventoryChart()
-  initCollectionTrendChart()
-})
-
-watch(chartMode, () => {
-  nextTick(() => initSalesChart())
 })
 </script>
 
@@ -1398,285 +968,30 @@ watch(chartMode, () => {
   color: var(--color-accent);
   border-color: var(--color-accent);
 }
-.dash-highlight-grid {
-  display: grid;
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
+.skeleton-wrapper {
+  padding: var(--space-4);
 }
-.stats-grid-4 {
+.skeleton-row-4 {
+  display: grid;
   grid-template-columns: repeat(4, 1fr);
-}
-.stats-grid-7 {
-  grid-template-columns: repeat(7, 1fr);
-}
-.dash-stat-card {
-  background: var(--color-surface-elevated);
-  padding: var(--space-4);
-  border-radius: var(--radius-lg);
-  border-left: 4px solid var(--card-color, var(--color-accent));
-  transition: transform var(--transition-fast);
-}
-.dash-stat-card:hover {
-  transform: translateY(-2px);
-}
-.dash-stat-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-  margin-bottom: var(--space-1);
-}
-.dash-stat-value {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  font-family: var(--font-mono);
-  margin-bottom: var(--space-1);
-}
-.dash-stat-sub {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-}
-.stats-row {
-  display: grid;
   gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
-.alert-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.alert-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
-}
-.alert-icon {
-  font-size: 12px;
-  margin-top: 2px;
-  flex-shrink: 0;
-}
-.alert-content {
-  flex: 1;
-  min-width: 0;
-}
-.alert-title {
-  font-size: var(--font-size-sm);
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-.alert-desc {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-}
-.alert-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
-.alert-empty {
-  text-align: center;
-  padding: var(--space-8) 0;
-  color: var(--color-text-tertiary);
-}
-.timeline {
-  position: relative;
-  padding-left: var(--space-6);
-}
-.timeline-item {
-  position: relative;
-  padding-bottom: var(--space-4);
-  display: flex;
-  gap: var(--space-3);
-}
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-.timeline-dot {
-  position: absolute;
-  left: calc(-1 * var(--space-6) + 4px);
-  top: 6px;
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-}
-.timeline-content {
-  flex: 1;
-}
-.timeline-text {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-}
-.timeline-time {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-}
-.quick-actions {
+.skeleton-row-2 {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-4);
 }
-.quick-action-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all var(--transition-fast);
+.skeleton {
+  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-surface-hover) 50%, var(--color-bg-tertiary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
 }
-.quick-action-card:hover {
-  border-color: var(--color-accent);
-  background: var(--color-accent-subtle);
-  transform: translateY(-2px);
-}
-.quick-action-icon {
-  font-size: 24px;
-}
-.quick-action-label {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-secondary);
-}
-.top-customers {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.top-customer-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.top-rank {
-  width: 24px;
-  height: 24px;
-  border-radius: var(--radius-full);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-secondary);
-  flex-shrink: 0;
-}
-.top-rank.rank-1 { background: #fbbf24; color: #1a1f36; }
-.top-rank.rank-2 { background: #94a3b8; color: #1a1f36; }
-.top-rank.rank-3 { background: #d97706; color: #1a1f36; }
-.top-info {
-  flex: 1;
-  min-width: 0;
-}
-.top-name {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-1);
-}
-.top-bar-container {
-  height: 4px;
-  background: var(--color-bg-tertiary);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-.top-bar {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: var(--radius-full);
-  transition: width 500ms ease;
-}
-.top-amount {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-accent);
-  font-family: var(--font-mono);
-  flex-shrink: 0;
-}
-.todo-quick-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-.todo-quick-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-primary);
-  transition: all var(--transition-fast);
-}
-.todo-quick-item.overdue {
-  border-left: 3px solid var(--color-danger);
-}
-.todo-quick-item.completed {
-  opacity: 0.5;
-}
-.todo-check {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-.todo-info {
-  flex: 1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-width: 0;
-}
-.todo-title {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.todo-due {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-tertiary);
-  flex-shrink: 0;
-}
-.todo-due.overdue {
-  color: var(--color-danger);
-  font-weight: 600;
-}
-.todo-priority {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: var(--radius-full);
-  flex-shrink: 0;
-}
-.priority-high { background: var(--color-danger-subtle); color: var(--color-danger); }
-.priority-medium { background: var(--color-warning-subtle); color: var(--color-warning); }
-.priority-low { background: var(--color-info-subtle); color: var(--color-info); }
-.todo-empty {
-  text-align: center;
-  padding: var(--space-6) 0;
-  color: var(--color-text-tertiary);
-}
-.ai-insight-panel {
-  border-left: 3px solid var(--color-purple);
-}
-.ai-loading {
-  text-align: center;
-  padding: var(--space-8) 0;
-  color: var(--color-purple);
-  font-size: var(--font-size-sm);
-  animation: pulse 1s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.skeleton-card { height: 100px; }
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 .date-todo-section {
   display: grid;
@@ -1877,203 +1192,70 @@ watch(chartMode, () => {
   display: flex;
   gap: var(--space-2);
 }
-.skeleton-wrapper {
-  padding: var(--space-4);
-}
-.skeleton-row-4 {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-4);
-}
-.skeleton-row-2 {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: var(--space-4);
-}
-.skeleton {
-  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-surface-hover) 50%, var(--color-bg-tertiary) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
-  border-radius: var(--radius-sm);
-}
-.skeleton-card { height: 100px; }
-@keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-.ai-icon {
-  display: inline-flex;
+.todo-quick-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  margin-right: var(--space-1);
-  vertical-align: middle;
-}
-.ai-summary {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-primary);
-  padding: var(--space-3);
-  background: var(--color-purple-subtle);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-3);
-  line-height: 1.6;
+  background: var(--color-bg-primary);
+  transition: all var(--transition-fast);
 }
-.ai-insights {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.todo-quick-item.overdue {
+  border-left: 3px solid var(--color-danger);
 }
-.ai-insight-item {
-  display: flex;
-  gap: var(--space-2);
-  align-items: flex-start;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
+.todo-quick-item.completed {
+  opacity: 0.5;
 }
-.ai-insight-icon {
-  flex-shrink: 0;
+.todo-check {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
 }
-.week-view-section {
-  background: var(--color-surface-elevated);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-  margin-bottom: var(--space-4);
-  border: 1px solid var(--color-border);
+.todo-uncheck {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
 }
-.week-view-header {
+.todo-info {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-3);
-  flex-wrap: wrap;
-  gap: var(--space-2);
+  min-width: 0;
 }
-.week-view-nav {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-.week-view-range {
+.todo-title {
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  background: var(--color-bg-tertiary);
-  padding: 2px 10px;
-  border-radius: var(--radius-sm);
-  font-weight: 600;
-}
-.week-view-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: var(--space-2);
-}
-.week-day-col {
-  background: var(--color-bg-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-2);
-  min-height: 140px;
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  flex-direction: column;
-}
-.week-day-col:hover {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 1px var(--color-accent-subtle);
-}
-.week-day-col.today {
-  border-color: var(--color-accent);
-  background: var(--color-accent-subtle);
-}
-.week-day-col.selected {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent);
-}
-.week-day-header {
-  text-align: center;
-  margin-bottom: var(--space-2);
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid var(--color-border);
-}
-.week-day-name {
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.week-day-num {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
   color: var(--color-text-primary);
-  margin-top: 2px;
-}
-.week-day-num.is-today {
-  color: var(--color-accent);
-}
-.week-day-todos {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  overflow: hidden;
-}
-.week-todo-item {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.15s;
-  overflow: hidden;
-}
-.week-todo-item:hover {
-  background: var(--color-bg-tertiary);
-}
-.week-todo-item.completed {
-  opacity: 0.4;
-  text-decoration: line-through;
-}
-.week-todo-item.overdue {
-  background: var(--color-danger-subtle);
-}
-.week-todo-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.week-todo-item.priority-high .week-todo-dot { background: var(--color-danger); }
-.week-todo-item.priority-medium .week-todo-dot { background: var(--color-warning); }
-.week-todo-item.priority-low .week-todo-dot { background: var(--color-info); }
-.week-todo-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-text-primary);
 }
-.week-day-empty {
-  text-align: center;
+.todo-due {
+  font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  font-size: var(--font-size-sm);
-  padding: var(--space-2) 0;
+  flex-shrink: 0;
 }
-.week-day-count {
-  text-align: center;
-  font-size: 10px;
-  color: var(--color-accent);
+.todo-due.overdue {
+  color: var(--color-danger);
   font-weight: 600;
-  margin-top: var(--space-1);
-  padding-top: var(--space-1);
-  border-top: 1px solid var(--color-border);
+}
+.todo-priority {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+.priority-high { background: var(--color-danger-subtle); color: var(--color-danger); }
+.priority-medium { background: var(--color-warning-subtle); color: var(--color-warning); }
+.priority-low { background: var(--color-info-subtle); color: var(--color-info); }
+.todo-empty {
+  text-align: center;
+  padding: var(--space-6) 0;
+  color: var(--color-text-tertiary);
 }
 .todo-view-toggle {
   display: flex;
@@ -2308,18 +1490,63 @@ watch(chartMode, () => {
   font-size: var(--font-size-sm);
   padding: var(--space-2) 0;
 }
+
+/* 响应式适配 */
 @media (max-width: 1024px) {
-  .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .stats-grid-7 { grid-template-columns: repeat(3, 1fr); }
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
-  .week-view-grid { grid-template-columns: repeat(4, 1fr); }
-  .week-day-col:nth-child(n+5) { display: none; }
+  .skeleton-row-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .skeleton-row-2 {
+    grid-template-columns: 1fr;
+  }
+  .date-todo-section {
+    grid-template-columns: 1fr;
+  }
+  .todo-week-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .dashboard-toolbar {
+    flex-wrap: wrap;
+  }
 }
-@media (max-width: 640px) {
-  .stats-grid-4 { grid-template-columns: 1fr; }
-  .stats-grid-7 { grid-template-columns: repeat(2, 1fr); }
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
-  .week-view-grid { grid-template-columns: repeat(3, 1fr); }
-  .week-day-col:nth-child(n+4) { display: none; }
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .skeleton-row-4 {
+    grid-template-columns: 1fr;
+  }
+  .skeleton-row-2 {
+    grid-template-columns: 1fr;
+  }
+  .date-todo-section {
+    grid-template-columns: 1fr;
+  }
+  .todo-week-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .todo-card-view {
+    grid-template-columns: 1fr;
+  }
+  .todo-add-form {
+    flex-direction: column;
+  }
+  .todo-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .todo-cal-days {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .todo-cal-weekdays {
+    grid-template-columns: repeat(7, 1fr);
+  }
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

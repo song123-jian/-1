@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useSessionStore } from './session'
 
 const QUAL_KEY = 'gj_erp_qualifications'
 const INVOICE_KEY = 'gj_erp_invoiceProfiles'
@@ -12,7 +13,11 @@ function load(key, fallback) {
   return fallback
 }
 function persist(key, data) {
-  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) { /* ignore */ }
+  try { localStorage.setItem(key, JSON.stringify(data)) } catch (e) {
+    if (e.name === 'QuotaExceededError') {
+      console.error('[docSettings] localStorage容量不足，数据可能丢失！')
+    }
+  }
 }
 function genId(prefix) { return prefix + Date.now() + '_' + Math.random().toString(36).slice(2, 6) }
 
@@ -26,6 +31,16 @@ const qualStatusLabels = {
 }
 
 export const useDocSettingsStore = defineStore('docSettings', () => {
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
   const qualifications = ref(load(QUAL_KEY, []))
   const invoiceProfiles = ref(load(INVOICE_KEY, []))
   const settings = ref(load(DS_SETTINGS_KEY, {
@@ -56,7 +71,7 @@ export const useDocSettingsStore = defineStore('docSettings', () => {
     logs.value.unshift({
       id: genId('dsl'),
       time: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      user: '系统管理员', action, detail, ip: '127.0.0.1'
+      user: getCurrentUser(), action, detail, ip: '127.0.0.1'
     })
     if (logs.value.length > 200) logs.value = logs.value.slice(0, 200)
     _persistLogs()
@@ -154,10 +169,21 @@ export const useDocSettingsStore = defineStore('docSettings', () => {
     } else if (preset === 'standard') {
       Object.assign(settings.value, { licenseDays: 30, completeness: 80, autoFreeze: true, remindFreq: 'weekly' })
     } else if (preset === 'loose') {
-      Object.assign(settings.value, { licenseDays: 15, completeness: 60, autoFreeze: false, remindFreq: 'onExpiry' })
+      Object.assign(settings.value, { licenseDays: 14, completeness: 60, autoFreeze: false, remindFreq: 'onExpiry' })
     }
     _addLog('应用预设', preset)
     _persistSettings()
+  }
+
+  function replaceData(newData) {
+    if (newData.qualifications) {
+      qualifications.value = newData.qualifications
+      _persistQuals()
+    }
+    if (newData.invoiceProfiles) {
+      invoiceProfiles.value = newData.invoiceProfiles
+      _persistInvoices()
+    }
   }
 
   function initSeedData() {
@@ -190,6 +216,6 @@ export const useDocSettingsStore = defineStore('docSettings', () => {
     complianceScore, complianceRate, riskCount,
     addQualification, updateQualification, deleteQualification,
     addInvoiceProfile, updateInvoiceProfile, deleteInvoiceProfile,
-    saveSettings, applyPreset, initSeedData
+    saveSettings, applyPreset, replaceData, initSeedData
   }
 })

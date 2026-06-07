@@ -1,25 +1,23 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useSessionStore } from './session'
+import { safeGetItem, safeSetItem, safeGetJSON, safeSetJSON } from '@/utils/storage'
 
 const STORAGE_KEY = 'gj_erp_logs'
 const INIT_KEY = 'gj_erp_logs_initialized'
 
-function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
-  return fallback
-}
-
-function persist(key, data) {
-  try {
-    localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
-}
-
 export const useLogStore = defineStore('log', () => {
-  const logs = ref(load(STORAGE_KEY, []))
+  /* 获取当前用户标识 */
+  function getCurrentUser() {
+    try {
+      const sessionStore = useSessionStore()
+      return sessionStore.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
+  }
+
+  const logs = ref(safeGetJSON(STORAGE_KEY) || [])
 
   const moduleLabels = {
     customers: '客户管理', quotations: '报价管理', inventory: '库存管理',
@@ -57,13 +55,13 @@ export const useLogStore = defineStore('log', () => {
     const timeStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
     logs.value.unshift({
       time: timeStr,
-      user: '系统管理员(admin)',
+      user: getCurrentUser(),
       action: action || '',
       module: module || '',
       detail: detail || action + ' ' + (moduleLabels[module] || module) + '记录'
     })
     if (logs.value.length > 1000) logs.value.pop()
-    persist(STORAGE_KEY, logs.value)
+    safeSetJSON(STORAGE_KEY, logs.value)
   }
 
   function getFilteredLogs(filters) {
@@ -118,33 +116,38 @@ export const useLogStore = defineStore('log', () => {
 
   function clearLogs() {
     logs.value = []
-    persist(STORAGE_KEY, logs.value)
+    safeSetJSON(STORAGE_KEY, logs.value)
+  }
+
+  function replaceData(newData) {
+    logs.value = newData
+    safeSetJSON(STORAGE_KEY, logs.value)
   }
 
   function initSeedData() {
-    if (localStorage.getItem(INIT_KEY)) return
+    if (safeGetItem(INIT_KEY)) return
     const now = new Date()
     const pad = n => String(n).padStart(2, '0')
     const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
     const seeds = [
-      { time: dateStr + ' 09:15:22', user: '系统管理员(admin)', action: '登录系统', module: 'settings', detail: '管理员登录系统' },
-      { time: dateStr + ' 09:30:45', user: '系统管理员(admin)', action: '创建报价', module: 'quotations', detail: '创建报价单QT20241218001' },
-      { time: dateStr + ' 10:12:33', user: '系统管理员(admin)', action: '修改客户', module: 'customers', detail: '修改客户上海贸易有限公司信息' },
-      { time: dateStr + ' 11:05:18', user: '系统管理员(admin)', action: '审批报价', module: 'approvals', detail: '审批通过报价单QT20241210001' },
-      { time: dateStr + ' 13:22:07', user: '系统管理员(admin)', action: '创建送货单', module: 'delivery', detail: '创建送货单DLV-2024-0055' },
-      { time: dateStr + ' 14:45:30', user: '系统管理员(admin)', action: '确认回款', module: 'collections', detail: '确认回款¥32,000' },
-      { time: dateStr + ' 15:10:55', user: '系统管理员(admin)', action: '导出报表', module: 'report', detail: '导出销售分析报告' },
-      { time: dateStr + ' 16:30:12', user: '系统管理员(admin)', action: '修改库存', module: 'inventory', detail: '修改ABS树脂库存数量' }
+      { time: dateStr + ' 09:15:22', user: getCurrentUser(), action: '登录系统', module: 'settings', detail: '管理员登录系统' },
+      { time: dateStr + ' 09:30:45', user: getCurrentUser(), action: '创建报价', module: 'quotations', detail: '创建报价单QT20241218001' },
+      { time: dateStr + ' 10:12:33', user: getCurrentUser(), action: '修改客户', module: 'customers', detail: '修改客户上海贸易有限公司信息' },
+      { time: dateStr + ' 11:05:18', user: getCurrentUser(), action: '审批报价', module: 'approvals', detail: '审批通过报价单QT20241210001' },
+      { time: dateStr + ' 13:22:07', user: getCurrentUser(), action: '创建送货单', module: 'delivery', detail: '创建送货单DLV-2024-0055' },
+      { time: dateStr + ' 14:45:30', user: getCurrentUser(), action: '确认回款', module: 'collections', detail: '确认回款¥32,000' },
+      { time: dateStr + ' 15:10:55', user: getCurrentUser(), action: '导出报表', module: 'report', detail: '导出销售分析报告' },
+      { time: dateStr + ' 16:30:12', user: getCurrentUser(), action: '修改库存', module: 'inventory', detail: '修改ABS树脂库存数量' }
     ]
     logs.value = seeds
-    persist(STORAGE_KEY, logs.value)
-    localStorage.setItem(INIT_KEY, '1')
+    safeSetJSON(STORAGE_KEY, logs.value)
+    safeSetItem(INIT_KEY, '1')
   }
 
   return {
     logs, moduleLabels,
     todayCount, weekCount, sensitiveCount, activeUsers,
     addLog, getFilteredLogs, getModuleDistribution, getDailyTrend,
-    clearLogs, initSeedData
+    clearLogs, replaceData, initSeedData
   }
 })
