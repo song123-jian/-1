@@ -103,6 +103,14 @@
 
         <div class="config-item">
           <label class="config-label">
+            <input type="checkbox" v-model="config.confirmBeforeUpload" @change="handleConfigChange" />
+            每次上传前确认
+          </label>
+          <span class="config-hint">开启后，自动和手动上传都会先询问确认</span>
+        </div>
+
+        <div class="config-item">
+          <label class="config-label">
             <input type="checkbox" v-model="config.uploadViewState" @change="handleConfigChange" />
             上传视图状态（筛选、排序等）
           </label>
@@ -182,13 +190,37 @@
         </span>
       </div>
     </div>
+
+    <!-- 上传确认弹窗 -->
+    <div v-if="showUploadConfirm" class="modal-overlay" @click.self="showUploadConfirm = false">
+      <div class="modal-content" style="max-width:400px">
+        <div class="modal-header">
+          <h3>确认上传同步</h3>
+          <button class="btn btn-sm btn-outline" @click="showUploadConfirm = false">关闭</button>
+        </div>
+        <div class="modal-body">
+          <p>{{ uploadConfirmMessage }}</p>
+          <div v-if="uploadConfirmType === 'auto'" class="config-item" style="margin-top:var(--space-2)">
+            <label class="config-label">
+              <input type="checkbox" v-model="skipAutoConfirmThisSession" />
+              本次会话不再询问自动上传
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" @click="showUploadConfirm = false">取消</button>
+          <button class="btn btn-primary" @click="confirmUploadAction">确认上传</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import githubSync from '@/utils/githubSync'
 import autoSave from '@/utils/autoSave'
+import eventBus from '@/utils/eventBus'
 
 const patInput = ref('')
 const clientIdInput = ref('')
@@ -200,6 +232,13 @@ const uploadResult = ref(null)
 const errorMessage = ref('')
 const showHistory = ref(false)
 const historyList = ref([])
+
+/* 上传确认相关 */
+const showUploadConfirm = ref(false)
+const uploadConfirmType = ref('manual') // 'manual' | 'auto'
+const uploadConfirmMessage = ref('')
+const skipAutoConfirmThisSession = ref(false)
+let pendingUploadAction = null
 
 const authStatus = computed(() => githubSync.getAuthStatus())
 const stats = computed(() => githubSync.getStats())
@@ -270,6 +309,17 @@ function handleConfigChange() {
 
 /* 手动上传 */
 async function handleUpload() {
+  if (config.confirmBeforeUpload) {
+    uploadConfirmType.value = 'manual'
+    uploadConfirmMessage.value = '确认要将当前数据上传同步到 GitHub Gist 吗？'
+    pendingUploadAction = doUpload
+    showUploadConfirm.value = true
+    return
+  }
+  await doUpload()
+}
+
+async function doUpload() {
   uploading.value = true
   uploadResult.value = null
   errorMessage.value = ''
@@ -283,6 +333,37 @@ async function handleUpload() {
   } finally {
     uploading.value = false
   }
+}
+
+/* 确认上传动作 */
+function confirmUploadAction() {
+  showUploadConfirm.value = false
+  if (uploadConfirmType.value === 'auto' && skipAutoConfirmThisSession.value) {
+    /* 本次会话跳过自动上传确认，临时关闭确认 */
+    githubSync.updateConfig({ confirmBeforeUpload: false })
+    /* 会话结束时恢复 */
+    const restore = () => {
+      githubSync.updateConfig({ confirmBeforeUpload: true })
+      skipAutoConfirmThisSession.value = false
+    }
+    window.addEventListener('beforeunload', restore, { once: true })
+  }
+  if (pendingUploadAction) {
+    pendingUploadAction()
+    pendingUploadAction = null
+  }
+}
+
+/* 自动上传请求事件处理 */
+function handleAutoUploadRequest() {
+  if (skipAutoConfirmThisSession.value) {
+    doUpload()
+    return
+  }
+  uploadConfirmType.value = 'auto'
+  uploadConfirmMessage.value = '自动备份时间到了，确认上传同步数据到 GitHub Gist 吗？'
+  pendingUploadAction = doUpload
+  showUploadConfirm.value = true
 }
 
 /* 手动下载 */
@@ -369,6 +450,11 @@ function formatTime(ts) {
 
 onMounted(() => {
   githubSync.init()
+  eventBus.on('github:auto_upload_request', handleAutoUploadRequest)
+})
+
+onUnmounted(() => {
+  eventBus.off('github:auto_upload_request', handleAutoUploadRequest)
 })
 </script>
 

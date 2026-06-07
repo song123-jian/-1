@@ -408,7 +408,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.customer-detail-page { max-width: 1200px; margin: 0 auto; }
+.customer-detail-page { }
 
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-4); flex-wrap: wrap; gap: var(--space-3); }
 .page-header-title { font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-text-primary); margin: 0; }

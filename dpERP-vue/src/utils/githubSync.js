@@ -27,6 +27,8 @@ const DEFAULT_CONFIG = {
   autoUpload: false,
   /* 自动上传间隔（毫秒），默认5分钟 */
   autoUploadInterval: 5 * 60 * 1000,
+  /* 每次上传前是否需要确认 */
+  confirmBeforeUpload: true,
   /* 是否上传视图状态 */
   uploadViewState: true,
   /* 是否上传草稿 */
@@ -578,7 +580,12 @@ class GitHubSync {
       if (this._isUploading || !this._token) return
 
       try {
-        await this.uploadAllData()
+        if (this._config.confirmBeforeUpload) {
+          /* 需要确认时，发出事件让UI层弹窗确认 */
+          eventBus.emit('github:auto_upload_request')
+        } else {
+          await this.uploadAllData()
+        }
       } catch (e) {
         console.warn('[GitHubSync] 自动上传失败:', e)
       }

@@ -894,8 +894,6 @@ onUnmounted(() => {
 
 <style scoped>
 .collection-page {
-  max-width: 1600px;
-  margin: 0 auto;
 }
 .stats-grid-4 {
   display: grid;

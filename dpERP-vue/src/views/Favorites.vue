@@ -160,8 +160,6 @@ onUnmounted(() => {
 
 <style scoped>
 .favorites-page {
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .page-header {

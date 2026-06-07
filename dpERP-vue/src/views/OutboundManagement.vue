@@ -10,8 +10,6 @@ import OutboundSection from '@/components/inventory/OutboundSection.vue'
 
 <style scoped>
 .outbound-management-page {
-  max-width: 1600px;
-  margin: 0 auto;
 }
 
 /* 响应式适配 */

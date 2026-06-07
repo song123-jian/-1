@@ -626,7 +626,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.customer-page { max-width: 1600px; margin: 0 auto; }
+.customer-page { }
 .page-header-actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
 .view-toggle { display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
 .view-btn { padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; transition: all var(--transition-fast); border-right: 1px solid var(--color-border); }

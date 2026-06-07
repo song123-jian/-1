@@ -578,8 +578,6 @@ onMounted(async () => {
 
 <style scoped>
 .db-connection-page {
-  max-width: 960px;
-  margin: 0 auto;
 }
 .form-grid {
   display: grid;

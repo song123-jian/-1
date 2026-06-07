@@ -303,7 +303,7 @@ function confirmAction() {
 </script>
 
 <style scoped>
-.tagcategory-page { max-width: 1200px; margin: 0 auto; }
+.tagcategory-page { }
 
 .page-header { margin-bottom: var(--space-6); }
 .page-header-title { font-size: var(--font-size-2xl); font-weight: 700; color: var(--color-text-primary); margin-bottom: var(--space-1); }

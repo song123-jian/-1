@@ -6,10 +6,10 @@ import { usePermissionStore } from '@/stores/permission'
 const ADMIN_ONLY_ROUTES = ['Approvals', 'SalesPermission', 'SystemManagement', 'SettingsParams', 'DatabaseConnection']
 
 /* 需要财务权限的路由 */
-const FINANCE_ROUTES = ['Collections', 'CostAnalysis', 'MonthlyStats']
+const FINANCE_ROUTES = ['Collections', 'CostAnalysis', 'MonthlyStats', 'ReceivableManagement', 'PayableManagement']
 
 /* 需要仓储权限的路由 */
-const WAREHOUSE_ROUTES = ['WarehouseLocations']
+const WAREHOUSE_ROUTES = ['WarehouseLocations', 'StocktakingManagement', 'TransferManagement']
 
 const routes = [
   {
@@ -101,6 +101,18 @@ const routes = [
     meta: { title: '回款管理', icon: 'dollar' }
   },
   {
+    path: '/receivables',
+    name: 'ReceivableManagement',
+    component: () => import('@/views/ReceivableManagement.vue'),
+    meta: { title: '应收管理', icon: 'trendUp' }
+  },
+  {
+    path: '/payables',
+    name: 'PayableManagement',
+    component: () => import('@/views/PayableManagement.vue'),
+    meta: { title: '应付管理', icon: 'arrowDown' }
+  },
+  {
     path: '/statements',
     name: 'Statements',
     component: () => import('@/views/Statements.vue'),
@@ -113,10 +125,46 @@ const routes = [
     meta: { title: '送货管理', icon: 'truck' }
   },
   {
+    path: '/ecommerce',
+    name: 'EcommerceIntegration',
+    component: () => import('@/views/EcommerceIntegration.vue'),
+    meta: { title: '电商对接', icon: 'globe' }
+  },
+  {
+    path: '/production',
+    name: 'ProductionManagement',
+    component: () => import('@/views/ProductionManagement.vue'),
+    meta: { title: '生产管理', icon: 'layers' }
+  },
+  {
+    path: '/suppliers',
+    name: 'SupplierManagement',
+    component: () => import('@/views/SupplierManagement.vue'),
+    meta: { title: '供应商管理', icon: 'building' }
+  },
+  {
+    path: '/purchase',
+    name: 'PurchaseManagement',
+    component: () => import('@/views/PurchaseManagement.vue'),
+    meta: { title: '采购管理', icon: 'clipboard' }
+  },
+  {
     path: '/warehouse-locations',
     name: 'WarehouseLocations',
     component: () => import('@/views/WarehouseLocations.vue'),
     meta: { title: '仓位管理', icon: 'mapPin' }
+  },
+  {
+    path: '/stocktaking',
+    name: 'StocktakingManagement',
+    component: () => import('@/views/StocktakingManagement.vue'),
+    meta: { title: '盘点管理', icon: 'clipboardCheck' }
+  },
+  {
+    path: '/transfer',
+    name: 'TransferManagement',
+    component: () => import('@/views/TransferManagement.vue'),
+    meta: { title: '调拨管理', icon: 'shuffle' }
   },
   {
     path: '/cost-analysis',
@@ -131,10 +179,22 @@ const routes = [
     meta: { title: '报表中心', icon: 'trendUp' }
   },
   {
+    path: '/data-screen',
+    name: 'DataScreen',
+    component: () => import('@/views/DataScreen.vue'),
+    meta: { title: '数据大屏', icon: 'database' }
+  },
+  {
     path: '/approvals',
     name: 'Approvals',
     component: () => import('@/views/Approvals.vue'),
     meta: { title: '审批配置', icon: 'check' }
+  },
+  {
+    path: '/workflow',
+    name: 'WorkflowDesign',
+    component: () => import('@/views/WorkflowDesign.vue'),
+    meta: { title: '工作流管理', icon: 'layers' }
   },
   {
     path: '/archives',

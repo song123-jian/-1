@@ -34,6 +34,8 @@
           @click="themeStore.setTheme(theme.key)"
         />
       </div>
+      <LanguageSwitcher />
+      <NotificationBell />
       <div class="topbar-user">
         <div class="user-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
       </div>
@@ -46,6 +48,8 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
+import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
+import NotificationBell from '@/components/layout/NotificationBell.vue'
 
 const props = defineProps({
   showHamburger: { type: Boolean, default: false },

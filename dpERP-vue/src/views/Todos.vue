@@ -974,7 +974,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.todo-page { max-width: 1600px; margin: 0 auto; }
+.todo-page { }
 .page-header-actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
 .view-toggle { display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
 .view-btn { padding: var(--space-2) var(--space-3); font-size: var(--font-size-sm); background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; transition: all var(--transition-fast); border-right: 1px solid var(--color-border); }

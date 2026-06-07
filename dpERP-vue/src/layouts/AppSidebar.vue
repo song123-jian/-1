@@ -332,7 +332,9 @@ onMounted(() => {
 
 const overviewItems = computed(() => [
   { path: '/dashboard', icon: 'table', label: '仪表盘' },
+  { path: '/data-screen', icon: 'database', label: '数据大屏', matchPath: '/data-screen' },
   { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
+  { path: '/workflow', icon: 'layers', label: '工作流管理', matchPath: '/workflow' },
   { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' },
 ])
 
@@ -347,16 +349,24 @@ const salesItems = computed(() => [
 ])
 
 const warehouseItems = computed(() => [
+  { path: '/suppliers', icon: 'building', label: '供应商管理', matchPath: '/suppliers' },
+  { path: '/purchase', icon: 'clipboard', label: '采购管理', matchPath: '/purchase' },
   { path: '/inbound', icon: 'upload', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inbound' },
   { path: '/inventory', icon: 'package', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
   { path: '/outbound', icon: 'download', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/outbound' },
+  { path: '/stocktaking', icon: 'clipboardCheck', label: '盘点管理', matchPath: '/stocktaking' },
+  { path: '/transfer', icon: 'shuffle', label: '调拨管理', matchPath: '/transfer' },
+  { path: '/production', icon: 'layers', label: '生产管理', matchPath: '/production' },
   { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理', matchPath: '/warehouse-locations' },
   { path: '/deliveries', icon: 'truck', label: '送货管理', matchPath: '/deliveries' },
+  { path: '/ecommerce', icon: 'globe', label: '电商对接', matchPath: '/ecommerce' },
 ])
 
 const financeItems = computed(() => [
   { path: '/monthly-stats', icon: 'calendar', label: '月度统计', matchPath: '/monthly-stats' },
   { path: '/collections', icon: 'dollar', label: '回款管理', matchPath: '/collections' },
+  { path: '/receivables', icon: 'trendUp', label: '应收管理', matchPath: '/receivables' },
+  { path: '/payables', icon: 'arrowDown', label: '应付管理', matchPath: '/payables' },
   { path: '/cost-analysis', icon: 'calculator', label: '成本核算', matchPath: '/cost-analysis' },
   { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' },
 ])

@@ -815,8 +815,6 @@ onUnmounted(() => {
 
 <style scoped>
 .transaction-page {
-  max-width: 1600px;
-  margin: 0 auto;
 }
 .page-header {
   display: flex;

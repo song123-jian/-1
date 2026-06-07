@@ -945,8 +945,6 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard-page {
-  max-width: 1600px;
-  margin: 0 auto;
 }
 .dashboard-toolbar {
   display: flex;

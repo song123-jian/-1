@@ -26,7 +26,16 @@ const defaultModules = [
   { key: 'warehouse', label: '仓位管理', perms: ['warehouseCreate', 'warehouseUpdate', 'warehouseDelete', 'warehouseExport'] },
   { key: 'statement', label: '对账', perms: ['statementCreate', 'statementRead', 'statementUpdate', 'statementDelete', 'statementConfirm', 'statementVoid', 'statementPay', 'statementExport', 'statementPrint'] },
   { key: 'delivery', label: '送货', perms: ['deliveryCreate', 'deliveryEdit', 'deliveryDelete', 'deliveryViewDetail', 'deliveryChangeStatus', 'deliveryExport', 'deliveryImport', 'deliveryPrint'] },
-  { key: 'cost', label: '成本核算', perms: ['costView', 'costExport', 'costEdit', 'costDelete', 'costViewStandard', 'costEditStandard'] }
+  { key: 'cost', label: '成本核算', perms: ['costView', 'costExport', 'costEdit', 'costDelete', 'costViewStandard', 'costEditStandard'] },
+  { key: 'purchase', label: '采购', perms: ['purchaseCreate', 'purchaseEdit', 'purchaseDelete', 'purchaseApprove', 'purchaseOrder', 'purchaseReceive', 'purchaseInspect', 'purchaseComplete', 'purchaseCancel', 'purchaseExport', 'purchasePrint'] },
+  { key: 'supplier', label: '供应商', perms: ['supplierCreate', 'supplierEdit', 'supplierDelete', 'supplierView', 'supplierEvaluate', 'supplierBlacklist', 'supplierExport'] },
+  { key: 'receivable', label: '应收', perms: ['receivableView', 'receivableCreate', 'receivableEdit', 'receivableDelete', 'receiptCreate', 'receivableExport', 'receivableAging'] },
+  { key: 'payable', label: '应付', perms: ['payableView', 'payableCreate', 'payableEdit', 'payableDelete', 'paymentCreate', 'payableExport', 'payableAging'] },
+  { key: 'workflow', label: '工作流', perms: ['workflowView', 'workflowApprove', 'workflowDelegate', 'workflowAddApprover', 'workflowCancel', 'workflowDesign'] },
+  { key: 'stocktaking', label: '盘点', perms: ['stocktakingCreate', 'stocktakingExecute', 'stocktakingReview', 'stocktakingAdjust', 'stocktakingExport'] },
+  { key: 'transfer', label: '调拨', perms: ['transferCreate', 'transferEdit', 'transferDelete', 'transferApprove', 'transferShip', 'transferReceive', 'transferExport', 'transferPrint'] },
+  { key: 'production', label: '生产', perms: ['productionCreate', 'productionEdit', 'productionRelease', 'productionStart', 'productionQualityCheck', 'productionComplete', 'productionCancel', 'productionIssueMaterial', 'productionViewBom', 'productionEditBom'] },
+  { key: 'ecommerce', label: '电商对接', perms: ['ecommerceConnect', 'ecommerceSync', 'ecommerceMapping', 'ecommerceSettings', 'ecommerceViewOrders'] }
 ]
 
 const permLabels = {
@@ -48,20 +57,42 @@ const permLabels = {
   deliveryViewDetail: '查看送货详情', deliveryChangeStatus: '变更送货状态',
   deliveryExport: '导出送货', deliveryImport: '导入送货', deliveryPrint: '打印送货',
   costView: '查看成本', costExport: '导出成本', costEdit: '编辑成本',
-  costDelete: '删除成本', costViewStandard: '查看标准成本', costEditStandard: '编辑标准成本'
+  costDelete: '删除成本', costViewStandard: '查看标准成本', costEditStandard: '编辑标准成本',
+  purchaseCreate: '创建采购', purchaseEdit: '编辑采购', purchaseDelete: '删除采购',
+  purchaseApprove: '审批采购', purchaseOrder: '采购下单', purchaseReceive: '采购收货',
+  purchaseInspect: '采购质检', purchaseComplete: '采购完成', purchaseCancel: '取消采购',
+  purchaseExport: '导出采购', purchasePrint: '打印采购',
+  supplierCreate: '新增供应商', supplierEdit: '编辑供应商', supplierDelete: '删除供应商',
+  supplierView: '查看供应商', supplierEvaluate: '评估供应商', supplierBlacklist: '供应商黑名单', supplierExport: '导出供应商',
+  receivableView: '查看应收', receivableCreate: '新增应收', receivableEdit: '编辑应收',
+  receivableDelete: '删除应收', receiptCreate: '创建收款', receivableExport: '导出应收', receivableAging: '账龄分析',
+  payableView: '查看应付', payableCreate: '新增应付', payableEdit: '编辑应付',
+  payableDelete: '删除应付', paymentCreate: '创建付款', payableExport: '导出应付', payableAging: '账龄分析',
+  workflowView: '查看工作流', workflowApprove: '审批工作流', workflowDelegate: '委托审批',
+  workflowAddApprover: '加签', workflowCancel: '取消工作流', workflowDesign: '设计工作流',
+  stocktakingCreate: '创建盘点', stocktakingExecute: '执行盘点', stocktakingReview: '审批盘点',
+  stocktakingAdjust: '盘点调整', stocktakingExport: '导出盘点',
+  transferCreate: '创建调拨', transferEdit: '编辑调拨', transferDelete: '删除调拨',
+  transferApprove: '审批调拨', transferShip: '调拨发货', transferReceive: '调拨收货',
+  transferExport: '导出调拨', transferPrint: '打印调拨',
+  productionCreate: '创建工单', productionEdit: '编辑工单', productionRelease: '下达工单',
+  productionStart: '开始生产', productionQualityCheck: '生产质检', productionComplete: '完成生产',
+  productionCancel: '取消工单', productionIssueMaterial: '领料', productionViewBom: '查看BOM', productionEditBom: '编辑BOM',
+  ecommerceConnect: '连接平台', ecommerceSync: '数据同步', ecommerceMapping: '商品映射',
+  ecommerceSettings: '同步设置', ecommerceViewOrders: '查看订单'
 }
 
 // 权限分类：查看类、创建类、审批类、删除类、导出类
 const permCategories = {
-  view: ['statementRead', 'deliveryViewDetail', 'costView', 'costViewStandard', 'inboundViewCost'],
-  create: ['canCreateQuote', 'canCreateContract', 'inboundCreate', 'outboundCreate', 'warehouseCreate', 'statementCreate', 'deliveryCreate'],
-  approve: ['canApproveQuote', 'canApproveLargeQuote', 'canApproveContract', 'outboundApprove', 'statementConfirm', 'deliveryChangeStatus', 'inboundConfirm', 'outboundConfirm', 'canSignContract'],
-  delete: ['canDeleteQuote', 'canDeleteContract', 'inboundDelete', 'outboundDelete', 'warehouseDelete', 'statementDelete', 'deliveryDelete', 'costDelete'],
-  export: ['inboundExport', 'outboundExport', 'warehouseExport', 'statementExport', 'deliveryExport', 'costExport'],
-  print: ['inboundPrint', 'outboundPrint', 'statementPrint', 'deliveryPrint'],
-  edit: ['canEditOthersQuote', 'canEditContract', 'inboundEdit', 'outboundUpdate', 'warehouseUpdate', 'statementUpdate', 'deliveryEdit', 'costEdit', 'costEditStandard', 'canArchiveContract'],
+  view: ['statementRead', 'deliveryViewDetail', 'costView', 'costViewStandard', 'inboundViewCost', 'receivableView', 'payableView', 'workflowView', 'productionViewBom', 'supplierView', 'ecommerceViewOrders'],
+  create: ['canCreateQuote', 'canCreateContract', 'inboundCreate', 'outboundCreate', 'warehouseCreate', 'statementCreate', 'deliveryCreate', 'purchaseCreate', 'supplierCreate', 'receivableCreate', 'payableCreate', 'receiptCreate', 'paymentCreate', 'stocktakingCreate', 'transferCreate', 'productionCreate', 'ecommerceConnect'],
+  approve: ['canApproveQuote', 'canApproveLargeQuote', 'canApproveContract', 'outboundApprove', 'outboundConfirm', 'statementConfirm', 'deliveryChangeStatus', 'inboundConfirm', 'canSignContract', 'purchaseApprove', 'workflowApprove', 'transferApprove', 'stocktakingReview'],
+  delete: ['canDeleteQuote', 'canDeleteContract', 'inboundDelete', 'outboundDelete', 'warehouseDelete', 'statementDelete', 'deliveryDelete', 'costDelete', 'purchaseDelete', 'supplierDelete', 'receivableDelete', 'payableDelete', 'transferDelete'],
+  export: ['inboundExport', 'outboundExport', 'warehouseExport', 'statementExport', 'deliveryExport', 'costExport', 'purchaseExport', 'supplierExport', 'receivableExport', 'payableExport', 'stocktakingExport', 'transferExport'],
+  print: ['inboundPrint', 'outboundPrint', 'statementPrint', 'deliveryPrint', 'purchasePrint', 'transferPrint'],
+  edit: ['canEditOthersQuote', 'canEditContract', 'inboundEdit', 'outboundUpdate', 'warehouseUpdate', 'statementUpdate', 'deliveryEdit', 'costEdit', 'costEditStandard', 'canArchiveContract', 'purchaseEdit', 'supplierEdit', 'receivableEdit', 'payableEdit', 'transferEdit', 'productionEdit', 'productionEditBom'],
   import: ['inboundImport', 'deliveryImport'],
-  special: ['inboundInspect', 'outboundCancel', 'outboundReverse', 'statementVoid', 'statementPay']
+  special: ['inboundInspect', 'outboundCancel', 'outboundReverse', 'statementVoid', 'statementPay', 'purchaseOrder', 'purchaseReceive', 'purchaseInspect', 'purchaseComplete', 'purchaseCancel', 'supplierEvaluate', 'supplierBlacklist', 'workflowDelegate', 'workflowAddApprover', 'workflowCancel', 'workflowDesign', 'stocktakingExecute', 'stocktakingAdjust', 'transferShip', 'transferReceive', 'productionRelease', 'productionStart', 'productionQualityCheck', 'productionComplete', 'productionCancel', 'productionIssueMaterial', 'receivableAging', 'payableAging', 'ecommerceSync', 'ecommerceMapping', 'ecommerceSettings']
 }
 
 export const usePermissionStore = defineStore('permission', () => {
