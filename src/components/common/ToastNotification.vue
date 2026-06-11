@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Teleport to="body">
     <div class="toast-container">
       <TransitionGroup name="toast">
@@ -40,8 +40,8 @@ defineExpose({ show, success, error, warning, info, remove })
 </script>
 
 <style scoped>
-.toast-container { position: fixed; top: 20px; right: 20px; z-index: var(--z-toast); display: flex; flex-direction: column; gap: 8px; }
-.toast-item { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-radius: 8px; min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 14px; }
+.toast-container { position: fixed; top: 20px; right: 20px; z-index: var(--z-toast); display: flex; flex-direction: column; gap: var(--space-2); }
+.toast-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-4); border-radius: 8px; min-width: 280px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 14px; }
 .toast-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .toast-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 .toast-warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }

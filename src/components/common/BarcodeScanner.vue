@@ -12,7 +12,7 @@
         <div class="form-group">
           <label class="form-label">扫码类型</label>
           <select v-model="scanType" class="form-select">
-            <option value="material">物料编码</option>
+            <option value="material">编号</option>
             <option value="location">仓位编码</option>
             <option value="order">单据编号</option>
           </select>

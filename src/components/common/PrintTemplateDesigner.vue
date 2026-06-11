@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-dialog" style="max-width: 1100px; height: 85vh; display: flex; flex-direction: column">
       <div class="modal-header">
@@ -266,7 +266,7 @@ function handleSave() {
   color: var(--color-accent);
   cursor: grab;
   border-radius: var(--radius-sm);
-  margin-bottom: 2px;
+  margin-bottom: var(--space-1);
   transition: background var(--transition-fast);
   display: flex;
   align-items: center;

@@ -7,9 +7,17 @@ const CONFIG_URL_KEY = 'gj_erp_sb_url'
 const CONFIG_KEY_KEY = 'gj_erp_sb_key'
 const SYNC_STATUS_KEY = 'gj_erp_sb_sync_status'
 
+function decodeKey(encoded) {
+  try {
+    return decodeURIComponent(atob(encoded))
+  } catch {
+    return ''
+  }
+}
+
 export const useSupabaseStore = defineStore('supabase', () => {
   const url = ref(localStorage.getItem(CONFIG_URL_KEY) || '')
-  const anonKey = ref(localStorage.getItem(CONFIG_KEY_KEY) || '')
+  const anonKey = ref(decodeKey(localStorage.getItem(CONFIG_KEY_KEY)) || '')
   const connected = ref(false)
   const connecting = ref(false)
   const testing = ref(false)
@@ -22,7 +30,7 @@ export const useSupabaseStore = defineStore('supabase', () => {
 
   const connectionSummary = computed(() => {
     if (!connected.value) return '未连接'
-    const syncedCount = Object.values(syncStatus.value).filter(s => s === 'synced').length
+    const syncedCount = Object.values(syncStatus.value).filter((s) => s === 'synced').length
     const total = Object.keys(API.TABLE_MAP).length
     return `已连接 · ${syncedCount}/${total} 表已同步`
   })
@@ -83,6 +91,9 @@ export const useSupabaseStore = defineStore('supabase', () => {
     const client = SupabaseClient.autoInit()
     if (client) {
       connected.value = true
+      // 同步更新 store 中的配置，确保表单显示已保存的连接信息
+      url.value = localStorage.getItem(CONFIG_URL_KEY) || ''
+      anonKey.value = decodeKey(localStorage.getItem(CONFIG_KEY_KEY)) || ''
       return true
     }
     return false
@@ -145,7 +156,8 @@ export const useSupabaseStore = defineStore('supabase', () => {
       { name: 'inbound_orders', store: stores.inventory, dataKey: 'inboundOrders' },
       { name: 'outbound_orders', store: stores.inventory, dataKey: 'outboundOrders' },
       { name: 'cost_records', store: stores.cost, dataKey: 'records' },
-      { name: 'warehouse_locations', store: stores.warehouseLocation, dataKey: 'locations' }
+      { name: 'warehouse_locations', store: stores.warehouseLocation, dataKey: 'locations' },
+      { name: 'suppliers', store: stores.supplier, dataKey: 'suppliers' }
     ]
 
     for (const r of resources) {
@@ -161,9 +173,17 @@ export const useSupabaseStore = defineStore('supabase', () => {
   async function pullAll() {
     if (!isConnected.value) return {}
     const resources = [
-      'customers', 'quotations', 'contracts', 'inventory',
-      'inbound_orders', 'outbound_orders', 'deliveries',
-      'collections', 'statements', 'todos', 'cost_records',
+      'customers',
+      'quotations',
+      'contracts',
+      'inventory',
+      'inbound_orders',
+      'outbound_orders',
+      'deliveries',
+      'collections',
+      'statements',
+      'todos',
+      'cost_records',
       'warehouse_locations'
     ]
 
@@ -190,10 +210,26 @@ export const useSupabaseStore = defineStore('supabase', () => {
   }
 
   return {
-    url, anonKey, connected, connecting, testing, testResult,
-    lastSyncTime, syncStatus, syncErrors, isConnected, connectionSummary,
-    testConnection, connect, disconnect, autoConnect,
-    pushToServer, pullFromServer, pushAll, pullAll,
-    subscribeRealtime, clearErrors
+    url,
+    anonKey,
+    connected,
+    connecting,
+    testing,
+    testResult,
+    lastSyncTime,
+    syncStatus,
+    syncErrors,
+    isConnected,
+    connectionSummary,
+    testConnection,
+    connect,
+    disconnect,
+    autoConnect,
+    pushToServer,
+    pullFromServer,
+    pushAll,
+    pullAll,
+    subscribeRealtime,
+    clearErrors
   }
 })

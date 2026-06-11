@@ -272,7 +272,7 @@ onUnmounted(() => {
   margin-bottom: var(--space-1);
   display: flex;
   align-items: baseline;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .dash-stat-prefix {
@@ -296,7 +296,7 @@ onUnmounted(() => {
 .dash-stat-change {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   font-weight: 600;
 }
 
@@ -378,13 +378,13 @@ onUnmounted(() => {
   font-weight: 700;
   color: var(--color-text-primary);
   font-family: var(--font-mono);
-  margin-bottom: 2px;
+  margin-bottom: var(--space-1);
 }
 
 .stat-card-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
-  margin-bottom: 2px;
+  margin-bottom: var(--space-1);
 }
 
 .stat-card-change {

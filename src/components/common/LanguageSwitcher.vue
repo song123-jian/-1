@@ -143,7 +143,7 @@ onBeforeUnmount(() => {
 }
 
 /* 手机端适配 */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .lang-label {
     display: none;
   }

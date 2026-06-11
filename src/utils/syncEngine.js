@@ -11,16 +11,17 @@ import { mergeArrays } from '@/utils/conflictResolver.js'
 import eventBus from '@/utils/eventBus.js'
 
 // ==================== Store 导入 ====================
-import { useCustomerStore } from '@/stores/customer'
-import { useQuotationStore } from '@/stores/quotation'
-import { useContractStore } from '@/stores/contract'
-import { useInventoryStore } from '@/stores/inventory'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
+import { useQuotationStore } from '@/modules/sales/stores/quotation'
+import { useContractStore } from '@/modules/sales/stores/contract'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useDeliveryStore } from '@/stores/delivery'
-import { useCollectionStore } from '@/stores/collection'
-import { useStatementStore } from '@/stores/statement'
+import { useCollectionStore } from '@/modules/finance/stores/collection'
+import { useStatementStore } from '@/modules/finance/stores/statement'
 import { useTodoStore } from '@/stores/todo'
-import { useCostStore } from '@/stores/cost'
-import { useWarehouseLocationStore } from '@/stores/warehouseLocation'
+import { useCostStore } from '@/modules/finance/stores/cost'
+import { useWarehouseLocationStore } from '@/modules/warehouse/stores/warehouseLocation'
+import { useSupplierStore } from '@/modules/purchase/stores/supplier'
 
 // ==================== 表与 Store 映射 ====================
 const SYNC_MAP = {
@@ -35,7 +36,8 @@ const SYNC_MAP = {
   statements: { storeName: 'statement', dataKey: 'statements' },
   todos: { storeName: 'todo', dataKey: 'todos' },
   cost_records: { storeName: 'cost', dataKey: 'records' },
-  warehouse_locations: { storeName: 'warehouseLocation', dataKey: 'locations' }
+  warehouse_locations: { storeName: 'warehouseLocation', dataKey: 'locations' },
+  suppliers: { storeName: 'supplier', dataKey: 'suppliers' }
 }
 
 // ==================== Store 实例缓存 ====================
@@ -50,7 +52,7 @@ function getStore(storeName) {
   if (_storeCache.has(storeName)) {
     return _storeCache.get(storeName)
   }
-  let store = null
+  let store
   switch (storeName) {
     case 'customer':
       store = useCustomerStore()
@@ -81,6 +83,9 @@ function getStore(storeName) {
       break
     case 'warehouseLocation':
       store = useWarehouseLocationStore()
+      break
+    case 'supplier':
+      store = useSupplierStore()
       break
     default:
       console.warn(`[SyncEngine] 未知 Store: ${storeName}`)
@@ -726,7 +731,8 @@ function getStorageKey(storeName, dataKey) {
     'statement.statements': 'gj_erp_statements',
     'todo.todos': 'gj_erp_todos',
     'cost.records': 'gj_erp_costAnalysis',
-    'warehouseLocation.locations': 'gj_erp_warehouseLocations'
+    'warehouseLocation.locations': 'gj_erp_warehouseLocations',
+    'supplier.suppliers': 'gj_erp_suppliers'
   }
   return keyMap[`${storeName}.${dataKey}`] || null
 }

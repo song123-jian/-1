@@ -105,7 +105,7 @@ onMounted(() => {
   justify-content: center;
   background: var(--color-bg-primary);
   overflow-y: auto;
-  z-index: 9999;
+  z-index: var(--z-popover, 9999);
 }
 
 /* 动态渐变背景 */

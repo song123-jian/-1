@@ -92,7 +92,7 @@ function isOverdue(todo) {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   background: var(--color-bg-tertiary);
-  padding: 2px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-weight: 600;
 }
@@ -156,7 +156,7 @@ function isOverdue(todo) {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 
 .week-day-num.is-today {
@@ -188,7 +188,7 @@ function isOverdue(todo) {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
 }
 
@@ -196,15 +196,15 @@ function isOverdue(todo) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
   overflow: hidden;
 }
 
 .week-todo-item {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 4px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-1);
   border-radius: var(--radius-sm);
   font-size: 11px;
   cursor: pointer;
@@ -266,7 +266,7 @@ function isOverdue(todo) {
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   cursor: pointer;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 12px;
   transition: all 0.15s;
 }
@@ -279,7 +279,7 @@ function isOverdue(todo) {
   border-radius: var(--radius-sm);
   color: var(--color-accent);
   cursor: pointer;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 12px;
   font-weight: 600;
   transition: all 0.15s;

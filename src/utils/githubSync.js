@@ -13,10 +13,50 @@
 
 import eventBus from './eventBus'
 
-const GITHUB_TOKEN_KEY = 'gj_erp_github_token'
+const GITHUB_TOKEN_KEY = 'gj_erp_github_token_enc'
 const GITHUB_GIST_ID_KEY = 'gj_erp_github_gist_id'
 const GITHUB_CONFIG_KEY = 'gj_erp_github_config'
 const GITHUB_USER_KEY = 'gj_erp_github_user'
+
+/* Token加密密钥派生（基于设备指纹，增加读取难度） */
+function _deriveObfuscationKey() {
+  const components = [navigator.userAgent, screen.width + 'x' + screen.height, navigator.language]
+  let hash = 0
+  const str = components.join('|')
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash
+  }
+  return 'gh_' + Math.abs(hash).toString(36)
+}
+
+/* 加密Token存储（非强加密，但防止明文直接读取） */
+function _encryptToken(token) {
+  if (!token) return ''
+  const key = _deriveObfuscationKey()
+  let result = ''
+  for (let i = 0; i < token.length; i++) {
+    result += String.fromCharCode(token.charCodeAt(i) ^ key.charCodeAt(i % key.length))
+  }
+  return btoa(encodeURIComponent(result))
+}
+
+/* 解密Token */
+function _decryptToken(encoded) {
+  if (!encoded) return ''
+  try {
+    const key = _deriveObfuscationKey()
+    const text = decodeURIComponent(atob(encoded))
+    let result = ''
+    for (let i = 0; i < text.length; i++) {
+      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length))
+    }
+    return result
+  } catch {
+    return ''
+  }
+}
 
 /* GitHub API 基础地址 */
 const GITHUB_API = 'https://api.github.com'
@@ -182,7 +222,7 @@ class GitHubSync {
 
           if (data.access_token) {
             this._token = data.access_token
-            localStorage.setItem(GITHUB_TOKEN_KEY, this._token)
+            localStorage.setItem(GITHUB_TOKEN_KEY, _encryptToken(this._token))
             /* 获取用户信息 */
             await this._fetchUserInfo()
             /* 发布事件 */
@@ -215,7 +255,7 @@ class GitHubSync {
    */
   async authWithToken(token) {
     this._token = token
-    localStorage.setItem(GITHUB_TOKEN_KEY, token)
+    localStorage.setItem(GITHUB_TOKEN_KEY, _encryptToken(token))
 
     const valid = await this._verifyToken()
     if (!valid) {
@@ -802,8 +842,17 @@ class GitHubSync {
    */
   _loadConfig() {
     try {
-      /* 加载 Token */
-      this._token = localStorage.getItem(GITHUB_TOKEN_KEY) || null
+      /* 加载 Token（解密） */
+      const encryptedToken = localStorage.getItem(GITHUB_TOKEN_KEY)
+      this._token = encryptedToken ? _decryptToken(encryptedToken) : null
+
+      /* 清理旧版明文Token（兼容迁移） */
+      const oldPlainToken = localStorage.getItem('gj_erp_github_token')
+      if (oldPlainToken) {
+        this._token = oldPlainToken
+        localStorage.setItem(GITHUB_TOKEN_KEY, _encryptToken(oldPlainToken))
+        localStorage.removeItem('gj_erp_github_token')
+      }
 
       /* 加载 Gist ID */
       this._gistId = localStorage.getItem(GITHUB_GIST_ID_KEY) || null

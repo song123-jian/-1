@@ -97,16 +97,12 @@ export const useThemeStore = defineStore('theme', () => {
   ]
 
   // ============ Computed ============
-  const currentThemeInfo = computed(() =>
-    themes.find(t => t.key === currentTheme.value) || themes[0]
-  )
+  const currentThemeInfo = computed(() => themes.find((t) => t.key === currentTheme.value) || themes[0])
 
-  const currentModeInfo = computed(() =>
-    modes.find(m => m.key === currentMode.value) || modes[0]
-  )
+  const currentModeInfo = computed(() => modes.find((m) => m.key === currentMode.value) || modes[0])
 
-  const isDark = computed(() =>
-    currentMode.value === 'dark' || currentMode.value === 'cyberpunk' || currentMode.value === 'highcontrast'
+  const isDark = computed(
+    () => currentMode.value === 'dark' || currentMode.value === 'cyberpunk' || currentMode.value === 'highcontrast'
   )
 
   const effectiveTransitionDuration = computed(() =>
@@ -117,6 +113,9 @@ export const useThemeStore = defineStore('theme', () => {
   function applyToDocument() {
     if (typeof document === 'undefined') return
     const html = document.documentElement
+    // 添加过渡动画类
+    html.classList.add('theme-transitioning')
+    setTimeout(() => html.classList.remove('theme-transitioning'), effectiveTransitionDuration.value + 50)
     html.setAttribute('data-theme', currentTheme.value)
     html.setAttribute('data-preset', currentPreset.value)
     html.setAttribute('data-mode', currentMode.value)
@@ -145,6 +144,8 @@ export const useThemeStore = defineStore('theme', () => {
     } else {
       html.classList.remove('reduce-motion')
     }
+    // 大字体模式
+    html.setAttribute('data-accessibility-large-text', s.accessibility.largeText ? 'true' : 'false')
 
     // 应用亮度
     if (s.brightness !== 100) {
@@ -164,7 +165,7 @@ export const useThemeStore = defineStore('theme', () => {
   // ============ Actions ============
   function setTheme(themeKey) {
     currentTheme.value = themeKey
-    const theme = themes.find(t => t.key === themeKey)
+    const theme = themes.find((t) => t.key === themeKey)
     if (theme) {
       themeSettings.value.accentColor = theme.color
       // 自动计算hover色
@@ -237,14 +238,18 @@ export const useThemeStore = defineStore('theme', () => {
 
   // ============ Import / Export ============
   function exportTheme() {
-    return JSON.stringify({
-      theme: currentTheme.value,
-      preset: currentPreset.value,
-      mode: currentMode.value,
-      settings: themeSettings.value,
-      exportAt: new Date().toISOString(),
-      version: '1.0'
-    }, null, 2)
+    return JSON.stringify(
+      {
+        theme: currentTheme.value,
+        preset: currentPreset.value,
+        mode: currentMode.value,
+        settings: themeSettings.value,
+        exportAt: new Date().toISOString(),
+        version: '1.0'
+      },
+      null,
+      2
+    )
   }
 
   function importTheme(jsonString) {
@@ -265,6 +270,7 @@ export const useThemeStore = defineStore('theme', () => {
   // ============ Auto Switch ============
   let autoSwitchTimer = null
   let systemMediaQuery = null
+  let systemMediaHandler = null
 
   function checkAutoSwitch() {
     const s = themeSettings.value.autoSwitch
@@ -284,7 +290,7 @@ export const useThemeStore = defineStore('theme', () => {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
     const { lightStart, darkStart } = s.schedule
 
-    let targetMode = currentMode.value
+    let targetMode
     if (lightStart <= darkStart) {
       // 正常时间段
       if (currentTime >= lightStart && currentTime < darkStart) {
@@ -315,15 +321,15 @@ export const useThemeStore = defineStore('theme', () => {
     // 监听系统主题变化
     if (typeof window !== 'undefined' && window.matchMedia) {
       systemMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-      const handler = () => {
+      systemMediaHandler = () => {
         if (themeSettings.value.autoSwitch.enabled && themeSettings.value.autoSwitch.followSystem) {
           checkAutoSwitch()
         }
       }
       if (systemMediaQuery.addEventListener) {
-        systemMediaQuery.addEventListener('change', handler)
+        systemMediaQuery.addEventListener('change', systemMediaHandler)
       } else if (systemMediaQuery.addListener) {
-        systemMediaQuery.addListener(handler)
+        systemMediaQuery.addListener(systemMediaHandler)
       }
     }
   }
@@ -333,6 +339,14 @@ export const useThemeStore = defineStore('theme', () => {
       clearInterval(autoSwitchTimer)
       autoSwitchTimer = null
     }
+    if (systemMediaQuery && systemMediaHandler) {
+      if (systemMediaQuery.removeEventListener) {
+        systemMediaQuery.removeEventListener('change', systemMediaHandler)
+      } else if (systemMediaQuery.removeListener) {
+        systemMediaQuery.removeListener(systemMediaHandler)
+      }
+      systemMediaHandler = null
+    }
   }
 
   // ============ Utility ============
@@ -340,8 +354,8 @@ export const useThemeStore = defineStore('theme', () => {
     const num = parseInt(hex.replace('#', ''), 16)
     const amt = Math.round(2.55 * percent)
     const R = Math.min(255, (num >> 16) + amt)
-    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt)
-    const B = Math.min(255, (num & 0x0000FF) + amt)
+    const G = Math.min(255, ((num >> 8) & 0x00ff) + amt)
+    const B = Math.min(255, (num & 0x0000ff) + amt)
     return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)
   }
 
@@ -367,13 +381,16 @@ export const useThemeStore = defineStore('theme', () => {
   }
 
   // 监听设置变化自动启动/停止自动切换
-  watch(() => themeSettings.value.autoSwitch.enabled, (enabled) => {
-    if (enabled) {
-      startAutoSwitch()
-    } else {
-      stopAutoSwitch()
+  watch(
+    () => themeSettings.value.autoSwitch.enabled,
+    (enabled) => {
+      if (enabled) {
+        startAutoSwitch()
+      } else {
+        stopAutoSwitch()
+      }
     }
-  })
+  )
 
   return {
     // state
@@ -403,6 +420,7 @@ export const useThemeStore = defineStore('theme', () => {
     init,
     startAutoSwitch,
     stopAutoSwitch,
-    adjustBrightness
+    adjustBrightness,
+    persist
   }
 })

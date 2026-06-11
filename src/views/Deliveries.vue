@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="delivery-page">
     <div class="page-header">
       <div>
@@ -164,6 +164,7 @@
         <option value="express">快递</option>
         <option value="dedicated">专车</option>
       </select>
+      <DataSelect module="customer" variant="active" v-model="filters.customerName" value-field="name" label-field="name" placeholder="全部客户" clearable style="min-width:160px" />
       <input type="date" class="form-input" v-model="filters.dateFrom" style="max-width:140px" title="起始日期">
       <input type="date" class="form-input" v-model="filters.dateTo" style="max-width:140px" title="截止日期">
       <button class="btn btn-ghost btn-sm" @click="resetFilters">重置</button>
@@ -189,6 +190,7 @@
             <thead>
               <tr>
                 <th style="width:36px"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
+                <th style="width:50px;text-align:center">序号</th>
                 <th v-if="columnVisible.deliveryNo" @click="toggleSort('deliveryNo')" style="cursor:pointer">送货单号 <span class="sort-icon"><Icon :name="sortField === 'deliveryNo' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
                 <th v-if="columnVisible.customer" @click="toggleSort('customerName')" style="cursor:pointer">购货单位 <span class="sort-icon"><Icon :name="sortField === 'customerName' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
                 <th v-if="columnVisible.purchaseNo">关联采购单号</th>
@@ -204,13 +206,14 @@
             </thead>
             <tbody>
               <tr v-if="pagedDeliveries.length === 0">
-                <td colspan="12" class="empty-state">
+                <td colspan="13" class="empty-state">
                   <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
                 </td>
               </tr>
               <tr v-for="(d, idx) in pagedDeliveries" :key="d.id"
                 :style="[d.hasException === '1' ? 'border-left:3px solid var(--color-danger)' : '', { animationDelay: idx * 20 + 'ms' }]" class="delivery-table-row">
                 <td><input type="checkbox" :value="d.id" v-model="selectedIds"></td>
+                <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
                 <td v-if="columnVisible.deliveryNo" class="cell-mono" style="font-weight:600;color:var(--color-accent);cursor:pointer" @click="viewDetail(d.id)">{{ d.deliveryNo }}</td>
                 <td v-if="columnVisible.customer">{{ d.customerName || '-' }}</td>
                 <td v-if="columnVisible.purchaseNo" class="cell-mono">{{ d.orderId || '-' }}</td>
@@ -260,7 +263,7 @@
           <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
         </div>
         <div style="display:flex;align-items:center;gap:var(--space-2)">
-          <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出Excel</button>
+          <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
           <button v-if="canDelete && selectedIds.length > 0" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="batchDelete"><Icon name="delete" :size="14" /> 批量删除({{ selectedIds.length }})</button>
         </div>
       </div>
@@ -538,7 +541,7 @@
               </thead>
               <tbody>
                 <tr v-for="(it, idx) in editorItems" :key="idx">
-                  <td style="text-align:center">{{ idx + 1 }}</td>
+                  <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ idx + 1 }}</td>
                   <td><input class="form-input" style="min-width:100px" v-model="it.productName"></td>
                   <td><input class="form-input" style="min-width:80px" v-model="it.partNo"></td>
                   <td><input class="form-input" style="min-width:80px" v-model="it.inventoryCode"></td>
@@ -839,8 +842,9 @@
 <script setup>
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useDeliveryStore } from '@/stores/delivery'
-import { useCustomerStore } from '@/stores/customer'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { usePermission } from '@/utils/permissionGuard'
+import { formatMoney, escapeHtml } from '@/utils/format'
 import DataSelect from '@/components/DataSelect.vue'
 
 const deliveryStore = useDeliveryStore()
@@ -907,6 +911,7 @@ const filters = reactive({
   status: '',
   urgency: '',
   transport: '',
+  customerName: '',
   dateFrom: '',
   dateTo: ''
 })
@@ -960,6 +965,7 @@ const filteredDeliveries = computed(() => {
   if (filters.status) list = list.filter(d => d.status === filters.status)
   if (filters.urgency) list = list.filter(d => d.urgency === filters.urgency)
   if (filters.transport) list = list.filter(d => d.transportMethod === filters.transport)
+  if (filters.customerName) list = list.filter(d => d.customerName === filters.customerName)
   if (filters.dateFrom) list = list.filter(d => d.date >= filters.dateFrom)
   if (filters.dateTo) list = list.filter(d => d.date <= filters.dateTo)
   if (sortField.value) {
@@ -1099,11 +1105,6 @@ function kanbanItems(status) {
   return filteredDeliveries.value.filter(d => d.status === status)
 }
 
-function formatMoney(num) {
-  const n = parseFloat(num) || 0
-  return n.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
 function isOverdue(d) {
   if (!d.expectedArrivalDate) return false
   const now = new Date().toISOString().split('T')[0]
@@ -1115,6 +1116,7 @@ function resetFilters() {
   filters.status = ''
   filters.urgency = ''
   filters.transport = ''
+  filters.customerName = ''
   filters.dateFrom = ''
   filters.dateTo = ''
   currentPage.value = 1
@@ -1327,25 +1329,21 @@ function handlePrint(id) {
   if (!d) return
   const items = Array.isArray(d.items) ? d.items : []
   const itemsHtml = items.map((it, i) =>
-    `<tr><td>${it.seq || i + 1}</td><td>${it.productName || ''}</td><td>${it.partNo || ''}</td><td>${it.spec || ''}</td><td>${it.unit || ''}</td><td style="text-align:right">${it.quantity || 0}</td><td style="text-align:right">${formatMoney(it.unitPrice || 0)}</td><td style="text-align:right">${formatMoney(it.amount || 0)}</td></tr>`
-  ).join('')
-  const printHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>送货单 - ${d.deliveryNo}</title>
-<style>body{font-family:sans-serif;padding:20px;font-size:12px}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f5f5f5;font-weight:600}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;border-bottom:2px solid #333;padding-bottom:10px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.section-title{font-weight:700;margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid #ccc}</style></head>
-<body><div class="header"><h2>送货单</h2><div>单据编号：${d.deliveryNo}</div></div>
+    `<tr><td>${it.seq || i + 1}</td><td>${escapeHtml(it.productName || '')}</td><td>${escapeHtml(it.partNo || '')}</td><td>${escapeHtml(it.spec || '')}</td><td>${escapeHtml(it.unit || '')}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${it.quantity || 0}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.unitPrice || 0)}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.amount || 0)}</td></tr>`  ).join('')/* eslint-disable no-useless-escape */  const printHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>送货单 - ${escapeHtml(d.deliveryNo || '')}</title><style>body{font-family:sans-serif;padding:var(--space-5);font-size:12px}table{width:100%;border-collapse:collapse;margin:var(--space-2) 0}th{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left; overflow-wrap: break-word; word-wrap: break-word}td{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left; overflow-wrap: break-word; word-wrap: break-word}th{background:#f5f5f5;font-weight:600}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5);border-bottom:2px solid #333;padding-bottom:var(--space-2)}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin:var(--space-2) 0}.section-title{font-weight:700;margin:var(--space-4) 0 var(--space-2);padding-bottom:var(--space-1);border-bottom:1px solid #ccc}</style></head><body><div class="header"><h2>送货单</h2><div>单据编号：${escapeHtml(d.deliveryNo || '')}</div></div>
 <div class="section-title">基本信息</div>
-<div class="info-grid"><div>发货日期：${d.date || '-'}</div><div>关联采购单号：${d.orderId || '-'}</div><div>紧急程度：${deliveryStore.urgencyLabels[d.urgency] || '-'}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div></div>
+<div class="info-grid"><div>发货日期：${escapeHtml(d.date || '-')}</div><div>关联采购单号：${escapeHtml(d.orderId || '-')}</div><div>紧急程度：${deliveryStore.urgencyLabels[d.urgency] || '-'}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div></div>
 <div class="section-title">购货单位</div>
-<div class="info-grid"><div>单位名称：${d.customerName || '-'}</div><div>地址：${d.address || '-'}</div><div>联系人：${d.contact || '-'}</div><div>联系电话：${d.phone || '-'}</div></div>
+<div class="info-grid"><div>单位名称：${escapeHtml(d.customerName || '-')}</div><div>地址：${escapeHtml(d.address || '-')}</div><div>联系人：${escapeHtml(d.contact || '-')}</div><div>联系电话：${escapeHtml(d.phone || '-')}</div></div>
 <div class="section-title">送货计划</div>
-<div class="info-grid"><div>预计送货日期：${d.expectedDate || '-'}</div><div>预计送达日期：${d.expectedArrivalDate || '-'}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div><div>承运单位：${d.carrier || '-'}</div><div>送货人员：${d.driver || '-'}</div><div>物流单号：${d.trackingNo || '-'}</div></div>
+<div class="info-grid"><div>预计送货日期：${escapeHtml(d.expectedDate || '-')}</div><div>预计送达日期：${escapeHtml(d.expectedArrivalDate || '-')}</div><div>运输方式：${deliveryStore.transportLabels[d.transportMethod] || '-'}</div><div>承运单位：${escapeHtml(d.carrier || '-')}</div><div>送货人员：${escapeHtml(d.driver || '-')}</div><div>物流单号：${escapeHtml(d.trackingNo || '-')}</div></div>
 <div class="section-title">产品明细</div>
 <table><thead><tr><th>序号</th><th>产品名称</th><th>料号</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th></tr></thead><tbody>${itemsHtml}</tbody></table>
 <div style="text-align:right;font-weight:700">金额合计：¥${formatMoney(d.totalAmount || 0)} · 税额合计：¥${formatMoney(d.totalTax || 0)} · 价税合计：¥${formatMoney(d.grandTotal || 0)}</div>
-${d.actualDate ? '<div class="section-title">收货确认</div><div class="info-grid"><div>实际送达日期：' + d.actualDate + '</div><div>验收情况：' + (deliveryStore.acceptanceLabels[d.acceptanceResult] || '未验收') + '</div><div>验收人员：' + (d.acceptPerson || '-') + '</div></div>' : ''}
-${d.hasException === '1' ? '<div class="section-title">异常处理</div><div class="info-grid"><div>异常类型：' + (deliveryStore.exceptionTypeLabels[d.exceptionType] || '-') + '</div><div>异常原因：' + (d.exceptionReason || '-') + '</div><div>处理方案：' + (d.exceptionSolution || '-') + '</div><div>责任人：' + (d.exceptionResponsible || '-') + '</div></div>' : ''}
+${d.actualDate ? '<div class="section-title">收货确认</div><div class="info-grid"><div>实际送达日期：' + escapeHtml(d.actualDate) + '</div><div>验收情况：' + (deliveryStore.acceptanceLabels[d.acceptanceResult] || '未验收') + '</div><div>验收人员：' + escapeHtml(d.acceptPerson || '-') + '</div></div>' : ''}
+${d.hasException === '1' ? '<div class="section-title">异常处理</div><div class="info-grid"><div>异常类型：' + (deliveryStore.exceptionTypeLabels[d.exceptionType] || '-') + '</div><div>异常原因：' + escapeHtml(d.exceptionReason || '-') + '</div><div>处理方案：' + escapeHtml(d.exceptionSolution || '-') + '</div><div>责任人：' + escapeHtml(d.exceptionResponsible || '-') + '</div></div>' : ''}
 <div class="section-title">签章确认</div>
-<div class="info-grid"><div>审核人：${d.reviewer || '-'}</div><div>制表人：${d.creator || '-'}</div><div>送货人签字：${d.deliverySigner || '-'}</div><div>签章日期：${d.signDate || '-'}</div></div>
-<script>window.onload=function(){window.print()}<\/script></body></html>`
+<div class="info-grid"><div>审核人：${escapeHtml(d.reviewer || '-')}</div><div>制表人：${escapeHtml(d.creator || '-')}</div><div>送货人签字：${escapeHtml(d.deliverySigner || '-')}</div><div>签章日期：${escapeHtml(d.signDate || '-')}</div></div>
+<script>window.onload=function(){window.print()}<\/script></body></html>` /* eslint-enable no-useless-escape */
   const win = window.open('', '_blank')
   if (win) {
     win.document.write(printHtml)
@@ -1433,8 +1431,6 @@ function handleClickOutside(e) {
 }
 
 onMounted(() => {
-  customerStore.initSeedData()
-  deliveryStore.initSeedData()
   document.addEventListener('click', handleClickOutside)
 })
 onUnmounted(() => {
@@ -1446,7 +1442,7 @@ onUnmounted(() => {
 .sort-icon {
   font-size: 10px;
   color: var(--color-text-tertiary);
-  margin-left: 2px;
+  margin-left: var(--space-1);
 }
 .kanban-board {
   display: flex;
@@ -1609,7 +1605,7 @@ onUnmounted(() => {
   font-size: var(--font-size-2xl);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .stat-dot-halo {
   display: inline-block;
@@ -1635,12 +1631,12 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 700;
   color: var(--color-accent);
-  margin-bottom: 12px;
-  padding-bottom: 8px;
+  margin-bottom: var(--space-3);
+  padding-bottom: var(--space-2);
   border-bottom: 2px solid var(--color-accent);
 }
 .form-section-title:not(:first-child) {
-  margin-top: 16px;
+  margin-top: var(--space-4);
 }
 
 /* ====== 概览面板 ====== */
@@ -1685,14 +1681,14 @@ onUnmounted(() => {
 .overview-ring-sub {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 
 /* 运输方式分布条形图 */
 .transport-bars {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .transport-bar-item {
   display: grid;
@@ -1728,9 +1724,9 @@ onUnmounted(() => {
 .trend-bars {
   display: flex;
   align-items: flex-end;
-  gap: 4px;
+  gap: var(--space-1);
   height: 80px;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 .trend-bar-col {
   flex: 1;
@@ -1754,7 +1750,7 @@ onUnmounted(() => {
 .trend-bar-day {
   font-size: 10px;
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 .trend-bar-num {
   font-size: 10px;
@@ -1774,7 +1770,7 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--color-danger);
   animation: alertDotPulse 1.5s ease-in-out infinite;
-  margin-right: 4px;
+  margin-right: var(--space-1);
 }
 .delivery-alert-item {
   display: flex;
@@ -1791,7 +1787,7 @@ onUnmounted(() => {
   to { opacity: 1; transform: translateX(0); }
 }
 .delivery-alert-badge {
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   font-weight: 500;
@@ -1919,7 +1915,7 @@ onUnmounted(() => {
   }
 }
 .column-config-wrapper { position: relative; }
-.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: 9999; min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
 .column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
 .column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
 .pagination-bar {
@@ -1943,7 +1939,7 @@ onUnmounted(() => {
 .form-error {
   font-size: var(--font-size-base);
   color: var(--color-danger);
-  padding: 2px 0;
+  padding: var(--space-1) 0;
 }
 .form-textarea {
   padding: var(--space-2) var(--space-3);

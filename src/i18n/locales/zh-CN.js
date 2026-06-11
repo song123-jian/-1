@@ -269,7 +269,7 @@ export default {
 
   inventory: {
     materialName: '物料名称',
-    materialCode: '物料编码',
+    materialCode: '编号',
     specification: '规格',
     unit: '单位',
     quantity: '数量',

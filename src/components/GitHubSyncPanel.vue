@@ -498,7 +498,7 @@ onUnmounted(() => {
 }
 .method-desc code {
   background: var(--color-bg-tertiary);
-  padding: 1px 4px;
+  padding: var(--space-1) var(--space-1);
   border-radius: 2px;
   font-size: var(--font-size-xs);
 }
@@ -533,7 +533,7 @@ onUnmounted(() => {
   color: var(--color-text-tertiary);
 }
 .code-value {
-  font-family: monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-size-lg);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -589,7 +589,7 @@ onUnmounted(() => {
 }
 .gist-link {
   color: var(--color-accent);
-  font-family: monospace;
+  font-family: var(--font-mono);
 }
 
 .sync-config {
@@ -681,7 +681,7 @@ onUnmounted(() => {
 
 /* 通用样式 */
 .btn {
-  padding: 6px 14px;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   cursor: pointer;
@@ -693,9 +693,9 @@ onUnmounted(() => {
 .btn-outline { background: transparent; border-color: var(--color-border); color: var(--color-text-secondary); }
 .btn-ghost { background: transparent; border: none; color: var(--color-text-tertiary); }
 .btn-ghost:hover { color: var(--color-text-primary); background: var(--color-bg-secondary); }
-.btn-sm { padding: 3px 8px; font-size: var(--font-size-xs); }
+.btn-sm { padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); }
 .form-input, .form-select {
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);

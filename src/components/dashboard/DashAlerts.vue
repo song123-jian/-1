@@ -87,7 +87,7 @@ const worstLevel = computed(() => {
   height: 6px;
   border-radius: 50%;
   background: #22c55e;
-  margin-right: 4px;
+  margin-right: var(--space-1);
   vertical-align: middle;
 }
 
@@ -115,7 +115,7 @@ const worstLevel = computed(() => {
   height: 6px;
   border-radius: 50%;
   background: #8b5cf6;
-  margin-right: 4px;
+  margin-right: var(--space-1);
   vertical-align: middle;
   box-shadow: 0 0 6px rgba(139, 92, 246, 0.4);
 }
@@ -158,7 +158,7 @@ const worstLevel = computed(() => {
 .alert-indicator {
   width: 10px;
   height: 10px;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -206,7 +206,7 @@ const worstLevel = computed(() => {
 .alert-desc {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 
 .alert-time {
@@ -281,6 +281,6 @@ const worstLevel = computed(() => {
 .timeline-time {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 </style>

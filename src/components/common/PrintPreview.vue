@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-dialog" style="max-width: 900px; height: 85vh; display: flex; flex-direction: column">
       <div class="modal-header">
@@ -49,7 +49,7 @@ function handleExportPDF() {
 .print-preview-frame {
   background: #fff;
   color: #333;
-  padding: 20px;
+  padding: var(--space-5);
   border-radius: var(--radius-md);
   min-height: 400px;
   font-size: 13px;

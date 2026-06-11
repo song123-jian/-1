@@ -33,7 +33,7 @@ function generateDeviceFingerprint() {
     const str = components.join('|')
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
+      hash = (hash << 5) - hash + char
       hash = hash & hash
     }
     return 'dev_' + Math.abs(hash).toString(36)
@@ -265,10 +265,23 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   return {
-    currentRole, sessionId, deviceFingerprint, onlineMembers,
-    lastActiveTime, loginTime, isLoggedIn, currentUser, roleName,
+    currentRole,
+    sessionId,
+    deviceFingerprint,
+    onlineMembers,
+    lastActiveTime,
+    loginTime,
+    isLoggedIn,
+    currentUser,
+    roleName,
     availableRoles,
-    restoreSession, selectRole, clearSession, updateActivity, checkSessionExpiry,
-    subscribePresence, unsubscribePresence, getOnlineMembers
+    restoreSession,
+    selectRole,
+    clearSession,
+    updateActivity,
+    checkSessionExpiry,
+    subscribePresence,
+    unsubscribePresence,
+    getOnlineMembers
   }
 })

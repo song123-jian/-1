@@ -5,9 +5,158 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="description" content="冠久ERP - 面向中小制造和贸易企业的云原生企业资源计划管理系统">
   <meta name="theme-color" content="#1a1f36">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>冠久ERP - 管理系统</title>
+  <style>
+    /* IE浏览器检测样式 - 完全兼容IE11 */
+    #ie-warning {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1f36;
+      color: #fff;
+      z-index: 99999;
+      font-family: "Microsoft YaHei", sans-serif;
+      overflow: auto;
+    }
+    #ie-warning .ie-box {
+      width: 520px;
+      max-width: 90%;
+      margin: 0 auto;
+      padding-top: 10%;
+      padding-bottom: 40px;
+      text-align: center;
+    }
+    #ie-warning .ie-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+      color: #f59e0b;
+    }
+    #ie-warning h2 {
+      font-size: 24px;
+      margin: 0 0 12px;
+      font-weight: normal;
+    }
+    #ie-warning p {
+      font-size: 14px;
+      color: #a0aec0;
+      line-height: 1.8;
+      margin: 0 0 24px;
+    }
+    #ie-warning .ie-browsers {
+      text-align: center;
+    }
+    #ie-warning .ie-browser {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 4px;
+      background: #2d3748;
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-size: 13px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    #ie-warning .ie-browser:hover {
+      background: #4a5568;
+    }
+    /* 加载指示器 - 现代浏览器显示 */
+    #app-loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #1a1f36;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      z-index: 99998;
+    }
+    #app-loading .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #334155;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      -webkit-animation: spin 0.8s linear infinite;
+      animation: spin 0.8s linear infinite;
+    }
+    #app-loading .loading-text {
+      color: #94a3b8;
+      font-size: 14px;
+      margin-top: 16px;
+      font-family: "Microsoft YaHei", sans-serif;
+    }
+    @-webkit-keyframes spin {
+      to { -webkit-transform: rotate(360deg); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+  <script>
+    /* IE11及Edge IE模式检测 - 多种方式确保可靠 */
+    (function() {
+      var ua = window.navigator.userAgent;
+      var isIE = false;
+      
+      /* 方式1: User-Agent检测 */
+      if (ua.indexOf('MSIE ') > 0 || ua.indexOf('Trident/') > 0) {
+        isIE = true;
+      }
+      
+      /* 方式2: documentMode检测(IE特有属性) */
+      if (document.documentMode) {
+        isIE = true;
+      }
+      
+      /* 方式3: 检测IE特有API缺失 */
+      if (!window.Promise || !window.Map || !window.Set || !window.WeakMap) {
+        isIE = true;
+      }
+      
+      if (isIE) {
+        /* 立即显示提示，隐藏其他内容 */
+        var style = document.createElement('style');
+        style.type = 'text/css';
+        style.styleSheet ? style.styleSheet.cssText = '#app{display:none!important}#app-loading{display:none!important}#ie-warning{display:block!important}' : style.appendChild(document.createTextNode('#app{display:none!important}#app-loading{display:none!important}#ie-warning{display:block!important}'));
+        document.getElementsByTagName('head')[0].appendChild(style);
+      }
+    })();
+  </script>
 </head>
 <body>
+  <!-- IE浏览器不兼容提示 -->
+  <div id="ie-warning">
+    <div class="ie-box">
+      <div class="ie-icon">&#9888;</div>
+      <h2>浏览器不兼容</h2>
+      <p>冠久ERP使用了现代Web技术，Internet Explorer / Edge兼容模式 无法正常运行。<br>请使用以下现代浏览器访问系统：</p>
+      <div class="ie-browsers">
+        <a class="ie-browser" href="https://www.google.cn/chrome/" target="_blank">Chrome 浏览器</a>
+        <a class="ie-browser" href="https://www.microsoft.com/edge" target="_blank">Microsoft Edge（正常模式）</a>
+        <a class="ie-browser" href="https://www.firefox.com.cn/" target="_blank">Firefox 浏览器</a>
+      </div>
+      <p style="margin-top:24px;font-size:12px;color:#64748b;">
+        如果您正在使用 Edge 浏览器，请关闭 IE 兼容模式：<br>
+        设置 &gt; 默认浏览器 &gt; Internet Explorer 兼容性 &gt; 选择"从不"
+      </p>
+    </div>
+  </div>
+  <!-- 加载指示器 -->
+  <div id="app-loading">
+    <div style="text-align:center">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">系统加载中...</div>
+    </div>
+  </div>
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
 </body>

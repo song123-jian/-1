@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <span class="icon-wrap" v-html="sanitizeHtml(svgHtml)" :style="{ width: size + 'px', height: size + 'px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', verticalAlign: 'middle', flexShrink: '0' }"></span>
 </template>
 

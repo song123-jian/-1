@@ -9,6 +9,16 @@ import { vPermission } from './utils/permissionGuard'
 import Icon from '@/components/Icon.vue'
 import notificationEngine from '@/utils/notificationEngine'
 
+/* CSS变量polyfill - 为不支持CSS变量的浏览器提供兼容 */
+import cssVars from 'css-vars-ponyfill'
+cssVars({
+  onlyLegacy: true,
+  preserveVars: true,
+  silent: true,
+  updateDOM: true,
+  watch: true
+})
+
 const app = createApp(App)
 app.use(createPinia())
 app.use(router)

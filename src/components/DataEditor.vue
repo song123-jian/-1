@@ -429,7 +429,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--color-border, #e5e7eb);
 }
 .data-editor-title {
@@ -439,7 +439,7 @@ export default {
 }
 .data-editor-header-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .data-editor-body {
   flex: 1;
@@ -454,18 +454,18 @@ export default {
   overflow-y: auto;
 }
 .sidebar-header {
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   font-weight: 600;
   font-size: 13px;
   border-bottom: 1px solid var(--color-border, #e5e7eb);
   background: var(--color-bg-secondary, #f9fafb);
 }
-.sidebar-body { padding: 8px; }
+.sidebar-body { padding: var(--space-2); }
 .version-item {
-  padding: 8px;
+  padding: var(--space-2);
   border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   border: 1px solid transparent;
 }
 .version-item:hover { background: var(--color-bg-secondary, #f9fafb); }
@@ -473,31 +473,31 @@ export default {
 .version-header { display: flex; justify-content: space-between; align-items: center; }
 .version-number { font-weight: 600; font-size: 12px; }
 .version-action { font-size: 11px; color: var(--color-text-muted, #6b7280); }
-.version-meta { font-size: 11px; color: var(--color-text-muted, #9ca3af); margin-top: 2px; display: flex; gap: 8px; }
-.version-label { font-size: 11px; color: var(--color-primary, #3b82f6); margin-top: 2px; }
-.version-changes { margin-top: 4px; display: flex; flex-wrap: wrap; gap: 2px; }
-.change-tag { font-size: 10px; padding: 1px 4px; background: var(--color-bg-secondary, #f3f4f6); border-radius: 2px; }
+.version-meta { font-size: 11px; color: var(--color-text-muted, #9ca3af); margin-top: var(--space-1); display: flex; gap: var(--space-2); }
+.version-label { font-size: 11px; color: var(--color-primary, #3b82f6); margin-top: var(--space-1); }
+.version-changes { margin-top: var(--space-1); display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.change-tag { font-size: 10px; padding: var(--space-1) var(--space-1); background: var(--color-bg-secondary, #f3f4f6); border-radius: 2px; }
 .change-more { font-size: 10px; color: var(--color-text-muted, #9ca3af); }
-.empty-versions { text-align: center; color: var(--color-text-muted, #9ca3af); padding: 20px; font-size: 13px; }
+.empty-versions { text-align: center; color: var(--color-text-muted, #9ca3af); padding: var(--space-5); font-size: 13px; }
 
 .data-editor-form {
   flex: 1;
-  padding: 20px;
+  padding: var(--space-5);
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
   align-content: start;
 }
-.form-field { display: flex; flex-direction: column; gap: 4px; }
+.form-field { display: flex; flex-direction: column; gap: var(--space-1); }
 .form-field.is-full-width { grid-column: 1 / -1; }
 .form-field-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text, #374151);
 }
-.required-mark { color: var(--color-danger, #ef4444); margin-left: 2px; }
+.required-mark { color: var(--color-danger, #ef4444); margin-left: var(--space-1); }
 .form-input, .form-select, .form-textarea {
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: 6px;
   font-size: 14px;
@@ -516,7 +516,7 @@ export default {
 .field-error { font-size: 12px; color: var(--color-danger, #ef4444); }
 .data-editor-loading,
 .data-editor-error {
-  padding: 40px;
+  padding: var(--space-10);
   text-align: center;
   flex: 1;
 }
@@ -524,22 +524,22 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-2);
   color: var(--color-danger, #ef4444);
 }
 .data-editor-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 20px;
+  padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--color-border, #e5e7eb);
 }
 .footer-left { font-size: 12px; color: var(--color-text-muted, #9ca3af); }
-.footer-right { display: flex; gap: 8px; }
+.footer-right { display: flex; gap: var(--space-2); }
 
 /* 通用按钮样式 */
 .btn {
-  padding: 6px 14px;
+  padding: var(--space-2) var(--space-3);
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
@@ -553,5 +553,5 @@ export default {
 .btn-outline:hover:not(:disabled) { border-color: var(--color-primary, #3b82f6); color: var(--color-primary, #3b82f6); }
 .btn-ghost { background: transparent; border: none; color: var(--color-text-muted, #6b7280); }
 .btn-ghost:hover:not(:disabled) { color: var(--color-text, #374151); background: var(--color-bg-secondary, #f3f4f6); }
-.btn-sm { padding: 3px 8px; font-size: 12px; }
+.btn-sm { padding: var(--space-1) var(--space-2); font-size: 12px; }
 </style>

@@ -176,7 +176,7 @@ function generateDataModules(text, moduleCount) {
 export function parseBarcode(text) {
   if (!text) return { type: 'unknown', value: '' }
 
-  /* 物料编码模式: MTL-XXX */
+  /* 编号模式: MTL-XXX */
   if (/^MTL-\d{3}$/i.test(text)) {
     return { type: 'material', value: text }
   }
@@ -233,7 +233,7 @@ export function generateLabels(items, options = {}) {
     }
 
     return `<div style="display:inline-block;width:${cfg.width}px;height:${cfg.height}px;border:1px solid #ccc;border-radius:4px;padding:5px;margin:3px;page-break-inside:avoid;font-family:-apple-system,'Microsoft YaHei',sans-serif">
-      <div style="font-size:${cfg.fontSize - 1}px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px">${escapeHtml(item.name || '')}</div>
+      <div style="font-size:${cfg.fontSize - 1}px;font-weight:600;overflow-wrap:break-word;word-wrap:break-word;margin-bottom:2px">${escapeHtml(item.name || '')}</div>
       <div style="display:flex;align-items:center">
         <div style="flex:1">${barcodeSvg}</div>
         ${qrSection}

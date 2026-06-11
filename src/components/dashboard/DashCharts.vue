@@ -74,10 +74,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { useContractStore } from '@/stores/contract'
-import { useInventoryStore } from '@/stores/inventory'
-import { useCollectionStore } from '@/stores/collection'
-import { useCustomerStore } from '@/stores/customer'
+import { useContractStore } from '@/modules/sales/stores/contract'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
+import { useCollectionStore } from '@/modules/finance/stores/collection'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
 import Chart from 'chart.js/auto'
 
 const contractStore = useContractStore()
@@ -93,6 +93,7 @@ let salesChart = null
 let inventoryChart = null
 let collectionTrendChart = null
 
+// 保留本地版本：未指定小数位数（由浏览器自动决定），与全局 formatNumber 固定2位小数不同
 function formatNumber(num) {
   if (num === undefined || num === null) return '0'
   return Number(num).toLocaleString('zh-CN')

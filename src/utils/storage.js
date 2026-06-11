@@ -16,7 +16,7 @@ class StorageManager {
   }
 
   removeItem(key) {
-    try { localStorage.removeItem(this._prefix + key) } catch {}
+    try { localStorage.removeItem(this._prefix + key) } catch { /* ignore */ }
   }
 
   /* ========== JSON 方法 ========== */

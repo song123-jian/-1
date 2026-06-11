@@ -379,7 +379,7 @@ export default {
   display: flex;
   align-items: center;
   min-height: 36px;
-  padding: 4px 32px 4px 10px;
+  padding: var(--space-1) var(--space-8) var(--space-1) var(--space-2);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 6px);
   background: var(--color-bg, #fff);
@@ -402,13 +402,13 @@ export default {
 .data-select-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .data-select-tag {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 1px 6px;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
   background: var(--color-primary-light, #dbeafe);
   color: var(--color-primary, #3b82f6);
   border-radius: 3px;
@@ -422,7 +422,7 @@ export default {
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
-  margin-left: 2px;
+  margin-left: var(--space-1);
 }
 .tag-close:hover { color: var(--color-danger, #ef4444); }
 .data-select-clear {
@@ -434,7 +434,7 @@ export default {
   font-size: 16px;
   cursor: pointer;
   line-height: 1;
-  padding: 0 2px;
+  padding: 0 var(--space-1);
   transition: color 0.2s;
 }
 .data-select-clear:hover { color: var(--color-danger, #ef4444); }
@@ -465,12 +465,12 @@ export default {
   flex-direction: column;
 }
 .data-select-search {
-  padding: 8px;
+  padding: var(--space-2);
   border-bottom: 1px solid var(--color-border, #e5e7eb);
 }
 .data-select-search-input {
   width: 100%;
-  padding: 6px 8px;
+  padding: var(--space-2) var(--space-2);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: 4px;
   font-size: 13px;
@@ -484,7 +484,7 @@ export default {
   flex: 1;
 }
 .data-select-group-label {
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-2);
   font-size: 12px;
   font-weight: 600;
   color: var(--color-text-muted, #6b7280);
@@ -493,10 +493,10 @@ export default {
 .data-select-option {
   display: flex;
   align-items: center;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
   cursor: pointer;
   transition: background 0.15s;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .data-select-option:hover,
 .data-select-option.is-highlighted {
@@ -518,19 +518,19 @@ export default {
   flex-shrink: 0;
 }
 .data-select-empty {
-  padding: 20px;
+  padding: var(--space-5);
   text-align: center;
   color: var(--color-text-muted, #9ca3af);
 }
 .data-select-footer {
   display: flex;
-  gap: 8px;
-  padding: 8px;
+  gap: var(--space-2);
+  padding: var(--space-2);
   border-top: 1px solid var(--color-border, #e5e7eb);
 }
 .data-select-create-btn,
 .data-select-refresh-btn {
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: 4px;
   background: var(--color-bg, #fff);

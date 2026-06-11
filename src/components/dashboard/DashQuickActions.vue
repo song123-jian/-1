@@ -202,7 +202,7 @@ const actions = [
 .ai-summary-icon {
   flex-shrink: 0;
   color: var(--color-purple);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 
 .ai-summary-text {

@@ -19,21 +19,21 @@ import versionControl from '@/utils/versionControl'
 
 /* 各模块Store的懒加载映射 */
 const STORE_IMPORTS = {
-  customer: () => import('@/stores/customer').then(m => m.useCustomerStore()),
-  quotation: () => import('@/stores/quotation').then(m => m.useQuotationStore()),
-  contract: () => import('@/stores/contract').then(m => m.useContractStore()),
-  inventory: () => import('@/stores/inventory').then(m => m.useInventoryStore()),
-  delivery: () => import('@/stores/delivery').then(m => m.useDeliveryStore()),
-  collection: () => import('@/stores/collection').then(m => m.useCollectionStore()),
-  statement: () => import('@/stores/statement').then(m => m.useStatementStore()),
-  supplier: () => import('@/stores/inventory').then(m => m.useInventoryStore()),
-  warehouse: () => import('@/stores/warehouseLocation').then(m => m.useWarehouseLocationStore()),
-  warehouseLocation: () => import('@/stores/warehouseLocation').then(m => m.useWarehouseLocationStore()),
-  cost: () => import('@/stores/cost').then(m => m.useCostStore()),
-  todo: () => import('@/stores/todo').then(m => m.useTodoStore()),
-  purchase: () => import('@/stores/purchase').then(m => m.usePurchaseStore()),
-  production: () => import('@/stores/production').then(m => m.useProductionStore()),
-  transfer: () => import('@/stores/transfer').then(m => m.useTransferStore())
+  customer: () => import('@/modules/customer/stores/customer').then((m) => m.useCustomerStore()),
+  quotation: () => import('@/modules/sales/stores/quotation').then((m) => m.useQuotationStore()),
+  contract: () => import('@/modules/sales/stores/contract').then((m) => m.useContractStore()),
+  inventory: () => import('@/modules/warehouse/stores/inventory').then((m) => m.useInventoryStore()),
+  delivery: () => import('@/stores/delivery').then((m) => m.useDeliveryStore()),
+  collection: () => import('@/modules/finance/stores/collection').then((m) => m.useCollectionStore()),
+  statement: () => import('@/modules/finance/stores/statement').then((m) => m.useStatementStore()),
+  supplier: () => import('@/modules/purchase/stores/supplier').then((m) => m.useSupplierStore()),
+  warehouse: () => import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
+  warehouseLocation: () => import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
+  cost: () => import('@/modules/finance/stores/cost').then((m) => m.useCostStore()),
+  todo: () => import('@/stores/todo').then((m) => m.useTodoStore()),
+  purchase: () => import('@/modules/purchase/stores/purchase').then((m) => m.usePurchaseStore()),
+  production: () => import('@/modules/production/stores/production').then((m) => m.useProductionStore()),
+  transfer: () => import('@/modules/warehouse/stores/transfer').then((m) => m.useTransferStore())
 }
 
 /* 模块数据键映射 */
@@ -81,7 +81,11 @@ const SELECT_CONFIGS = {
     default: { valueField: 'code', labelField: 'name', filters: [] },
     variants: {
       inStock: { valueField: 'code', labelField: 'name', filters: [{ field: 'quantity', operator: 'gt', value: 0 }] },
-      lowStock: { valueField: 'code', labelField: 'name', filters: [{ field: 'status', operator: 'eq', value: 'low' }] },
+      lowStock: {
+        valueField: 'code',
+        labelField: 'name',
+        filters: [{ field: 'status', operator: 'eq', value: 'low' }]
+      },
       byCategory: { valueField: 'code', labelField: 'name', groupBy: 'category' },
       byWarehouse: { valueField: 'code', labelField: 'name', groupBy: 'warehouse' },
       /* 级联：按类别筛选物料 */
@@ -92,8 +96,16 @@ const SELECT_CONFIGS = {
   quotation: {
     default: { valueField: 'id', labelField: 'quoteNo', filters: [] },
     variants: {
-      approved: { valueField: 'id', labelField: 'quoteNo', filters: [{ field: 'status', operator: 'eq', value: 'approved' }] },
-      accepted: { valueField: 'id', labelField: 'quoteNo', filters: [{ field: 'status', operator: 'eq', value: 'accepted' }] },
+      approved: {
+        valueField: 'id',
+        labelField: 'quoteNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'approved' }]
+      },
+      accepted: {
+        valueField: 'id',
+        labelField: 'quoteNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'accepted' }]
+      },
       /* 级联：按客户筛选报价单 */
       byCustomer: { valueField: 'id', labelField: 'quoteNo', filters: [] }
     }
@@ -102,7 +114,11 @@ const SELECT_CONFIGS = {
   contract: {
     default: { valueField: 'id', labelField: 'contractNo', filters: [] },
     variants: {
-      active: { valueField: 'id', labelField: 'contractNo', filters: [{ field: 'status', operator: 'in', value: ['approved', 'signed'] }] },
+      active: {
+        valueField: 'id',
+        labelField: 'contractNo',
+        filters: [{ field: 'status', operator: 'in', value: ['approved', 'signed'] }]
+      },
       /* 级联：按客户筛选合同 */
       byCustomer: { valueField: 'id', labelField: 'contractNo', filters: [] }
     }
@@ -118,7 +134,11 @@ const SELECT_CONFIGS = {
   warehouseLocation: {
     default: { valueField: 'id', labelField: 'locationCode', filters: [] },
     variants: {
-      available: { valueField: 'id', labelField: 'locationCode', filters: [{ field: 'status', operator: 'eq', value: 'available' }] },
+      available: {
+        valueField: 'id',
+        labelField: 'locationCode',
+        filters: [{ field: 'status', operator: 'eq', value: 'available' }]
+      },
       /* 级联：按仓库筛选仓位 */
       byWarehouse: { valueField: 'id', labelField: 'locationCode', filters: [] }
     }
@@ -127,7 +147,11 @@ const SELECT_CONFIGS = {
   delivery: {
     default: { valueField: 'id', labelField: 'deliveryNo', filters: [] },
     variants: {
-      pending: { valueField: 'id', labelField: 'deliveryNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] },
+      pending: {
+        valueField: 'id',
+        labelField: 'deliveryNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'pending' }]
+      },
       byCustomer: { valueField: 'id', labelField: 'deliveryNo', filters: [] }
     }
   },
@@ -149,21 +173,33 @@ const SELECT_CONFIGS = {
   purchase: {
     default: { valueField: 'id', labelField: 'orderNo', filters: [] },
     variants: {
-      pending: { valueField: 'id', labelField: 'orderNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
+      pending: {
+        valueField: 'id',
+        labelField: 'orderNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'pending' }]
+      }
     }
   },
   /* 生产工单下拉选项 */
   production: {
     default: { valueField: 'id', labelField: 'orderNo', filters: [] },
     variants: {
-      pending: { valueField: 'id', labelField: 'orderNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
+      pending: {
+        valueField: 'id',
+        labelField: 'orderNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'pending' }]
+      }
     }
   },
   /* 调拨单下拉选项 */
   transfer: {
     default: { valueField: 'id', labelField: 'transferNo', filters: [] },
     variants: {
-      pending: { valueField: 'id', labelField: 'transferNo', filters: [{ field: 'status', operator: 'eq', value: 'pending' }] }
+      pending: {
+        valueField: 'id',
+        labelField: 'transferNo',
+        filters: [{ field: 'status', operator: 'eq', value: 'pending' }]
+      }
     }
   }
 }
@@ -181,7 +217,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   const deliveries = computed(() => _stores.value.delivery?.deliveries || [])
   const collections = computed(() => _stores.value.collection?.collections || [])
   const statements = computed(() => _stores.value.statement?.statements || [])
-  const suppliers = computed(() => _stores.value.inventory?.suppliers || [])
+  const suppliers = computed(() => _stores.value.supplier?.suppliers || [])
   const warehouses = computed(() => _stores.value.warehouse?.warehouses || [])
   const warehouseLocations = computed(() => _stores.value.warehouseLocation?.locations || [])
   const costRecords = computed(() => _stores.value.cost?.records || [])
@@ -194,34 +230,34 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
 
   /* 客户关联数据：某客户的所有报价/合同/送货/回款 */
   function getCustomerRelatedData(customerId) {
-    const customerName = customers.value.find(c => c.id === customerId)?.name || ''
+    const customerName = customers.value.find((c) => c.id === customerId)?.name || ''
     return {
-      quotations: quotations.value.filter(q => q.customerId === customerId || q.customerName === customerName),
-      contracts: contracts.value.filter(c => c.customerId === customerId || c.customerName === customerName),
-      deliveries: deliveries.value.filter(d => d.customerId === customerId || d.customerName === customerName),
-      collections: collections.value.filter(c => c.customerId === customerId || c.customerName === customerName),
-      statements: statements.value.filter(s => s.customerId === customerId || s.customerName === customerName)
+      quotations: quotations.value.filter((q) => q.customerId === customerId || q.customerName === customerName),
+      contracts: contracts.value.filter((c) => c.customerId === customerId || c.customerName === customerName),
+      deliveries: deliveries.value.filter((d) => d.customerId === customerId || d.customerName === customerName),
+      collections: collections.value.filter((c) => c.customerId === customerId || c.customerName === customerName),
+      statements: statements.value.filter((s) => s.customerId === customerId || s.customerName === customerName)
     }
   }
 
   /* 报价关联数据：某报价的合同/送货 */
   function getQuotationRelatedData(quotationId) {
-    const quote = quotations.value.find(q => q.id === quotationId)
+    const quote = quotations.value.find((q) => q.id === quotationId)
     if (!quote) return { contracts: [], deliveries: [] }
     return {
-      contracts: contracts.value.filter(c => c.quotationId === quotationId || c.quoteNo === quote.quoteNo),
-      deliveries: deliveries.value.filter(d => d.referenceId === quotationId || d.referenceNo === quote.quoteNo)
+      contracts: contracts.value.filter((c) => c.quotationId === quotationId || c.quoteNo === quote.quoteNo),
+      deliveries: deliveries.value.filter((d) => d.referenceId === quotationId || d.referenceNo === quote.quoteNo)
     }
   }
 
   /* 合同关联数据：某合同的送货/回款/对账 */
   function getContractRelatedData(contractId) {
-    const contract = contracts.value.find(c => c.id === contractId)
+    const contract = contracts.value.find((c) => c.id === contractId)
     if (!contract) return { deliveries: [], collections: [], statements: [] }
     return {
-      deliveries: deliveries.value.filter(d => d.contractId === contractId || d.referenceNo === contract.contractNo),
-      collections: collections.value.filter(c => c.contractId === contractId || c.contractNo === contract.contractNo),
-      statements: statements.value.filter(s => s.contractId === contractId)
+      deliveries: deliveries.value.filter((d) => d.contractId === contractId || d.referenceNo === contract.contractNo),
+      collections: collections.value.filter((c) => c.contractId === contractId || c.contractNo === contract.contractNo),
+      statements: statements.value.filter((s) => s.contractId === contractId)
     }
   }
 
@@ -231,8 +267,18 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     if (!invStore) return { inboundOrders: [], outboundOrders: [] }
     const allOrders = invStore.warehouseOrders || []
     return {
-      inboundOrders: allOrders.filter(o => o.materialCode === materialCode && ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift'].includes(o.type)),
-      outboundOrders: allOrders.filter(o => o.materialCode === materialCode && !['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift'].includes(o.type))
+      inboundOrders: allOrders.filter(
+        (o) =>
+          o.materialCode === materialCode &&
+          ['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift'].includes(o.type)
+      ),
+      outboundOrders: allOrders.filter(
+        (o) =>
+          o.materialCode === materialCode &&
+          !['purchase', 'return', 'transfer', 'customer_return', 'production_return', 'surplus', 'gift'].includes(
+            o.type
+          )
+      )
     }
   }
 
@@ -268,7 +314,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
 
     /* 应用过滤 */
     for (const filter of filters) {
-      data = data.filter(d => {
+      data = data.filter((d) => {
         const val = d[filter.field]
         if (filter.operator === 'eq') return val === filter.value
         if (filter.operator === 'neq') return val !== filter.value
@@ -281,8 +327,8 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     /* 搜索过滤 */
     if (search) {
       const keyword = search.toLowerCase()
-      data = data.filter(d =>
-        Object.values(d).some(v => v && typeof v === 'string' && v.toLowerCase().includes(keyword))
+      data = data.filter((d) =>
+        Object.values(d).some((v) => v && typeof v === 'string' && v.toLowerCase().includes(keyword))
       )
     }
 
@@ -296,7 +342,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         if (!groups[group]) groups[group] = []
         groups[group].push({
           value: item[valueField],
-          label: typeof labelField === 'function' ? labelField(item) : (item[labelField] || item[valueField]),
+          label: typeof labelField === 'function' ? labelField(item) : item[labelField] || item[valueField],
           data: item,
           group
         })
@@ -306,9 +352,9 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         items
       }))
     } else {
-      options = data.map(item => ({
+      options = data.map((item) => ({
         value: item[valueField],
-        label: typeof labelField === 'function' ? labelField(item) : (item[labelField] || item[valueField]),
+        label: typeof labelField === 'function' ? labelField(item) : item[labelField] || item[valueField],
         data: item
       }))
     }
@@ -326,7 +372,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   function refreshSelectOptions(module) {
     if (module) {
       /* 清除该模块的所有缓存 */
-      const keys = Object.keys(_selectOptionsCache.value).filter(k => k.startsWith(module + ':'))
+      const keys = Object.keys(_selectOptionsCache.value).filter((k) => k.startsWith(module + ':'))
       for (const key of keys) {
         delete _selectOptionsCache.value[key]
       }
@@ -406,13 +452,13 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     /* 应用过滤 */
     if (options.filters) {
       for (const filter of options.filters) {
-        data = data.filter(d => d[filter.field] === filter.value)
+        data = data.filter((d) => d[filter.field] === filter.value)
       }
     }
 
     /* 字段选择 */
     if (options.fields && options.fields.length > 0) {
-      data = data.map(item => {
+      data = data.map((item) => {
         const filtered = {}
         for (const field of options.fields) {
           filtered[field] = item[field]
@@ -425,12 +471,16 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       return _toCSV(data, options.fields)
     }
 
-    return JSON.stringify({
-      module,
-      exportedAt: new Date().toISOString(),
-      count: data.length,
-      data
-    }, null, 2)
+    return JSON.stringify(
+      {
+        module,
+        exportedAt: new Date().toISOString(),
+        count: data.length,
+        data
+      },
+      null,
+      2
+    )
   }
 
   /**
@@ -458,9 +508,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
       /* 查找导入方法 */
-      const importMethod = Object.keys(store).find(k =>
-        k.startsWith('import') && typeof store[k] === 'function'
-      )
+      const importMethod = Object.keys(store).find((k) => k.startsWith('import') && typeof store[k] === 'function')
 
       if (importMethod) {
         const result = store[importMethod](data)
@@ -469,7 +517,8 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       }
 
       /* 降级：逐条新增 */
-      let imported = 0, skipped = 0
+      let imported = 0,
+        skipped = 0
       for (const item of data) {
         const result = await dataService.create(module, item, { checkPermission: false, validate: false })
         if (result.success) imported++
@@ -489,37 +538,37 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   /* 客户统计 */
   const customerStats = computed(() => ({
     total: customers.value.length,
-    active: customers.value.filter(c => c.status === 'active').length,
-    dormant: customers.value.filter(c => c.status === 'dormant').length,
+    active: customers.value.filter((c) => c.status === 'active').length,
+    dormant: customers.value.filter((c) => c.status === 'dormant').length,
     totalBalance: customers.value.reduce((s, c) => s + (c.balance || 0), 0),
     totalCreditLimit: customers.value.reduce((s, c) => s + (c.creditLimit || 0), 0),
-    regions: [...new Set(customers.value.map(c => c.region).filter(Boolean))].sort(),
+    regions: [...new Set(customers.value.map((c) => c.region).filter(Boolean))].sort(),
     levels: {
-      A: customers.value.filter(c => c.level === 'A').length,
-      B: customers.value.filter(c => c.level === 'B').length,
-      C: customers.value.filter(c => c.level === 'C').length
+      A: customers.value.filter((c) => c.level === 'A').length,
+      B: customers.value.filter((c) => c.level === 'B').length,
+      C: customers.value.filter((c) => c.level === 'C').length
     }
   }))
 
   /* 库存统计 */
   const inventoryStats = computed(() => ({
     total: inventory.value.length,
-    totalValue: inventory.value.reduce((s, i) => s + ((i.quantity || 0) * (i.unitCost || 0)), 0),
-    lowStock: inventory.value.filter(i => i.status === 'low' || i.status === 'exhausted').length,
-    categories: [...new Set(inventory.value.map(i => i.category).filter(Boolean))].sort()
+    totalValue: inventory.value.reduce((s, i) => s + (i.quantity || 0) * (i.unitCost || 0), 0),
+    lowStock: inventory.value.filter((i) => i.status === 'low' || i.status === 'exhausted').length,
+    categories: [...new Set(inventory.value.map((i) => i.category).filter(Boolean))].sort()
   }))
 
   /* 报价统计 */
   const quotationStats = computed(() => ({
     total: quotations.value.length,
-    pending: quotations.value.filter(q => q.status === 'pending' || q.status === 'sent').length,
+    pending: quotations.value.filter((q) => q.status === 'pending' || q.status === 'sent').length,
     totalAmount: quotations.value.reduce((s, q) => s + (q.total || 0), 0)
   }))
 
   /* 合同统计 */
   const contractStats = computed(() => ({
     total: contracts.value.length,
-    active: contracts.value.filter(c => ['approved', 'signed'].includes(c.status)).length,
+    active: contracts.value.filter((c) => ['approved', 'signed'].includes(c.status)).length,
     totalAmount: contracts.value.reduce((s, c) => s + (c.amount || 0), 0)
   }))
 
@@ -580,13 +629,11 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     const headers = fields || Object.keys(data[0])
     const lines = [headers.join(',')]
     for (const item of data) {
-      const row = headers.map(h => {
+      const row = headers.map((h) => {
         const val = item[h]
         if (val === null || val === undefined) return ''
         const str = String(val)
-        return str.includes(',') || str.includes('"') || str.includes('\n')
-          ? `"${str.replace(/"/g, '""')}"`
-          : str
+        return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str
       })
       lines.push(row.join(','))
     }
@@ -599,15 +646,51 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   function _fromCSV(content) {
     const lines = content.trim().split('\n')
     if (lines.length < 2) return []
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+    const headers = _parseCSVLine(lines[0])
     const data = []
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"|"$/g, ''))
+      const values = _parseCSVLine(lines[i])
       const item = {}
-      headers.forEach((h, idx) => { item[h] = values[idx] || '' })
+      headers.forEach((h, idx) => {
+        item[h.trim()] = (values[idx] || '').trim()
+      })
       data.push(item)
     }
     return data
+  }
+
+  /**
+   * 解析CSV行（处理引号内的逗号）
+   */
+  function _parseCSVLine(line) {
+    const result = []
+    let current = ''
+    let inQuotes = false
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i]
+      if (inQuotes) {
+        if (char === '"' && line[i + 1] === '"') {
+          current += '"'
+          i++
+        } else if (char === '"') {
+          inQuotes = false
+        } else {
+          current += char
+        }
+      } else {
+        if (char === '"') {
+          inQuotes = true
+        } else if (char === ',') {
+          result.push(current)
+          current = ''
+        } else {
+          current += char
+        }
+      }
+    }
+    result.push(current)
+    return result
   }
 
   /**
@@ -651,9 +734,18 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     _initialized,
 
     /* 数据引用 */
-    customers, quotations, contracts, inventory,
-    deliveries, collections, statements, suppliers,
-    warehouses, warehouseLocations, costRecords, todos,
+    customers,
+    quotations,
+    contracts,
+    inventory,
+    deliveries,
+    collections,
+    statements,
+    suppliers,
+    warehouses,
+    warehouseLocations,
+    costRecords,
+    todos,
 
     /* 跨模块关联 */
     getCustomerRelatedData,
@@ -666,19 +758,30 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     refreshSelectOptions,
 
     /* 统一CRUD */
-    query, create, update, remove, batchDelete,
+    query,
+    create,
+    update,
+    remove,
+    batchDelete,
 
     /* 导入导出 */
-    exportData, importData,
+    exportData,
+    importData,
 
     /* 聚合统计 */
-    customerStats, inventoryStats, quotationStats, contractStats,
+    customerStats,
+    inventoryStats,
+    quotationStats,
+    contractStats,
 
     /* 版本控制 */
-    getVersionHistory, restoreVersion,
+    getVersionHistory,
+    restoreVersion,
 
     /* 诊断工具 */
-    getCacheStats, getEventStats, getVersionStats,
+    getCacheStats,
+    getEventStats,
+    getVersionStats,
 
     /* Store引用 */
     _stores

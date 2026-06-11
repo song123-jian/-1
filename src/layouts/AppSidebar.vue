@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <aside class="app-sidebar" :class="{ 'collapsed': isCollapsed, 'open': isMobileOpen }">
     <div class="sidebar-header">
       <div class="sidebar-logo">冠</div>
@@ -236,9 +236,9 @@
 import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTodoStore } from '@/stores/todo'
-import { useQuotationStore } from '@/stores/quotation'
-import { useContractStore } from '@/stores/contract'
-import { useInventoryStore } from '@/stores/inventory'
+import { useQuotationStore } from '@/modules/sales/stores/quotation'
+import { useContractStore } from '@/modules/sales/stores/contract'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useSessionStore } from '@/stores/session'
 import { usePermissionStore } from '@/stores/permission'
 import { useSyncEngine } from '@/utils/syncEngine'
@@ -478,8 +478,8 @@ const systemItems = computed(() => [
   left: 0;
   bottom: 0;
   width: var(--sidebar-width, 260px);
-  background: var(--color-bg-secondary);
-  border-right: 1px solid var(--color-border);
+  background: var(--color-bg-secondary, #1e293b);
+  border-right: 1px solid var(--color-border, #475569);
   z-index: 100;
   display: flex;
   flex-direction: column;
@@ -514,7 +514,7 @@ const systemItems = computed(() => [
 .app-sidebar.collapsed .nav-item {
   justify-content: center;
   padding: var(--space-2);
-  margin: 1px 6px;
+  margin: var(--space-1) var(--space-2);
   position: relative;
 }
 .app-sidebar.collapsed .nav-item::after {
@@ -525,7 +525,7 @@ const systemItems = computed(() => [
   transform: translateY(-50%);
   background: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   white-space: nowrap;
@@ -730,7 +730,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-accent);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 .nav-section[data-section="sales"] .nav-section-title::before {
@@ -740,7 +740,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-success);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 .nav-section[data-section="warehouse"] .nav-section-title::before {
@@ -750,7 +750,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-warning);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 .nav-section[data-section="finance"] .nav-section-title::before {
@@ -760,7 +760,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-purple);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 .nav-section[data-section="resource"] .nav-section-title::before {
@@ -770,7 +770,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-danger);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 .nav-section[data-section="system"] .nav-section-title::before {
@@ -780,7 +780,7 @@ const systemItems = computed(() => [
   height: 14px;
   border-radius: 2px;
   background: var(--color-text-tertiary);
-  margin-right: 8px;
+  margin-right: var(--space-2);
   vertical-align: middle;
 }
 
@@ -789,7 +789,7 @@ const systemItems = computed(() => [
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-3);
-  margin: 1px 0;
+  margin: var(--space-1) 0;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
@@ -850,7 +850,7 @@ const systemItems = computed(() => [
   font-size: var(--font-size-xs);
   background: var(--color-danger-subtle);
   color: var(--color-danger);
-  padding: 1px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   font-weight: 600;
 }
@@ -914,7 +914,7 @@ const systemItems = computed(() => [
 .sidebar-fav-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .sidebar-fav-empty {
   font-size: var(--font-size-xs);
@@ -925,7 +925,7 @@ const systemItems = computed(() => [
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 3px var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
@@ -935,7 +935,7 @@ const systemItems = computed(() => [
 .sidebar-fav-item:hover {
   background: var(--color-accent-subtle);
   color: var(--color-accent);
-  padding-left: 8px;
+  padding-left: var(--space-2);
 }
 .sidebar-fav-item .fav-remove {
   margin-left: auto;
@@ -1018,7 +1018,7 @@ const systemItems = computed(() => [
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 9999;
+  z-index: var(--z-popover, 9999);
   min-width: 140px;
   padding: var(--space-1) 0;
 }

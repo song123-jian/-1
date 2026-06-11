@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <header class="app-topbar" :class="{ 'no-sidebar': !hasSidebar, 'sidebar-collapsed': collapsed }">
     <div class="topbar-left">
       <!-- 汉堡菜单按钮（移动端） -->
@@ -84,9 +84,9 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
-import { useCustomerStore } from '@/stores/customer'
-import { useInventoryStore } from '@/stores/inventory'
-import { useQuotationStore } from '@/stores/quotation'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
+import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
 import NotificationBell from '@/components/layout/NotificationBell.vue'
 
@@ -255,12 +255,12 @@ onBeforeUnmount(() => {
   left: var(--sidebar-width, 260px);
   right: 0;
   height: var(--topbar-height, 56px);
-  background: var(--color-bg-secondary);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg-secondary, #1e293b);
+  border-bottom: 1px solid var(--color-border, #475569);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--space-6);
+  padding: 0 var(--space-6, 1.5rem);
   z-index: 90;
   transition: left 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -415,7 +415,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 9999;
+  z-index: var(--z-popover, 9999);
   min-width: 140px;
   padding: var(--space-1) 0;
   max-height: 300px;
@@ -516,12 +516,12 @@ onBeforeUnmount(() => {
   top: 100%;
   left: 0;
   right: 0;
-  margin-top: 4px;
+  margin-top: var(--space-1);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 9999;
+  z-index: var(--z-popover, 9999);
   max-height: 320px;
   overflow-y: auto;
 }
@@ -553,7 +553,7 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-xs);
   color: var(--color-accent);
   background: var(--color-accent-subtle);
-  padding: 1px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }

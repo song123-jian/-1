@@ -9,7 +9,9 @@ function load(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
     if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
   return fallback
 }
 
@@ -79,13 +81,13 @@ export const useNotificationStore = defineStore('notification', () => {
 
   /* 未读数量 */
   const unreadCount = computed(() => {
-    return notifications.value.filter(n => !n.read).length
+    return notifications.value.filter((n) => !n.read).length
   })
 
   /* 按分类分组 */
   const byCategory = computed(() => {
     const groups = {}
-    notifications.value.forEach(n => {
+    notifications.value.forEach((n) => {
       const cat = n.category || 'system'
       if (!groups[cat]) groups[cat] = []
       groups[cat].push(n)
@@ -96,7 +98,7 @@ export const useNotificationStore = defineStore('notification', () => {
   /* 按类型分组 */
   const byType = computed(() => {
     const groups = {}
-    notifications.value.forEach(n => {
+    notifications.value.forEach((n) => {
       const type = n.type || 'message'
       if (!groups[type]) groups[type] = []
       groups[type].push(n)
@@ -142,7 +144,7 @@ export const useNotificationStore = defineStore('notification', () => {
    * 标记已读
    */
   function markAsRead(id) {
-    const n = notifications.value.find(item => item.id === id)
+    const n = notifications.value.find((item) => item.id === id)
     if (n) {
       n.read = true
       _persist()
@@ -153,7 +155,9 @@ export const useNotificationStore = defineStore('notification', () => {
    * 全部已读
    */
   function markAllAsRead() {
-    notifications.value.forEach(n => { n.read = true })
+    notifications.value.forEach((n) => {
+      n.read = true
+    })
     _persist()
   }
 
@@ -161,7 +165,7 @@ export const useNotificationStore = defineStore('notification', () => {
    * 删除通知
    */
   function removeNotification(id) {
-    const idx = notifications.value.findIndex(n => n.id === id)
+    const idx = notifications.value.findIndex((n) => n.id === id)
     if (idx !== -1) {
       notifications.value.splice(idx, 1)
       _persist()
@@ -182,7 +186,7 @@ export const useNotificationStore = defineStore('notification', () => {
   function clearExpired() {
     const now = new Date().toISOString()
     const before = notifications.value.length
-    notifications.value = notifications.value.filter(n => {
+    notifications.value = notifications.value.filter((n) => {
       if (!n.expireTime) return true
       return n.expireTime > now
     })
@@ -195,14 +199,14 @@ export const useNotificationStore = defineStore('notification', () => {
    * 获取指定类型的通知
    */
   function getByType(type) {
-    return notifications.value.filter(n => n.type === type)
+    return notifications.value.filter((n) => n.type === type)
   }
 
   /**
    * 获取指定分类的通知
    */
   function getByCategory(category) {
-    return notifications.value.filter(n => n.category === category)
+    return notifications.value.filter((n) => n.category === category)
   }
 
   /**

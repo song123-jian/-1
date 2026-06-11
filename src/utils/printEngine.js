@@ -118,7 +118,7 @@ class PrintEngine {
 <table style="width:100%;border-collapse:collapse">
   <thead>
     <tr style="background:#f5f5f5">
-      <th style="border:1px solid #ccc;padding:6px">物料编码</th>
+      <th style="border:1px solid #ccc;padding:6px">编号</th>
       <th style="border:1px solid #ccc;padding:6px">物料名称</th>
       <th style="border:1px solid #ccc;padding:6px">规格</th>
       <th style="border:1px solid #ccc;padding:6px">数量</th>
@@ -300,7 +300,7 @@ class PrintEngine {
 <table style="width:100%;border-collapse:collapse">
   <thead>
     <tr style="background:#f5f5f5">
-      <th style="border:1px solid #ccc;padding:6px">物料编码</th>
+      <th style="border:1px solid #ccc;padding:6px">编号</th>
       <th style="border:1px solid #ccc;padding:6px">物料名称</th>
       <th style="border:1px solid #ccc;padding:6px">规格</th>
       <th style="border:1px solid #ccc;padding:6px">数量</th>
@@ -364,6 +364,17 @@ class PrintEngine {
     saveTemplates(this.templates)
   }
 
+  /* HTML实体转义，防止XSS注入 */
+  _escapeHtml(str) {
+    if (!str) return ''
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+  }
+
   /* 渲染模板 - 替换变量 */
   render(templateId, data) {
     const template = this.getTemplate(templateId)
@@ -378,19 +389,19 @@ class PrintEngine {
       if (!Array.isArray(items)) return ''
       return items.map((item, idx) => {
         let row = inner
-        /* 替换循环内的变量 */
+        /* 替换循环内的变量，对值进行HTML转义防止XSS */
         for (const [k, v] of Object.entries(item)) {
-          row = row.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g', v ?? '')
+          row = row.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), this._escapeHtml(v))
         }
         row = row.replace(/\{\{index\}\}/g, idx + 1)
         return row
       }).join('')
     })
 
-    /* 替换简单变量 {{variable}} */
+    /* 替换简单变量 {{variable}}，对值进行HTML转义防止XSS */
     for (const [key, value] of Object.entries(data)) {
       if (Array.isArray(value)) continue
-      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g', value ?? '')
+      html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), this._escapeHtml(value))
     }
 
     /* 清除未替换的变量 */

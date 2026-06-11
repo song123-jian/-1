@@ -15,6 +15,8 @@ import eventBus, { DataModules } from '@/utils/eventBus'
 import dataCache from '@/utils/dataCache'
 import versionControl from '@/utils/versionControl'
 import { generateId } from '@/utils/uid'
+import { useSessionStore } from '@/stores/session'
+import { usePermissionStore } from '@/stores/permission'
 
 /* 操作结果封装 */
 export class DataResult {
@@ -66,7 +68,7 @@ const VALIDATION_RULES = {
   inventory: {
     required: ['code', 'name'],
     fields: {
-      code: { type: 'string', label: '物料编码' },
+      code: { type: 'string', label: '编号' },
       name: { type: 'string', label: '物料名称' },
       quantity: { type: 'number', min: 0, label: '数量' },
       unitCost: { type: 'number', min: 0, label: '单价' }
@@ -602,9 +604,6 @@ class DataService {
    */
   _checkPermission(module, action) {
     try {
-      /* 动态导入避免循环依赖 */
-      const { useSessionStore } = require('./../stores/session')
-      const { usePermissionStore } = require('./../stores/permission')
       const session = useSessionStore()
       const permStore = usePermissionStore()
 

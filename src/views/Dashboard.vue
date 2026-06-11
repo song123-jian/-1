@@ -35,18 +35,60 @@
       <button class="btn btn-ghost" @click="refreshData"><Icon name="refresh" :size="14" /> 刷新</button>
     </div>
 
-    <DashStatsCards
-      :total-revenue="totalRevenue"
-      :revenue-growth="revenueGrowth"
-      :collection-rate="collectionRate"
-      :month-collected="monthCollected"
-      :quotation-store="quotationStore"
-      :contract-store="contractStore"
-      :inventory-store="inventoryStore"
-      :todo-store="todoStore"
-      :stat-cards="statCards"
-      :format-number="formatNumber"
-    />
+    <!-- 紧凑指标条 -->
+    <div class="compact-metrics">
+      <div class="compact-metric">
+        <div class="compact-metric-dot" style="background:var(--color-success)"></div>
+        <span class="compact-metric-label">今日营收</span>
+        <span class="compact-metric-value">¥{{ formatNumber(todayTransactionAmount) }}</span>
+      </div>
+      <div class="compact-metric-sep"></div>
+      <div class="compact-metric">
+        <div class="compact-metric-dot" style="background:var(--color-accent)"></div>
+        <span class="compact-metric-label">本月营收</span>
+        <span class="compact-metric-value">¥{{ formatNumber(totalRevenue) }}</span>
+      </div>
+      <div class="compact-metric-sep"></div>
+      <div class="compact-metric">
+        <div class="compact-metric-dot" :style="{ background: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }"></div>
+        <span class="compact-metric-label">回款率</span>
+        <span class="compact-metric-value" :style="{ color: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }">{{ collectionRate }}<span class="compact-metric-unit">%</span></span>
+      </div>
+      <div class="compact-metric-sep"></div>
+      <div class="compact-metric">
+        <div class="compact-metric-dot" style="background:var(--color-warning)"></div>
+        <span class="compact-metric-label">待处理订单</span>
+        <span class="compact-metric-value">{{ dataStore.pendingQuotationCount }}</span>
+      </div>
+      <div class="compact-metric-sep"></div>
+      <div class="compact-metric">
+        <div class="compact-metric-dot" :style="{ background: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : 'var(--color-info)' }"></div>
+        <span class="compact-metric-label">库存预警</span>
+        <span class="compact-metric-value" :style="{ color: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : '' }">{{ inventoryStore.lowStockCount + inventoryStore.exhaustedCount }}<span class="compact-metric-unit">种</span></span>
+      </div>
+    </div>
+
+    <!-- 折叠统计区 -->
+    <div class="collapsible-stats">
+      <div class="collapsible-stats-header" @click="showDashStatsExpanded = !showDashStatsExpanded">
+        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 统计概览</span>
+        <span class="collapsible-stats-toggle" :class="{ expanded: showDashStatsExpanded }">▼</span>
+      </div>
+      <div v-show="showDashStatsExpanded" class="collapsible-stats-body">
+        <DashStatsCards
+          :total-revenue="totalRevenue"
+          :revenue-growth="revenueGrowth"
+          :collection-rate="collectionRate"
+          :month-collected="monthCollected"
+          :quotation-store="quotationStore"
+          :contract-store="contractStore"
+          :inventory-store="inventoryStore"
+          :todo-store="todoStore"
+          :stat-cards="statCards"
+          :format-number="formatNumber"
+        />
+      </div>
+    </div>
 
     <DashWeekView
       :week-days="weekDays"
@@ -65,6 +107,13 @@
       :recent-activities="recentActivities"
       @navigate="$router.push($event)"
     />
+
+    <!-- 智能洞察条 -->
+    <div v-for="(insight, idx) in smartInsights" :key="idx" class="alert-priority-bar" :class="insight.level">
+      <span class="alert-priority-icon">{{ insight.icon }}</span>
+      <span class="alert-priority-text">{{ insight.text }}</span>
+      <span class="alert-priority-detail">{{ insight.detail }}</span>
+    </div>
 
     <DashQuickActions
       :ai-summary="aiSummary"
@@ -377,14 +426,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDataStore } from '@/stores/data'
 import { useTodoStore } from '@/stores/todo'
-import { useCustomerStore } from '@/stores/customer'
-import { useQuotationStore } from '@/stores/quotation'
-import { useContractStore } from '@/stores/contract'
-import { useInventoryStore } from '@/stores/inventory'
-import { useCollectionStore } from '@/stores/collection'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
+import { useQuotationStore } from '@/modules/sales/stores/quotation'
+import { useContractStore } from '@/modules/sales/stores/contract'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
+import { useCollectionStore } from '@/modules/finance/stores/collection'
+import { formatNumber } from '@/utils/format'
 import DashStatsCards from '@/components/dashboard/DashStatsCards.vue'
 import DashWeekView from '@/components/dashboard/DashWeekView.vue'
 import DashCharts from '@/components/dashboard/DashCharts.vue'
@@ -400,6 +450,7 @@ const inventoryStore = useInventoryStore()
 const collectionStore = useCollectionStore()
 
 const isLoading = ref(true)
+const showDashStatsExpanded = ref(false)
 
 const selectedRange = ref('month')
 const chartsRef = ref(null)
@@ -636,26 +687,64 @@ const aiInsights = computed(() => {
   return insights
 })
 
+const smartInsights = computed(() => {
+  const items = []
+  const alertStockCount = inventoryStore.lowStockCount + inventoryStore.exhaustedCount
+  if (collectionRate.value < 60 && totalRevenue.value > 0) {
+    items.push({
+      icon: '⚠',
+      text: '回款率低于目标值，建议关注逾期客户',
+      detail: `当前回款率 ${collectionRate.value}%，目标 60%`,
+      level: 'danger'
+    })
+  }
+  if (alertStockCount > 0) {
+    items.push({
+      icon: '📦',
+      text: `库存预警物料 ${alertStockCount} 种，建议及时补货`,
+      detail: `低库存 ${inventoryStore.lowStockCount} 种 / 售罄 ${inventoryStore.exhaustedCount} 种`,
+      level: 'warning'
+    })
+  }
+  if (dataStore.pendingQuotationCount > 0) {
+    items.push({
+      icon: '📋',
+      text: `${dataStore.pendingQuotationCount} 份报价待处理，可能影响订单转化`,
+      detail: '建议尽快跟进客户报价',
+      level: 'warning'
+    })
+  }
+  if (items.length === 0) {
+    items.push({
+      icon: '✅',
+      text: '业务运行正常，各项指标均在合理范围',
+      detail: '无异常预警',
+      level: 'success'
+    })
+  }
+  return items.slice(0, 3)
+})
+
 function isOverdue(todo) {
   if (todo.status === 'completed') return false
   return todo.dueDate < new Date().toISOString().slice(0, 10)
-}
-
-function formatNumber(num) {
-  if (num === undefined || num === null) return '0'
-  return Number(num).toLocaleString('zh-CN')
 }
 
 function refreshData() {
   if (chartsRef.value) {
     chartsRef.value.refreshCharts()
   }
+  // 触发store数据重新计算（computed属性会自动响应）
+  // 强制刷新insights
+  refreshInsights()
 }
 
 const isRefreshingInsights = ref(false)
+let insightsTimer = null
 function refreshInsights() {
   isRefreshingInsights.value = true
-  setTimeout(() => {
+  if (insightsTimer) clearTimeout(insightsTimer)
+  insightsTimer = setTimeout(() => {
     isRefreshingInsights.value = false
   }, 800)
 }
@@ -749,7 +838,7 @@ const todoWeekDays = computed(() => {
     const d = new Date(monday)
     d.setDate(monday.getDate() + i)
     const dateStr = d.toISOString().slice(0, 10)
-    const dayTodos = filteredDpTodos.value.filter(t => t.dueDate === dateStr)
+    const dayTodos = todoStore.allTodos.filter(t => t.dueDate === dateStr)
     result.push({
       date: dateStr,
       dayNum: d.getDate(),
@@ -907,6 +996,7 @@ function dpSelectDate(date) { dpSelectedDate.value = date }
 function dpApplyManual() {
   if (dpManualDate.value) {
     const d = new Date(dpManualDate.value)
+    if (isNaN(d.getTime())) return
     dpYear.value = d.getFullYear()
     dpMonth.value = d.getMonth() + 1
     dpSelectedDate.value = dpManualDate.value
@@ -926,7 +1016,7 @@ function addNewTodo() {
   showTodoForm.value = false
 }
 function completeAllTodos() {
-  filteredDpTodos.value.forEach(t => {
+  todoStore.allTodos.forEach(t => {
     if (t.status !== 'completed') todoStore.toggleTodo(t.id, t.auto || false)
   })
 }
@@ -935,11 +1025,22 @@ function clearCompletedTodos() {
 }
 
 onMounted(async () => {
-  customerStore.initSeedData()
-  dataStore.initSeedData()
-  inventoryStore.initSeedData()
-  collectionStore.initSeedData()
+  try {
+    await Promise.all([
+      quotationStore.initSeedData?.(),
+      contractStore.initSeedData?.(),
+      collectionStore.initSeedData?.(),
+      inventoryStore.initSeedData?.(),
+      customerStore.initSeedData?.()
+    ])
+  } catch (e) {
+    // 静默处理初始化错误
+  }
   isLoading.value = false
+})
+
+onUnmounted(() => {
+  if (insightsTimer) clearTimeout(insightsTimer)
 })
 </script>
 
@@ -959,7 +1060,7 @@ onMounted(async () => {
 }
 .btn-group {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .btn-group .btn.active {
   background: var(--color-accent-subtle);
@@ -1024,12 +1125,12 @@ onMounted(async () => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
-  padding: 2px 4px;
+  padding: var(--space-1) var(--space-1);
   font-size: var(--font-size-sm);
 }
 .date-picker-nav {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .dp-nav-btn {
   background: var(--color-bg-primary);
@@ -1037,7 +1138,7 @@ onMounted(async () => {
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
   cursor: pointer;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 12px;
 }
 .dp-nav-btn:hover { background: var(--color-accent-subtle); }
@@ -1047,7 +1148,7 @@ onMounted(async () => {
   border-radius: var(--radius-sm);
   color: var(--color-accent);
   cursor: pointer;
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: 12px;
   font-weight: 600;
 }
@@ -1066,7 +1167,7 @@ onMounted(async () => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-xs);
 }
 .date-picker-weekdays {
@@ -1080,11 +1181,11 @@ onMounted(async () => {
 .date-picker-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 .dp-day {
   text-align: center;
-  padding: 6px 2px;
+  padding: var(--space-2) var(--space-1);
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-size-sm);
@@ -1123,19 +1224,19 @@ onMounted(async () => {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   background: var(--color-bg-tertiary);
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
 }
 .todo-filters {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .todo-filter-btn {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.15s;
@@ -1159,7 +1260,7 @@ onMounted(async () => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-primary);
-  padding: 4px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-sm);
 }
 .todo-add-form input[type="text"] { flex: 1; }
@@ -1171,7 +1272,7 @@ onMounted(async () => {
 }
 .todo-priority-filters {
   display: flex;
-  gap: 4px;
+  gap: var(--space-1);
 }
 .todo-priority-btn {
   width: 20px;
@@ -1243,7 +1344,7 @@ onMounted(async () => {
 .todo-priority {
   font-size: 10px;
   font-weight: 600;
-  padding: 1px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
@@ -1257,14 +1358,14 @@ onMounted(async () => {
 }
 .todo-view-toggle {
   display: flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 .todo-view-btn {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  padding: 2px 8px;
+  padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-xs);
   cursor: pointer;
   transition: all 0.15s;
@@ -1289,11 +1390,9 @@ onMounted(async () => {
   font-size: var(--font-size-xs);
   white-space: nowrap;
 }
-.todo-table td {
-  padding: var(--space-2) var(--space-3);
+.todo-table td {padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-  vertical-align: middle;
-}
+  vertical-align: middle; overflow-wrap: break-word; word-wrap: break-word}
 .todo-table tr.completed { opacity: 0.5; }
 .todo-table tr.overdue { border-left: 3px solid var(--color-danger); }
 .todo-table-title {
@@ -1351,7 +1450,7 @@ onMounted(async () => {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   background: var(--color-bg-tertiary);
-  padding: 2px 10px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-weight: 600;
 }
@@ -1367,7 +1466,7 @@ onMounted(async () => {
 .todo-cal-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  gap: var(--space-1);
 }
 .todo-cal-day {
   min-height: 60px;
@@ -1382,9 +1481,9 @@ onMounted(async () => {
 .todo-cal-day.other-month { opacity: 0.35; }
 .todo-cal-day.today { border-color: var(--color-accent); background: var(--color-accent-subtle); }
 .todo-cal-day.selected { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
-.todo-cal-day-num { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-primary); margin-bottom: 2px; }
+.todo-cal-day-num { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-1); }
 .todo-cal-day.today .todo-cal-day-num { color: var(--color-accent); }
-.todo-cal-day-items { display: flex; flex-wrap: wrap; gap: 2px; }
+.todo-cal-day-items { display: flex; flex-wrap: wrap; gap: var(--space-1); }
 .todo-cal-dot {
   width: 7px;
   height: 7px;
@@ -1452,17 +1551,17 @@ onMounted(async () => {
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: var(--color-text-primary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 .todo-week-num.is-today { color: var(--color-accent); }
 .todo-week-items {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: var(--space-1);
 }
 .todo-week-item {
-  padding: 2px 6px;
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: 11px;
   cursor: pointer;

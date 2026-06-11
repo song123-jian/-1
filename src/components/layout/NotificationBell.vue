@@ -202,7 +202,6 @@ function handleClickOutside(e) {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
-  notificationStore.initSeedData()
   notificationStore.clearExpired()
 })
 
@@ -242,7 +241,7 @@ onBeforeUnmount(() => {
   right: 2px;
   min-width: 16px;
   height: 16px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   background: #ef4444;
   color: #fff;
   font-size: 10px;
@@ -299,7 +298,7 @@ onBeforeUnmount(() => {
   color: var(--color-accent);
   font-size: var(--font-size-xs);
   cursor: pointer;
-  padding: 2px var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-md);
   transition: background var(--transition-fast);
 }
@@ -328,7 +327,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: var(--space-1);
 }
 
 .panel-tab:hover {
@@ -356,7 +355,7 @@ onBeforeUnmount(() => {
   background: #ef4444;
   color: #fff;
   font-size: 9px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   border-radius: var(--radius-full);
   min-width: 14px;
   height: 14px;
@@ -451,7 +450,7 @@ onBeforeUnmount(() => {
 .item-desc {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -460,13 +459,13 @@ onBeforeUnmount(() => {
 .item-time {
   font-size: 10px;
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  margin-top: var(--space-1);
 }
 
 .item-actions {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--space-1);
   flex-shrink: 0;
   opacity: 0;
   transition: opacity var(--transition-fast);
@@ -555,7 +554,7 @@ onBeforeUnmount(() => {
 }
 
 /* 响应式 */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .notification-panel {
     position: fixed;
     top: var(--topbar-height, 56px);

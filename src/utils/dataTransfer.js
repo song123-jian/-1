@@ -12,6 +12,7 @@
 
 import eventBus from './eventBus'
 import errorHandler from './errorHandler'
+import { useDataCenterStore } from '@/stores/dataCenter'
 
 /* 模块字段定义（用于CSV模板和导入验证） */
 const MODULE_FIELDS = {
@@ -37,7 +38,7 @@ const MODULE_FIELDS = {
     required: ['code', 'name'],
     optional: ['category', 'quantity', 'safetyStock', 'maxStock', 'warehouse', 'location', 'unitCost', 'grade', 'color', 'brand'],
     labels: {
-      code: '物料编码', name: '物料名称', category: '分类', quantity: '数量',
+      code: '编号', name: '物料名称', category: '分类', quantity: '数量',
       safetyStock: '安全库存', maxStock: '最大库存', warehouse: '仓库', location: '库位',
       unitCost: '单价', grade: '规格', color: '颜色', brand: '品牌'
     }
@@ -68,6 +69,7 @@ class DataTransfer {
    * @returns {string} JSON字符串
    */
   exportJSON(modules, options = {}) {
+    console.log('[DataTransfer] 开始导出JSON, 模块:', modules)
     try {
       const moduleList = Array.isArray(modules) ? modules : [modules]
       const result = {
@@ -77,6 +79,7 @@ class DataTransfer {
       }
 
       for (const module of moduleList) {
+        console.log(`[DataTransfer] 获取模块数据: ${module}`)
         const data = this._getModuleData(module, options)
         if (data) {
           result.modules[module] = {
@@ -84,13 +87,19 @@ class DataTransfer {
             fields: options.fields || null,
             data
           }
+          console.log(`[DataTransfer] 模块 ${module} 导出 ${data.length} 条数据`)
+        } else {
+          console.log(`[DataTransfer] 模块 ${module} 无数据`)
         }
       }
 
-      return options.pretty !== false
+      const json = options.pretty !== false
         ? JSON.stringify(result, null, 2)
         : JSON.stringify(result)
+      console.log(`[DataTransfer] JSON导出完成, 大小: ${json.length} 字符`)
+      return json
     } catch (e) {
+      console.error('[DataTransfer] 导出JSON失败:', e)
       errorHandler.handleError(e, { module: modules, action: 'export' })
       return ''
     }
@@ -143,26 +152,36 @@ class DataTransfer {
    * @returns {Object} 导入结果 { success, results: [{module, imported, skipped, errors}] }
    */
   async importJSON(content, options = {}) {
+    console.log('[DataTransfer] 开始导入JSON')
     try {
       const parsed = JSON.parse(content)
       const modules = parsed.modules || { [parsed.module || 'unknown']: parsed }
+      console.log(`[DataTransfer] JSON解析成功, 包含模块: ${Object.keys(modules).join(', ')}`)
       const results = []
 
       for (const [module, moduleData] of Object.entries(modules)) {
         const data = moduleData.data || moduleData
-        if (!Array.isArray(data)) continue
+        if (!Array.isArray(data)) {
+          console.log(`[DataTransfer] 模块 ${module} 数据格式无效, 跳过`)
+          continue
+        }
+        console.log(`[DataTransfer] 导入模块 ${module}, 数据量: ${data.length}`)
 
         const result = await this._importModuleData(module, data, options)
         results.push({ module, ...result })
+        console.log(`[DataTransfer] 模块 ${module} 导入结果: 成功${result.imported}, 跳过${result.skipped}, 错误${result.errors.length}`)
       }
 
       eventBus.emit('data:imported', { results })
+      const totalImported = results.reduce((s, r) => s + r.imported, 0)
+      console.log(`[DataTransfer] 导入完成, 总计导入: ${totalImported}`)
 
       return {
         success: results.every(r => r.imported > 0 || r.skipped === 0),
         results
       }
     } catch (e) {
+      console.error('[DataTransfer] 导入JSON失败:', e)
       const errorInfo = errorHandler.handleError(e, { action: 'importJSON' })
       return { success: false, results: [], error: errorInfo.message }
     }
@@ -321,18 +340,8 @@ class DataTransfer {
    * 获取模块数据
    */
   _getModuleData(module, options = {}) {
+    console.log(`[DataTransfer] _getModuleData 开始: module=${module}`)
     try {
-      /* 动态获取Store数据 */
-      const storeMap = {
-        customer: 'useCustomerStore',
-        quotation: 'useQuotationStore',
-        contract: 'useContractStore',
-        inventory: 'useInventoryStore',
-        delivery: 'useDeliveryStore',
-        collection: 'useCollectionStore',
-        statement: 'useStatementStore'
-      }
-
       const dataKeyMap = {
         customer: 'customers',
         quotation: 'quotations',
@@ -344,22 +353,19 @@ class DataTransfer {
         supplier: 'suppliers'
       }
 
-      /* 尝试从dataCenter获取 */
-      const { useDataCenterStore } = require('@/stores/dataCenter')
       const dataCenter = useDataCenterStore()
       const dataRef = dataCenter[dataKeyMap[module] || module]
+      console.log(`[DataTransfer] dataCenter.${dataKeyMap[module] || module} = ${dataRef ? '存在' : 'undefined'}, 类型: ${Array.isArray(dataRef) ? 'array(' + dataRef.length + ')' : typeof dataRef}`)
 
       if (dataRef && Array.isArray(dataRef)) {
         let data = [...dataRef]
 
-        /* 应用过滤 */
         if (options.filters) {
           for (const filter of options.filters) {
             data = data.filter(d => d[filter.field] === filter.value)
           }
         }
 
-        /* 字段选择 */
         if (options.fields) {
           data = data.map(item => {
             const filtered = {}
@@ -370,9 +376,11 @@ class DataTransfer {
           })
         }
 
+        console.log(`[DataTransfer] _getModuleData 完成: module=${module}, 返回 ${data.length} 条`)
         return data
       }
 
+      console.log(`[DataTransfer] _getModuleData 完成: module=${module}, 无数据`)
       return []
     } catch (e) {
       console.warn('[DataTransfer] 获取模块数据失败:', module, e)
@@ -389,7 +397,6 @@ class DataTransfer {
     const errors = []
 
     try {
-      const { useDataCenterStore } = require('@/stores/dataCenter')
       const dataCenter = useDataCenterStore()
 
       for (let i = 0; i < data.length; i++) {

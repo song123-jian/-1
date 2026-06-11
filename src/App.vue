@@ -1,12 +1,26 @@
 <template>
-  <div class="app-container" :data-theme="themeStore.currentTheme" :data-preset="themeStore.currentPreset" :data-mode="themeStore.currentMode"
-       :data-device="deviceType" :data-layout="layoutMode">
+  <div
+    class="app-container"
+    :data-theme="themeStore.currentTheme"
+    :data-preset="themeStore.currentPreset"
+    :data-mode="themeStore.currentMode"
+    :data-device="deviceType"
+    :data-layout="layoutMode"
+  >
     <!-- 移动端遮罩层 -->
     <div v-if="mobileMenuOpen" class="sidebar-overlay" @click="closeMobileMenu"></div>
-    <AppSidebar :collapsed="sidebarCollapsed" :mobile-open="mobileMenuOpen"
-                @toggle-collapse="toggleSidebarCollapse" @close-mobile="closeMobileMenu" />
+    <AppSidebar
+      :collapsed="sidebarCollapsed"
+      :mobile-open="mobileMenuOpen"
+      @toggle-collapse="toggleSidebarCollapse"
+      @close-mobile="closeMobileMenu"
+    />
     <div class="app-main" :class="{ 'sidebar-collapsed': sidebarCollapsed, 'no-sidebar': !isDesktop }">
-      <AppTopbar :show-hamburger="shouldUseHamburger" :sidebar-collapsed="sidebarCollapsed" @toggle-menu="toggleMobileMenu" />
+      <AppTopbar
+        :show-hamburger="shouldUseHamburger"
+        :sidebar-collapsed="sidebarCollapsed"
+        @toggle-menu="toggleMobileMenu"
+      />
       <main class="app-content">
         <router-view v-slot="{ Component, route }">
           <transition name="fade" mode="out-in">
@@ -85,18 +99,13 @@ function initTheme() {
   try {
     themeStore.init()
   } catch (e) {
-    console.error('[App] 主题初始化失败:', e)
-  }
-}
-
-/* 将主题属性同步到 <html> 元素 */
-function syncThemeToHtml() {
-  const html = document.documentElement
-  html.setAttribute('data-mode', themeStore.currentMode)
+    console.error('[App] 主题初始化失败:', e)}}/* 将主题属性同步到 <html> 元素 */function syncThemeToHtml() {const html = document.documentElement  html.setAttribute('data-mode', themeStore.currentMode)
   html.setAttribute('data-theme', themeStore.currentTheme)
   html.setAttribute('data-preset', themeStore.currentPreset)
 }
-watch(() => [themeStore.currentMode, themeStore.currentTheme, themeStore.currentPreset], syncThemeToHtml, { immediate: true })
+watch(() => [themeStore.currentMode, themeStore.currentTheme, themeStore.currentPreset], syncThemeToHtml, {
+  immediate: true
+})
 
 /* 监听设备类型变化，自动调整布局 */
 watch(deviceType, (newType) => {
@@ -113,14 +122,48 @@ router.afterEach((to) => {
 
 /* 应用启动时恢复会话并初始化 */
 onMounted(async () => {
+  /* 浏览器兼容性检测 */
+  try {
+    const ua = navigator.userAgent
+    const isIE = ua.indexOf('MSIE ') > 0 || ua.indexOf('Trident/') > 0
+    if (isIE) {
+      const app = document.getElementById('app')
+      if (app) {
+        app.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1f36;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Microsoft YaHei,sans-serif;z-index:99999"><div style="text-align:center;max-width:520px;padding:40px"><div style="font-size:64px;margin-bottom:20px">&#9888;</div><h2 style="font-size:24px;margin:0 0 12px;font-weight:normal">浏览器不兼容</h2><p style="font-size:14px;color:#a0aec0;line-height:1.8;margin:0 0 24px">冠久ERP使用了现代Web技术，Internet Explorer 浏览器无法正常运行。<br>请使用以下现代浏览器访问系统：</p><div style="text-align:center"><a href="https://www.google.cn/chrome/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Chrome 浏览器</a><a href="https://www.microsoft.com/edge" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Microsoft Edge</a><a href="https://www.firefox.com.cn/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Firefox 浏览器</a></div></div></div>'
+      }
+      return
+    }
+  } catch (e) { /* ignore */ }
+
+  /* 隐藏加载指示器 */
+  try {
+    const loading = document.getElementById('app-loading')
+    if (loading) {
+      loading.style.opacity = '0'
+      setTimeout(() => { loading.remove() }, 300)
+    }
+  } catch (e) { /* ignore */ }
+
   /* 初始化主题系统 */
-  try { initTheme() } catch (e) { console.error('[App] 主题初始化失败:', e) }
+  try {
+    initTheme()
+  } catch (e) {
+    console.error('[App] 主题初始化失败:', e)
+  }
 
   /* 初始化响应式管理器 */
-  try { responsive.init() } catch (e) { console.error('[App] responsive初始化失败:', e) }
+  try {
+    responsive.init()
+  } catch (e) {
+    console.error('[App] responsive初始化失败:', e)
+  }
 
   /* 初始化自动保存管理器 */
-  try { autoSave.init({ router }) } catch (e) { console.error('[App] autoSave初始化失败:', e) }
+  try {
+    autoSave.init({ router })
+  } catch (e) {
+    console.error('[App] autoSave初始化失败:', e)
+  }
 
   /* 恢复布局状态 */
   try {
@@ -128,13 +171,23 @@ onMounted(async () => {
     if (layoutState.sidebarCollapsed !== undefined) {
       sidebarCollapsed.value = layoutState.sidebarCollapsed
     }
-  } catch (e) { console.error('[App] 布局状态恢复失败:', e) }
+  } catch (e) {
+    console.error('[App] 布局状态恢复失败:', e)
+  }
 
   /* 恢复会话 */
-  try { sessionStore.restoreSession() } catch (e) { console.error('[App] 会话恢复失败:', e) }
+  try {
+    sessionStore.restoreSession()
+  } catch (e) {
+    console.error('[App] 会话恢复失败:', e)
+  }
 
   /* 初始化数据管理中心 */
-  try { await dataCenter.init() } catch (e) { console.error('[App] 数据中心初始化失败:', e) }
+  try {
+    await dataCenter.init()
+  } catch (e) {
+    console.error('[App] 数据中心初始化失败:', e)
+  }
 
   /* 恢复上次的路由 */
   try {
@@ -142,7 +195,9 @@ onMounted(async () => {
     if (lastRoute && lastRoute !== '/' && router.currentRoute.value.path === '/') {
       await router.replace(lastRoute)
     }
-  } catch (e) { console.error('[App] 路由恢复失败:', e) }
+  } catch (e) {
+    console.error('[App] 路由恢复失败:', e)
+  }
 
   /* 如果已连接 Supabase，订阅 Presence 并启动自动同步 */
   try {
@@ -150,7 +205,9 @@ onMounted(async () => {
       sessionStore.subscribePresence(SupabaseClient.getClient())
       syncEngine.initAutoSync()
     }
-  } catch (e) { console.error('[App] Supabase订阅失败:', e) }
+  } catch (e) {
+    console.error('[App] Supabase订阅失败:', e)
+  }
 })
 
 /* 应用卸载时清理 */
@@ -158,9 +215,26 @@ onUnmounted(() => {
   syncEngine.stopAutoSync()
   autoSave.destroy()
   responsive.destroy()
-  try { sessionStore.unsubscribePresence?.() } catch (e) { /* ignore */ }
-  try { dataCache.destroy() } catch (e) { /* ignore */ }
-  try { eventBus.clear() } catch (e) { /* ignore */ }
+  try {
+    sessionStore.unsubscribePresence?.()
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    dataCache.destroy()
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    eventBus.clear()
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    themeStore.stopAutoSwitch()
+  } catch (e) {
+    /* ignore */
+  }
 })
 </script>
 
@@ -189,13 +263,13 @@ onUnmounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-left: var(--sidebar-width, 260px);
+  margin-left: var(--sidebar-width);
   transition: margin-left 300ms cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
 }
 
 .app-main.sidebar-collapsed {
-  margin-left: var(--sidebar-collapsed-width, 52px);
+  margin-left: var(--sidebar-collapsed-width);
 }
 
 /* 移动端无侧边栏偏移 */
@@ -207,8 +281,8 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: var(--content-padding, var(--space-6));
-  padding-top: calc(var(--topbar-height, 56px) + var(--content-padding, var(--space-6)));
+  padding: var(--content-padding, var(--space-6, 1.5rem));
+  padding-top: calc(var(--topbar-height, 56px) + var(--content-padding, var(--space-6, 1.5rem)));
   width: 100%;
   box-sizing: border-box;
 }
@@ -223,18 +297,18 @@ onUnmounted(() => {
 }
 
 /* 移动端适配 */
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .app-content {
-    padding: var(--space-3);
-    padding-top: calc(var(--topbar-height, 48px) + var(--space-3));
+    padding: var(--space-3, 0.75rem);
+    padding-top: calc(var(--topbar-height, 48px) + var(--space-3, 0.75rem));
   }
 }
 
 /* 平板适配 */
-@media (min-width: 768px) and (max-width: 1023px) {
+@media (min-width: 768px) and (max-width: 1024px) {
   .app-content {
-    padding: var(--space-4);
-    padding-top: calc(var(--topbar-height, 52px) + var(--space-4));
+    padding: var(--space-4, 1rem);
+    padding-top: calc(var(--topbar-height, 52px) + var(--space-4, 1rem));
   }
 }
 </style>

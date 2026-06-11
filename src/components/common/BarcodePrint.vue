@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-dialog" style="max-width: 800px">
       <div class="modal-header">
@@ -110,13 +110,7 @@ function handleBatchPrint() {
 }
 
 function printHtml(html) {
-  const printWindow = window.open('', '_blank')
-  printWindow.document.write(`
-    <html>
-    <head>
-      <title>条码打印</title>
-      <style>
-        body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; padding: 10px; }
+  const printWindow = window.open('', '_blank')printWindow.document.write(`<html><head><title>条码打印</title><style>        body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; padding: var(--space-2); }
         @page { margin: 5mm; }
         @media print { body { padding: 0; } }
       </style>
