@@ -11,23 +11,29 @@
         <p class="role-subtitle">选择您的身份以进入系统</p>
       </header>
 
-      <!-- 角色卡片网格 -->
-      <div class="role-grid">
-        <div
-          v-for="role in roles"
-          :key="role.name"
-          class="role-card"
-          :class="{ selected: selectedRole === role.name }"
-          @click="selectedRole = role.name"
-        >
-          <div class="role-card-icon"><Icon :name="role.icon" :size="28" /></div>
-          <div class="role-card-name">{{ role.name }}</div>
-          <div class="role-card-desc">{{ role.desc }}</div>
+      <!-- 角色分组卡片 -->
+      <div class="role-categories">
+        <div v-for="category in roleCategories" :key="category.label" class="role-category">
+          <div class="category-label">{{ category.label }}</div>
+          <div class="category-grid">
+            <div
+              v-for="role in category.roles"
+              :key="role.name"
+              class="role-card"
+              :class="{ selected: selectedRole === role.name }"
+              @click="selectedRole = role.name"
+            >
+              <div class="role-card-icon"><Icon :name="role.icon" :size="28" /></div>
+              <div class="role-card-name">{{ role.name }}</div>
+              <div class="role-card-desc">{{ role.desc }}</div>
+              <div v-if="isLastUsedRole(role.name)" class="role-card-badge">上次使用</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- 在线成员 -->
-      <div class="online-section">
+      <!-- 在线成员（仅团队模式显示） -->
+      <div v-if="!sessionStore.isSoloMode" class="online-section">
         <div class="online-header">
           <span class="online-dot"></span>
           <span class="online-label">当前在线</span>
@@ -42,6 +48,14 @@
         <div class="online-empty" v-else>暂无其他成员在线</div>
       </div>
 
+      <!-- 记住身份复选框 -->
+      <label class="remember-check">
+        <input type="checkbox" v-model="rememberRole" />
+        <span class="checkmark"></span>
+        <span class="remember-label">记住我的身份</span>
+        <span class="remember-hint">下次自动进入，无需重新选择</span>
+      </label>
+
       <!-- 进入按钮 -->
       <button
         class="enter-btn"
@@ -52,7 +66,9 @@
       </button>
 
       <!-- 底部 -->
-      <footer class="role-footer">团队共享模式 · 无需个人账号密码</footer>
+      <footer class="role-footer">
+        {{ sessionStore.isSoloMode ? '个人使用模式 · 自动记住身份' : '团队共享模式 · 无需个人账号密码' }}
+      </footer>
     </div>
   </div>
 </template>
@@ -61,6 +77,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
+import { RoleCategories } from '@/constants/roles'
 
 const router = useRouter()
 const sessionStore = useSessionStore()
@@ -68,29 +85,35 @@ const sessionStore = useSessionStore()
 /* 选中的角色 */
 const selectedRole = ref(null)
 
-/* 角色定义（name 与 permission store 的角色名完全一致） */
-const roles = [
-  { name: '管理员', icon: 'users', desc: '系统配置与全部权限' },
-  { name: '总经理', icon: 'building', desc: '全局数据查看与审批' },
-  { name: '销售主管', icon: 'table', desc: '销售团队管理与审批' },
-  { name: '销售员', icon: 'dollar', desc: '客户与报价订单管理' },
-  { name: '仓库主管', icon: 'package', desc: '仓库管理与库存审批' },
-  { name: '仓管员', icon: 'tool', desc: '出入库与库存操作' },
-  { name: '财务', icon: 'calculator', desc: '回款对账与财务报表' },
-  { name: '查看者', icon: 'eye', desc: '只读查看所有数据' }
-]
+/* 是否记住角色 */
+const rememberRole = ref(!!sessionStore.rememberedRole)
+
+/* 角色分组定义 */
+const roleCategories = RoleCategories
+
+/* 判断是否为上次使用的角色 */
+function isLastUsedRole(roleName) {
+  return sessionStore.rememberedRole === roleName
+}
 
 /* 进入系统 */
 function handleEnter() {
   if (!selectedRole.value) return
-  sessionStore.selectRole(selectedRole.value)
+  sessionStore.selectRole(selectedRole.value, rememberRole.value)
   router.push('/dashboard')
 }
 
-/* 页面加载时检查已有会话 */
+/* 页面加载时检查已有会话或记住的角色 */
 onMounted(() => {
+  /* 尝试恢复已有会话 */
   if (sessionStore.restoreSession()) {
     router.replace('/dashboard')
+    return
+  }
+  /* 如果有记住的角色，自动选中 */
+  if (sessionStore.rememberedRole) {
+    selectedRole.value = sessionStore.rememberedRole
+    rememberRole.value = true
   }
 })
 </script>
@@ -175,13 +198,32 @@ onMounted(() => {
   color: var(--color-text-secondary);
 }
 
-/* 角色网格 */
-.role-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4, 1rem);
+/* 角色分组 */
+.role-categories {
   width: 100%;
   margin-bottom: var(--space-6, 1.5rem);
+}
+
+.role-category {
+  margin-bottom: var(--space-4, 1rem);
+}
+
+.category-label {
+  font-size: var(--font-size-xs, 0.75rem);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-2, 0.5rem);
+  padding-left: var(--space-1, 0.25rem);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-1, 0.25rem);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3, 0.75rem);
 }
 
 /* 角色卡片 */
@@ -189,11 +231,12 @@ onMounted(() => {
   background: var(--color-surface, var(--color-bg-secondary));
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg, 12px);
-  padding: var(--space-5, 1.25rem) var(--space-3, 0.75rem);
+  padding: var(--space-4, 1rem) var(--space-3, 0.75rem);
   text-align: center;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
+  position: relative;
 }
 
 .role-card:hover {
@@ -226,6 +269,18 @@ onMounted(() => {
   font-size: var(--font-size-xs, 0.75rem);
   color: var(--color-text-tertiary);
   line-height: 1.4;
+}
+
+.role-card-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 10px;
+  padding: 1px 6px;
+  background: var(--color-accent, #4F46E5);
+  color: #fff;
+  border-radius: var(--radius-full, 9999px);
+  font-weight: 500;
 }
 
 /* 在线成员区域 */
@@ -300,6 +355,38 @@ onMounted(() => {
   color: var(--color-text-tertiary);
 }
 
+/* 记住身份复选框 */
+.remember-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 0.5rem);
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: var(--space-4, 1rem);
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent, #4F46E5);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.remember-label {
+  font-size: var(--font-size-sm, 0.8125rem);
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.remember-hint {
+  font-size: var(--font-size-xs, 0.75rem);
+  color: var(--color-text-tertiary);
+  margin-left: auto;
+}
+
 /* 进入按钮 */
 .enter-btn {
   width: 100%;
@@ -336,26 +423,16 @@ onMounted(() => {
   text-align: center;
 }
 
-/* 响应式：移动端2列 */
-@media (max-width: 1024px) {
-  .role-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+/* 响应式 */
 @media (max-width: 768px) {
-  .role-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .category-grid {
+    grid-template-columns: 1fr;
   }
   .role-select-container {
     padding: var(--space-4);
   }
-}
-@media (max-width: 640px) {
-  .role-grid {
-    grid-template-columns: 1fr;
-  }
-  .role-select-container {
-    padding: var(--space-6, 1.5rem) var(--space-4, 1rem);
+  .remember-hint {
+    display: none;
   }
 }
 </style>
