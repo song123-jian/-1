@@ -18,6 +18,12 @@ const _subscriptions = new Map()
 const _autoSubscriptions = new Map()
 let _lastAutoCallbacks = null
 
+// 重连管理
+let _reconnectTimer = null
+const RECONNECT_BASE_DELAY = 3000
+const RECONNECT_MAX_DELAY = 60000
+let _reconnectAttempt = 0
+
 // 需要自动订阅的表列表
 const TABLES_TO_WATCH = [
   'customers', 'quotations', 'contracts', 'inventory',
@@ -51,14 +57,24 @@ function init(url, anonKey, options = {}) {
     _config.url = url
     _config.anonKey = anonKey
     localStorage.setItem(STORAGE_URL_KEY, url)
-    localStorage.setItem(STORAGE_KEY_KEY, encodeKey(anonKey))
+    // 使用 sessionStorage 存储 anon key，关闭标签页即清除，避免密钥长期残留在浏览器中
+    sessionStorage.setItem(STORAGE_KEY_KEY, encodeKey(anonKey))
     _connected = true
     console.info('[Supabase] 连接成功:', url)
+
+    // 重置重连计数
+    _reconnectAttempt = 0
 
     // 如果启用了自动订阅，则自动订阅所有关键表
     if (options.autoSubscribe && options.onRealtimeChange) {
       autoSubscribeTables(options.onRealtimeChange)
     }
+
+    // 监听客户端连接状态变化，自动触发重连
+    _client.on('connected', () => {
+      console.info('[Supabase] 实时连接已建立')
+      _reconnectAttempt = 0
+    })
 
     return _client
   } catch (e) {
@@ -73,7 +89,7 @@ function init(url, anonKey, options = {}) {
  */
 function autoInit() {
   const url = localStorage.getItem(STORAGE_URL_KEY)
-  const key = decodeKey(localStorage.getItem(STORAGE_KEY_KEY))
+  const key = decodeKey(sessionStorage.getItem(STORAGE_KEY_KEY))
   if (url && key) {
     return init(url, key)
   }
@@ -105,7 +121,15 @@ function disconnect() {
   _connected = false
   _config = { url: '', anonKey: '' }
   localStorage.removeItem(STORAGE_URL_KEY)
-  localStorage.removeItem(STORAGE_KEY_KEY)
+  sessionStorage.removeItem(STORAGE_KEY_KEY)
+
+  // 清理重连定时器
+  if (_reconnectTimer) {
+    clearTimeout(_reconnectTimer)
+    _reconnectTimer = null
+  }
+  _reconnectAttempt = 0
+
   console.info('[Supabase] 已断开连接')
 }
 
@@ -266,6 +290,28 @@ function getAutoSubscriptionStatus() {
 }
 
 /**
+ * 自动重连（指数退避策略）
+ * 当检测到连接断开时自动调用
+ * @returns {void}
+ */
+function scheduleReconnect() {
+  if (_reconnectTimer) return // 已在重连中
+
+  _reconnectAttempt++
+  const delay = Math.min(RECONNECT_BASE_DELAY * Math.pow(2, _reconnectAttempt - 1), RECONNECT_MAX_DELAY)
+  console.warn(`[Supabase] 将在 ${delay}ms 后尝试第 ${_reconnectAttempt} 次重连...`)
+
+  _reconnectTimer = setTimeout(() => {
+    _reconnectTimer = null
+    const client = reconnect()
+    if (!client) {
+      // 重连失败，继续调度下一次
+      scheduleReconnect()
+    }
+  }, delay)
+}
+
+/**
  * 断开并重连，自动恢复之前的订阅
  * @returns {object|null} Supabase 客户端实例
  */
@@ -307,5 +353,6 @@ export const SupabaseClient = {
   autoSubscribeTables,
   unsubscribeAllAuto,
   getAutoSubscriptionStatus,
-  reconnect
+  reconnect,
+  scheduleReconnect
 }

@@ -30,6 +30,8 @@ export const InstanceStatus = {
   CANCELLED: 'cancelled'
 }
 
+const INSTANCES_STORAGE_KEY = 'gj_erp_workflowInstances'
+
 /* 审批结果 */
 export const ApprovalResult = {
   APPROVED: 'approved',
@@ -154,10 +156,40 @@ export const WORKFLOW_TEMPLATES = {
 class WorkflowEngine {
   constructor() {
     this._templates = new Map()
+    this._instances = new Map()
     /* 注册预定义模板 */
     Object.values(WORKFLOW_TEMPLATES).forEach(t => {
       this._templates.set(t.id, t)
     })
+    /* 从 localStorage 加载已持久化的实例 */
+    this._loadInstances()
+  }
+
+  /**
+   * 从 localStorage 加载工作流实例
+   */
+  _loadInstances() {
+    try {
+      const raw = localStorage.getItem(INSTANCES_STORAGE_KEY)
+      if (raw) {
+        const arr = JSON.parse(raw)
+        arr.forEach(inst => this._instances.set(inst.id, inst))
+      }
+    } catch (e) {
+      console.error('[WorkflowEngine] 加载持久化实例失败:', e)
+    }
+  }
+
+  /**
+   * 将工作流实例持久化到 localStorage
+   */
+  _saveInstances() {
+    try {
+      const arr = Array.from(this._instances.values())
+      localStorage.setItem(INSTANCES_STORAGE_KEY, JSON.stringify(arr))
+    } catch (e) {
+      console.error('[WorkflowEngine] 持久化实例失败:', e)
+    }
   }
 
   /**
@@ -229,6 +261,7 @@ class WorkflowEngine {
       currentApprover: currentNode ? currentNode.approver : '',
       variables,
       startTime: new Date().toISOString(),
+      currentNodeArrivalTime: new Date().toISOString(),
       endTime: null,
       history: [{
         node: startNode.name,
@@ -262,6 +295,10 @@ class WorkflowEngine {
         businessType
       })
     }
+
+    /* 持久化实例 */
+    this._instances.set(instance.id, instance)
+    this._saveInstances()
 
     return instance
   }
@@ -310,6 +347,9 @@ class WorkflowEngine {
         comment
       })
 
+      this._instances.set(instance.id, instance)
+      this._saveInstances()
+
       return { success: true, instance, message: '审批已拒绝，流程结束' }
     }
 
@@ -339,12 +379,16 @@ class WorkflowEngine {
         businessType: instance.businessType
       })
 
+      this._instances.set(instance.id, instance)
+      this._saveInstances()
+
       return { success: true, instance, message: '审批通过，流程已完成' }
     }
 
     /* 流转到下一审批节点 */
     instance.currentNode = nextNode.id
     instance.currentApprover = nextNode.approver
+    instance.currentNodeArrivalTime = new Date().toISOString()
 
     /* 发布审批待办事件 */
     eventBus.emit('workflow:pending', {
@@ -355,6 +399,9 @@ class WorkflowEngine {
       approver: nextNode.approver,
       businessType: instance.businessType
     })
+
+    this._instances.set(instance.id, instance)
+    this._saveInstances()
 
     return { success: true, instance, message: `审批通过，已流转至: ${nextNode.name}` }
   }
@@ -396,6 +443,9 @@ class WorkflowEngine {
       businessType: instance.businessType
     })
 
+    this._instances.set(instance.id, instance)
+    this._saveInstances()
+
     return { success: true, instance, message: `已委托给 ${to}` }
   }
 
@@ -433,7 +483,37 @@ class WorkflowEngine {
       businessType: instance.businessType
     })
 
+    this._instances.set(instance.id, instance)
+    this._saveInstances()
+
     return { success: true, instance, message: `已加签 ${approver}` }
+  }
+
+  /**
+   * 获取持久化的工作流实例
+   * @param {string} [templateId] - 可选，按模板ID筛选
+   * @returns {Array} 实例数组
+   */
+  getInstances(templateId) {
+    const all = Array.from(this._instances.values())
+    if (templateId) {
+      return all.filter(inst => inst.templateId === templateId)
+    }
+    return all
+  }
+
+  /**
+   * 删除工作流实例
+   * @param {string} instanceId - 实例ID
+   * @returns {boolean} 是否删除成功
+   */
+  deleteInstance(instanceId) {
+    if (this._instances.has(instanceId)) {
+      this._instances.delete(instanceId)
+      this._saveInstances()
+      return true
+    }
+    return false
   }
 
   /**
@@ -467,8 +547,8 @@ class WorkflowEngine {
 
     instances.forEach(inst => {
       if (inst.status !== InstanceStatus.RUNNING) return
-      const startTime = new Date(inst.startTime)
-      const hoursDiff = (now - startTime) / (1000 * 60 * 60)
+      const referenceTime = new Date(inst.currentNodeArrivalTime || inst.startTime)
+      const hoursDiff = (now - referenceTime) / (1000 * 60 * 60)
       if (hoursDiff > (inst.timeoutHours || 48)) {
         timeoutList.push({
           instanceId: inst.id,

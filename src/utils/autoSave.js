@@ -14,6 +14,7 @@
 import { watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import githubSync from './githubSync'
+import eventBus from './eventBus'
 
 const AUTO_SAVE_KEY = 'gj_erp_autoSave'
 const DRAFT_KEY_PREFIX = 'gj_erp_draft_'
@@ -35,12 +36,17 @@ const CONFIG = {
   enabled: true
 }
 
+/* 存储配额警告阈值（80%的5MB） */
+const STORAGE_QUOTA_WARNING = 0.8
+
 class AutoSaveManager {
   constructor() {
     /* 防抖定时器 */
     this._debounceTimers = new Map()
     /* 自动保存定时器 */
     this._autoSaveTimer = null
+    /* 自动保存是否因页面后台而暂停 */
+    this._autoSavePaused = false
     /* 是否已初始化 */
     this._initialized = false
     /* 脏标记（是否有未保存的变更） */
@@ -389,6 +395,27 @@ class AutoSaveManager {
       /* 定期清理过期草稿 */
       this.cleanupDrafts()
     }, CONFIG.autoSaveInterval)
+
+    /* 监听页面可见性变化，后台时暂停定时器，前台时恢复 */
+    this._autoSaveVisibilityHandler = () => {
+      if (document.visibilityState === 'hidden') {
+        /* 页面进入后台，暂停定时器 */
+        if (this._autoSaveTimer) {
+          clearInterval(this._autoSaveTimer)
+          this._autoSaveTimer = null
+        }
+        this._autoSavePaused = true
+      } else if (document.visibilityState === 'visible' && this._autoSavePaused) {
+        /* 页面回到前台，恢复定时器 */
+        if (this._dirty) {
+          this.saveSessionState()
+          this._dirty = false
+        }
+        this._autoSavePaused = false
+        this._startAutoSaveTimer()
+      }
+    }
+    document.addEventListener('visibilitychange', this._autoSaveVisibilityHandler)
   }
 
   /**
@@ -427,10 +454,40 @@ class AutoSaveManager {
   }
 
   /**
+   * 估算 localStorage 使用量
+   * @returns {{ usedBytes: number, totalBytes: number, usageRatio: number }} 存储使用情况
+   */
+  getStorageUsage() {
+    let usedBytes = 0
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key) {
+          usedBytes += key.length + (localStorage.getItem(key) || '').length
+        }
+      }
+    } catch (e) { /* ignore */ }
+    // localStorage 通常限制为 5MB
+    const totalBytes = 5 * 1024 * 1024
+    return {
+      usedBytes,
+      totalBytes,
+      usageRatio: usedBytes / totalBytes
+    }
+  }
+
+  /**
    * 保存到localStorage
    */
   _saveToStorage(key, data) {
     try {
+      const usage = this.getStorageUsage()
+      if (usage.usageRatio >= STORAGE_QUOTA_WARNING) {
+        eventBus.emit('notification:show', {
+          type: 'warning',
+          message: `本地存储空间已使用 ${Math.round(usage.usageRatio * 100)}%，请及时清理数据`
+        })
+      }
       localStorage.setItem(key, JSON.stringify(data))
     } catch (e) {
       if (e.name === 'QuotaExceededError') {
@@ -531,6 +588,11 @@ class AutoSaveManager {
       window.removeEventListener('visibilitychange', this._visibilityChangeHandler)
       this._visibilityChangeHandler = null
     }
+    if (this._autoSaveVisibilityHandler) {
+      document.removeEventListener('visibilitychange', this._autoSaveVisibilityHandler)
+      this._autoSaveVisibilityHandler = null
+    }
+    this._autoSavePaused = false
     for (const [, timer] of this._debounceTimers) {
       clearTimeout(timer)
     }

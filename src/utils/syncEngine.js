@@ -4,7 +4,7 @@
  * 支持实时订阅、增量拉取/推送、冲突合并、离线队列
  */
 
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { SupabaseClient } from '@/lib/supabase.js'
 import { API } from '@/services/api.js'
 import { mergeArrays } from '@/utils/conflictResolver.js'
@@ -101,8 +101,14 @@ const SYNC_STATE_KEY = 'gj_erp_syncState'
 /** 同步状态（每张表的上次同步时间） */
 const syncState = ref(loadSyncState())
 
-/** 是否正在同步中 */
-const isSyncing = ref(false)
+/** 是否正在拉取中 */
+const isPulling = ref(false)
+
+/** 是否正在推送中 */
+const isPushing = ref(false)
+
+/** 是否正在同步中（兼容旧接口） */
+const isSyncing = computed(() => isPulling.value || isPushing.value)
 
 /** 同步统计 */
 const syncStats = ref({
@@ -116,6 +122,7 @@ const pendingPush = ref(loadPendingPush())
 
 /** 删除墓碑：记录本地已删除的ID，防止同步时被远端数据恢复 */
 const DELETED_IDS_KEY = 'gj_erp_deletedIds'
+const TOMBSTONE_TTL = 30 * 24 * 60 * 60 * 1000 // 30天过期
 const deletedIds = ref(loadDeletedIds())
 
 /** Store watcher 停止函数列表 */
@@ -154,18 +161,28 @@ function saveSyncState() {
 
 /**
  * 从 localStorage 加载删除墓碑
- * 结构: { tableName: Set<id> }
- * @returns {Object} 每张表已删除ID的集合
+ * 结构: { tableName: Map<id, timestamp> }
+ * 兼容旧格式: { tableName: [id1, id2] } 会被转换为 { tableName: { id: timestamp } }
+ * @returns {Object} 每张表已删除ID的 Map（id → timestamp）
  */
 function loadDeletedIds() {
   try {
     const raw = localStorage.getItem(DELETED_IDS_KEY)
     if (raw) {
       const parsed = JSON.parse(raw)
-      // 将数组转为 Set
       const result = {}
       for (const [table, ids] of Object.entries(parsed)) {
-        result[table] = new Set(ids)
+        if (Array.isArray(ids)) {
+          // 旧格式：数组，转换为 Map，时间戳设为0（将立即过期）
+          const map = new Map()
+          for (const id of ids) {
+            map.set(id, 0)
+          }
+          result[table] = map
+        } else if (typeof ids === 'object' && ids !== null) {
+          // 新格式：{ id: timestamp }
+          result[table] = new Map(Object.entries(ids))
+        }
       }
       return result
     }
@@ -177,14 +194,16 @@ function loadDeletedIds() {
 
 /**
  * 保存删除墓碑到 localStorage
+ * 存储格式: { tableName: { id: timestamp } }
  */
 function saveDeletedIds() {
   try {
-    // 将 Set 转为数组存储
+    cleanupTombstones()
+    // 将 Map 转为普通对象存储
     const toStore = {}
-    for (const [table, ids] of Object.entries(deletedIds.value)) {
-      if (ids.size > 0) {
-        toStore[table] = Array.from(ids)
+    for (const [table, idMap] of Object.entries(deletedIds.value)) {
+      if (idMap.size > 0) {
+        toStore[table] = Object.fromEntries(idMap)
       }
     }
     localStorage.setItem(DELETED_IDS_KEY, JSON.stringify(toStore))
@@ -200,9 +219,9 @@ function saveDeletedIds() {
  */
 function recordDeletedId(tableName, id) {
   if (!deletedIds.value[tableName]) {
-    deletedIds.value[tableName] = new Set()
+    deletedIds.value[tableName] = new Map()
   }
-  deletedIds.value[tableName].add(id)
+  deletedIds.value[tableName].set(id, Date.now())
   saveDeletedIds()
 }
 
@@ -213,22 +232,32 @@ function recordDeletedId(tableName, id) {
  */
 function recordDeletedIds(tableName, ids) {
   if (!deletedIds.value[tableName]) {
-    deletedIds.value[tableName] = new Set()
+    deletedIds.value[tableName] = new Map()
   }
+  const now = Date.now()
   for (const id of ids) {
-    deletedIds.value[tableName].add(id)
+    deletedIds.value[tableName].set(id, now)
   }
   saveDeletedIds()
 }
 
 /**
  * 检查某个ID是否已被本地删除
+ * 自动移除超过TTL的过期条目
  * @param {string} tableName - 同步表名
  * @param {string} id - 待检查的ID
  * @returns {boolean}
  */
 function isDeletedId(tableName, id) {
-  return deletedIds.value[tableName]?.has(id) || false
+  const idMap = deletedIds.value[tableName]
+  if (!idMap || !idMap.has(id)) return false
+  const timestamp = idMap.get(id)
+  if (Date.now() - timestamp > TOMBSTONE_TTL) {
+    idMap.delete(id)
+    saveDeletedIds()
+    return false
+  }
+  return true
 }
 
 /**
@@ -240,6 +269,30 @@ function clearDeletedId(tableName, id) {
   if (deletedIds.value[tableName]) {
     deletedIds.value[tableName].delete(id)
     saveDeletedIds()
+  }
+}
+
+/**
+ * 清理过期的墓碑条目（超过TOMBSTONE_TTL的记录将被移除）
+ */
+function cleanupTombstones() {
+  const now = Date.now()
+  let cleaned = 0
+  for (const [table, idMap] of Object.entries(deletedIds.value)) {
+    if (!idMap || !(idMap instanceof Map)) continue
+    for (const [id, timestamp] of idMap) {
+      if (now - timestamp > TOMBSTONE_TTL) {
+        idMap.delete(id)
+        cleaned++
+      }
+    }
+    // 清理空的 Map
+    if (idMap.size === 0) {
+      delete deletedIds.value[table]
+    }
+  }
+  if (cleaned > 0) {
+    console.info(`[SyncEngine] 墓碑清理: 移除 ${cleaned} 条过期记录`)
   }
 }
 
@@ -311,12 +364,12 @@ function initAutoSync() {
  * 使用 Promise.allSettled 并行拉取所有表，单表失败不影响其他表
  */
 async function incrementalPullAll() {
-  if (isSyncing.value) {
-    console.warn('[SyncEngine] 同步正在进行中，跳过本次拉取')
+  if (isPulling.value) {
+    console.warn('[SyncEngine] 拉取正在进行中，跳过本次拉取')
     return
   }
 
-  isSyncing.value = true
+  isPulling.value = true
   let syncedCount = 0
   let errorCount = 0
 
@@ -360,7 +413,7 @@ async function incrementalPullAll() {
     console.error('[SyncEngine] 增量拉取异常:', e)
     syncStats.value.totalErrors++
   } finally {
-    isSyncing.value = false
+    isPulling.value = false
   }
 }
 
@@ -369,12 +422,12 @@ async function incrementalPullAll() {
  * 对每张表，筛选本地修改过的数据推送到 Supabase
  */
 async function incrementalPushAll() {
-  if (isSyncing.value) {
-    console.warn('[SyncEngine] 同步正在进行中，跳过本次推送')
+  if (isPushing.value) {
+    console.warn('[SyncEngine] 推送正在进行中，跳过本次推送')
     return
   }
 
-  isSyncing.value = true
+  isPushing.value = true
   let syncedCount = 0
   let errorCount = 0
 
@@ -399,7 +452,7 @@ async function incrementalPushAll() {
           modifiedItems = localData
         } else {
           const lastSyncTime = new Date(lastSync).getTime()
-          modifiedItems = localData.filter(item => {
+          modifiedItems = localData.filter((item) => {
             const updatedTime = item.updatedAt ? new Date(item.updatedAt).getTime() : 0
             const createdTime = item.createdAt ? new Date(item.createdAt).getTime() : 0
             return updatedTime > lastSyncTime || createdTime > lastSyncTime
@@ -431,7 +484,7 @@ async function incrementalPushAll() {
     console.error('[SyncEngine] 增量推送异常:', e)
     syncStats.value.totalErrors++
   } finally {
-    isSyncing.value = false
+    isPushing.value = false
   }
 }
 
@@ -451,7 +504,7 @@ async function incrementalPushTable(tableName, storeName, dataKey) {
     const lastSync = syncState.value[tableName] || null
     let modified = items
     if (lastSync) {
-      modified = items.filter(item => {
+      modified = items.filter((item) => {
         const updated = item.updatedAt || item.createdAt
         return !updated || updated >= lastSync
       })
@@ -491,7 +544,7 @@ function handleRemoteInsert(tableName, record) {
     if (!Array.isArray(currentData)) return
 
     // 检查是否已存在（避免重复插入）
-    const exists = currentData.some(item => item.id === record.id)
+    const exists = currentData.some((item) => item.id === record.id)
     if (exists) return
 
     // 添加新记录
@@ -528,7 +581,7 @@ function handleRemoteUpdate(tableName, record) {
     const currentData = store[dataKey]
     if (!Array.isArray(currentData)) return
 
-    const idx = currentData.findIndex(item => item.id === record.id)
+    const idx = currentData.findIndex((item) => item.id === record.id)
     if (idx !== -1) {
       const localItem = currentData[idx]
       const localTime = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0
@@ -536,7 +589,9 @@ function handleRemoteUpdate(tableName, record) {
 
       if (localTime > remoteTime) {
         // 本地版本更新，保留本地数据，加入推送队列确保远端同步
-        console.info(`[SyncEngine] 本地更新，保留本地版本: ${tableName}/${record.id} (本地 ${localItem.updatedAt} > 远端 ${record.updatedAt})`)
+        console.info(
+          `[SyncEngine] 本地更新，保留本地版本: ${tableName}/${record.id} (本地 ${localItem.updatedAt} > 远端 ${record.updatedAt})`
+        )
         queuePendingPush(tableName)
         return
       }
@@ -577,7 +632,7 @@ function handleRemoteDelete(tableName, record) {
     if (!Array.isArray(currentData)) return
 
     // 移除匹配 id 的记录
-    const filtered = currentData.filter(item => item.id !== record.id)
+    const filtered = currentData.filter((item) => item.id !== record.id)
     if (filtered.length !== currentData.length) {
       // 直接赋值以触发响应式更新
       store[dataKey] = filtered
@@ -610,14 +665,14 @@ function mergeRemoteItems(storeName, dataKey, remoteItems) {
 
     // 获取对应的同步表名，用于查找墓碑
     const tableName = Object.keys(SYNC_MAP).find(
-      t => SYNC_MAP[t].storeName === storeName && SYNC_MAP[t].dataKey === dataKey
+      (t) => SYNC_MAP[t].storeName === storeName && SYNC_MAP[t].dataKey === dataKey
     )
 
     // 过滤掉已被本地删除的远端数据（墓碑机制）
     let filteredRemote = remoteItems
     if (tableName && deletedIds.value[tableName]?.size > 0) {
       const tombstone = deletedIds.value[tableName]
-      filteredRemote = remoteItems.filter(item => !tombstone.has(item.id))
+      filteredRemote = remoteItems.filter((item) => !tombstone.has(item.id))
       const filtered = remoteItems.length - filteredRemote.length
       if (filtered > 0) {
         console.info(`[SyncEngine] 墓碑过滤: ${tableName} 跳过 ${filtered} 条已删除数据`)
@@ -665,7 +720,10 @@ function mergeRemoteItems(storeName, dataKey, remoteItems) {
 function persistStore(storeName, store, dataKey) {
   try {
     /* inventory 的出入库单据需要调用 persistOrders */
-    if (storeName === 'inventory' && (dataKey === 'inboundOrders' || dataKey === 'outboundOrders' || dataKey === 'warehouseOrders')) {
+    if (
+      storeName === 'inventory' &&
+      (dataKey === 'inboundOrders' || dataKey === 'outboundOrders' || dataKey === 'warehouseOrders')
+    ) {
       if (store.persistOrders && typeof store.persistOrders === 'function') {
         store.persistOrders()
         return
@@ -751,14 +809,12 @@ function watchStoreChanges() {
   // 监听 eventBus 的数据变更事件，替代深度 watch
   const events = ['data:created', 'data:updated', 'data:deleted']
   const unsubscribers = []
-  events.forEach(event => {
+  events.forEach((event) => {
     const unsub = eventBus.on(event, (data) => {
       const storeName = data.store || data.module
       if (storeName) {
         // 根据 storeName 反查 tableName
-        const tableName = Object.keys(SYNC_MAP).find(
-          t => SYNC_MAP[t].storeName === storeName
-        )
+        const tableName = Object.keys(SYNC_MAP).find((t) => SYNC_MAP[t].storeName === storeName)
         if (tableName) {
           debouncePush(tableName)
         }
@@ -769,7 +825,7 @@ function watchStoreChanges() {
 
   // 保存取消订阅函数，用于后续清理
   _watcherStoppers.push(() => {
-    unsubscribers.forEach(fn => fn())
+    unsubscribers.forEach((fn) => fn())
   })
 
   console.info('[SyncEngine] Store 变更监听已启动（eventBus模式）')
@@ -812,7 +868,7 @@ function queuePendingPush(tableName) {
   if (!store) return
 
   // 检查是否已有该表的待推送记录
-  const existing = pendingPush.value.find(p => p.table === tableName)
+  const existing = pendingPush.value.find((p) => p.table === tableName)
   if (existing) {
     existing.timestamp = new Date().toISOString()
   } else {
@@ -842,7 +898,7 @@ function stopAutoSync() {
   stopWatchers()
 
   // 清理定时轮询 watcher
-  _watchers.value.forEach(w => clearInterval(w.intervalId))
+  _watchers.value.forEach((w) => clearInterval(w.intervalId))
   _watchers.value = []
 
   // 清空防抖定时器
@@ -850,6 +906,9 @@ function stopAutoSync() {
     clearTimeout(timer)
   }
   _debounceTimers.clear()
+
+  // 清空 Store 缓存，防止内存泄漏
+  _storeCache.clear()
 
   // 清空待推送队列
   pendingPush.value = []
@@ -865,7 +924,9 @@ function stopWatchers() {
   for (const stopper of _watcherStoppers) {
     try {
       stopper()
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
   _watcherStoppers.length = 0
 }
@@ -875,12 +936,13 @@ function stopWatchers() {
  * 清空同步时间戳，从远端全量拉取，再全量推送本地数据
  */
 async function forceFullSync() {
-  if (isSyncing.value) {
+  if (isPulling.value || isPushing.value) {
     console.warn('[SyncEngine] 同步正在进行中，跳过全量同步')
     return
   }
 
-  isSyncing.value = true
+  isPulling.value = true
+  isPushing.value = true
 
   try {
     // 1. 清空同步时间戳
@@ -930,7 +992,8 @@ async function forceFullSync() {
     console.error('[SyncEngine] 全量同步异常:', e)
     syncStats.value.totalErrors++
   } finally {
-    isSyncing.value = false
+    isPulling.value = false
+    isPushing.value = false
   }
 }
 
@@ -943,6 +1006,8 @@ async function forceFullSync() {
 export function useSyncEngine() {
   return {
     isSyncing,
+    isPulling,
+    isPushing,
     syncStats,
     syncState,
     pendingPush,
@@ -958,6 +1023,7 @@ export function useSyncEngine() {
     recordDeletedId,
     recordDeletedIds,
     clearDeletedId,
-    isDeletedId
+    isDeletedId,
+    cleanupTombstones
   }
 }
