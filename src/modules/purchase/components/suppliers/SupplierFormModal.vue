@@ -7,6 +7,15 @@
           <button class="modal-close" @click="handleCancel"><Icon name="close" :size="16" /></button>
         </div>
         <div class="modal-body">
+          <SmartRecognizePanel v-if="!isEdit"
+            v-model:showSmartRec="showSmartRec"
+            v-model:smartRecInput="smartRecInput"
+            :smartRecResult="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            @runSmartRecognize="runSmartRecognize"
+            @applySmartRecognize="applySmartRecognize"
+            @handleSmartFileUpload="handleSmartFileUpload"
+          />
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">供应商编码</label>
@@ -102,6 +111,9 @@
 <script setup>
 import { reactive, computed, watch } from 'vue'
 import { useSupplierStore } from '@/modules/purchase/stores/supplier'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const props = defineProps({
   supplier: { type: Object, default: null },
@@ -128,6 +140,24 @@ const form = reactive({
   rating: 3,
   notes: ''
 })
+
+const draftData = reactive({})
+watch([form], ([f]) => {
+  if (!isEdit.value) {
+    Object.assign(draftData, { ...f })
+  }
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('supplier-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(form, draft.data)
+    }
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
 
 const errors = reactive({
   name: '',
@@ -172,6 +202,10 @@ watch(() => props.visible, (val) => {
         rating: 3,
         notes: ''
       })
+      resetSmartRec()
+      if (hasDraft()) {
+        restoreDraft()
+      }
     }
   }
 })
@@ -208,6 +242,7 @@ function handleSave() {
   } else {
     supplierStore.addSupplier(data)
   }
+  clearDraft()
   emit('save', data)
 }
 

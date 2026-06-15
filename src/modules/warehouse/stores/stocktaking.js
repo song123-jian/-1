@@ -201,6 +201,91 @@ export const useStocktakingStore = defineStore('stocktaking', () => {
         createDate: '2026-06-07T08:00:00Z',
         completeDate: null,
         notes: '计划中全盘'
+      },
+      /* 以下盘点单用于测试 */
+      {
+        id: 'st7',
+        orderNo: 'PD-20241220-001',
+        type: 'cycle',
+        warehouseId: 'w1',
+        warehouseName: '一号仓库',
+        status: 'completed',
+        plannedDate: '2024-12-20',
+        executor: '张三',
+        items: [
+          {
+            id: generateId('pdi'),
+            materialCode: 'MT-001',
+            materialName: '碳钢Q235',
+            spec: '热轧板',
+            unit: '吨',
+            systemQty: 100,
+            actualQty: 98,
+            diffQty: -2,
+            diffRate: '2.00',
+            warehouseLocation: 'A-01',
+            status: 'diff'
+          },
+          {
+            id: generateId('pdi'),
+            materialCode: 'MT-002',
+            materialName: '碳钢Q345',
+            spec: '中厚板',
+            unit: '吨',
+            systemQty: 50,
+            actualQty: 50,
+            diffQty: 0,
+            diffRate: '0.00',
+            warehouseLocation: 'A-02',
+            status: 'counted'
+          }
+        ],
+        summary: { totalItems: 2, countedItems: 2, diffItems: 1, profitAmount: 0, lossAmount: 0 },
+        createDate: '2024-12-20T09:00:00Z',
+        completeDate: '2024-12-20T17:00:00Z',
+        notes: '月度全盘'
+      },
+      {
+        id: 'st8',
+        orderNo: 'PD-20241225-001',
+        type: 'full',
+        warehouseId: 'w2',
+        warehouseName: '二号仓库',
+        status: 'planned',
+        plannedDate: '2024-12-25',
+        executor: '李四',
+        items: [
+          {
+            id: generateId('pdi'),
+            materialCode: 'MT-003',
+            materialName: '电阻',
+            spec: '1/4W 10K',
+            unit: '个',
+            systemQty: 5000,
+            actualQty: null,
+            diffQty: null,
+            diffRate: null,
+            warehouseLocation: 'B-01',
+            status: 'pending'
+          },
+          {
+            id: generateId('pdi'),
+            materialCode: 'MT-004',
+            materialName: '电容',
+            spec: '100uF 25V',
+            unit: '个',
+            systemQty: 3000,
+            actualQty: null,
+            diffQty: null,
+            diffRate: null,
+            warehouseLocation: 'B-02',
+            status: 'pending'
+          }
+        ],
+        summary: { totalItems: 2, countedItems: 0, diffItems: 0, profitAmount: 0, lossAmount: 0 },
+        createDate: '2024-12-25T08:00:00Z',
+        completeDate: null,
+        notes: '年终盘点'
       }
     ]
     persist()

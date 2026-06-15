@@ -99,7 +99,13 @@ function initTheme() {
   try {
     themeStore.init()
   } catch (e) {
-    console.error('[App] 主题初始化失败:', e)}}/* 将主题属性同步到 <html> 元素 */function syncThemeToHtml() {const html = document.documentElement  html.setAttribute('data-mode', themeStore.currentMode)
+    console.error('[App] 主题初始化失败:', e)
+}
+}
+/* 将主题属性同步到 <html> 元素 */
+function syncThemeToHtml() {
+const html = document.documentElement
+  html.setAttribute('data-mode', themeStore.currentMode)
   html.setAttribute('data-theme', themeStore.currentTheme)
   html.setAttribute('data-preset', themeStore.currentPreset)
 }

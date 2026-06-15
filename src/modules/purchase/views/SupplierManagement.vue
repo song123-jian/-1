@@ -8,6 +8,9 @@
           <p class="page-header-subtitle">管理供应商信息、评估与合作关系</p>
         </div>
         <div class="page-header-actions">
+          <button v-if="duplicateGroups.length > 0" class="btn btn-outline btn-warning" @click="showDuplicateModal = true">
+            <Icon name="alert" :size="14" /> 发现 {{ duplicateGroups.length }} 组重复
+          </button>
           <button class="btn btn-primary" @click="openAddModal">
             <Icon name="add" :size="14" /> 新增供应商
           </button>
@@ -373,6 +376,31 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- 重复供应商检测弹窗 -->
+    <Teleport to="body">
+      <div v-if="showDuplicateModal" class="modal-overlay" @click.self="showDuplicateModal = false">
+        <div class="modal-dialog" style="max-width: 600px;">
+          <div class="modal-header">
+            <h3>重复供应商检测</h3>
+            <button class="modal-close" @click="showDuplicateModal = false">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p style="margin-bottom: var(--space-3); color: var(--color-text-secondary);">检测到 {{ duplicateGroups.length }} 组相似供应商：</p>
+            <div v-for="(group, gi) in duplicateGroups" :key="gi" class="duplicate-group">
+              <div class="duplicate-group-title">第 {{ gi + 1 }} 组（{{ group.length }} 条记录）</div>
+              <div v-for="item in group" :key="item.id" class="duplicate-item">
+                <span class="duplicate-name">{{ item.name }}</span>
+                <span class="duplicate-phone">{{ item.phone }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" @click="showDuplicateModal = false">关闭</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -382,11 +410,17 @@ import { useSupplierStore } from '@/modules/purchase/stores/supplier'
 import { usePurchaseStore, STATUS_LABELS as PO_STATUS_LABELS, STATUS_COLORS as PO_STATUS_COLORS } from '@/modules/purchase/stores/purchase'
 import SupplierFormModal from '@/modules/purchase/components/suppliers/SupplierFormModal.vue'
 import SupplierEvaluation from '@/modules/purchase/components/suppliers/SupplierEvaluation.vue'
+import { useDuplicateDetector } from '@/composables/useDuplicateDetector'
 
 const supplierStore = useSupplierStore()
 const purchaseStore = usePurchaseStore()
 
-
+/* 重复数据检测 */
+const { duplicateGroups, markChecked } = useDuplicateDetector(
+  computed(() => supplierStore.suppliers || []),
+  { fields: ['name', 'phone'], threshold: 0.85 }
+)
+const showDuplicateModal = ref(false)
 
 /* 筛选 */
 const searchText = ref('')
@@ -580,6 +614,11 @@ function formatAmount(val) {
 </script>
 
 <style scoped>
+.duplicate-group { margin-bottom: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-3); }
+.duplicate-group-title { font-weight: 600; font-size: var(--font-size-sm); color: var(--color-warning); margin-bottom: var(--space-2); }
+.duplicate-item { display: flex; gap: var(--space-3); padding: var(--space-1) 0; font-size: var(--font-size-sm); }
+.duplicate-name { color: var(--color-text-primary); }
+.duplicate-phone { color: var(--color-text-secondary); }
 .supplier-management-page {
   padding: var(--space-6);
   height: 100%;

@@ -202,6 +202,50 @@ export const useTransferStore = defineStore('transfer', () => {
         actualDate: null,
         notes: '项目需求调拨',
         createDate: '2026-06-05T10:00:00Z'
+      },
+      /* 以下调拨单用于测试 */
+      {
+        id: 'tf7',
+        orderNo: 'DB-20241220-001',
+        type: 'same_price',
+        fromWarehouseId: 'w1',
+        fromWarehouseName: '一号仓库',
+        toWarehouseId: 'w2',
+        toWarehouseName: '二号仓库',
+        status: 'completed',
+        items: [
+          { id: generateId('dbi'), materialCode: 'MT-001', materialName: '碳钢Q235', spec: '热轧板', unit: '吨', quantity: 20, unitPrice: 5200, amount: 104000 },
+          { id: generateId('dbi'), materialCode: 'MT-002', materialName: '碳钢Q345', spec: '中厚板', unit: '吨', quantity: 10, unitPrice: 5800, amount: 58000 }
+        ],
+        totalAmount: 162000,
+        requester: '张三',
+        approver: '仓库主管',
+        approveDate: '2024-12-20',
+        expectedDate: '2024-12-21',
+        actualDate: '2024-12-21',
+        notes: '',
+        createDate: '2024-12-20T09:00:00Z'
+      },
+      {
+        id: 'tf8',
+        orderNo: 'DB-20241225-001',
+        type: 'diff_price',
+        fromWarehouseId: 'w2',
+        fromWarehouseName: '二号仓库',
+        toWarehouseId: 'w1',
+        toWarehouseName: '一号仓库',
+        status: 'pending',
+        items: [
+          { id: generateId('dbi'), materialCode: 'MT-003', materialName: '电阻', spec: '1/4W 10K', unit: '个', quantity: 1000, unitPrice: 0.5, amount: 500 }
+        ],
+        totalAmount: 500,
+        requester: '李四',
+        approver: '',
+        approveDate: null,
+        expectedDate: '2024-12-26',
+        actualDate: null,
+        notes: '紧急调拨',
+        createDate: '2024-12-25T08:00:00Z'
       }
     ]
     persist()

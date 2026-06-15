@@ -26,6 +26,7 @@
               <th v-if="columnVisible.decision" class="col-decision">决策权限</th>
               <th v-if="columnVisible.concerns" class="col-concerns">核心关注点</th>
               <th v-if="columnVisible.status" class="col-status">状态</th>
+              <th v-if="columnVisible.balance" class="col-balance">余额</th>
               <th v-if="columnVisible.docs" class="col-docs">关联单据</th>
               <th class="col-actions">操作</th>
             </tr>
@@ -81,6 +82,12 @@
                   <option value="dormant">休眠</option>
                 </select>
               </td>
+              <td v-if="columnVisible.balance" class="col-balance" :class="{ 'anomaly-highlight': anomalyData[(currentPage - 1) * pageSize + idx]?.isAnomaly }">
+                <span class="mono">{{ formatNumber(c.balance || 0) }}</span>
+                <span v-if="trendData[(currentPage - 1) * pageSize + idx]" :class="'trend-' + trendData[(currentPage - 1) * pageSize + idx].trend">
+                  {{ trendData[(currentPage - 1) * pageSize + idx].trend === 'up' ? '↑' : trendData[(currentPage - 1) * pageSize + idx].trend === 'down' ? '↓' : '→' }}
+                </span>
+              </td>
               <td v-if="columnVisible.docs" class="col-docs">
                 <div class="docs-cell">
                   <span v-if="getCustomerDocCount(c) > 0" class="doc-badge" @click.stop="$emit('openDetail', c)">{{ getCustomerDocCount(c) }}份</span>
@@ -114,6 +121,7 @@ import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import { useDataStore } from '@/stores/data'
 import { levelColors, levelLabel, getTagName, getTagStyle } from '@/utils/customerHelpers'
+import { formatNumber } from '@/utils/format'
 
 const customerStore = useCustomerStore()
 const quotationStore = useQuotationStore()
@@ -121,7 +129,9 @@ const dataStore = useDataStore()
 
 const props = defineProps({
   customers: { type: Array, required: true },
-  selectedIds: { type: Array, required: true }
+  selectedIds: { type: Array, required: true },
+  trendData: { type: Array, default: () => [] },
+  anomalyData: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['update:selectedIds', 'openEdit', 'openDetail', 'handleDelete'])
@@ -157,6 +167,7 @@ const columnDefs = [
   { key: 'decision', label: '决策权限' },
   { key: 'concerns', label: '核心关注点' },
   { key: 'status', label: '状态' },
+  { key: 'balance', label: '余额' },
   { key: 'docs', label: '关联单据' },
   { key: 'actions', label: '操作', hideable: false }
 ]
@@ -342,4 +353,9 @@ onUnmounted(() => {
 .column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 200px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg)}
 .column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap}
 .column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm)}
+.trend-up { color: var(--color-danger); }
+.trend-down { color: var(--color-success); }
+.trend-neutral { color: var(--color-text-tertiary); }
+.anomaly-highlight { background: var(--color-danger-subtle) !important; }
+.col-balance { width: 120px; text-align: right; }
 </style>

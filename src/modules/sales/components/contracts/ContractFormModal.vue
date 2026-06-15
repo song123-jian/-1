@@ -13,6 +13,15 @@
       </div>
       <div class="wizard-body">
         <div v-if="wizardStep === 1" class="form-section">
+          <SmartRecognizePanel v-if="!isEditing"
+            v-model:showSmartRec="showSmartRec"
+            v-model:smartRecInput="smartRecInput"
+            :smartRecResult="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            @runSmartRecognize="runSmartRecognize"
+            @applySmartRecognize="applySmartRecognizeToForm"
+            @handleSmartFileUpload="handleSmartFileUpload"
+          />
           <div v-if="!isEditing && !wizardData.sourceQuoteId" class="contract-import-hint"><Icon name="info" :size="14" /> �ɴӱ��۵��������ݴ�����ͬ��ѡ��ͻ���ɹ������۵�</div>
           <div v-if="wizardData.sourceQuoteId" class="contract-import-hint"><Icon name="file" :size="14" /> �ѹ������۵�����Ʒ��ϸ���Զ�����</div>
           <div class="form-section-title">��ͬ������Ϣ</div>
@@ -201,7 +210,7 @@
         </label>
         <button class="btn btn-ghost" @click="$emit('saveDraft')">����ݸ�</button>
         <button class="btn btn-primary" v-if="wizardStep < 4" @click="$emit('nextStep')">��һ�� <Icon name="chevronRight" :size="14" /></button>
-        <button class="btn btn-primary" v-if="wizardStep === 4" @click="$emit('submitContract')">�ύ����</button>
+        <button class="btn btn-primary" v-if="wizardStep === 4" @click="handleSubmitContract">�ύ����</button>
       </div>
     </div>
   </div>
@@ -269,9 +278,12 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, reactive, watch } from 'vue'
 import { numberToChinese } from '@/utils/numberToChinese.js'
 import { formatNumber } from '@/utils/format'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const props = defineProps({
   showModal: { type: Boolean, default: false },
@@ -289,7 +301,72 @@ const props = defineProps({
 
 const wizardData = defineModel('wizardData', { default: () => ({}) })
 
-defineEmits([
+const draftData = reactive({})
+watch(wizardData, (wd) => {
+  if (props.isEditing) return
+  Object.assign(draftData, { ...wd, products: wd.products ? [...wd.products] : [] })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('contract-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(wizardData.value, draft.data)
+      if (draft.data.products) {
+        wizardData.value.products = draft.data.products.map(p => ({ ...p }))
+      }
+    }
+  }
+})
+
+watch(() => props.showModal, (val) => {
+  if (val && !props.isEditing) {
+    if (hasDraft()) {
+      restoreDraft()
+    }
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(wizardData.value)
+
+function applySmartRecognizeToForm() {
+  if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
+  smartRecResult.value.items.forEach(item => {
+    if (item.value) {
+      const key = item.key
+      // 处理嵌套属性如 partyAInfo.representative
+      if (key.includes('.')) {
+        const parts = key.split('.')
+        let obj = wizardData.value
+        for (let i = 0; i < parts.length - 1; i++) {
+          if (!obj[parts[i]]) obj[parts[i]] = {}
+          obj = obj[parts[i]]
+        }
+        if (obj && parts.length > 0) {
+          obj[parts[parts.length - 1]] = item.value
+        }
+      } else if (Object.hasOwn(wizardData.value, key)) {
+        wizardData.value[key] = item.value
+      }
+    }
+  })
+  // 填入表格明细行
+  if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    smartRecResult.value.tableRows.forEach(row => {
+      wizardData.value.products.push({
+        productName: row.productName || '',
+        spec: row.spec || '',
+        quantity: row.quantity || 0,
+        unitPrice: row.unitPrice || 0,
+        amount: (row.quantity && row.unitPrice) ? row.quantity * row.unitPrice : 0,
+        deliveryPlace: row.deliveryPlace || '',
+        remark: row.remark || ''
+      })
+    })
+  }
+}
+
+const emit = defineEmits([
   'close',
   'nextStep',
   'prevStep',
@@ -312,6 +389,11 @@ defineEmits([
   'update:rejectReason',
   'confirmReject'
 ])
+
+function handleSubmitContract() {
+  clearDraft()
+  emit('submitContract')
+}
 
 const templateFileInput = ref(null)
 function clickTemplateFileInput() {

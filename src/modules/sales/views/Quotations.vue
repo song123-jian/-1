@@ -101,6 +101,7 @@
                   <th v-if="columnVisible.customer"><span class="th-icon"><Icon name="building" :size="14" /></span> 客户</th>
                   <th v-if="columnVisible.grade"><span class="th-icon"><Icon name="package" :size="14" /></span> 牌号</th>
                   <th v-if="columnVisible.unitPrice"><span class="th-icon">[美元]</span> 单价含税</th>
+                  <th v-if="columnVisible.total"><span class="th-icon"><Icon name="dollar" :size="14" /></span> 金额</th>
                   <th v-if="columnVisible.status"><span class="th-icon"><Icon name="list" :size="14" /></span> 状态</th>
                   <th v-if="columnVisible.notes"><span class="th-icon">[评论]</span> 备注</th>
                   <th><span class="th-icon">[操作]</span> 操作</th>
@@ -116,6 +117,12 @@
                   <td v-if="columnVisible.customer">{{ q.customerName }}</td>
                   <td v-if="columnVisible.grade">{{ getFirstGrade(q) }}</td>
                   <td v-if="columnVisible.unitPrice" class="mono">{{ getFirstPrice(q) }}</td>
+                  <td v-if="columnVisible.total" class="mono" :class="{ 'anomaly-highlight': anomalyData[(currentPage - 1) * pageSize + index]?.isAnomaly }">
+                    ¥{{ formatNumber(q.total || 0) }}
+                    <span v-if="trendData[(currentPage - 1) * pageSize + index]" :class="'trend-' + trendData[(currentPage - 1) * pageSize + index].trend">
+                      {{ trendData[(currentPage - 1) * pageSize + index].trend === 'up' ? '↑' : trendData[(currentPage - 1) * pageSize + index].trend === 'down' ? '↓' : '→' }}
+                    </span>
+                  </td>
                   <td v-if="columnVisible.status"><span class="status-badge" :class="'status-' + q.status">{{ statusLabels[q.status] || q.status }}</span></td>
                   <td v-if="columnVisible.notes">{{ q.notes || '-' }}</td>
                   <td class="cell-actions">
@@ -249,6 +256,7 @@ import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { usePermission } from '@/utils/permissionGuard'
 import { formatNumber } from '@/utils/format'
+import { useTableEnhance } from '@/composables/useTableEnhance'
 import QuotationFormModal from '@/modules/sales/components/quotations/QuotationFormModal.vue'
 import QuotationPreview from '@/modules/sales/components/quotations/QuotationPreview.vue'
 import QuotationTemplateModal from '@/modules/sales/components/quotations/QuotationTemplateModal.vue'
@@ -300,6 +308,7 @@ const columnDefs = [
   { key: 'customer', label: '客户' },
   { key: 'grade', label: '牌号' },
   { key: 'unitPrice', label: '单价含税' },
+  { key: 'total', label: '金额' },
   { key: 'status', label: '状态' },
   { key: 'notes', label: '备注' },
   { key: 'actions', label: '操作', hidden: true }
@@ -401,6 +410,11 @@ const filteredQuotations = computed(() => {
   })
   return list
 })
+
+const { trendData, anomalyData } = useTableEnhance(
+  computed(() => filteredQuotations.value),
+  { trendField: 'total', highlightField: 'total', highlightThreshold: 2 }
+)
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredQuotations.value.length / pageSize)))
 const pagedQuotations = computed(() => {
@@ -739,4 +753,8 @@ th.sortable:hover { color: var(--color-accent); }
   .page-header { flex-direction: column; }
   .card-grid { grid-template-columns: 1fr; }
 }
+.trend-up { color: var(--color-danger); }
+.trend-down { color: var(--color-success); }
+.trend-neutral { color: var(--color-text-tertiary); }
+.anomaly-highlight { background: var(--color-danger-subtle) !important; }
 </style>

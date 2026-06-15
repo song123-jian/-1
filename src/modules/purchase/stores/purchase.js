@@ -318,6 +318,127 @@ export const usePurchaseStore = defineStore('purchase', () => {
         notes: '质量不合格退货',
         createDate: '2026-06-05',
         attachments: []
+      },
+      /* 以下采购单用于测试 */
+      {
+        id: 'p7',
+        orderNo: 'PO20241220001',
+        title: 'Q235钢材采购',
+        supplierId: 's7',
+        supplierName: '上海钢铁贸易有限公司',
+        type: 'purchase',
+        status: 'pending',
+        items: [
+          {
+            id: generateId('pi'),
+            materialCode: 'MT-001',
+            materialName: '碳钢Q235',
+            spec: '热轧板',
+            unit: '吨',
+            quantity: 50,
+            unitPrice: 5200,
+            amount: 260000,
+            warehouseId: 'main',
+            warehouseName: '主仓库'
+          },
+          {
+            id: generateId('pi'),
+            materialCode: 'MT-002',
+            materialName: '碳钢Q345',
+            spec: '中厚板',
+            unit: '吨',
+            quantity: 30,
+            unitPrice: 5800,
+            amount: 174000,
+            warehouseId: 'main',
+            warehouseName: '主仓库'
+          }
+        ],
+        totalAmount: 434000,
+        expectedDate: '2025-01-10',
+        actualDate: '',
+        requester: '张经理',
+        approver: '',
+        approveDate: '',
+        notes: '紧急订单',
+        createDate: '2024-12-20',
+        attachments: []
+      },
+      {
+        id: 'p8',
+        orderNo: 'PO20241222001',
+        title: '电子元器件样品',
+        supplierId: 's9',
+        supplierName: '深圳电子科技有限公司',
+        type: 'purchase',
+        status: 'approved',
+        items: [
+          {
+            id: generateId('pi'),
+            materialCode: 'MT-003',
+            materialName: '电阻',
+            spec: '1/4W 10K',
+            unit: '个',
+            quantity: 1000,
+            unitPrice: 0.5,
+            amount: 500,
+            warehouseId: 'main',
+            warehouseName: '主仓库'
+          },
+          {
+            id: generateId('pi'),
+            materialCode: 'MT-004',
+            materialName: '电容',
+            spec: '100uF 25V',
+            unit: '个',
+            quantity: 500,
+            unitPrice: 1.2,
+            amount: 600,
+            warehouseId: 'main',
+            warehouseName: '主仓库'
+          }
+        ],
+        totalAmount: 1100,
+        expectedDate: '2025-01-15',
+        actualDate: '',
+        requester: '王主管',
+        approver: '李总',
+        approveDate: '2024-12-22',
+        notes: '新产品测试用',
+        createDate: '2024-12-22',
+        attachments: []
+      },
+      {
+        id: 'p9',
+        orderNo: 'PO20241225001',
+        title: '零部件外协加工',
+        supplierId: 's10',
+        supplierName: '北京机械加工有限公司',
+        type: 'purchase',
+        status: 'completed',
+        items: [
+          {
+            id: generateId('pi'),
+            materialCode: 'MT-005',
+            materialName: '轴承座',
+            spec: 'Φ80',
+            unit: '件',
+            quantity: 100,
+            unitPrice: 150,
+            amount: 15000,
+            warehouseId: 'main',
+            warehouseName: '主仓库'
+          }
+        ],
+        totalAmount: 15000,
+        expectedDate: '2025-01-20',
+        actualDate: '2025-01-18',
+        requester: '赵工',
+        approver: '李总',
+        approveDate: '2024-12-25',
+        notes: '年底备货',
+        createDate: '2024-12-25',
+        attachments: []
       }
     ]
     persist()

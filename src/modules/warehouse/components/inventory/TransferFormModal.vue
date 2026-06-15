@@ -6,6 +6,15 @@
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
+        <SmartRecognizePanel
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="applySmartRecognizeToForm"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
         <!-- 基本信息 -->
         <div class="form-row" style="margin-bottom: var(--space-4)">
           <div class="form-group" style="flex: 1">
@@ -178,11 +187,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useTransferStore } from '@/modules/warehouse/stores/transfer'
 import DataSelect from '@/components/DataSelect.vue'
 import { formatMoney } from '@/utils/format'
+import { useSmartRecognize } from './useTransferSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const emit = defineEmits(['close', 'created'])
 
@@ -200,6 +212,51 @@ const form = ref({
   notes: '',
   items: []
 })
+
+const draftData = reactive({})
+watch(form, (f) => {
+  Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('transfer-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data.items) {
+      form.value.items = draft.data.items.map(item => ({ ...item }))
+    }
+  }
+})
+
+onMounted(() => {
+  if (hasDraft()) {
+    restoreDraft()
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form.value)
+
+function applySmartRecognizeToForm() {
+  if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
+  smartRecResult.value.items.forEach(item => {
+    if (item.value && Object.hasOwn(form.value, item.key)) {
+      form.value[item.key] = item.value
+    }
+  })
+  // 填入表格明细行
+  if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    smartRecResult.value.tableRows.forEach(row => {
+      form.value.items.push({
+        materialCode: row.materialCode || '',
+        materialName: row.materialName || '',
+        spec: row.spec || '',
+        unit: row.unit || 'kg',
+        quantity: row.quantity || 0,
+        unitPrice: row.unitPrice || 0,
+        amount: (row.quantity && row.unitPrice) ? row.quantity * row.unitPrice : 0
+      })
+    })
+  }
+}
 
 const errors = ref({})
 
@@ -289,6 +346,7 @@ function handleSubmit() {
     items: form.value.items
   })
 
+  clearDraft()
   emit('created')
   emit('close')
 }

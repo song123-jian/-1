@@ -6,6 +6,15 @@
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body">
+        <SmartRecognizePanel
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="applySmartRecognizeToForm"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
         <!-- 基本信息 -->
         <div class="form-row" style="margin-bottom: var(--space-4)">
           <div class="form-group" style="flex: 1">
@@ -86,9 +95,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useStocktakingStore } from '@/modules/warehouse/stores/stocktaking'
+import { useSmartRecognize } from './useStocktakingSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const emit = defineEmits(['close', 'created'])
 
@@ -107,6 +119,49 @@ const errors = ref({})
 const materialSearch = ref('')
 const materialCategoryFilter = ref('')
 const selectedMaterialIds = ref([])
+
+const draftData = reactive({})
+watch([form, selectedMaterialIds], ([f, ids]) => {
+  Object.assign(draftData, { ...f, selectedMaterialIds: ids ? [...ids] : [] })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('stocktaking-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(form.value, draft.data)
+      if (draft.data.selectedMaterialIds) {
+        selectedMaterialIds.value = [...draft.data.selectedMaterialIds]
+      }
+    }
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload } = useSmartRecognize(form.value)
+
+onMounted(() => {
+  if (hasDraft()) {
+    restoreDraft()
+  }
+})
+
+function applySmartRecognizeToForm() {
+  if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
+  smartRecResult.value.items.forEach(item => {
+    if (item.value && Object.hasOwn(form.value, item.key)) {
+      form.value[item.key] = item.value
+    }
+  })
+  // 填入表格明细行 - 盘点单的明细行由store管理，这里只记录识别到的物料编号
+  if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    // 将识别到的物料编号添加到选中列表
+    smartRecResult.value.tableRows.forEach(row => {
+      if (row.materialCode) {
+        selectedMaterialIds.value.push(row.materialCode)
+      }
+    })
+  }
+}
 
 const filteredMaterials = computed(() => {
   let list = invStore.inventory || []
@@ -157,6 +212,7 @@ function handleSubmit() {
     items: selectedItems
   })
 
+  clearDraft()
   emit('created', order)
   emit('close')
 }

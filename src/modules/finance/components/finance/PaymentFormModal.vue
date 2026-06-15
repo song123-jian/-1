@@ -6,6 +6,15 @@
         <button class="btn btn-ghost btn-sm" @click="handleCancel"><Icon name="close" :size="14" /></button>
       </div>
       <div class="modal-body">
+        <SmartRecognizePanel
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="applySmartRecognize"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
         <div class="form-group">
           <label class="form-label">应付单 <span style="color:var(--color-danger)">*</span></label>
           <select class="form-select" v-model="formData.payableId" @change="onPayableChange">
@@ -93,6 +102,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { usePayableStore } from '@/modules/finance/stores/payable'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const props = defineProps({
   payable: { type: Object, default: null },
@@ -112,10 +122,26 @@ const formData = reactive({
   notes: ''
 })
 
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(formData)
+
 const errors = reactive({
   payableId: '',
   amount: '',
   paymentDate: ''
+})
+
+const draftData = reactive({})
+watch([formData], ([fd]) => {
+  Object.assign(draftData, { ...fd })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('payment-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(formData, draft.data)
+    }
+  }
 })
 
 /* 可选应付单：未完成的 */
@@ -143,8 +169,15 @@ watch(() => props.payable, (val) => {
 }, { immediate: true })
 
 watch(() => props.visible, (val) => {
-  if (val && props.payable && props.payable.id) {
-    formData.payableId = props.payable.id
+  if (val) {
+    if (props.payable && props.payable.id) {
+      formData.payableId = props.payable.id
+    } else {
+      resetForm()
+    }
+    if (hasDraft()) {
+      restoreDraft()
+    }
   }
 })
 
@@ -190,6 +223,7 @@ function handleSubmit() {
     notes: formData.notes
   })
   if (result) {
+    clearDraft()
     emit('saved', result)
     resetForm()
     emit('update:visible', false)
@@ -212,6 +246,7 @@ function resetForm() {
   errors.payableId = ''
   errors.amount = ''
   errors.paymentDate = ''
+  resetSmartRec()
 }
 
 // 保留本地版本：minimumFractionDigits 为 0（整数不显示小数位），与全局 formatMoney 固定2位小数不同

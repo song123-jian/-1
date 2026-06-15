@@ -29,6 +29,20 @@
           </div>
         </div>
 
+        <SmartRecognizePanel v-if="!editingId"
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="onApplySmartRecognize"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
+        <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
+          <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
+          <div v-for="w in warnings" :key="w.field" class="val-warning">{{ w.message }}</div>
+        </div>
+
         <!-- 步骤1：基本信息 -->
         <div v-if="editorStep === 1" class="wizard-content">
           <div class="form-row form-row-3">
@@ -252,10 +266,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useStatementStore } from '@/modules/finance/stores/statement'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { useDataStore } from '@/stores/data'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
+import { useFormValidator } from '@/composables/useFormValidator'
 
 const props = defineProps({
   showModal: { type: Boolean, default: false },
@@ -298,6 +316,62 @@ const editorData = reactive({
 })
 const editorItems = ref([])
 
+const { warnings, errors, hasErrors, hasWarnings, validate, clearWarnings } = useFormValidator(editorData, {
+  required: [
+    { key: 'period', label: '账单期间' },
+    { key: 'buyerName', label: '采购方' }
+  ],
+  dateCheck: [
+    { startField: 'reconDate', endField: 'dueDate', message: '到期日不能早于对账日期' }
+  ]
+})
+
+const draftData = reactive({})
+watch([editorData, editorItems], ([ed, items]) => {
+  if (editingId.value) return
+  Object.assign(draftData, { ...ed, items: items ? [...items] : [] })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('statement-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data.items) {
+      editorItems.value = draft.data.items.map(item => ({ ...item }))
+    }
+  }
+})
+
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload
+} = useSmartRecognize(editorData)
+
+function onApplySmartRecognize() {
+  applySmartRecognize()
+  // 填入表格明细行
+  if (smartRecResult.value && smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    smartRecResult.value.tableRows.forEach(row => {
+      editorItems.value.push({
+        date: row.date || '',
+        name: row.name || '',
+        code: row.code || '',
+        spec: row.spec || '',
+        unit: row.unit || 'kg',
+        qty: row.qty || 0,
+        price: row.price || 0,
+        amount: (row.qty && row.price) ? row.qty * row.price : 0,
+        remark: row.remark || '',
+        sourceTransactionId: ''
+      })
+    })
+  }
+}
+
 // 初始化表单数据
 function initForm() {
   if (props.editingStatement && props.editingStatement.id) {
@@ -336,6 +410,9 @@ function initForm() {
     editorData.bankAccount = ''
     editorData.bankHolder = ''
     editorItems.value = []
+    if (hasDraft()) {
+      restoreDraft()
+    }
   }
   editorStep.value = 1
 }
@@ -548,23 +625,26 @@ function saveDraft() {
 }
 
 function submitStatement() {
-  const data = collectData()
-  const errors = validateData(data)
-  if (errors.length > 0) {
-    alert(errors[0])
+  validate()
+  if (hasErrors.value) {
     return
   }
+  const data = collectData()
   if (editingId.value) {
     statementStore.updateStatement(editingId.value, { ...data, status: 'pending' })
   } else {
     statementStore.addStatement(data)
   }
+  clearDraft()
   emit('saved')
   emit('close')
 }
 </script>
 
 <style scoped>
+.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
+.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
+.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

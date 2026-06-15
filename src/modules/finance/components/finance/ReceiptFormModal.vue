@@ -6,6 +6,15 @@
         <button class="btn btn-ghost btn-sm" @click="handleCancel"><Icon name="close" :size="14" /></button>
       </div>
       <div class="modal-body">
+        <SmartRecognizePanel
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="applySmartRecognize"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
         <div class="form-group">
           <label class="form-label">应收单 <span style="color:var(--color-danger)">*</span></label>
           <select class="form-select" v-model="formData.receivableId" @change="onReceivableChange">
@@ -93,6 +102,9 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useReceivableStore } from '@/modules/finance/stores/receivable'
+import { useSmartRecognize } from './useReceiptSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const props = defineProps({
   receivable: { type: Object, default: null },
@@ -116,6 +128,20 @@ const errors = reactive({
   receivableId: '',
   amount: '',
   receiptDate: ''
+})
+
+const draftData = reactive({})
+watch([formData], ([fd]) => {
+  Object.assign(draftData, { ...fd })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('receipt-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(formData, draft.data)
+    }
+  }
 })
 
 /* 可选应收单：未完成的 */
@@ -143,8 +169,15 @@ watch(() => props.receivable, (val) => {
 }, { immediate: true })
 
 watch(() => props.visible, (val) => {
-  if (val && props.receivable && props.receivable.id) {
-    formData.receivableId = props.receivable.id
+  if (val) {
+    if (props.receivable && props.receivable.id) {
+      formData.receivableId = props.receivable.id
+    } else {
+      resetForm()
+    }
+    if (hasDraft()) {
+      restoreDraft()
+    }
   }
 })
 
@@ -190,6 +223,7 @@ function handleSubmit() {
     notes: formData.notes
   })
   if (result) {
+    clearDraft()
     emit('saved', result)
     resetForm()
     emit('update:visible', false)
@@ -212,6 +246,7 @@ function resetForm() {
   errors.receivableId = ''
   errors.amount = ''
   errors.receiptDate = ''
+  resetSmartRec()
 }
 
 // 保留本地版本：minimumFractionDigits 为 0（整数不显示小数位），与全局 formatMoney 固定2位小数不同

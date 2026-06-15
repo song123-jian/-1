@@ -145,15 +145,48 @@ export default {
     const searchText = ref('')
     const highlightedIndex = ref(-1)
 
+    /* 使用频率记录 */
+    const freqKey = computed(() => `ds-freq-${props.module}-${props.variant}`)
+    function getFreqMap() {
+      try {
+        const raw = localStorage.getItem(freqKey.value)
+        return raw ? JSON.parse(raw) : {}
+      } catch (e) { return {} }
+    }
+    function saveFreqMap(map) {
+      try { localStorage.setItem(freqKey.value, JSON.stringify(map)) } catch (e) {}
+    }
+    function recordUsage(value) {
+      const map = getFreqMap()
+      map[String(value)] = (map[String(value)] || 0) + 1
+      saveFreqMap(map)
+    }
+
+    /* 按使用频率排序 */
+    function sortByFreq(options) {
+      const map = getFreqMap()
+      return [...options].sort((a, b) => {
+        const fa = map[String(a.value)] || 0
+        const fb = map[String(b.value)] || 0
+        if (fb !== fa) return fb - fa
+        return String(a.label).localeCompare(String(b.label))
+      })
+    }
+
     /* 获取选项列表 */
     const rawOptions = computed(() => {
       /* 合并静态 filters 和动态 parentFilters */
       const allFilters = [...props.filters, ...props.parentFilters.filter(pf => pf.value !== undefined && pf.value !== null && pf.value !== '')]
-      return dataCenter.getSelectOptions(props.module, props.variant, {
+      const opts = dataCenter.getSelectOptions(props.module, props.variant, {
         valueField: props.valueField,
         labelField: props.labelField,
         filters: allFilters
       })
+      /* 按使用频率排序 */
+      if (opts.length > 0 && opts[0]?.group !== undefined) {
+        return opts.map(g => ({ ...g, items: sortByFreq(g.items || []) }))
+      }
+      return sortByFreq(opts)
     })
 
     /* 是否分组 */
@@ -257,6 +290,8 @@ export default {
     /* 选择选项 */
     function selectOption(option) {
       if (option.disabled) return
+
+      recordUsage(option.value)
 
       if (props.multiple) {
         const current = Array.isArray(props.modelValue) ? [...props.modelValue] : []

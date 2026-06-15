@@ -625,6 +625,119 @@ export const useContractStore = defineStore('contract', () => {
         notes: '年度框架协议',
         createdAt: '2026-04-20T08:00:00Z',
         updatedAt: '2026-05-25T16:00:00Z'
+      },
+      /* 以下合同用于测试 */
+      {
+        id: 'ct7',
+        contractNo: 'HT-20241220-001',
+        contractType: '销售合同',
+        partyA: '上海贸易有限公司浦东分公司',
+        partyAId: 'c7',
+        partyB: '苏州冠久新材料科技有限公司',
+        signPlace: '上海',
+        signDate: '2024-12-20',
+        endDate: '2025-12-20',
+        settlement: '月结30天',
+        products: [
+          {
+            productName: '不锈钢板304',
+            spec: '2B面',
+            quantity: 500,
+            unitPrice: 150,
+            amount: 75000,
+            deliveryPlace: '浦东仓库',
+            remark: ''
+          },
+          {
+            productName: '碳钢Q235',
+            spec: '热轧板',
+            quantity: 300,
+            unitPrice: 55,
+            amount: 16500,
+            deliveryPlace: '浦东仓库',
+            remark: ''
+          }
+        ],
+        totalAmount: 169500,
+        terms: getDefaultTerms(),
+        partyAInfo: {
+          address: '上海市浦东新区',
+          representative: '张经理',
+          contact: '',
+          date: '2024-12-20',
+          seal: ''
+        },
+        partyBInfo: {
+          companyName: '苏州冠久新材料科技有限公司',
+          address: '苏州高新区滨河路3337号',
+          representative: '宋建',
+          contact: '15589233039',
+          date: '2024-12-20',
+          seal: 'preset'
+        },
+        status: 'signed',
+        signedBy: '宋建',
+        signedAt: '2024-12-20T09:00:00Z',
+        sourceQuoteId: '',
+        notes: '年度框架协议',
+        createdAt: '2024-12-20T09:00:00Z',
+        updatedAt: '2024-12-20T09:00:00Z'
+      },
+      {
+        id: 'ct8',
+        contractNo: 'HT-20241222-001',
+        contractType: '采购合同',
+        partyA: '苏州冠久新材料科技有限公司',
+        partyAId: '',
+        partyB: '深圳智能制造股份公司',
+        signPlace: '深圳',
+        signDate: '2024-12-22',
+        endDate: '2025-06-22',
+        settlement: '月结60天',
+        products: [
+          {
+            productName: '铝合金型材6063',
+            spec: 'T6',
+            quantity: 1000,
+            unitPrice: 135,
+            amount: 135000,
+            deliveryPlace: '南山工厂',
+            remark: ''
+          },
+          {
+            productName: 'ABS树脂',
+            spec: '高冲击级',
+            quantity: 500,
+            unitPrice: 105,
+            amount: 52500,
+            deliveryPlace: '南山工厂',
+            remark: ''
+          }
+        ],
+        totalAmount: 316400,
+        terms: getDefaultTerms(),
+        partyAInfo: {
+          address: '苏州高新区滨河路3337号',
+          representative: '宋建',
+          contact: '15589233039',
+          date: '2024-12-22',
+          seal: 'preset'
+        },
+        partyBInfo: {
+          companyName: '深圳智能制造股份公司',
+          address: '深圳市南山区',
+          representative: '陈总',
+          contact: '',
+          date: '2024-12-22',
+          seal: ''
+        },
+        status: 'signed',
+        signedBy: '宋建',
+        signedAt: '2024-12-22T10:00:00Z',
+        sourceQuoteId: '',
+        notes: '大批量供应合同',
+        createdAt: '2024-12-22T10:00:00Z',
+        updatedAt: '2024-12-22T10:00:00Z'
       }
     ]
     contracts.value = seedContracts

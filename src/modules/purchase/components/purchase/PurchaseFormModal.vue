@@ -7,6 +7,19 @@
           <button class="modal-close" @click="handleCancel"><Icon name="close" :size="16" /></button>
         </div>
         <div class="modal-body">
+          <SmartRecognizePanel v-if="!isEdit"
+            v-model:showSmartRec="showSmartRec"
+            v-model:smartRecInput="smartRecInput"
+            :smartRecResult="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            @runSmartRecognize="runSmartRecognize"
+            @applySmartRecognize="onApplySmartRecognize"
+            @handleSmartFileUpload="handleSmartFileUpload"
+          />
+          <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
+            <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
+            <div v-for="w in warnings" :key="w.field" class="val-warning">{{ w.message }}</div>
+          </div>
           <!-- 基本信息 -->
           <div class="section-title">基本信息</div>
           <div class="form-row form-row-2">
@@ -25,7 +38,7 @@
               <DataSelect module="supplier" variant="active" v-model="form.supplierId"
                 value-field="id" label-field="name" placeholder="选择供应商"
                 @change="onSupplierChange" />
-              <span v-if="errors.supplierId" class="form-error">{{ errors.supplierId }}</span>
+              <span v-if="fieldErrors.supplierId" class="form-error">{{ fieldErrors.supplierId }}</span>
             </div>
             <div class="form-group">
               <label class="form-label">供应商名称</label>
@@ -56,7 +69,7 @@
             <button class="btn btn-sm btn-primary" style="margin-left: var(--space-2);" @click="addItem">
               <Icon name="add" :size="12" /> 添加行
             </button>
-            <span v-if="errors.items" class="form-error" style="margin-left: var(--space-2);">{{ errors.items }}</span>
+            <span v-if="fieldErrors.items" class="form-error" style="margin-left: var(--space-2);">{{ fieldErrors.items }}</span>
           </div>
           <div class="table-container">
             <table class="data-table items-table">
@@ -132,7 +145,12 @@
 import { reactive, computed, watch } from 'vue'
 import { usePurchaseStore } from '@/modules/purchase/stores/purchase'
 import { generateId } from '@/utils/uid'
+import { useSupplierStore } from '@/modules/purchase/stores/supplier'
 import DataSelect from '@/components/DataSelect.vue'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
+import { useFormValidator } from '@/composables/useFormValidator'
 
 const props = defineProps({
   order: { type: Object, default: null },
@@ -141,6 +159,7 @@ const props = defineProps({
 const emit = defineEmits(['save', 'cancel'])
 
 const purchaseStore = usePurchaseStore()
+const supplierStore = useSupplierStore()
 const isEdit = computed(() => !!props.order?.id)
 
 const form = reactive({
@@ -154,7 +173,40 @@ const form = reactive({
   items: []
 })
 
-const errors = reactive({
+const formValidator = useFormValidator(form, {
+  required: [
+    { key: 'supplierName', label: '供应商名称' },
+    { key: 'expectedDate', label: '预计到货日' }
+  ],
+  dateCheck: [
+    { startField: 'expectedDate', endField: 'expectedDate', message: '日期格式不正确' }
+  ]
+})
+const warnings = computed(() => formValidator.warnings?.value || [])
+const errors = computed(() => formValidator.errors?.value || [])
+const hasErrors = computed(() => formValidator.hasErrors?.value || false)
+const hasWarnings = computed(() => formValidator.hasWarnings?.value || false)
+const clearWarnings = () => formValidator.clearWarnings?.()
+
+const draftData = reactive({})
+watch([form], ([f]) => {
+  if (!isEdit.value) {
+    Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
+  }
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('purchase-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data.items) {
+      form.items = draft.data.items.map(item => ({ ...item }))
+    }
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
+
+const fieldErrors = reactive({
   supplierId: '',
   items: ''
 })
@@ -185,13 +237,17 @@ watch(() => props.visible, (val) => {
         notes: '',
         items: []
       })
+      resetSmartRec()
+      if (hasDraft()) {
+        restoreDraft()
+      }
     }
   }
 })
 
 function resetErrors() {
-  errors.supplierId = ''
-  errors.items = ''
+  fieldErrors.supplierId = ''
+  fieldErrors.items = ''
   Object.keys(itemErrors).forEach(k => delete itemErrors[k])
 }
 
@@ -225,19 +281,25 @@ const totalAmount = computed(() =>
   form.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
 )
 
-function onSupplierChange({ value, data }) {
-  form.supplierName = data ? (data.shortName || data.name) : ''
+function onSupplierChange(event) {
+  const supplier = supplierStore.suppliers.find(s => s.id === event?.value)
+  if (supplier) {
+    if (!form.supplierName) form.supplierName = supplier.shortName || supplier.name || ''
+    if (supplier.contactName && !form.contactName) form.contactName = supplier.contactName
+    if (supplier.phone && !form.phone) form.phone = supplier.phone
+    if (supplier.email && !form.email) form.email = supplier.email
+  }
 }
 
-function validate() {
+function validateForm() {
   resetErrors()
   let valid = true
   if (!form.supplierId) {
-    errors.supplierId = '请选择供应商'
+    fieldErrors.supplierId = '请选择供应商'
     valid = false
   }
   if (form.items.length === 0) {
-    errors.items = '至少添加一条采购明细'
+    fieldErrors.items = '至少添加一条采购明细'
     valid = false
   }
   form.items.forEach((item, idx) => {
@@ -258,7 +320,11 @@ function validate() {
 }
 
 function handleSave() {
-  if (!validate()) return
+  formValidator.validate()
+  if (hasErrors.value) {
+    return
+  }
+  if (!validateForm()) return
   const data = {
     ...form,
     totalAmount: totalAmount.value,
@@ -272,11 +338,33 @@ function handleSave() {
   } else {
     purchaseStore.addPurchaseOrder(data)
   }
+  clearDraft()
   emit('save', data)
 }
 
 function handleCancel() {
   emit('cancel')
+}
+
+function onApplySmartRecognize() {
+  applySmartRecognize()
+  // 填入表格明细行
+  if (smartRecResult.value && smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    smartRecResult.value.tableRows.forEach(row => {
+      form.items.push({
+        id: generateId('pi'),
+        materialCode: row.materialCode || '',
+        materialName: row.materialName || '',
+        spec: row.spec || '',
+        unit: row.unit || 'kg',
+        quantity: row.quantity || 0,
+        unitPrice: row.unitPrice || 0,
+        amount: (row.quantity && row.unitPrice) ? row.quantity * row.unitPrice : (row.amount || 0),
+        warehouseId: 'main',
+        warehouseName: '主仓库'
+      })
+    })
+  }
 }
 
 function formatNum(val) {
@@ -286,6 +374,9 @@ function formatNum(val) {
 </script>
 
 <style scoped>
+.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
+.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
+.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
 .modal-xl {
   max-width: 960px;
 }

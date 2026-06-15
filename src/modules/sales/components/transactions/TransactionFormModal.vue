@@ -6,6 +6,15 @@
         <button class="btn btn-ghost btn-sm" @click="emit('close')"><Icon name="close" :size="14" /></button>
       </div>
       <div class="modal-body">
+        <SmartRecognizePanel v-if="!editingTransaction"
+          v-model:showSmartRec="showSmartRec"
+          v-model:smartRecInput="smartRecInput"
+          :smartRecResult="smartRecResult"
+          :placeholder="smartRecPlaceholder"
+          @runSmartRecognize="runSmartRecognize"
+          @applySmartRecognize="applySmartRecognizeToForm"
+          @handleSmartFileUpload="handleSmartFileUpload"
+        />
         <div class="form-group">
           <label class="form-label">客户</label>
           <select class="form-select" v-model="formData.customerId">
@@ -45,7 +54,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, reactive } from 'vue'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
 
 const props = defineProps({
   showModal: { type: Boolean, default: false },
@@ -63,6 +75,32 @@ const formData = ref({
   date: new Date().toISOString().slice(0, 10),
   notes: ''
 })
+
+const draftData = reactive({})
+watch(formData, (fd) => {
+  if (props.editingTransaction) return
+  Object.assign(draftData, { ...fd })
+}, { deep: true })
+
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('transaction-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(formData.value, draft.data)
+    }
+  }
+})
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(formData.value)
+
+function applySmartRecognizeToForm() {
+  if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
+  smartRecResult.value.items.forEach(item => {
+    if (item.value && Object.hasOwn(formData.value, item.key)) {
+      formData.value[item.key] = item.value
+    }
+  })
+}
 
 watch(() => props.showModal, (val) => {
   if (val) {
@@ -83,11 +121,16 @@ watch(() => props.showModal, (val) => {
         date: new Date().toISOString().slice(0, 10),
         notes: ''
       }
+      resetSmartRec()
+      if (hasDraft()) {
+        restoreDraft()
+      }
     }
   }
 })
 
 function handleSave() {
+  clearDraft()
   emit('save', { ...formData.value })
 }
 </script>

@@ -7,6 +7,19 @@
           <button class="modal-close" @click="handleClose"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
+          <SmartRecognizePanel v-if="!isEditing"
+            v-model:showSmartRec="showSmartRec"
+            v-model:smartRecInput="smartRecInput"
+            :smartRecResult="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            @runSmartRecognize="runSmartRecognize"
+            @applySmartRecognize="applySmartRecognize"
+            @handleSmartFileUpload="handleSmartFileUpload"
+          />
+          <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
+            <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
+            <div v-for="w in warnings" :key="w.field" class="val-warning">{{ w.message }}</div>
+          </div>
           <div class="form-section">
             <h4 class="form-section-title"><Icon name="list" :size="14" /> 报价基本信息</h4>
             <div class="form-row form-row-3">
@@ -192,11 +205,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import DataSelect from '@/components/DataSelect.vue'
 import { formatNumber } from '@/utils/format'
+import { useSmartRecognize } from './useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useFormDraft } from '@/composables/useFormDraft'
+import { useFormValidator } from '@/composables/useFormValidator'
 
 const props = defineProps({
   showModal: { type: Boolean, default: false },
@@ -212,6 +229,60 @@ const isEditing = computed(() => !!props.editingQuotation)
 const saveAsTemplateFlag = ref(false)
 const form = ref({})
 const formItems = ref([{ grade: '', standard: '', qty: 0, price: 0, remark: '' }])
+
+const { warnings, errors, hasErrors, hasWarnings, validate, clearWarnings } = useFormValidator(form, {
+  required: [
+    { key: 'customerFullName', label: '客户公司全称' },
+    { key: 'custContact', label: '联系人' }
+  ],
+  amountCheck: [
+    { field: 'taxRate', label: '税率', max: 100 }
+  ]
+})
+
+const draftData = reactive({})
+const { restoreDraft, clearDraft, hasDraft } = useFormDraft('quotation-form', draftData, {
+  debounce: 1500,
+  onRestore: (draft) => {
+    if (draft.data) {
+      Object.assign(form.value, draft.data)
+      if (draft.data.items) {
+        formItems.value = draft.data.items.map(item => ({ ...item }))
+      }
+    }
+  }
+})
+
+watch([form, formItems], ([f, items]) => {
+  if (isEditing.value) return
+  Object.assign(draftData, { ...f, items: items ? [...items] : [] })
+}, { deep: true })
+
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form.value)
+
+function applySmartRecognize() {
+  if (!smartRecResult.value) return
+  // 填入表头字段
+  if (smartRecResult.value.items && smartRecResult.value.items.length > 0) {
+    smartRecResult.value.items.forEach(item => {
+      if (item.value && Object.hasOwn(form.value, item.key)) {
+        form.value[item.key] = item.value
+      }
+    })
+  }
+  // 填入表格明细行
+  if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
+    smartRecResult.value.tableRows.forEach(row => {
+      formItems.value.push({
+        grade: row.grade || '',
+        standard: row.standard || '',
+        qty: row.qty || 0,
+        price: row.price || 0,
+        remark: row.remark || ''
+      })
+    })
+  }
+}
 
 const itemsSubtotal = computed(() => formItems.value.reduce((s, it) => s + (it.qty || 0) * (it.price || 0), 0))
 const calculatedTotal = computed(() => itemsSubtotal.value * (1 + (form.value.taxRate || 0) / 100))
@@ -255,17 +326,19 @@ function resetForm() {
     termLegal: '本报价函经双方授权代表签字并加盖公司公章后即构成具有法律约束力的合同要约，与正式采购合同具有同等法律效力。'
   }
   formItems.value = [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
+  resetSmartRec()
 }
 
-/* DataSelect change 事件提供 { value, data, option }，data 为完整客户对象 */
 function onCustomerChange(event) {
-  const c = event?.data
-  if (!c) return
-  form.value.customerName = c.fullName || c.name || ''
-  form.value.customerFullName = c.fullName || c.name || ''
-  form.value.custContact = c.contactName || c.contact || ''
-  form.value.custPhone = c.phone || ''
-  form.value.custEmail = c.email || ''
+  const customer = customerStore.customers.find(c => c.id === event?.value)
+  if (customer) {
+    if (!form.value.customerName) form.value.customerName = customer.fullName || customer.name || ''
+    if (!form.value.customerFullName) form.value.customerFullName = customer.fullName || customer.name || ''
+    if (customer.contactName && !form.value.custContact) form.value.custContact = customer.contactName
+    if (customer.phone && !form.value.custPhone) form.value.custPhone = customer.phone
+    if (customer.email && !form.value.custEmail) form.value.custEmail = customer.email
+    if (customer.address && !form.value.termDeliveryAddr) form.value.termDeliveryAddr = customer.address
+  }
 }
 
 function addItem() {
@@ -309,6 +382,10 @@ function handleClose() {
 }
 
 function handleSave() {
+  validate()
+  if (hasErrors.value) {
+    return
+  }
   const data = {
     ...form.value,
     items: JSON.stringify(formItems.value),
@@ -337,6 +414,7 @@ function handleSave() {
     }
     saveAsTemplateFlag.value = false
   }
+  clearDraft()
   emit('save', { data, isEditing: isEditing.value, editingId: props.editingQuotation?.id })
 }
 
@@ -362,6 +440,9 @@ watch(() => props.showModal, (val) => {
       }
     } else {
       resetForm()
+      if (hasDraft()) {
+        restoreDraft()
+      }
     }
   }
 })
@@ -387,6 +468,9 @@ watch(() => props.showModal, (val) => {
 .form-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-secondary); }
 .form-input, .form-select, .form-textarea { padding: var(--space-2) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); background: var(--color-surface); color: var(--color-text-primary); }
 .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-subtle, rgba(59,130,246,0.1)); }
+.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
+.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
+.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
 .form-textarea { resize: vertical; }
 .items-table { font-size: var(--font-size-sm); }
 .items-table input { padding: var(--space-1) var(--space-2); font-size: var(--font-size-sm); }

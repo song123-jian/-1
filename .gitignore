@@ -5,3 +5,15 @@ dist/
 .env
 .env.*
 !.env.example
+
+# 临时文件和修复脚本
+1.txt
+211.txt
+_update_topbar.js
+eslint-full.json
+lint-result.json
+开发.txt
+dpERP版本02.html
+scripts/
+_fix_script.ps1
+dpERP-vue/

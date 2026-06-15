@@ -13,6 +13,9 @@
         <button class="btn btn-outline" @click="handleDownloadTemplate"><Icon name="file" :size="14" /> 模板下载</button>
         <button class="btn btn-outline" @click="handleBatchAdd"><Icon name="list" :size="14" /> 批量增加</button>
         <button class="btn btn-outline" @click="handleExport"><Icon name="download" :size="14" /> 导出CSV</button>
+        <button v-if="duplicateGroups.length > 0" class="btn btn-outline btn-warning" @click="showDuplicateModal = true">
+          <Icon name="alert" :size="14" /> 发现 {{ duplicateGroups.length }} 组重复
+        </button>
         <button v-if="canDelete" class="btn btn-outline btn-danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
       </div>
     </div>
@@ -146,6 +149,8 @@
     <CustomerTable v-if="currentView === 'table'"
       :customers="filteredCustomers"
       :selected-ids="selectedIds"
+      :trend-data="trendData"
+      :anomaly-data="anomalyData"
       @update:selected-ids="selectedIds = $event"
       @open-edit="openEditModal"
       @open-detail="openDetailModal"
@@ -199,42 +204,16 @@
             <button class="modal-close" @click="closeModal"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
-            <div v-if="!editingCustomer" class="smart-recognize-panel" :class="{ expanded: showSmartRec }">
-              <div class="smart-recognize-header" @click="showSmartRec = !showSmartRec">
-                <div class="sr-header-left"><span class="sr-icon">[智能]</span> 智能识别 <span class="sr-badge sr-badge-success">AI</span></div>
-                <span class="sr-toggle">{{ showSmartRec ? '收起' : '展开' }} <Icon :name="showSmartRec ? 'chevronUp' : 'chevronDown'" :size="14" /></span>
-              </div>
-              <div v-if="showSmartRec" class="smart-recognize-body">
-                <textarea v-model="smartRecInput" class="form-textarea" rows="3" placeholder="粘贴客户信息文本（名片、邮件等），AI将自动识别并提取关键字段..."></textarea>
-                <div class="sr-actions">
-                  <label class="btn btn-ghost btn-sm">
-                    <Icon name="file" :size="14" /> 上传文件
-                    <input type="file" style="display:none" @change="handleSmartFileUpload" />
-                  </label>
-                  <button class="btn btn-ghost btn-sm" @click="smartRecInput = ''; smartRecResult = null">清空</button>
-                  <button class="btn btn-primary btn-sm" @click="runSmartRecognize"><Icon name="search" :size="14" /> 开始识别</button>
-                </div>
-                <div v-if="smartRecResult" class="sr-result-panel">
-                  <div class="sr-result-header" :class="{ 'has-warnings': smartRecResult.lowConfCount > 0 }">
-                    <Icon name="checkCircle" :size="14" /> 已识别 <strong>{{ smartRecResult.identifiedCount }}</strong> 个字段
-                    <span v-if="smartRecResult.lowConfCount > 0" class="sr-badge sr-badge-warning">{{ smartRecResult.lowConfCount }}项需确认</span>
-                    <span v-else class="sr-badge sr-badge-success">全部可信</span>
-                  </div>
-                  <div class="sr-result-body">
-                    <div v-for="item in smartRecResult.items" :key="item.key" class="sr-result-item">
-                      <span class="sr-result-label">{{ item.label }}</span>
-                      <input class="sr-result-input" v-model="item.value" />
-                      <span class="sr-result-confidence" :class="item.confLevel">{{ item.confLabel }} {{ item.confidence }}%</span>
-                    </div>
-                  </div>
-                  <div v-if="smartRecResult.identifiedCount === 0" class="sr-empty-tip">未能识别出有效客户信息，请检查输入内容格式</div>
-                  <div v-if="smartRecResult.identifiedCount > 0" class="sr-result-actions">
-                    <button class="btn btn-ghost btn-sm" @click="runSmartRecognize">重新识别</button>
-                    <button class="btn btn-primary btn-sm" @click="applySmartRecognize"><Icon name="checkCircle" :size="14" /> 确认填入</button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <SmartRecognizePanel v-if="!editingCustomer"
+              v-model:showSmartRec="showSmartRec"
+              v-model:smartRecInput="smartRecInput"
+              :smartRecResult="smartRecResult"
+              :placeholder="smartRecPlaceholder"
+              @runSmartRecognize="runSmartRecognize"
+              @applySmartRecognize="applySmartRecognize"
+              @handleSmartFileUpload="handleSmartFileUpload"
+              @clear="smartRecInput = ''; smartRecResult = null"
+            />
             <div class="form-grid">
               <div class="form-group">
                 <label>客户编号</label>
@@ -383,6 +362,36 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- 重复检测结果弹窗 -->
+    <Teleport to="body">
+      <div v-if="showDuplicateModal" class="modal-overlay" @click.self="showDuplicateModal = false">
+        <div class="modal-dialog">
+          <div class="modal-header">
+            <h3><Icon name="alert" :size="14" /> 重复客户检测结果</h3>
+            <button class="modal-close" @click="showDuplicateModal = false"><Icon name="close" :size="14" /></button>
+          </div>
+          <div class="modal-body">
+            <div v-for="(group, idx) in duplicateGroups" :key="idx" class="duplicate-group">
+              <div class="duplicate-group-title">第 {{ idx + 1 }} 组重复（{{ group.length }} 条）</div>
+              <div class="duplicate-group-list">
+                <div v-for="item in group" :key="item.id" class="duplicate-item">
+                  <span class="duplicate-item-name">{{ item.fullName || item.name || '未命名' }}</span>
+                  <span class="duplicate-item-phone">{{ item.phone || '-' }}</span>
+                  <span class="duplicate-item-level" :class="'level-' + item.level">{{ levelLabel(item.level) }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-if="duplicateGroups.length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);text-align:center;padding:var(--space-4)">
+              暂无重复客户
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" @click="showDuplicateModal = false">关闭</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -392,7 +401,11 @@ import { useRouter, useRoute } from 'vue-router'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { useDataStore } from '@/stores/data'
 import { useSessionStore } from '@/stores/session'
+import { useSmartSearch } from '@/composables/useSmartSearch'
+import { useDuplicateDetector } from '@/composables/useDuplicateDetector'
 import { useSmartRecognize } from '@/modules/customer/components/customers/useSmartRecognize'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useTableEnhance } from '@/composables/useTableEnhance'
 import { useCustomerImport } from '@/modules/customer/components/customers/useCustomerImport'
 import { levelColors, levelLabel } from '@/utils/customerHelpers'
 import { formatNumber } from '@/utils/format'
@@ -410,6 +423,13 @@ const customerStore = useCustomerStore()
 const dataStore = useDataStore()
 const sessionStore = useSessionStore()
 
+const { duplicateGroups, markChecked } = useDuplicateDetector(
+  computed(() => customerStore.customers || []),
+  { fields: ['fullName', 'phone'], threshold: 0.85 }
+)
+
+const showDuplicateModal = ref(false)
+
 const canCreate = !['查看者'].includes(sessionStore.currentRole)
 const canDelete = ['管理员', '总经理'].includes(sessionStore.currentRole)
 
@@ -418,7 +438,7 @@ const advFilterNo = ref('')
 const advFilterName = ref('')
 const advFilterPhone = ref('')
 const advFilterConcerns = ref('')
-const smartSearchText = ref('')
+const { smartSearchText, parsedFilters, clearSearch } = useSmartSearch()
 const tagGradeFilter = ref('')
 const tagStatusFilter = ref('')
 const filterLevel = ref('all')
@@ -469,17 +489,28 @@ const filteredCustomers = computed(() => {
   let list = [...customerStore.customers]
   // 智能搜索：支持名称/编号/手机号模糊匹配，以及关键词识别（如"A级客户"）
   if (smartSearchText.value) {
-    const s = smartSearchText.value.toLowerCase()
-    // 关键词智能识别
-    const gradeKeywords = { 'a级客户': 'A', 'b级客户': 'B', 'c级客户': 'C', 'd级客户': 'D' }
-    const statusKeywords = { '活跃客户': 'active', '潜在客户': 'potential', '非活跃客户': 'dormant', '休眠客户': 'dormant' }
-    const matchedGrade = gradeKeywords[s]
-    const matchedStatus = statusKeywords[s]
-    if (matchedGrade) {
-      list = list.filter(c => c.level === matchedGrade)
-    } else if (matchedStatus) {
-      list = list.filter(c => c.status === matchedStatus)
-    } else {
+    const pf = parsedFilters.value
+    if (pf.grade) {
+      list = list.filter(c => c.level === pf.grade)
+    }
+    if (pf.status) {
+      list = list.filter(c => c.status === pf.status)
+    }
+    if (pf.region) {
+      list = list.filter(c => c.region === pf.region)
+    }
+    if (pf.keyword) {
+      const kw = pf.keyword.toLowerCase()
+      list = list.filter(c =>
+        (c.customerNo || '').toLowerCase().includes(kw) ||
+        (c.fullName || c.name || '').toLowerCase().includes(kw) ||
+        (c.phone || '').includes(kw) ||
+        (c.email || '').toLowerCase().includes(kw) ||
+        (c.contactName || c.contact || '').toLowerCase().includes(kw)
+      )
+    } else if (!pf.grade && !pf.status && !pf.region) {
+      // 没有任何解析出的过滤条件，回退到原始模糊匹配
+      const s = smartSearchText.value.toLowerCase()
       list = list.filter(c =>
         (c.customerNo || '').toLowerCase().includes(s) ||
         (c.fullName || c.name || '').toLowerCase().includes(s) ||
@@ -524,6 +555,11 @@ const filteredCustomers = computed(() => {
   return list
 })
 
+const { trendData, anomalyData } = useTableEnhance(
+  computed(() => filteredCustomers.value),
+  { trendField: 'balance', highlightField: 'balance', highlightThreshold: 2 }
+)
+
 const defaultForm = () => ({
   customerNo: '', fullName: '', shortName: '', contactName: '', phone: '',
   email: '', department: '', position: '', region: '',
@@ -532,7 +568,7 @@ const defaultForm = () => ({
 })
 const form = reactive(defaultForm())
 
-const { showSmartRec, smartRecInput, smartRecResult, runSmartRecognize, applySmartRecognize, handleSmartFileUpload } = useSmartRecognize(form)
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
 const { handleBatchAdd } = useCustomerImport(customerStore)
 
 function openAddModal() {
@@ -541,9 +577,7 @@ function openAddModal() {
   const defaults = defaultForm()
   defaults.customerNo = customerStore.generateCustomerNo()
   Object.assign(form, defaults)
-  showSmartRec.value = false
-  smartRecInput.value = ''
-  smartRecResult.value = null
+  resetSmartRec()
   showModal.value = true
 }
 
@@ -893,30 +927,6 @@ onMounted(() => {
 .tag-filter-clear:hover {
   color: var(--color-danger);
 }
-.smart-recognize-panel { margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.smart-recognize-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-2) var(--space-3); background: var(--color-surface-elevated); cursor: pointer; user-select: none; }
-.smart-recognize-header:hover { background: var(--color-surface-hover); }
-.sr-header-left { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm); font-weight: 600; }
-.sr-icon { font-size: 16px; }
-.sr-badge { font-size: 10px; padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); font-weight: 700; }
-.sr-badge-success { background: var(--color-success-subtle); color: var(--color-success); }
-.sr-badge-warning { background: var(--color-warning-subtle); color: var(--color-warning); }
-.sr-toggle { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
-.smart-recognize-body { padding: var(--space-3); border-top: 1px solid var(--color-border); }
-.sr-actions { display: flex; gap: var(--space-2); margin-top: var(--space-2); align-items: center; }
-.sr-result-panel { margin-top: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.sr-result-header { padding: var(--space-2) var(--space-3); background: var(--color-success-subtle); font-size: var(--font-size-sm); }
-.sr-result-header.has-warnings { background: rgba(245,158,11,0.08); }
-.sr-result-body { padding: var(--space-2) var(--space-3); }
-.sr-result-item { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-1); }
-.sr-result-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); min-width: 70px; }
-.sr-result-input { flex: 1; padding: var(--space-1) var(--space-2); font-size: var(--font-size-sm); border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-bg-primary); color: var(--color-text-primary); }
-.sr-result-confidence { font-size: 10px; padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); font-weight: 600; min-width: 60px; text-align: center; }
-.sr-result-confidence.high { background: var(--color-success-subtle); color: var(--color-success); }
-.sr-result-confidence.medium { background: var(--color-warning-subtle); color: var(--color-warning); }
-.sr-result-confidence.low { background: var(--color-danger-subtle); color: var(--color-danger); }
-.sr-empty-tip { padding: var(--space-3); text-align: center; font-size: var(--font-size-sm); color: var(--color-text-tertiary); }
-.sr-result-actions { display: flex; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-top: 1px solid var(--color-border); justify-content: flex-end; }
 .customer-search-grid { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: var(--space-3); align-items: end; flex: 1; }
 .search-field { display: flex; flex-direction: column; gap: var(--space-1); }
 .search-field-label { font-size: 11px; font-weight: 600; color: var(--color-text-tertiary); white-space: nowrap; }
@@ -994,6 +1004,13 @@ onMounted(() => {
 .batch-tag-option { padding: var(--space-1) var(--space-3); border-radius: 14px; font-size: var(--font-size-sm); cursor: pointer; border: 1px dashed var(--color-border); color: var(--color-text-secondary); transition: all var(--transition-fast); }
 .batch-tag-option:hover { border-style: solid; }
 .batch-tag-option.selected { border-style: solid; }
+.duplicate-group { margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); background: var(--color-surface); }
+.duplicate-group-title { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-2); }
+.duplicate-group-list { display: flex; flex-direction: column; gap: var(--space-2); }
+.duplicate-item { display: flex; align-items: center; gap: var(--space-3); font-size: var(--font-size-sm); padding: var(--space-2); background: var(--color-bg-primary); border-radius: var(--radius-md); }
+.duplicate-item-name { flex: 1; font-weight: 500; color: var(--color-text-primary); }
+.duplicate-item-phone { color: var(--color-text-secondary); font-family: var(--font-mono); }
+.duplicate-item-level { font-size: 11px; font-weight: 700; padding: var(--space-1) var(--space-2); border-radius: 12px; }
 .level-badge { padding: var(--space-1) var(--space-2); border-radius: 12px; font-size: 12px; font-weight: 700; }
 .level-A { background: var(--color-danger-subtle); color: var(--color-danger); }
 .level-B { background: var(--color-warning-subtle); color: var(--color-warning); }
@@ -1011,4 +1028,8 @@ onMounted(() => {
   .form-grid { grid-template-columns: 1fr; }
   .page-header-actions { flex-direction: column; align-items: flex-start; }
 }
+.trend-up { color: var(--color-danger); }
+.trend-down { color: var(--color-success); }
+.trend-neutral { color: var(--color-text-tertiary); }
+.anomaly-highlight { background: var(--color-danger-subtle) !important; }
 </style>
