@@ -142,10 +142,10 @@ export const useReceivableStore = defineStore('receivable', () => {
     receipts.value.push(item)
     persistReceipts()
 
-    /* 更新应收单的已收金额和状态 */
-    const newReceived = (parseFloat(rv.receivedAmount) || 0) + amount
+    /* 更新应收单的已收金额和状态（使用 Math.round 避免浮点精度问题） */
+    const newReceived = Math.round(((parseFloat(rv.receivedAmount) || 0) + amount) * 100) / 100
     receivables.value[rvIdx].receivedAmount = newReceived
-    receivables.value[rvIdx].remainingAmount = (parseFloat(rv.amount) || 0) - newReceived
+    receivables.value[rvIdx].remainingAmount = Math.round(((parseFloat(rv.amount) || 0) - newReceived) * 100) / 100
 
     if (newReceived >= (parseFloat(rv.amount) || 0)) {
       receivables.value[rvIdx].status = 'completed'
@@ -168,9 +168,9 @@ export const useReceivableStore = defineStore('receivable', () => {
     if (!receivable) return { success: false, error: '应收单不存在' }
     const receipt = receivable.receipts?.find((rc) => rc.id === receiptId)
     if (!receipt) return { success: false, error: '收款记录不存在' }
-    /* 回退已收金额 */
-    receivable.receivedAmount = Math.max(0, (receivable.receivedAmount || 0) - (receipt.amount || 0))
-    receivable.remainingAmount = (parseFloat(receivable.amount) || 0) - receivable.receivedAmount
+    /* 回退已收金额（使用 Math.round 避免浮点精度问题） */
+    receivable.receivedAmount = Math.round(((receivable.receivedAmount || 0) - (receipt.amount || 0)) * 100) / 100
+    receivable.remainingAmount = Math.round(((parseFloat(receivable.amount) || 0) - receivable.receivedAmount) * 100) / 100
     /* 移除收款记录 */
     receivable.receipts = (receivable.receipts || []).filter((rc) => rc.id !== receiptId)
     /* 从全局 receipts 中也移除 */

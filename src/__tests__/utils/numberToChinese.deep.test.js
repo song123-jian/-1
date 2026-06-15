@@ -9,33 +9,27 @@ describe('numberToChinese.js - 深度边界测试', () => {
 
   /* ===== NC-01: 零值 ===== */
   describe('NC-01: 零值', () => {
-    it('0 应返回 "零元整"（源码零值路径不加"人民币"前缀）', () => {
-      expect(numberToChinese(0)).toBe('零元整')
+    it('0 应返回 "人民币零元整"', () => {
+      expect(numberToChinese(0)).toBe('人民币零元整')
     })
 
-    it('0.0 应返回 "零元整"', () => {
-      expect(numberToChinese(0.0)).toBe('零元整')
+    it('0.0 应返回 "人民币零元整"', () => {
+      expect(numberToChinese(0.0)).toBe('人民币零元整')
     })
 
-    it('0.00 应返回 "零元整"', () => {
-      expect(numberToChinese(0.00)).toBe('零元整')
+    it('0.00 应返回 "人民币零元整"', () => {
+      expect(numberToChinese(0.00)).toBe('人民币零元整')
     })
   })
 
   /* ===== NC-02: 负数 ===== */
   describe('NC-02: 负数', () => {
-    it('-1 的行为（源码未处理负数，验证实际输出）', () => {
-      // 源码中 Math.floor(-1) = -1, Math.round(-1*100)%100 = 0
-      // integer = -1, intStr = "-1", len = 2
-      // 循环处理 '-' 和 '1' 字符，parseInt('-') = NaN
-      // 结果取决于实现细节，验证不抛异常即可
-      const result = numberToChinese(-1)
-      expect(typeof result).toBe('string')
+    it('-1 应返回 "人民币负壹元整"', () => {
+      expect(numberToChinese(-1)).toBe('人民币负壹元整')
     })
 
-    it('-100 的行为', () => {
-      const result = numberToChinese(-100)
-      expect(typeof result).toBe('string')
+    it('-100 应返回 "人民币负壹佰元整"', () => {
+      expect(numberToChinese(-100)).toBe('人民币负壹佰元整')
     })
 
     it('-0.01 的行为', () => {

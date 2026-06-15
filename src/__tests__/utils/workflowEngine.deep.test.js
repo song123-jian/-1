@@ -65,12 +65,13 @@ describe('workflowEngine.js - 深度测试', () => {
       expect(stored[0].id).toBe(instance.id)
     })
 
-    it('不存在的模板应返回 null', () => {
-      const instance = workflowEngine.startInstance('nonexistent', {
+    it('不存在的模板应返回错误对象', () => {
+      const result = workflowEngine.startInstance('nonexistent', {
         businessId: 'X001',
         variables: {}
       })
-      expect(instance).toBeNull()
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('不存在')
     })
   })
 

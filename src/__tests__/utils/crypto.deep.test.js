@@ -29,11 +29,9 @@ describe('crypto.js - 深度边界测试', () => {
 
   /* ===== CR-02: AES 加解密大文本 ===== */
   describe('CR-02: AES 加解密大文本', () => {
-    it('较大文本（100KB）加解密应正确还原', async () => {
-      // 注意：源码使用 String.fromCharCode(...result) 展开大数组会导致栈溢出
-      // 因此使用 100KB 而非 1MB 进行测试
+    it('1MB 大文本加解密应正确还原（修复 fromCharCode 栈溢出后）', async () => {
       const chunk = 'A'.repeat(1024)
-      const largeText = chunk.repeat(100) // ~100KB
+      const largeText = chunk.repeat(1024) // ~1MB
       const encrypted = await aesEncrypt(largeText, 'big-password')
       const decrypted = await aesDecrypt(encrypted, 'big-password')
       expect(decrypted).toBe(largeText)

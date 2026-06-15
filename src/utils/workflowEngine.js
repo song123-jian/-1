@@ -228,14 +228,14 @@ class WorkflowEngine {
     const template = this._templates.get(templateId)
     if (!template) {
       console.error(`[WorkflowEngine] 模板不存在: ${templateId}`)
-      return null
+      return { success: false, error: `工作流模板 "${templateId}" 不存在` }
     }
 
     /* 找到起始节点的下一个节点（第一个审批节点） */
     const startNode = template.nodes.find(n => n.type === NodeType.START)
     if (!startNode) {
       console.error(`[WorkflowEngine] 模板缺少起始节点: ${templateId}`)
-      return null
+      return { success: false, error: `工作流模板 "${templateId}" 缺少起始节点` }
     }
 
     const nextEdges = template.edges.filter(e => e.from === startNode.id)

@@ -50,7 +50,12 @@ export async function aesEncrypt(plaintext, password) {
   result.set(salt, 0)
   result.set(iv, salt.length)
   result.set(new Uint8Array(encrypted), salt.length + iv.length)
-  return btoa(String.fromCharCode(...result))
+  /* 分块拼接避免大数组展开导致栈溢出 */
+  let binary = ''
+  for (let i = 0; i < result.length; i++) {
+    binary += String.fromCharCode(result[i])
+  }
+  return btoa(binary)
 }
 
 // AES-GCM 解密（基于 Web Crypto API）

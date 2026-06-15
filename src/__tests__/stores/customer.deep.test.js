@@ -50,27 +50,24 @@ describe('客户 Store 深度测试', () => {
 
   /* ==================== CS-01: 信用额度边界 ==================== */
   describe('CS-01: 信用额度边界', () => {
-    it('客户余额超过信用额度时应触发警告', () => {
-      const customer = store.addCustomer({
+    it('客户余额超过信用额度时应被拦截', () => {
+      const result = store.addCustomer({
         fullName: '超限客户',
         creditLimit: 100000,
         balance: 150000
       })
-      expect(customer.balance).toBeGreaterThan(customer.creditLimit)
-      /* 业务逻辑：余额 > 信用额度表示超限 */
-      const isOverLimit = customer.balance > customer.creditLimit
-      expect(isOverLimit).toBe(true)
+      /* 修复后：addCustomer 返回 { success: false, error } 拦截超限 */
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('信用额度')
     })
 
-    it('客户余额等于信用额度时处于临界状态', () => {
+    it('客户余额等于信用额度时允许添加', () => {
       const customer = store.addCustomer({
         fullName: '临界客户',
         creditLimit: 100000,
         balance: 100000
       })
       expect(customer.balance).toBe(customer.creditLimit)
-      const isAtLimit = customer.balance >= customer.creditLimit
-      expect(isAtLimit).toBe(true)
     })
 
     it('客户余额低于信用额度时正常', () => {
@@ -82,23 +79,24 @@ describe('客户 Store 深度测试', () => {
       expect(customer.balance).toBeLessThan(customer.creditLimit)
     })
 
-    it('信用额度为0时任何余额都应超限', () => {
+    it('信用额度为0时允许任何余额', () => {
       const customer = store.addCustomer({
         fullName: '零额度客户',
         creditLimit: 0,
         balance: 1
       })
+      /* 信用额度为0时不做拦截（0表示未设置额度） */
       expect(customer.balance).toBeGreaterThan(customer.creditLimit)
     })
 
-    it('批量添加后统计超限客户数量', () => {
+    it('批量添加后超限客户应被拦截', () => {
       const overLimitCustomers = generateCustomers(5, { creditLimit: 10000, balance: 50000 })
       const normalCustomers = generateCustomers(5, { creditLimit: 100000, balance: 50000 })
       ;[...overLimitCustomers, ...normalCustomers].forEach(c => {
         store.addCustomer({ fullName: c.name, creditLimit: c.creditLimit, balance: c.balance })
       })
-      const overLimitCount = store.customers.filter(c => c.balance > c.creditLimit).length
-      expect(overLimitCount).toBe(5)
+      /* 超限的5个客户被拦截，只有正常的5个被添加 */
+      expect(store.customers.length).toBe(5)
     })
   })
 

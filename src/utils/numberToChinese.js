@@ -1,5 +1,5 @@
-export function numberToChinese(n) {
-  if (n === 0) return '零元整'
+/* 正数转中文（内部函数，不含"人民币"前缀） */
+function _numberToChinesePositive(n) {
   const digits = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖']
   const units = ['', '拾', '佰', '仟']
   const bigUnits = ['', '万', '亿', '万亿']
@@ -34,5 +34,12 @@ export function numberToChinese(n) {
   } else {
     result += '整'
   }
-  return '人民币' + result
+  return result
+}
+
+export function numberToChinese(n) {
+  if (n === 0) return '人民币零元整'
+  /* 处理负数 */
+  if (n < 0) return '人民币负' + _numberToChinesePositive(-n)
+  return '人民币' + _numberToChinesePositive(n)
 }
