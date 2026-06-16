@@ -1,5 +1,7 @@
 <template>
   <div class="role-select-page">
+    <!-- Canvas粒子背景 -->
+    <canvas ref="particleCanvas" class="particle-canvas"></canvas>
     <!-- 动态渐变背景 -->
     <div class="animated-bg"></div>
 
@@ -8,6 +10,7 @@
       <header class="role-header">
         <div class="role-logo">冠</div>
         <h1 class="role-title">冠久ERP</h1>
+        <p class="role-slogan">智领未来，久经考验</p>
         <p class="role-subtitle">选择您的身份以进入系统</p>
       </header>
 
@@ -58,7 +61,7 @@
 
       <!-- 进入按钮 -->
       <button
-        class="enter-btn"
+        class="enter-btn btn-ripple"
         :disabled="!selectedRole"
         @click="handleEnter"
       >
@@ -74,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { RoleCategories } from '@/constants/roles'
@@ -103,8 +106,75 @@ function handleEnter() {
   router.push('/dashboard')
 }
 
+/* Canvas粒子背景 */
+const particleCanvas = ref(null)
+let animationId = null
+
+function initParticles() {
+  const canvas = particleCanvas.value
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')
+  let width = canvas.width = window.innerWidth
+  let height = canvas.height = window.innerHeight
+
+  const particles = []
+  const count = 60
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: (Math.random() - 0.5) * 0.5,
+      r: Math.random() * 2 + 1,
+      alpha: Math.random() * 0.5 + 0.1
+    })
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height)
+    particles.forEach(p => {
+      p.x += p.vx
+      p.y += p.vy
+      if (p.x < 0) p.x = width
+      if (p.x > width) p.x = 0
+      if (p.y < 0) p.y = height
+      if (p.y > height) p.y = 0
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+      ctx.fillStyle = `rgba(59, 130, 246, ${p.alpha})`
+      ctx.fill()
+    })
+    /* 连线 */
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x
+        const dy = particles[i].y - particles[j].y
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        if (dist < 120) {
+          ctx.beginPath()
+          ctx.moveTo(particles[i].x, particles[i].y)
+          ctx.lineTo(particles[j].x, particles[j].y)
+          ctx.strokeStyle = `rgba(59, 130, 246, ${0.08 * (1 - dist / 120)})`
+          ctx.lineWidth = 0.5
+          ctx.stroke()
+        }
+      }
+    }
+    animationId = requestAnimationFrame(draw)
+  }
+  draw()
+
+  const handleResize = () => {
+    width = canvas.width = window.innerWidth
+    height = canvas.height = window.innerHeight
+  }
+  window.addEventListener('resize', handleResize)
+}
+
 /* 页面加载时检查已有会话或记住的角色 */
 onMounted(() => {
+  /* 初始化粒子背景 */
+  initParticles()
   /* 尝试恢复已有会话 */
   if (sessionStore.restoreSession()) {
     router.replace('/dashboard')
@@ -114,6 +184,13 @@ onMounted(() => {
   if (sessionStore.rememberedRole) {
     selectedRole.value = sessionStore.rememberedRole
     rememberRole.value = true
+  }
+})
+
+onUnmounted(() => {
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+    animationId = null
   }
 })
 </script>
@@ -131,6 +208,14 @@ onMounted(() => {
   z-index: var(--z-popover, 9999);
 }
 
+/* Canvas粒子背景 */
+.particle-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
 /* 动态渐变背景 */
 .animated-bg {
   position: absolute;
@@ -146,6 +231,7 @@ onMounted(() => {
   animation: gradientShift 12s ease infinite;
   opacity: 0.6;
   pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes gradientShift {
@@ -173,17 +259,20 @@ onMounted(() => {
 }
 
 .role-logo {
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto var(--space-4, 1rem);
-  background: linear-gradient(135deg, var(--color-accent, #4F46E5), var(--color-purple, #8B5CF6));
-  border-radius: var(--radius-lg, 12px);
+  background: linear-gradient(135deg, var(--color-accent, #3b82f6), var(--color-purple, #8b5cf6), #ec4899);
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite, fadeInScale 600ms ease;
+  border-radius: var(--radius-xl, 16px);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
 }
 
 .role-title {
@@ -191,6 +280,17 @@ onMounted(() => {
   font-weight: 700;
   color: var(--color-text-primary);
   margin-bottom: var(--space-2, 0.5rem);
+}
+
+.role-slogan {
+  font-size: var(--font-size-sm, 0.8125rem);
+  font-weight: 500;
+  background: linear-gradient(90deg, var(--color-accent, #3b82f6), var(--color-purple, #8b5cf6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: var(--space-1, 0.25rem);
+  animation: fadeInUp 600ms ease 200ms both;
 }
 
 .role-subtitle {
@@ -240,16 +340,17 @@ onMounted(() => {
 }
 
 .role-card:hover {
-  border-color: var(--color-accent, #4F46E5);
+  border-color: var(--color-accent, #3b82f6);
   background: var(--color-surface-hover, var(--color-bg-tertiary));
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1)), 0 0 16px rgba(59, 130, 246, 0.1);
 }
 
 .role-card.selected {
-  border-color: var(--color-accent, #4F46E5);
+  border-color: var(--color-accent, #3b82f6);
   background: var(--color-accent-subtle, rgba(79,70,229,0.1));
-  box-shadow: 0 0 0 1px var(--color-accent, #4F46E5);
+  box-shadow: 0 0 0 1px var(--color-accent, #3b82f6), 0 0 20px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
 }
 
 .role-card-icon {
@@ -375,6 +476,10 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
+.remember-check input[type="checkbox"]:checked {
+  animation: fadeInScale 200ms ease;
+}
+
 .remember-label {
   font-size: var(--font-size-sm, 0.8125rem);
   font-weight: 500;
@@ -392,21 +497,25 @@ onMounted(() => {
   width: 100%;
   max-width: 320px;
   padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
-  background: var(--color-accent, #4F46E5);
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
+  background-size: 200% 200%;
   color: #fff;
   border: none;
   border-radius: var(--radius-lg, 12px);
   font-size: var(--font-size-lg, 1.125rem);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.25s ease;
   margin-bottom: var(--space-6, 1.5rem);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
 }
 
 .enter-btn:hover:not(:disabled) {
-  opacity: 0.9;
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.15));
+  background-position: 100% 50%;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
 }
 
 .enter-btn:disabled {
@@ -414,6 +523,31 @@ onMounted(() => {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+/* 波纹效果 */
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  opacity: 0;
+}
+.btn-ripple:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 1;
+  transition: 0s;
 }
 
 /* 底部 */

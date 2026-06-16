@@ -23,7 +23,7 @@
       />
       <main class="app-content">
         <router-view v-slot="{ Component, route }">
-          <transition name="fade" mode="out-in">
+          <transition name="fade-up" mode="out-in">
             <component :is="Component" :key="route.path" />
           </transition>
         </router-view>
@@ -293,13 +293,19 @@ onUnmounted(() => {
   box-sizing: border-box;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 200ms ease;
+.fade-up-enter-active {
+  transition: opacity 250ms ease, transform 250ms ease;
 }
-.fade-enter-from,
-.fade-leave-to {
+.fade-up-leave-active {
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+.fade-up-enter-from {
   opacity: 0;
+  transform: translateY(12px);
+}
+.fade-up-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 /* 移动端适配 */

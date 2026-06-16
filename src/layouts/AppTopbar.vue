@@ -370,6 +370,7 @@ onBeforeUnmount(() => {
 }
 .topbar-search:focus-within {
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle), 0 0 12px rgba(59, 130, 246, 0.1);
 }
 .search-icon {
   font-size: 14px;
@@ -411,9 +412,13 @@ onBeforeUnmount(() => {
   background: var(--color-surface-hover);
   color: var(--color-accent);
 }
+.mode-toggle-btn:hover .mode-icon {
+  transform: rotate(180deg);
+}
 .mode-icon {
   width: 18px;
   height: 18px;
+  transition: transform 0.5s ease;
 }
 
 .topbar-theme-switcher {
@@ -422,8 +427,8 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 .theme-dot {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   cursor: pointer;
@@ -434,7 +439,8 @@ onBeforeUnmount(() => {
 }
 .theme-dot.active {
   border-color: var(--color-text-primary);
-  box-shadow: 0 0 0 2px var(--color-bg-primary);
+  box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 8px rgba(59, 130, 246, 0.3);
+  transform: scale(1.15);
 }
 .theme-more {
   font-size: 12px;
@@ -509,11 +515,13 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-sm);
   font-weight: 600;
   flex-shrink: 0;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 .user-role-name {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
-  font-weight: 500;
+  font-weight: 600;
   max-width: 80px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -639,10 +647,11 @@ onBeforeUnmount(() => {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(0, 0, 0, 0.15);
   z-index: var(--z-popover, 9999);
   max-height: 320px;
   overflow-y: auto;
+  animation: fadeInDown 200ms ease;
 }
 .search-result-item {
   display: flex;
@@ -681,5 +690,16 @@ onBeforeUnmount(() => {
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

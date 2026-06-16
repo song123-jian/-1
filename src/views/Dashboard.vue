@@ -1046,6 +1046,7 @@ onUnmounted(() => {
 
 <style scoped>
 .dashboard-page {
+  animation: fadeInUp 300ms ease;
 }
 .dashboard-toolbar {
   display: flex;
@@ -1084,11 +1085,11 @@ onUnmounted(() => {
 .skeleton {
   background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-surface-hover) 50%, var(--color-bg-tertiary) 75%);
   background-size: 200% 100%;
-  animation: skeleton-loading 1.5s ease-in-out infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
 .skeleton-card { height: 100px; }
-@keyframes skeleton-loading {
+@keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
@@ -1348,7 +1349,7 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
-.priority-high { background: var(--color-danger-subtle); color: var(--color-danger); }
+.priority-high { background: var(--color-danger-subtle); color: var(--color-danger); font-weight: 700; }
 .priority-medium { background: var(--color-warning-subtle); color: var(--color-warning); }
 .priority-low { background: var(--color-info-subtle); color: var(--color-info); }
 .todo-empty {
@@ -1645,5 +1646,9 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: flex-start;
   }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

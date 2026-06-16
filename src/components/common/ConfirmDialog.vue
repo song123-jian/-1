@@ -53,8 +53,8 @@ defineExpose({ show })
 </script>
 
 <style scoped>
-.confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: var(--z-modal); }
-.confirm-dialog { background: var(--color-bg-primary, #fff); border-radius: 12px; min-width: 400px; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.confirm-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: var(--z-modal); backdrop-filter: blur(4px); animation: fadeIn 200ms ease; }
+.confirm-dialog { background: var(--color-bg-primary, #fff); border-radius: 12px; min-width: 400px; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: fadeInScale 250ms ease; }
 .confirm-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border, #e5e7eb); }
 .confirm-header h3 { margin: 0; font-size: 16px; color: var(--color-text-primary); }
 .confirm-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--color-text-secondary, #6b7280); }
@@ -65,4 +65,12 @@ defineExpose({ show })
 .btn-cancel { background: var(--color-bg-secondary, #f3f4f6); color: var(--color-text-primary, #374151); }
 .btn-confirm { background: var(--color-accent, #3b82f6); color: #fff; }
 .btn-danger { background: var(--color-danger, #ef4444); color: #fff; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
 </style>
