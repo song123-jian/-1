@@ -60,15 +60,15 @@
         </div>
       </div>
       <div class="stats-items">
-        <div class="stat-item"><span class="stat-dot total"></span><span class="stat-num">{{ quotationStore.quotations.length }}</span><span class="stat-label">总计</span></div>
-        <div class="stat-item"><span class="stat-dot draft"></span><span class="stat-num">{{ quotationStore.draftCount }}</span><span class="stat-label">草稿</span></div>
-        <div class="stat-item"><span class="stat-dot pending"></span><span class="stat-num">{{ quotationStore.pendingCount }}</span><span class="stat-label">待审</span></div>
-        <div class="stat-item"><span class="stat-dot approved"></span><span class="stat-num">{{ quotationStore.approvedCount }}</span><span class="stat-label">已审</span></div>
-        <div class="stat-item"><span class="stat-dot accepted"></span><span class="stat-num">{{ quotationStore.acceptedCount }}</span><span class="stat-label">已接受</span></div>
+        <div class="stat-item"><Icon name="hash" :size="14" class="stat-icon total" /><span class="stat-num">{{ quotationStore.quotations.length }}</span><span class="stat-label">总计</span></div>
+        <div class="stat-item"><Icon name="edit3" :size="14" class="stat-icon draft" /><span class="stat-num">{{ quotationStore.draftCount }}</span><span class="stat-label">草稿</span></div>
+        <div class="stat-item"><Icon name="clock" :size="14" class="stat-icon pending" /><span class="stat-num">{{ quotationStore.pendingCount }}</span><span class="stat-label">待审</span></div>
+        <div class="stat-item"><Icon name="checkCircle" :size="14" class="stat-icon approved" /><span class="stat-num">{{ quotationStore.approvedCount }}</span><span class="stat-label">已审</span></div>
+        <div class="stat-item"><Icon name="thumbsUp" :size="14" class="stat-icon accepted" /><span class="stat-num">{{ quotationStore.acceptedCount }}</span><span class="stat-label">已接受</span></div>
       </div>
       <div class="stats-money-items">
-        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="dollar" :size="14" /></span><span class="stat-money-val">¥{{ formatNumber(quotationStore.totalAmount) }}</span><span class="stat-money-label">总额</span></div>
-        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="chevronDown" :size="14" /></span><span class="stat-money-val">{{ quotationStore.avgProfitMargin }}%</span><span class="stat-money-label">平均利润率</span></div>
+        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="dollarSign" :size="14" /></span><span class="stat-money-val">¥{{ formatNumber(quotationStore.totalAmount) }}</span><span class="stat-money-label">总额</span></div>
+        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="percent" :size="14" /></span><span class="stat-money-val">{{ quotationStore.avgProfitMargin }}%</span><span class="stat-money-label">平均利润率</span></div>
       </div>
       <div class="column-config-wrapper">
         <button class="btn btn-outline btn-sm" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
@@ -96,15 +96,15 @@
                 <tr>
                   <th style="width:40px"><div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll"><Icon name="checkCircle" :size="14" /></div></th>
                   <th style="width:50px;text-align:center">序号</th>
-                  <th v-if="columnVisible.quoteNo"><span class="th-icon"><Icon name="checkCircle" :size="14" /></span> 报价编码</th>
+                  <th v-if="columnVisible.quoteNo"><span class="th-icon"><Icon name="hash" :size="14" /></span> 报价编码</th>
                   <th v-if="columnVisible.date" class="sortable" @click="toggleSort('date')"><span class="th-icon"><Icon name="calendar" :size="14" /></span> 日期 <span class="sort-icon"><Icon :name="sortField === 'date' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="14" /></span></th>
                   <th v-if="columnVisible.customer"><span class="th-icon"><Icon name="building" :size="14" /></span> 客户</th>
                   <th v-if="columnVisible.grade"><span class="th-icon"><Icon name="package" :size="14" /></span> 牌号</th>
-                  <th v-if="columnVisible.unitPrice"><span class="th-icon">[美元]</span> 单价含税</th>
-                  <th v-if="columnVisible.total"><span class="th-icon"><Icon name="dollar" :size="14" /></span> 金额</th>
+                  <th v-if="columnVisible.unitPrice"><span class="th-icon"><Icon name="dollarSign" :size="14" /></span> 单价含税</th>
+                  <th v-if="columnVisible.total"><span class="th-icon"><Icon name="dollarSign" :size="14" /></span> 金额</th>
                   <th v-if="columnVisible.status"><span class="th-icon"><Icon name="list" :size="14" /></span> 状态</th>
-                  <th v-if="columnVisible.notes"><span class="th-icon">[评论]</span> 备注</th>
-                  <th><span class="th-icon">[操作]</span> 操作</th>
+                  <th v-if="columnVisible.notes"><span class="th-icon"><Icon name="messageSquare" :size="14" /></span> 备注</th>
+                  <th>操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -126,15 +126,20 @@
                   <td v-if="columnVisible.status"><span class="status-badge" :class="'status-' + q.status">{{ statusLabels[q.status] || q.status }}</span></td>
                   <td v-if="columnVisible.notes">{{ q.notes || '-' }}</td>
                   <td class="cell-actions">
-                    <button class="btn btn-sm btn-outline" @click="openEditModal(q)"><Icon name="edit" :size="14" /> 编辑</button>
-                    <button class="btn btn-sm btn-outline" @click="handleDuplicate(q)"><Icon name="list" :size="14" /> 复制</button>
-                    <button class="btn btn-sm btn-outline" @click="openQuoteLetter(q)"><Icon name="eye" :size="14" /> 预览</button>
-                    <button class="btn btn-sm btn-outline" @click="sendQuoteByEmail(q)">[邮件] 邮件</button>
-                    <button class="btn btn-sm btn-outline" @click="openFollowUpModal(q)">[电话] 电话</button>
+                    <button class="btn btn-sm btn-icon" title="编辑" @click="openEditModal(q)"><Icon name="edit" :size="14" /></button>
+                    <button class="btn btn-sm btn-icon" title="预览" @click="openQuoteLetter(q)"><Icon name="eye" :size="14" /></button>
                     <button v-if="canApprove && canApproveQ(q)" class="btn btn-sm btn-primary" @click="handleApprove(q)"><Icon name="checkCircle" :size="14" /> 确认</button>
                     <button v-if="q.status === 'approved' || q.status === 'accepted'" class="btn btn-sm btn-outline" @click="convertToDelivery(q)"><Icon name="truck" :size="14" /> 送货</button>
                     <button v-if="q.status === 'approved' || q.status === 'accepted'" class="btn btn-sm btn-outline" @click="convertToContract(q)"><Icon name="file" :size="14" /> 合同</button>
-                    <button class="btn btn-sm btn-outline" @click="openVersionModal(q)"><Icon name="refresh" :size="14" /> 版本</button>
+                    <div class="action-more-wrapper">
+                      <button class="btn btn-sm btn-icon" title="更多操作" @click="toggleActionMenu(q.id)"><Icon name="moreHorizontal" :size="14" /></button>
+                      <div v-if="activeActionMenu === q.id" class="action-more-dropdown">
+                        <button class="action-more-item" @click="handleDuplicate(q); closeActionMenu()"><Icon name="copy" :size="14" /> 复制</button>
+                        <button class="action-more-item" @click="sendQuoteByEmail(q); closeActionMenu()"><Icon name="mail" :size="14" /> 邮件</button>
+                        <button class="action-more-item" @click="openFollowUpModal(q); closeActionMenu()"><Icon name="phone" :size="14" /> 电话</button>
+                        <button class="action-more-item" @click="openVersionModal(q); closeActionMenu()"><Icon name="refresh" :size="14" /> 版本</button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -159,9 +164,9 @@
             <div class="list-item-avatar" :style="{ background: statusColors[q.status] || '#94a3b8' }">{{ (q.quoteNo || '?').slice(-3) }}</div>
             <div class="list-item-main">
               <div class="list-item-row1">
-                <strong class="list-item-name"><Icon name="checkCircle" :size="14" /> {{ q.quoteNo }}</strong>
+                <strong class="list-item-name"><Icon name="hash" :size="14" /> {{ q.quoteNo }}</strong>
                 <span class="status-badge" :class="'status-' + q.status">{{ statusLabels[q.status] || q.status }}</span>
-                <span class="mono" :class="profitClass(q.profitMargin)"><Icon name="chevronDown" :size="14" /> {{ q.profitMargin || 0 }}%</span>
+                <span class="mono" :class="profitClass(q.profitMargin)"><Icon name="percent" :size="14" /> {{ q.profitMargin || 0 }}%</span>
               </div>
               <div class="list-item-row2">
                 <span><Icon name="building" :size="14" /> {{ q.customerName }}</span>
@@ -169,8 +174,8 @@
                 <span v-if="q.expiryDate"><Icon name="bell" :size="14" /> 到期 {{ q.expiryDate }}</span>
               </div>
               <div class="list-item-row3">
-                <span class="mono"><Icon name="dollar" :size="14" /> ¥{{ formatNumber(q.total) }}</span>
-                <span v-if="q.notes" class="text-muted">[评论] {{ q.notes }}</span>
+                <span class="mono"><Icon name="dollarSign" :size="14" /> ¥{{ formatNumber(q.total) }}</span>
+                <span v-if="q.notes" class="text-muted"><Icon name="messageSquare" :size="14" /> {{ q.notes }}</span>
               </div>
             </div>
             <div class="list-item-actions" @click.stop>
@@ -186,13 +191,13 @@
         <div v-if="filteredQuotations.length === 0" class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon"><Icon name="empty" :size="24" /></div>暂无报价数据</div>
         <div v-for="q in filteredQuotations" :key="q.id" class="quote-card" :class="'card-status-' + q.status">
           <div class="quote-card-header">
-            <strong class="mono"><Icon name="checkCircle" :size="14" /> {{ q.quoteNo }}</strong>
+            <strong class="mono"><Icon name="hash" :size="14" /> {{ q.quoteNo }}</strong>
             <span class="status-badge" :class="'status-' + q.status">{{ statusLabels[q.status] || q.status }}</span>
           </div>
           <div class="quote-card-body">
             <div class="quote-card-field"><span class="field-label"><Icon name="building" :size="14" /> 客户</span><span>{{ q.customerName }}</span></div>
-            <div class="quote-card-field"><span class="field-label"><Icon name="dollar" :size="14" /> 金额</span><span class="mono">¥{{ formatNumber(q.total) }}</span></div>
-            <div class="quote-card-field"><span class="field-label"><Icon name="chevronDown" :size="14" /> 利润率</span><span class="mono" :class="profitClass(q.profitMargin)">{{ q.profitMargin || 0 }}%</span></div>
+            <div class="quote-card-field"><span class="field-label"><Icon name="dollarSign" :size="14" /> 金额</span><span class="mono">¥{{ formatNumber(q.total) }}</span></div>
+            <div class="quote-card-field"><span class="field-label"><Icon name="percent" :size="14" /> 利润率</span><span class="mono" :class="profitClass(q.profitMargin)">{{ q.profitMargin || 0 }}%</span></div>
             <div class="quote-card-field"><span class="field-label"><Icon name="bell" :size="14" /> 到期日</span><span>{{ q.expiryDate || '-' }}</span></div>
           </div>
           <div class="quote-card-footer">
@@ -568,6 +573,14 @@ function toggleSort(field) {
 
 const showFollowUpModal = ref(false)
 const followUpQuote = ref(null)
+const activeActionMenu = ref(null)
+
+function toggleActionMenu(id) {
+  activeActionMenu.value = activeActionMenu.value === id ? null : id
+}
+function closeActionMenu() {
+  activeActionMenu.value = null
+}
 
 function openFollowUpModal(q) {
   followUpQuote.value = q
@@ -604,6 +617,8 @@ watch([searchText, filterStatus], () => { currentPage.value = 1 })
 function closeColumnConfigOnClick(e) {
   const wrapper = e.target.closest('.column-config-wrapper')
   if (!wrapper && showColumnConfig.value) closeColumnConfig()
+  const actionWrapper = e.target.closest('.action-more-wrapper')
+  if (!actionWrapper && activeActionMenu.value) closeActionMenu()
 }
 
 onMounted(() => {
@@ -646,12 +661,12 @@ onUnmounted(() => {
 .stats-ring-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: var(--space-1); }
 .stats-items { display: flex; gap: var(--space-4); flex: 1; flex-wrap: wrap; }
 .stat-item { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); }
-.stat-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
-.stat-dot.total { background: var(--color-accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3); }
-.stat-dot.draft { background: var(--color-text-tertiary); }
-.stat-dot.pending { background: var(--color-warning); box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); animation: pendingPulse 2s ease-in-out infinite; }
-.stat-dot.approved { background: var(--color-accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3); }
-.stat-dot.accepted { background: var(--color-success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.3); }
+.stat-icon { flex-shrink: 0; }
+.stat-icon.total { color: var(--color-accent); }
+.stat-icon.draft { color: var(--color-text-tertiary); }
+.stat-icon.pending { color: var(--color-warning); animation: pendingPulse 2s ease-in-out infinite; }
+.stat-icon.approved { color: var(--color-accent); }
+.stat-icon.accepted { color: var(--color-success); }
 @keyframes pendingPulse { 0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); } }
 .stat-num { font-weight: 700; font-family: var(--font-mono); font-size: var(--font-size-base); color: var(--color-text-primary); }
 .stat-label { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
@@ -676,7 +691,11 @@ onUnmounted(() => {
 .text-danger { color: var(--color-danger, #ef4444); }
 .text-accent { color: var(--color-accent); }
 .text-muted { color: var(--color-text-tertiary); }
-.cell-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.cell-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; align-items: center; }
+.action-more-wrapper { position: relative; display: inline-flex; }
+.action-more-dropdown { position: absolute; top: 100%; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1) 0; z-index: var(--z-dropdown, 100); min-width: 140px; box-shadow: var(--shadow-lg); margin-top: var(--space-1); }
+.action-more-item { display: flex; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2) var(--space-3); border: none; background: none; color: var(--color-text-primary); font-size: var(--font-size-sm); cursor: pointer; text-align: left; white-space: nowrap; }
+.action-more-item:hover { background: var(--color-bg-secondary); }
 .empty-state { text-align: center; padding: var(--space-10); color: var(--color-text-tertiary); }
 .empty-state-icon { width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-3); color: var(--color-text-tertiary); font-size: 24px; }
 .pagination-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); }
@@ -712,6 +731,7 @@ onUnmounted(() => {
 .btn-ghost { border-color: transparent; background: transparent; }
 .btn-ghost:hover { background: var(--color-bg-secondary); }
 .btn-sm { padding: var(--space-1) var(--space-3); font-size: var(--font-size-xs); }
+.btn-icon { padding: var(--space-1); min-width: 28px; display: inline-flex; align-items: center; justify-content: center; }
 .btn-outline { background: var(--color-surface); color: var(--color-text-primary); border-color: var(--color-border); }
 .btn-outline:hover { background: var(--color-bg-secondary); }
 th.sortable { cursor: pointer; user-select: none; }
