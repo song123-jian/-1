@@ -123,12 +123,6 @@ async function init(url, anonKey, options = {}) {
       autoSubscribeTables(options.onRealtimeChange)
     }
 
-    // 监听客户端连接状态变化，自动触发重连
-    _client.on('connected', () => {
-      console.info('[Supabase] 实时连接已建立')
-      _reconnectAttempt = 0
-    })
-
     return _client
   } catch (e) {
     console.error('[Supabase] 初始化失败:', e)
