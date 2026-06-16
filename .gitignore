@@ -6,7 +6,17 @@ dist/
 .env.*
 !.env.example
 
-# 临时文件和修复脚本
+# 测试文件
+src/__tests__/
+
+# 临时文件和导出包
+*.tar.gz
+*.bak
+*.tmp
+*.log
+*.swp
+*.cache
+Thumbs.db
 1.txt
 211.txt
 _update_topbar.js
@@ -17,3 +27,4 @@ dpERP版本02.html
 scripts/
 _fix_script.ps1
 dpERP-vue/
+zh4_export.tar.gz
