@@ -311,7 +311,9 @@ export const useWorkflowStore = defineStore('workflow', () => {
     const timeoutList = workflowEngine.checkTimeout(instances.value)
     if (timeoutList.length > 0) {
       for (const item of timeoutList) {
-        console.warn(`[Workflow] 审批超时: ${item.templateName} - ${item.currentApprover} 已超时 ${item.hoursOverdue} 小时`)
+        console.warn(
+          `[Workflow] 审批超时: ${item.templateName} - ${item.currentApprover} 已超时 ${item.hoursOverdue} 小时`
+        )
       }
     }
     return timeoutList

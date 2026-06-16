@@ -107,17 +107,40 @@ function closeMobileMenu() {
   mobileMenuOpen.value = false
 }
 
+/* 定期检查连接状态，断线时自动重连 */
+let _reconnectInterval = null
+function startConnectionMonitor() {
+  if (_reconnectInterval) return
+  _reconnectInterval = setInterval(async () => {
+    const { SupabaseClient } = await import('@/lib/supabase.js')
+    const { useSupabaseStore } = await import('@/stores/supabase.js')
+    const sbStore = useSupabaseStore()
+
+    if (!SupabaseClient.isConnected() && sbStore.url.value) {
+      console.warn('[App] 检测到连接断开，尝试自动重连...')
+      const connected = await sbStore.autoConnect()
+      if (connected) {
+        console.info('[App] 自动重连成功')
+        /* 显示 Toast 通知 */
+        if (toastRef.value) {
+          toastRef.value.show('云端同步已恢复', 'success')
+        }
+      }
+    }
+  }, 30000) // 每30秒检查一次
+}
+
 /* 初始化主题系统 */
 function initTheme() {
   try {
     themeStore.init()
   } catch (e) {
     console.error('[App] 主题初始化失败:', e)
-}
+  }
 }
 /* 将主题属性同步到 <html> 元素 */
 function syncThemeToHtml() {
-const html = document.documentElement
+  const html = document.documentElement
   html.setAttribute('data-mode', themeStore.currentMode)
   html.setAttribute('data-theme', themeStore.currentTheme)
   html.setAttribute('data-preset', themeStore.currentPreset)
@@ -151,20 +174,27 @@ onMounted(async () => {
     if (isIE) {
       const app = document.getElementById('app')
       if (app) {
-        app.innerHTML = '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1f36;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Microsoft YaHei,sans-serif;z-index:99999"><div style="text-align:center;max-width:520px;padding:40px"><div style="font-size:64px;margin-bottom:20px">&#9888;</div><h2 style="font-size:24px;margin:0 0 12px;font-weight:normal">浏览器不兼容</h2><p style="font-size:14px;color:#a0aec0;line-height:1.8;margin:0 0 24px">冠久ERP使用了现代Web技术，Internet Explorer 浏览器无法正常运行。<br>请使用以下现代浏览器访问系统：</p><div style="text-align:center"><a href="https://www.google.cn/chrome/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Chrome 浏览器</a><a href="https://www.microsoft.com/edge" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Microsoft Edge</a><a href="https://www.firefox.com.cn/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Firefox 浏览器</a></div></div></div>'
+        app.innerHTML =
+          '<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#1a1f36;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Microsoft YaHei,sans-serif;z-index:99999"><div style="text-align:center;max-width:520px;padding:40px"><div style="font-size:64px;margin-bottom:20px">&#9888;</div><h2 style="font-size:24px;margin:0 0 12px;font-weight:normal">浏览器不兼容</h2><p style="font-size:14px;color:#a0aec0;line-height:1.8;margin:0 0 24px">冠久ERP使用了现代Web技术，Internet Explorer 浏览器无法正常运行。<br>请使用以下现代浏览器访问系统：</p><div style="text-align:center"><a href="https://www.google.cn/chrome/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Chrome 浏览器</a><a href="https://www.microsoft.com/edge" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Microsoft Edge</a><a href="https://www.firefox.com.cn/" target="_blank" style="display:inline-block;padding:12px 20px;margin:4px;background:#2d3748;border-radius:8px;color:#e2e8f0;font-size:13px;text-decoration:none">Firefox 浏览器</a></div></div></div>'
       }
       return
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
 
   /* 隐藏加载指示器 */
   try {
     const loading = document.getElementById('app-loading')
     if (loading) {
       loading.style.opacity = '0'
-      setTimeout(() => { loading.remove() }, 300)
+      setTimeout(() => {
+        loading.remove()
+      }, 300)
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
 
   /* 初始化主题系统 */
   try {
@@ -230,6 +260,27 @@ onMounted(async () => {
   } catch (e) {
     console.error('[App] Supabase订阅失败:', e)
   }
+
+  /* 自动恢复 Supabase 连接 */
+  try {
+    const { useSupabaseStore } = await import('@/stores/supabase.js')
+    const sbStore = useSupabaseStore()
+    const connected = await sbStore.autoConnect()
+    if (connected) {
+      console.info('[App] Supabase 自动连接成功')
+      /* 连接成功后启动自动同步 */
+      const { useSyncEngine } = await import('@/utils/syncEngine.js')
+      const syncEngine = useSyncEngine()
+      syncEngine.initAutoSync()
+    } else {
+      console.info('[App] Supabase 无保存的配置，跳过自动连接')
+    }
+  } catch (e) {
+    console.warn('[App] Supabase 自动连接异常:', e.message)
+  }
+
+  /* 启动连接状态监控 */
+  startConnectionMonitor()
 })
 
 /* 应用卸载时清理 */
@@ -238,6 +289,10 @@ onUnmounted(() => {
   syncEngine.stopAutoSync()
   autoSave.destroy()
   responsive.destroy()
+  if (_reconnectInterval) {
+    clearInterval(_reconnectInterval)
+    _reconnectInterval = null
+  }
   try {
     sessionStore.unsubscribePresence?.()
   } catch (e) {
@@ -311,10 +366,14 @@ onUnmounted(() => {
 }
 
 .fade-up-enter-active {
-  transition: opacity 250ms ease, transform 250ms ease;
+  transition:
+    opacity 250ms ease,
+    transform 250ms ease;
 }
 .fade-up-leave-active {
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
 }
 .fade-up-enter-from {
   opacity: 0;

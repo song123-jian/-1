@@ -43,9 +43,13 @@
 
         <div v-else class="global-search-hint">
           <div class="global-search-hint-row">
-            <kbd>↑</kbd><kbd>↓</kbd> 导航
-            <kbd>Enter</kbd> 选择
-            <kbd>Esc</kbd> 关闭
+            <kbd>↑</kbd>
+            <kbd>↓</kbd>
+            导航
+            <kbd>Enter</kbd>
+            选择
+            <kbd>Esc</kbd>
+            关闭
           </div>
         </div>
       </div>
@@ -159,11 +163,10 @@ const SEARCH_MODULES = [
 /* 模糊匹配 */
 function fuzzyMatch(item, keyword) {
   const q = keyword.toLowerCase()
-  return SEARCH_MODULES.find(m => m.key === item._moduleKey)
-    ?.fields.some(field => {
-      const val = item[field]
-      return val && String(val).toLowerCase().includes(q)
-    })
+  return SEARCH_MODULES.find((m) => m.key === item._moduleKey)?.fields.some((field) => {
+    const val = item[field]
+    return val && String(val).toLowerCase().includes(q)
+  })
 }
 
 /* 分组搜索结果 */
@@ -178,14 +181,14 @@ const groupedResults = computed(() => {
     if (!data || !Array.isArray(data)) continue
 
     const matched = data
-      .filter(item => {
-        return mod.fields.some(field => {
+      .filter((item) => {
+        return mod.fields.some((field) => {
           const val = item[field]
           return val && String(val).toLowerCase().includes(q)
         })
       })
       .slice(0, 5)
-      .map(item => ({
+      .map((item) => ({
         id: `${mod.key}-${item.id}`,
         label: item[mod.labelField] || item.id,
         sub: item[mod.subField] || '',
@@ -275,13 +278,16 @@ function onKeydown(e) {
 }
 
 /* 监听 visible 变化，自动聚焦 */
-watch(() => props.visible, (val) => {
-  if (val) {
-    nextTick(() => {
-      inputRef.value?.focus()
-    })
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      nextTick(() => {
+        inputRef.value?.focus()
+      })
+    }
   }
-})
+)
 
 /* 监听搜索结果变化，重置 activeIndex */
 watch(groupedResults, () => {

@@ -30,7 +30,8 @@ const STORE_IMPORTS = {
   statement: () => import('@/modules/finance/stores/statement').then((m) => m.useStatementStore()),
   supplier: () => import('@/modules/purchase/stores/supplier').then((m) => m.useSupplierStore()),
   warehouse: () => import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
-  warehouseLocation: () => import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
+  warehouseLocation: () =>
+    import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
   cost: () => import('@/modules/finance/stores/cost').then((m) => m.useCostStore()),
   todo: () => import('@/stores/todo').then((m) => m.useTodoStore()),
   purchase: () => import('@/modules/purchase/stores/purchase').then((m) => m.usePurchaseStore()),
@@ -769,8 +770,8 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       if (!store || !store[dataKey]) continue
 
       /* 合并策略：服务器数据优先，本地新增保留 */
-      const serverIds = new Set(data.map(d => d.id))
-      const localOnly = store[dataKey].filter(item => !serverIds.has(item.id))
+      const serverIds = new Set(data.map((d) => d.id))
+      const localOnly = store[dataKey].filter((item) => !serverIds.has(item.id))
       store[dataKey] = [...data, ...localOnly]
 
       console.info(`[DataCenter] 合并 ${resource}: 远端${data.length}条 + 本地独有${localOnly.length}条`)
@@ -788,7 +789,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         const module = TABLE_TO_MODULE[tableName] || tableName
         const store = _stores.value[module]
         const dataKey = DATA_KEY_MAP[module]
-        if (store && store[dataKey] && !store[dataKey].find(i => i.id === record.id)) {
+        if (store && store[dataKey] && !store[dataKey].find((i) => i.id === record.id)) {
           store[dataKey].push(record)
         }
       },
@@ -797,7 +798,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         const store = _stores.value[module]
         const dataKey = DATA_KEY_MAP[module]
         if (store && store[dataKey]) {
-          const idx = store[dataKey].findIndex(i => i.id === record.id)
+          const idx = store[dataKey].findIndex((i) => i.id === record.id)
           if (idx !== -1) store[dataKey][idx] = record
         }
       },
@@ -806,7 +807,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         const store = _stores.value[module]
         const dataKey = DATA_KEY_MAP[module]
         if (store && store[dataKey]) {
-          store[dataKey] = store[dataKey].filter(i => i.id !== oldRecord.id)
+          store[dataKey] = store[dataKey].filter((i) => i.id !== oldRecord.id)
         }
       }
     })

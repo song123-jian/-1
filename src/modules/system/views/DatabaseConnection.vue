@@ -13,46 +13,77 @@
     </div>
 
     <!-- 连接状态卡片 -->
-    <div class="panel-card" style="margin-bottom:var(--space-6)">
+    <div class="panel-card" style="margin-bottom: var(--space-6)">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="setting" :size="14" /> 连接配置</span>
-        <span v-if="sbStore.isConnected" style="color:var(--color-success);font-size:var(--font-size-sm)">{{ sbStore.connectionSummary }}</span>
+        <span class="panel-card-title">
+          <Icon name="setting" :size="14" />
+          连接配置
+        </span>
+        <span v-if="sbStore.isConnected" style="color: var(--color-success); font-size: var(--font-size-sm)">
+          {{ sbStore.connectionSummary }}
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label">Project URL</label>
             <input
+              v-model="sbStore.url"
               type="url"
               class="form-input"
-              v-model="sbStore.url"
               placeholder="https://xxxxx.supabase.co"
               :disabled="sbStore.connected"
             />
-            <div class="form-hint">在 Supabase 项目设置 <Icon name="chevronRight" :size="14" /> API <Icon name="chevronRight" :size="14" /> Project URL 中获取</div>
+            <div class="form-hint">
+              在 Supabase 项目设置
+              <Icon name="chevronRight" :size="14" />
+              API
+              <Icon name="chevronRight" :size="14" />
+              Project URL 中获取
+            </div>
           </div>
           <div class="form-group">
             <label class="form-label">Anon Public Key</label>
             <input
+              v-model="sbStore.anonKey"
               type="password"
               class="form-input"
-              v-model="sbStore.anonKey"
               placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
               :disabled="sbStore.connected"
             />
-            <div class="form-hint">在 Supabase 项目设置 <Icon name="chevronRight" :size="14" /> API <Icon name="chevronRight" :size="14" /> anon public 中获取</div>
+            <div class="form-hint">
+              在 Supabase 项目设置
+              <Icon name="chevronRight" :size="14" />
+              API
+              <Icon name="chevronRight" :size="14" />
+              anon public 中获取
+            </div>
           </div>
         </div>
 
         <div class="form-actions">
           <template v-if="!sbStore.connected">
-            <button class="btn btn-outline" @click="handleTest" :disabled="sbStore.testing || !sbStore.url || !sbStore.anonKey">
+            <button
+              class="btn btn-outline"
+              :disabled="sbStore.testing || !sbStore.url || !sbStore.anonKey"
+              @click="handleTest"
+            >
               <template v-if="sbStore.testing">测试中...</template>
-              <template v-else><Icon name="search" :size="14" /> 测试连接</template>
+              <template v-else>
+                <Icon name="search" :size="14" />
+                测试连接
+              </template>
             </button>
-            <button class="btn btn-primary" @click="handleConnect" :disabled="sbStore.connecting || !sbStore.url || !sbStore.anonKey">
+            <button
+              class="btn btn-primary"
+              :disabled="sbStore.connecting || !sbStore.url || !sbStore.anonKey"
+              @click="handleConnect"
+            >
               <template v-if="sbStore.connecting">连接中...</template>
-              <template v-else><Icon name="link" :size="14" /> 连接</template>
+              <template v-else>
+                <Icon name="link" :size="14" />
+                连接
+              </template>
             </button>
           </template>
           <template v-else>
@@ -67,44 +98,69 @@
     </div>
 
     <!-- 数据同步面板 -->
-    <div v-if="sbStore.isConnected" class="panel-card" style="margin-bottom:var(--space-6)">
+    <div v-if="sbStore.isConnected" class="panel-card" style="margin-bottom: var(--space-6)">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="refresh" :size="14" /> 数据同步</span>
-        <span v-if="sbStore.lastSyncTime" style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">
+        <span class="panel-card-title">
+          <Icon name="refresh" :size="14" />
+          数据同步
+        </span>
+        <span v-if="sbStore.lastSyncTime" style="font-size: var(--font-size-xs); color: var(--color-text-tertiary)">
           最近同步: {{ formatTime(sbStore.lastSyncTime) }}
         </span>
       </div>
       <div class="panel-card-body">
         <div class="sync-actions">
-          <button class="btn btn-primary" @click="handlePushAll" :disabled="syncing || syncEngine.isSyncing.value">
+          <button class="btn btn-primary" :disabled="syncing || syncEngine.isSyncing.value" @click="handlePushAll">
             <template v-if="syncing || syncEngine.isSyncing.value">同步中...</template>
-            <template v-else><Icon name="download" :size="14" /> 上传本地数据到云端</template>
+            <template v-else>
+              <Icon name="download" :size="14" />
+              上传本地数据到云端
+            </template>
           </button>
-          <button class="btn btn-outline" @click="handlePullAll" :disabled="syncing || syncEngine.isSyncing.value">
+          <button class="btn btn-outline" :disabled="syncing || syncEngine.isSyncing.value" @click="handlePullAll">
             <template v-if="syncing || syncEngine.isSyncing.value">同步中...</template>
-            <template v-else><Icon name="download" :size="14" /> 从云端拉取数据</template>
+            <template v-else>
+              <Icon name="download" :size="14" />
+              从云端拉取数据
+            </template>
           </button>
-          <button class="btn btn-outline" @click="handleBidirectionalSync" :disabled="syncing || syncEngine.isSyncing.value">
-            {{ (syncing || syncEngine.isSyncing.value) ? '同步中...' : '[合并] 双向合并同步' }}
+          <button
+            class="btn btn-outline"
+            :disabled="syncing || syncEngine.isSyncing.value"
+            @click="handleBidirectionalSync"
+          >
+            {{ syncing || syncEngine.isSyncing.value ? '同步中...' : '[合并] 双向合并同步' }}
           </button>
-          <button class="btn btn-outline" @click="handleAutoSync" :disabled="!sbStore.isConnected">
+          <button class="btn btn-outline" :disabled="!sbStore.isConnected" @click="handleAutoSync">
             [自动] 启动自动同步
           </button>
-          <button class="btn btn-outline" @click="handleForceFullSync" :disabled="syncing || syncEngine.isSyncing.value">
-            <Icon name="refresh" :size="14" /> 强制全量同步
+          <button
+            class="btn btn-outline"
+            :disabled="syncing || syncEngine.isSyncing.value"
+            @click="handleForceFullSync"
+          >
+            <Icon name="refresh" :size="14" />
+            强制全量同步
           </button>
         </div>
 
-        <div class="sync-info" v-if="syncEngine.syncStats.value.lastSyncTime" style="margin-top:var(--space-3);font-size:var(--font-size-sm);color:var(--color-text-secondary)">
-          自动同步统计: 已同步 {{ syncEngine.syncStats.value.totalSynced }} 条 · 错误 {{ syncEngine.syncStats.value.totalErrors }} 个 · 最近 {{ formatTime(syncEngine.syncStats.value.lastSyncTime) }}
+        <div
+          v-if="syncEngine.syncStats.value.lastSyncTime"
+          class="sync-info"
+          style="margin-top: var(--space-3); font-size: var(--font-size-sm); color: var(--color-text-secondary)"
+        >
+          自动同步统计: 已同步 {{ syncEngine.syncStats.value.totalSynced }} 条 · 错误
+          {{ syncEngine.syncStats.value.totalErrors }} 个 · 最近
+          {{ formatTime(syncEngine.syncStats.value.lastSyncTime) }}
         </div>
 
-        <div class="sync-warning" v-if="syncing">
-          <span><Icon name="warning" :size="14" /></span> 同步进行中，请勿关闭页面...
+        <div v-if="syncing" class="sync-warning">
+          <span><Icon name="warning" :size="14" /></span>
+          同步进行中，请勿关闭页面...
         </div>
 
         <!-- 同步状态表 -->
-        <div class="table-container" style="margin-top:var(--space-4)">
+        <div class="table-container" style="margin-top: var(--space-4)">
           <table class="data-table">
             <thead>
               <tr>
@@ -116,7 +172,9 @@
             </thead>
             <tbody>
               <tr v-for="table in syncTables" :key="table.name">
-                <td><strong>{{ table.label }}</strong></td>
+                <td>
+                  <strong>{{ table.label }}</strong>
+                </td>
                 <td>{{ table.localCount }}</td>
                 <td>
                   <span class="status-badge" :class="syncBadgeClass(table.name)">
@@ -124,8 +182,20 @@
                   </span>
                 </td>
                 <td>
-                  <button class="btn btn-ghost btn-sm" @click="handlePushOne(table.name, table.dataKey)" :disabled="syncing"><Icon name="download" :size="14" /></button>
-                  <button class="btn btn-ghost btn-sm" @click="handlePullOne(table.name, table.storeRef)" :disabled="syncing"><Icon name="download" :size="14" /></button>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    :disabled="syncing"
+                    @click="handlePushOne(table.name, table.dataKey)"
+                  >
+                    <Icon name="download" :size="14" />
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    :disabled="syncing"
+                    @click="handlePullOne(table.name, table.storeRef)"
+                  >
+                    <Icon name="download" :size="14" />
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -135,9 +205,16 @@
     </div>
 
     <!-- 同步错误日志 -->
-    <div v-if="sbStore.syncErrors.length > 0" class="panel-card" style="margin-bottom:var(--space-6);border-left:3px solid var(--color-danger)">
+    <div
+      v-if="sbStore.syncErrors.length > 0"
+      class="panel-card"
+      style="margin-bottom: var(--space-6); border-left: 3px solid var(--color-danger)"
+    >
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="log" :size="14" /> 同步错误</span>
+        <span class="panel-card-title">
+          <Icon name="log" :size="14" />
+          同步错误
+        </span>
         <button class="btn btn-ghost btn-sm" @click="sbStore.clearErrors()">清除</button>
       </div>
       <div class="panel-card-body">
@@ -153,7 +230,10 @@
     <!-- 建表指南 -->
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="file" :size="14" /> 快速入门指南</span>
+        <span class="panel-card-title">
+          <Icon name="file" :size="14" />
+          快速入门指南
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="guide-steps">
@@ -161,7 +241,13 @@
             <div class="guide-step-num">1</div>
             <div class="guide-step-content">
               <strong>注册 Supabase</strong>
-              <p>访问 <a href="https://supabase.com" target="_blank" rel="noopener" style="color:var(--color-accent)">supabase.com</a> 注册免费账号，创建新项目</p>
+              <p>
+                访问
+                <a href="https://supabase.com" target="_blank" rel="noopener" style="color: var(--color-accent)">
+                  supabase.com
+                </a>
+                注册免费账号，创建新项目
+              </p>
             </div>
           </div>
           <div class="guide-step">
@@ -169,14 +255,21 @@
             <div class="guide-step-content">
               <strong>创建数据库表</strong>
               <p>在 Supabase SQL Editor 中执行建表语句（点击下方按钮复制）</p>
-              <button class="btn btn-outline btn-sm" @click="copySQL" style="margin-top:var(--space-2)"><Icon name="copy" :size="14" /> 复制建表SQL</button>
+              <button class="btn btn-outline btn-sm" style="margin-top: var(--space-2)" @click="copySQL">
+                <Icon name="copy" :size="14" />
+                复制建表SQL
+              </button>
             </div>
           </div>
           <div class="guide-step">
             <div class="guide-step-num">3</div>
             <div class="guide-step-content">
               <strong>获取连接信息</strong>
-              <p>在项目设置 <Icon name="chevronRight" :size="14" /> API 中复制 Project URL 和 anon public key，填入上方表单</p>
+              <p>
+                在项目设置
+                <Icon name="chevronRight" :size="14" />
+                API 中复制 Project URL 和 anon public key，填入上方表单
+              </p>
             </div>
           </div>
           <div class="guide-step">
@@ -250,7 +343,7 @@ function validateDataArray(data, tableName) {
     console.warn(`[数据校验] ${tableName}: 拉取数据不是数组，已忽略 (类型: ${typeof data})`)
     return []
   }
-  const validItems = data.filter(item => {
+  const validItems = data.filter((item) => {
     if (!item || typeof item !== 'object') {
       console.warn(`[数据校验] ${tableName}: 存在非对象记录，已过滤`)
       return false
@@ -262,25 +355,99 @@ function validateDataArray(data, tableName) {
     return true
   })
   if (validItems.length !== data.length) {
-    console.warn(`[数据校验] ${tableName}: 原始 ${data.length} 条，有效 ${validItems.length} 条，过滤 ${data.length - validItems.length} 条`)
+    console.warn(
+      `[数据校验] ${tableName}: 原始 ${data.length} 条，有效 ${validItems.length} 条，过滤 ${data.length - validItems.length} 条`
+    )
   }
   return validItems
 }
 
 const syncTables = computed(() => [
-  { name: 'customers', label: '客户管理', localCount: customerStore.customers.length, dataKey: 'customers', storeRef: customerStore },
-  { name: 'quotations', label: '报价管理', localCount: quotationStore.quotations.length, dataKey: 'quotations', storeRef: quotationStore },
-  { name: 'contracts', label: '合同管理', localCount: contractStore.contracts.length, dataKey: 'contracts', storeRef: contractStore },
-  { name: 'inventory', label: '库存数据', localCount: inventoryStore.enrichedInventory.length, dataKey: 'enrichedInventory', storeRef: inventoryStore },
-  { name: 'inbound_orders', label: '入库单', localCount: inventoryStore.inboundOrders.length, dataKey: 'inboundOrders', storeRef: inventoryStore },
-  { name: 'outbound_orders', label: '出库单', localCount: inventoryStore.outboundOrders.length, dataKey: 'outboundOrders', storeRef: inventoryStore },
-  { name: 'deliveries', label: '送货单', localCount: deliveryStore.deliveries.length, dataKey: 'deliveries', storeRef: deliveryStore },
-  { name: 'collections', label: '回款记录', localCount: collectionStore.collections.length, dataKey: 'collections', storeRef: collectionStore },
-  { name: 'statements', label: '对账单', localCount: statementStore.statements.length, dataKey: 'statements', storeRef: statementStore },
+  {
+    name: 'customers',
+    label: '客户管理',
+    localCount: customerStore.customers.length,
+    dataKey: 'customers',
+    storeRef: customerStore
+  },
+  {
+    name: 'quotations',
+    label: '报价管理',
+    localCount: quotationStore.quotations.length,
+    dataKey: 'quotations',
+    storeRef: quotationStore
+  },
+  {
+    name: 'contracts',
+    label: '合同管理',
+    localCount: contractStore.contracts.length,
+    dataKey: 'contracts',
+    storeRef: contractStore
+  },
+  {
+    name: 'inventory',
+    label: '库存数据',
+    localCount: inventoryStore.enrichedInventory.length,
+    dataKey: 'enrichedInventory',
+    storeRef: inventoryStore
+  },
+  {
+    name: 'inbound_orders',
+    label: '入库单',
+    localCount: inventoryStore.inboundOrders.length,
+    dataKey: 'inboundOrders',
+    storeRef: inventoryStore
+  },
+  {
+    name: 'outbound_orders',
+    label: '出库单',
+    localCount: inventoryStore.outboundOrders.length,
+    dataKey: 'outboundOrders',
+    storeRef: inventoryStore
+  },
+  {
+    name: 'deliveries',
+    label: '送货单',
+    localCount: deliveryStore.deliveries.length,
+    dataKey: 'deliveries',
+    storeRef: deliveryStore
+  },
+  {
+    name: 'collections',
+    label: '回款记录',
+    localCount: collectionStore.collections.length,
+    dataKey: 'collections',
+    storeRef: collectionStore
+  },
+  {
+    name: 'statements',
+    label: '对账单',
+    localCount: statementStore.statements.length,
+    dataKey: 'statements',
+    storeRef: statementStore
+  },
   { name: 'todos', label: '待办事项', localCount: todoStore.todos.length, dataKey: 'todos', storeRef: todoStore },
-  { name: 'cost_records', label: '成本核算', localCount: costStore.records.length, dataKey: 'records', storeRef: costStore },
-  { name: 'warehouse_locations', label: '仓位管理', localCount: warehouseLocationStore.locations.length, dataKey: 'locations', storeRef: warehouseLocationStore },
-  { name: 'suppliers', label: '供应商管理', localCount: supplierStore.suppliers.length, dataKey: 'suppliers', storeRef: supplierStore }
+  {
+    name: 'cost_records',
+    label: '成本核算',
+    localCount: costStore.records.length,
+    dataKey: 'records',
+    storeRef: costStore
+  },
+  {
+    name: 'warehouse_locations',
+    label: '仓位管理',
+    localCount: warehouseLocationStore.locations.length,
+    dataKey: 'locations',
+    storeRef: warehouseLocationStore
+  },
+  {
+    name: 'suppliers',
+    label: '供应商管理',
+    localCount: supplierStore.suppliers.length,
+    dataKey: 'suppliers',
+    storeRef: supplierStore
+  }
 ])
 
 function syncBadgeClass(name) {
@@ -317,14 +484,31 @@ async function handleConnect() {
 }
 
 async function handleDisconnect() {
-  const ok = await confirm.show({ title: '断开连接', message: '断开连接后，数据将仅保存在本地浏览器中。确定断开？', danger: true })
+  const ok = await confirm.show({
+    title: '断开连接',
+    message: '断开连接后，数据将仅保存在本地浏览器中。确定断开？',
+    danger: true
+  })
   if (ok) {
     sbStore.disconnect()
   }
 }
 
 function subscribeAllTables() {
-  const tables = ['customers', 'quotations', 'contracts', 'inventory', 'inbound_orders', 'outbound_orders', 'deliveries', 'collections', 'statements', 'todos', 'cost_records', 'warehouse_locations']
+  const tables = [
+    'customers',
+    'quotations',
+    'contracts',
+    'inventory',
+    'inbound_orders',
+    'outbound_orders',
+    'deliveries',
+    'collections',
+    'statements',
+    'todos',
+    'cost_records',
+    'warehouse_locations'
+  ]
   const storeMap = {
     customers: { store: customerStore, dataKey: 'customers' },
     quotations: { store: quotationStore, dataKey: 'quotations' },
@@ -348,7 +532,7 @@ function subscribeAllTables() {
       onInsert: (row) => {
         if (!row || !row.id) return
         const data = config.store[config.dataKey]
-        if (Array.isArray(data) && !data.some(item => item.id === row.id)) {
+        if (Array.isArray(data) && !data.some((item) => item.id === row.id)) {
           data.push(row)
           console.info(`[Realtime] ${t} 新增同步到Store:`, row.id)
         }
@@ -357,7 +541,7 @@ function subscribeAllTables() {
         if (!row || !row.id) return
         const data = config.store[config.dataKey]
         if (Array.isArray(data)) {
-          const idx = data.findIndex(item => item.id === row.id)
+          const idx = data.findIndex((item) => item.id === row.id)
           if (idx !== -1) {
             data[idx] = row
             console.info(`[Realtime] ${t} 更新同步到Store:`, row.id)
@@ -368,7 +552,7 @@ function subscribeAllTables() {
         if (!old || !old.id) return
         const data = config.store[config.dataKey]
         if (Array.isArray(data)) {
-          const filtered = data.filter(item => item.id !== old.id)
+          const filtered = data.filter((item) => item.id !== old.id)
           if (filtered.length !== data.length) {
             // 使用 replaceData 方法触发响应式更新和持久化
             if (config.replaceMethod && config.store[config.replaceMethod]) {
@@ -407,7 +591,11 @@ async function handlePushAll() {
 }
 
 async function handlePullAll() {
-  const ok = await confirm.show({ title: '拉取数据', message: '从云端拉取数据将覆盖本地数据，确定继续？', danger: true })
+  const ok = await confirm.show({
+    title: '拉取数据',
+    message: '从云端拉取数据将覆盖本地数据，确定继续？',
+    danger: true
+  })
   if (!ok) return
   syncing.value = true
   try {
@@ -424,7 +612,8 @@ async function handlePullAll() {
     if (data.statements) statementStore.replaceData(validateDataArray(data.statements, 'statements'))
     if (data.todos) todoStore.replaceData(validateDataArray(data.todos, 'todos'))
     if (data.cost_records) costStore.replaceData(validateDataArray(data.cost_records, 'cost_records'))
-    if (data.warehouse_locations) warehouseLocationStore.replaceData(validateDataArray(data.warehouse_locations, 'warehouse_locations'))
+    if (data.warehouse_locations)
+      warehouseLocationStore.replaceData(validateDataArray(data.warehouse_locations, 'warehouse_locations'))
   } finally {
     syncing.value = false
   }
@@ -442,19 +631,63 @@ async function handleBidirectionalSync() {
 
     // 定义表与本地数据/替换方法的映射
     const tableConfigs = [
-      { name: 'customers', localData: customerStore.customers, replaceFn: (merged) => customerStore.replaceData(merged) },
-      { name: 'quotations', localData: quotationStore.quotations, replaceFn: (merged) => quotationStore.replaceData(merged) },
-      { name: 'contracts', localData: contractStore.contracts, replaceFn: (merged) => contractStore.replaceData(merged) },
-      { name: 'inventory', localData: inventoryStore.inventory, replaceFn: (merged) => inventoryStore.replaceData(merged) },
-      { name: 'inbound_orders', localData: inventoryStore.inboundOrders, replaceFn: (merged) => inventoryStore.replaceInbound(merged) },
-      { name: 'outbound_orders', localData: inventoryStore.outboundOrders, replaceFn: (merged) => inventoryStore.replaceOutbound(merged) },
-      { name: 'deliveries', localData: deliveryStore.deliveries, replaceFn: (merged) => deliveryStore.replaceData(merged) },
-      { name: 'collections', localData: collectionStore.collections, replaceFn: (merged) => collectionStore.replaceData(merged) },
-      { name: 'statements', localData: statementStore.statements, replaceFn: (merged) => statementStore.replaceData(merged) },
+      {
+        name: 'customers',
+        localData: customerStore.customers,
+        replaceFn: (merged) => customerStore.replaceData(merged)
+      },
+      {
+        name: 'quotations',
+        localData: quotationStore.quotations,
+        replaceFn: (merged) => quotationStore.replaceData(merged)
+      },
+      {
+        name: 'contracts',
+        localData: contractStore.contracts,
+        replaceFn: (merged) => contractStore.replaceData(merged)
+      },
+      {
+        name: 'inventory',
+        localData: inventoryStore.inventory,
+        replaceFn: (merged) => inventoryStore.replaceData(merged)
+      },
+      {
+        name: 'inbound_orders',
+        localData: inventoryStore.inboundOrders,
+        replaceFn: (merged) => inventoryStore.replaceInbound(merged)
+      },
+      {
+        name: 'outbound_orders',
+        localData: inventoryStore.outboundOrders,
+        replaceFn: (merged) => inventoryStore.replaceOutbound(merged)
+      },
+      {
+        name: 'deliveries',
+        localData: deliveryStore.deliveries,
+        replaceFn: (merged) => deliveryStore.replaceData(merged)
+      },
+      {
+        name: 'collections',
+        localData: collectionStore.collections,
+        replaceFn: (merged) => collectionStore.replaceData(merged)
+      },
+      {
+        name: 'statements',
+        localData: statementStore.statements,
+        replaceFn: (merged) => statementStore.replaceData(merged)
+      },
       { name: 'todos', localData: todoStore.todos, replaceFn: (merged) => todoStore.replaceData(merged) },
       { name: 'cost_records', localData: costStore.records, replaceFn: (merged) => costStore.replaceData(merged) },
-      { name: 'warehouse_locations', localData: warehouseLocationStore.locations, replaceFn: (merged) => warehouseLocationStore.replaceData(merged) },
-      { name: 'suppliers', localData: supplierStore.suppliers, replaceFn: (merged) => supplierStore.replaceData(merged) }
+      {
+        name: 'warehouse_locations',
+        localData: warehouseLocationStore.locations,
+        replaceFn: (merged) => warehouseLocationStore.replaceData(merged)
+      },
+      {
+        name: 'suppliers',
+        localData: supplierStore.suppliers,
+        replaceFn: (merged) => supplierStore.replaceData(merged)
+      }
     ]
 
     for (const config of tableConfigs) {
@@ -712,7 +945,9 @@ async function copySQL() {
   try {
     await navigator.clipboard.writeText(INIT_SQL)
     copySuccess.value = true
-    setTimeout(() => { copySuccess.value = false }, 2000)
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
   } catch (e) {
     // 降级方案
     const textarea = document.createElement('textarea')
@@ -722,7 +957,9 @@ async function copySQL() {
     document.execCommand('copy')
     document.body.removeChild(textarea)
     copySuccess.value = true
-    setTimeout(() => { copySuccess.value = false }, 2000)
+    setTimeout(() => {
+      copySuccess.value = false
+    }, 2000)
   }
 }
 
@@ -731,6 +968,10 @@ onMounted(async () => {
   await sbStore.autoConnect()
   if (sbStore.isConnected) {
     subscribeAllTables()
+    /* 启动自动同步引擎 */
+    const { useSyncEngine } = await import('@/utils/syncEngine.js')
+    const syncEngine = useSyncEngine()
+    syncEngine.initAutoSync()
   }
 })
 </script>
@@ -744,10 +985,14 @@ onMounted(async () => {
   gap: var(--space-4);
 }
 @media (max-width: 1024px) {
-  .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 768px) {
-  .form-grid { grid-template-columns: 1fr; }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .form-group {
   display: flex;
@@ -804,10 +1049,22 @@ onMounted(async () => {
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.status-badge.success { background: var(--color-success-subtle); color: var(--color-success); }
-.status-badge.warning { background: var(--color-warning-subtle); color: var(--color-warning); }
-.status-badge.danger { background: var(--color-danger-subtle); color: var(--color-danger); }
-.status-badge.neutral { background: var(--color-bg-tertiary); color: var(--color-text-tertiary); }
+.status-badge.success {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.status-badge.warning {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.status-badge.danger {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+.status-badge.neutral {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+}
 .error-item {
   display: flex;
   gap: var(--space-3);
@@ -815,10 +1072,22 @@ onMounted(async () => {
   border-bottom: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
 }
-.error-resource { font-weight: 600; min-width: 100px; }
-.error-action { color: var(--color-accent); min-width: 40px; }
-.error-msg { flex: 1; color: var(--color-danger); }
-.error-time { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.error-resource {
+  font-weight: 600;
+  min-width: 100px;
+}
+.error-action {
+  color: var(--color-accent);
+  min-width: 40px;
+}
+.error-msg {
+  flex: 1;
+  color: var(--color-danger);
+}
+.error-time {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
 .guide-steps {
   display: flex;
   flex-direction: column;
@@ -861,28 +1130,54 @@ onMounted(async () => {
   animation: fadeInUp 0.3s ease;
 }
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 /* ===== Keyframes ===== */
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes rowSlideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes cardFadeIn {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ===== Stat Cards ===== */
 .stat-card {
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .stat-card:hover {
   transform: translateY(-2px);
@@ -895,7 +1190,9 @@ onMounted(async () => {
 /* ===== Connection Status Card ===== */
 .status-card {
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .status-card:hover {
   transform: translateY(-2px);
@@ -904,7 +1201,9 @@ onMounted(async () => {
 
 /* ===== Sync Button ===== */
 .sync-btn {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .sync-btn:hover {
   transform: translateY(-2px);

@@ -2,7 +2,7 @@
   <header class="app-topbar" :class="{ 'no-sidebar': !hasSidebar, 'sidebar-collapsed': collapsed }">
     <div class="topbar-left">
       <!-- 汉堡菜单按钮（移动端） -->
-      <button v-if="showHamburger" class="hamburger-btn" @click="emit('toggle-menu')" title="菜单">
+      <button v-if="showHamburger" class="hamburger-btn" title="菜单" @click="emit('toggle-menu')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="3" y1="6" x2="21" y2="6" />
           <line x1="3" y1="12" x2="21" y2="12" />
@@ -15,10 +15,10 @@
       <div class="topbar-search" :class="{ 'search-collapsed': searchCollapsed }">
         <span class="search-icon"><Icon name="search" :size="14" /></span>
         <input
+          v-model="searchQuery"
           type="text"
           class="search-input"
           placeholder="搜索客户、物料、订单、报价..."
-          v-model="searchQuery"
           @focus="onSearchFocus"
           @input="onSearchInput"
           @blur="onSearchBlur"
@@ -41,9 +41,43 @@
         </div>
       </div>
       <div class="topbar-mode-toggle">
-        <button class="mode-toggle-btn" :title="themeStore.currentMode === 'dark' ? '切换到浅色模式' : '切换到深色模式'" @click="themeStore.toggleMode()">
-          <svg v-if="themeStore.currentMode === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mode-icon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mode-icon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <button
+          class="mode-toggle-btn"
+          :title="themeStore.currentMode === 'dark' ? '切换到浅色模式' : '切换到深色模式'"
+          @click="themeStore.toggleMode()"
+        >
+          <svg
+            v-if="themeStore.currentMode === 'dark'"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mode-icon"
+          >
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <svg
+            v-else
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="mode-icon"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
         </button>
       </div>
       <div class="topbar-theme-switcher">
@@ -56,7 +90,15 @@
           :title="theme.name"
           @click="themeStore.setTheme(theme.key)"
         />
-        <button v-if="themeStore.themes.length > 5" class="theme-dot theme-more" :class="{ active: showThemeMenu }" @click="showThemeMenu = !showThemeMenu" title="更多主题">+</button>
+        <button
+          v-if="themeStore.themes.length > 5"
+          class="theme-dot theme-more"
+          :class="{ active: showThemeMenu }"
+          title="更多主题"
+          @click="showThemeMenu = !showThemeMenu"
+        >
+          +
+        </button>
         <div v-if="showThemeMenu" class="theme-dropdown">
           <button
             v-for="theme in themeStore.themes"
@@ -70,28 +112,21 @@
           </button>
         </div>
       </div>
+      <!-- Supabase 连接状态指示器 -->
+      <div
+        class="topbar-connection"
+        :class="{ connected: sbStore.isConnected }"
+        :title="sbStore.isConnected ? '云端同步已连接' : '云端同步未连接'"
+        @click="$router.push('/system/database')"
+      >
+        <span class="connection-dot"></span>
+        <span class="connection-label">{{ sbStore.isConnected ? '已同步' : '离线' }}</span>
+      </div>
       <LanguageSwitcher />
       <NotificationBell />
-      <div class="topbar-user" @click="showRoleMenu = !showRoleMenu">
+      <div class="topbar-user">
         <div class="user-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
         <span class="user-role-name">{{ sessionStore.roleName }}</span>
-        <svg class="user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        <!-- 角色快速切换下拉菜单 -->
-        <div v-if="showRoleMenu" class="role-switch-dropdown">
-          <div class="role-dropdown-header">切换身份</div>
-          <button
-            v-for="role in sessionStore.availableRoles"
-            :key="role"
-            class="role-dropdown-item"
-            :class="{ active: sessionStore.currentRole === role }"
-            @click.stop="onSwitchRole(role)"
-          >
-            <span class="role-check">{{ sessionStore.currentRole === role ? '✓' : '' }}</span>
-            {{ role }}
-          </button>
-          <div class="role-dropdown-divider"></div>
-          <button class="role-dropdown-item role-logout" @click.stop="onLogout">退出登录</button>
-        </div>
       </div>
     </div>
   </header>
@@ -102,6 +137,7 @@ import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
+import { useSupabaseStore } from '@/stores/supabase'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useQuotationStore } from '@/modules/sales/stores/quotation'
@@ -119,6 +155,7 @@ const route = useRoute()
 const router = useRouter()
 const themeStore = useThemeStore()
 const sessionStore = useSessionStore()
+const sbStore = useSupabaseStore()
 const customerStore = useCustomerStore()
 const inventoryStore = useInventoryStore()
 const quotationStore = useQuotationStore()
@@ -126,7 +163,6 @@ const searchQuery = ref('')
 const searchCollapsed = ref(false)
 const showSearchResults = ref(false)
 const showThemeMenu = ref(false)
-const showRoleMenu = ref(false)
 let debounceTimer = null
 
 const pageTitle = computed(() => route.meta.title || '冠久ERP')
@@ -140,7 +176,7 @@ const searchResults = computed(() => {
 
   /* 搜索客户 */
   const customers = customerStore.customers || []
-  customers.forEach(c => {
+  customers.forEach((c) => {
     const name = (c.name || c.shortName || '').toLowerCase()
     if (name.includes(q)) {
       results.push({
@@ -155,7 +191,7 @@ const searchResults = computed(() => {
 
   /* 搜索物料 */
   const items = inventoryStore.inventory || []
-  items.forEach(i => {
+  items.forEach((i) => {
     const code = (i.code || '').toLowerCase()
     const name = (i.name || '').toLowerCase()
     if (code.includes(q) || name.includes(q)) {
@@ -171,7 +207,7 @@ const searchResults = computed(() => {
 
   /* 搜索报价单 */
   const quotations = quotationStore.quotations || []
-  quotations.forEach(qt => {
+  quotations.forEach((qt) => {
     const no = (qt.quotationNo || qt.quoteNo || '').toLowerCase()
     const customerName = (qt.customerName || '').toLowerCase()
     if (no.includes(q) || customerName.includes(q)) {
@@ -187,12 +223,12 @@ const searchResults = computed(() => {
 
   /* 搜索出库单 */
   const outboundOrders = inventoryStore.outboundOrders || []
-  outboundOrders.forEach(o => {
+  outboundOrders.forEach((o) => {
     const no = (o.outboundNo || o.orderNo || '').toLowerCase()
     if (no.includes(q)) {
       results.push({
         key: 'outbound_' + o.id,
-        label: (o.outboundNo || o.orderNo || ''),
+        label: o.outboundNo || o.orderNo || '',
         typeLabel: '出库单',
         icon: 'download',
         path: '/outbound'
@@ -202,7 +238,7 @@ const searchResults = computed(() => {
 
   /* 搜索入库单 */
   const inboundOrders = inventoryStore.inboundOrders || []
-  inboundOrders.forEach(o => {
+  inboundOrders.forEach((o) => {
     const no = (o.orderNo || '').toLowerCase()
     if (no.includes(q)) {
       results.push({
@@ -250,25 +286,12 @@ function onSearchResultClick(item) {
   }
 }
 
-function onSwitchRole(role) {
-  sessionStore.switchRole(role)
-  showRoleMenu.value = false
-  /* 刷新当前页面以重新加载权限相关数据 */
-  router.go(0)
-}
-
-function onLogout() {
-  sessionStore.clearSession()
-  showRoleMenu.value = false
-  router.replace('/')
-}
-
 function handleClickOutside(e) {
   if (!e.target.closest('.topbar-search')) {
     showSearchResults.value = false
   }
   if (!e.target.closest('.topbar-user')) {
-    showRoleMenu.value = false
+    showThemeMenu.value = false
   }
 }
 
@@ -279,7 +302,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
   clearTimeout(debounceTimer)
-  try { themeStore.stopAutoSwitch() } catch (e) { /* ignore */ }
+  try {
+    themeStore.stopAutoSwitch()
+  } catch (e) {
+    /* ignore */
+  }
 })
 </script>
 
@@ -365,12 +392,16 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-1) var(--space-3);
-  transition: border-color var(--transition-fast), width 200ms ease;
+  transition:
+    border-color var(--transition-fast),
+    width 200ms ease;
   position: relative;
 }
 .topbar-search:focus-within {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px var(--color-accent-subtle), 0 0 12px rgba(59, 130, 246, 0.1);
+  box-shadow:
+    0 0 0 3px var(--color-accent-subtle),
+    0 0 12px rgba(59, 130, 246, 0.1);
 }
 .search-icon {
   font-size: 14px;
@@ -439,7 +470,9 @@ onBeforeUnmount(() => {
 }
 .theme-dot.active {
   border-color: var(--color-text-primary);
-  box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 8px rgba(59, 130, 246, 0.3);
+  box-shadow:
+    0 0 0 2px var(--color-bg-primary),
+    0 0 8px rgba(59, 130, 246, 0.3);
   transform: scale(1.15);
 }
 .theme-more {
@@ -587,7 +620,7 @@ onBeforeUnmount(() => {
   margin: var(--space-1) 0;
 }
 .role-logout {
-  color: var(--color-danger, #EF4444);
+  color: var(--color-danger, #ef4444);
 }
 .role-logout:hover {
   background: rgba(239, 68, 68, 0.1);
@@ -647,7 +680,9 @@ onBeforeUnmount(() => {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-xl), 0 0 20px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    var(--shadow-xl),
+    0 0 20px rgba(0, 0, 0, 0.15);
   z-index: var(--z-popover, 9999);
   max-height: 320px;
   overflow-y: auto;
@@ -700,6 +735,44 @@ onBeforeUnmount(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* 连接状态指示器 */
+.topbar-connection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+.topbar-connection:hover {
+  background: var(--color-surface-hover);
+}
+.connection-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-tertiary);
+  transition: background var(--transition-fast);
+}
+.topbar-connection.connected .connection-dot {
+  background: var(--color-success);
+  box-shadow: 0 0 0 2px var(--color-success-subtle);
+}
+.topbar-connection.connected {
+  color: var(--color-success);
+}
+.connection-label {
+  font-weight: 500;
+}
+@media (max-width: 768px) {
+  .connection-label {
+    display: none;
   }
 }
 </style>

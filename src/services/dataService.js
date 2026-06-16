@@ -155,7 +155,7 @@ class DataService {
 
       /* 按ID查询 */
       if (options.id) {
-        const item = data.find(d => d.id === options.id)
+        const item = data.find((d) => d.id === options.id)
         if (item && options.useCache !== false) {
           dataCache.set(`${module}:item:${options.id}`, item, { namespace: 'dataService' })
         }
@@ -165,7 +165,7 @@ class DataService {
       /* 过滤 */
       if (options.filters && options.filters.length > 0) {
         for (const filter of options.filters) {
-          data = data.filter(d => {
+          data = data.filter((d) => {
             const val = d[filter.field]
             if (filter.operator === 'eq' || !filter.operator) return val === filter.value
             if (filter.operator === 'neq') return val !== filter.value
@@ -183,10 +183,8 @@ class DataService {
       /* 搜索 */
       if (options.search) {
         const keyword = options.search.toLowerCase()
-        data = data.filter(d => {
-          return Object.values(d).some(v =>
-            v && typeof v === 'string' && v.toLowerCase().includes(keyword)
-          )
+        data = data.filter((d) => {
+          return Object.values(d).some((v) => v && typeof v === 'string' && v.toLowerCase().includes(keyword))
         })
       }
 
@@ -309,7 +307,7 @@ class DataService {
 
       /* 获取旧数据（用于版本控制和事件通知） */
       const dataKey = this._getDataKey(module)
-      const oldData = store[dataKey]?.find(d => d.id === id)
+      const oldData = store[dataKey]?.find((d) => d.id === id)
       if (!oldData) return DataResult.fail(`未找到ID为 ${id} 的数据`)
 
       /* 数据验证 */
@@ -338,11 +336,17 @@ class DataService {
 
       /* 手动记录版本（如果自动版本未开启） */
       if (options.recordVersion !== false && !versionControl._config?.autoVersion) {
-        versionControl.recordVersion(module, id, oldData, { ...oldData, ...updates }, {
-          action: 'update',
-          changes,
-          user: options.user
-        })
+        versionControl.recordVersion(
+          module,
+          id,
+          oldData,
+          { ...oldData, ...updates },
+          {
+            action: 'update',
+            changes,
+            user: options.user
+          }
+        )
       }
 
       /* 发布事件 */
@@ -385,15 +389,20 @@ class DataService {
 
       /* 获取旧数据 */
       const dataKey = this._getDataKey(module)
-      const oldData = store[dataKey]?.find(d => d.id === id)
+      const oldData = store[dataKey]?.find((d) => d.id === id)
       if (!oldData) return DataResult.fail(`未找到ID为 ${id} 的数据`)
 
       /* 软删除 */
       if (options.softDelete) {
-        return this.update(module, id, { status: 'deleted', deletedAt: new Date().toISOString() }, {
-          ...options,
-          checkPermission: false
-        })
+        return this.update(
+          module,
+          id,
+          { status: 'deleted', deletedAt: new Date().toISOString() },
+          {
+            ...options,
+            checkPermission: false
+          }
+        )
       }
 
       /* 调用Store的删除方法 */
@@ -432,7 +441,10 @@ class DataService {
     const errors = []
 
     for (let i = 0; i < items.length; i++) {
-      const result = await this.create(module, items[i], { ...options, checkPermission: i === 0 ? options.checkPermission : false })
+      const result = await this.create(module, items[i], {
+        ...options,
+        checkPermission: i === 0 ? options.checkPermission : false
+      })
       if (result.success) {
         results.push(result.data)
       } else {
@@ -441,7 +453,7 @@ class DataService {
     }
 
     if (errors.length > 0 && results.length === 0) {
-      return DataResult.fail(`批量新增全部失败: ${errors.map(e => e.error).join('; ')}`)
+      return DataResult.fail(`批量新增全部失败: ${errors.map((e) => e.error).join('; ')}`)
     }
 
     return DataResult.ok({ created: results.length, failed: errors.length, errors })
@@ -524,13 +536,7 @@ class DataService {
    * @returns {DataResult} 选项数组 [{value, label, data}]
    */
   getSelectOptions(module, options = {}) {
-    const {
-      valueField = 'id',
-      labelField = 'name',
-      filters,
-      search,
-      useCache = true
-    } = options
+    const { valueField = 'id', labelField = 'name', filters, search, useCache = true } = options
 
     /* 检查缓存 */
     if (useCache) {
@@ -547,7 +553,7 @@ class DataService {
     if (!Array.isArray(items)) return DataResult.ok([])
 
     /* 转换为选项格式 */
-    const optionsList = items.map(item => ({
+    const optionsList = items.map((item) => ({
       value: item[valueField],
       label: typeof labelField === 'function' ? labelField(item) : item[labelField],
       data: item
@@ -575,7 +581,7 @@ class DataService {
     const errors = []
 
     /* 必填检查 */
-    for (const field of (rules.required || [])) {
+    for (const field of rules.required || []) {
       if (data[field] === undefined || data[field] === null || data[field] === '') {
         const fieldRule = rules.fields[field]
         errors.push(`${fieldRule?.label || field} 不能为空`)
@@ -655,7 +661,7 @@ class DataService {
       }
 
       const permKeys = actionPermMap[action]?.split(',') || []
-      const hasAny = permKeys.some(pk => permStore.getPerm(role, permModule, pk))
+      const hasAny = permKeys.some((pk) => permStore.getPerm(role, permModule, pk))
       if (!hasAny) {
         return { allowed: false, reason: `角色 ${role} 无权限执行此操作` }
       }
@@ -815,11 +821,11 @@ class DataService {
       if (!tableName) return
 
       if (action === 'upsert') {
-        API.upsertToServer(tableName, [data]).catch(e => {
+        API.upsertToServer(tableName, [data]).catch((e) => {
           console.warn(`[DataService] ${module} upsert同步失败:`, e.message)
         })
       } else if (action === 'delete') {
-        API.request('DELETE', tableName, null, { id: data.id }).catch(e => {
+        API.request('DELETE', tableName, null, { id: data.id }).catch((e) => {
           console.warn(`[DataService] ${module} delete同步失败:`, e.message)
         })
       }
@@ -837,36 +843,40 @@ class DataService {
       if (!workflowType) return
 
       /* 延迟导入避免循环依赖 */
-      import('@/utils/workflowEngine').then(({ default: workflowEngine }) => {
-        const template = workflowEngine.getTemplate(workflowType)
-        if (!template) return
+      import('@/utils/workflowEngine')
+        .then(({ default: workflowEngine }) => {
+          const template = workflowEngine.getTemplate(workflowType)
+          if (!template) return
 
-        const businessNo = data.quotationNo || data.contractNo || data.orderNo || data.id || ''
-        const amount = data.totalAmount || data.amount || data.total || 0
+          const businessNo = data.quotationNo || data.contractNo || data.orderNo || data.id || ''
+          const amount = data.totalAmount || data.amount || data.total || 0
 
-        const instance = workflowEngine.startInstance(workflowType, {
-          businessId: data.id,
-          businessType: workflowType,
-          businessNo,
-          variables: {
-            amount,
-            applicant: this._getCurrentUser(),
+          const instance = workflowEngine.startInstance(workflowType, {
+            businessId: data.id,
+            businessType: workflowType,
             businessNo,
-            ...data
+            variables: {
+              amount,
+              applicant: this._getCurrentUser(),
+              businessNo,
+              ...data
+            }
+          })
+
+          if (instance) {
+            /* 同步到workflowStore */
+            import('@/modules/system/stores/workflow')
+              .then(({ useWorkflowStore }) => {
+                const workflowStore = useWorkflowStore()
+                workflowStore.instances.unshift(instance)
+                workflowStore._persist()
+              })
+              .catch(() => {})
+
+            console.info(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
           }
         })
-
-        if (instance) {
-          /* 同步到workflowStore */
-          import('@/modules/system/stores/workflow').then(({ useWorkflowStore }) => {
-            const workflowStore = useWorkflowStore()
-            workflowStore.instances.unshift(instance)
-            workflowStore._persist()
-          }).catch(() => {})
-
-          console.info(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
-        }
-      }).catch(() => {})
+        .catch(() => {})
     } catch (e) {
       console.warn(`[DataService] 启动审批流异常:`, e.message)
     }
