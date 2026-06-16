@@ -8,425 +8,568 @@
         <div class="skeleton skeleton-card"></div>
       </div>
       <div class="skeleton-row-2">
-        <div class="skeleton" style="height:300px"></div>
-        <div class="skeleton" style="height:300px"></div>
+        <div class="skeleton" style="height: 300px"></div>
+        <div class="skeleton" style="height: 300px"></div>
       </div>
     </div>
 
     <div v-else>
-    <div class="page-header">
-      <div>
-        <h2 class="page-header-title">仪表盘</h2>
-        <p class="page-header-subtitle">实时业务概览与关键指标监控</p>
+      <div class="page-header">
+        <div>
+          <h2 class="page-header-title">仪表盘</h2>
+          <p class="page-header-subtitle">实时业务概览与关键指标监控</p>
+        </div>
       </div>
-    </div>
 
-    <div class="dashboard-toolbar">
-      <span class="toolbar-label">数据范围</span>
-      <div class="btn-group">
+      <div class="dashboard-toolbar">
+        <span class="toolbar-label">数据范围</span>
+        <div class="btn-group">
+          <button
+            v-for="r in dateRanges"
+            :key="r.key"
+            class="btn btn-ghost"
+            :class="{ active: selectedRange === r.key }"
+            @click="selectedRange = r.key"
+          >
+            {{ r.label }}
+          </button>
+        </div>
+        <button class="btn btn-ghost" @click="refreshData">
+          <Icon name="refresh" :size="14" />
+          刷新
+        </button>
         <button
-          v-for="r in dateRanges"
-          :key="r.key"
+          v-if="showSeedButton"
           class="btn btn-ghost"
-          :class="{ active: selectedRange === r.key }"
-          @click="selectedRange = r.key"
-        >{{ r.label }}</button>
+          style="color:var(--color-warning)"
+          @click="handleSeedData"
+        >
+          <Icon name="database" :size="14" />
+          灌入演示数据
+        </button>
       </div>
-      <button class="btn btn-ghost" @click="refreshData"><Icon name="refresh" :size="14" /> 刷新</button>
-    </div>
 
-    <!-- 紧凑指标条 -->
-    <div class="compact-metrics">
-      <div class="compact-metric" :title="metricTrends.todayRevenue.tooltip">
-        <div class="compact-metric-dot" style="background:var(--color-success)"></div>
-        <span class="compact-metric-label">今日营收</span>
-        <span class="compact-metric-value">¥{{ formatNumber(todayTransactionAmount) }}</span>
-        <span class="compact-metric-trend" :class="metricTrends.todayRevenue.direction">{{ metricTrends.todayRevenue.arrow }}</span>
-      </div>
-      <div class="compact-metric-sep"></div>
-      <div class="compact-metric" :title="metricTrends.monthRevenue.tooltip">
-        <div class="compact-metric-dot" style="background:var(--color-accent)"></div>
-        <span class="compact-metric-label">本月营收</span>
-        <span class="compact-metric-value">¥{{ formatNumber(totalRevenue) }}</span>
-        <span class="compact-metric-trend" :class="metricTrends.monthRevenue.direction">{{ metricTrends.monthRevenue.arrow }}</span>
-      </div>
-      <div class="compact-metric-sep"></div>
-      <div class="compact-metric" :title="metricTrends.collectionRate.tooltip">
-        <div class="compact-metric-dot" :style="{ background: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }"></div>
-        <span class="compact-metric-label">回款率</span>
-        <span class="compact-metric-value" :style="{ color: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }">{{ collectionRate }}<span class="compact-metric-unit">%</span></span>
-        <span class="compact-metric-trend" :class="metricTrends.collectionRate.direction">{{ metricTrends.collectionRate.arrow }}</span>
-      </div>
-      <div class="compact-metric-sep"></div>
-      <div class="compact-metric" :title="metricTrends.pendingOrders.tooltip">
-        <div class="compact-metric-dot" style="background:var(--color-warning)"></div>
-        <span class="compact-metric-label">待处理订单</span>
-        <span class="compact-metric-value">{{ dataStore.pendingQuotationCount }}</span>
-        <span class="compact-metric-trend" :class="metricTrends.pendingOrders.direction">{{ metricTrends.pendingOrders.arrow }}</span>
-      </div>
-      <div class="compact-metric-sep"></div>
-      <div class="compact-metric" :title="metricTrends.stockAlert.tooltip">
-        <div class="compact-metric-dot" :style="{ background: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : 'var(--color-info)' }"></div>
-        <span class="compact-metric-label">库存预警</span>
-        <span class="compact-metric-value" :style="{ color: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : '' }">{{ inventoryStore.lowStockCount + inventoryStore.exhaustedCount }}<span class="compact-metric-unit">种</span></span>
-        <span class="compact-metric-trend" :class="metricTrends.stockAlert.direction">{{ metricTrends.stockAlert.arrow }}</span>
-      </div>
-    </div>
-
-    <!-- 折叠统计区 -->
-    <div class="collapsible-stats">
-      <div class="collapsible-stats-header" @click="showDashStatsExpanded = !showDashStatsExpanded">
-        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 统计概览</span>
-        <span class="collapsible-stats-toggle" :class="{ expanded: showDashStatsExpanded }">▼</span>
-      </div>
-      <div v-show="showDashStatsExpanded" class="collapsible-stats-body">
-        <DashStatsCards
-          :total-revenue="totalRevenue"
-          :revenue-growth="revenueGrowth"
-          :collection-rate="collectionRate"
-          :month-collected="monthCollected"
-          :quotation-store="quotationStore"
-          :contract-store="contractStore"
-          :inventory-store="inventoryStore"
-          :todo-store="todoStore"
-          :stat-cards="statCards"
-          :format-number="formatNumber"
-        />
-      </div>
-    </div>
-
-    <DashWeekView
-      :week-days="weekDays"
-      :dp-selected-date="dpSelectedDate"
-      :week-range-label="weekRangeLabel"
-      @dp-select-date="dpSelectDate"
-      @week-prev="weekPrev"
-      @week-next="weekNext"
-      @week-go-today="weekGoToday"
-    />
-
-    <DashCharts ref="chartsRef" />
-
-    <DashAlerts
-      :alerts="alerts"
-      :recent-activities="recentActivities"
-      @navigate="$router.push($event)"
-    />
-
-    <!-- 智能洞察条 -->
-    <div v-for="(insight, idx) in visibleSmartInsights" :key="idx" class="alert-priority-bar" :class="insight.level" @click="handleInsightClick(insight)">
-      <span class="alert-priority-icon">{{ insight.icon }}</span>
-      <span class="alert-priority-text">{{ insight.text }}</span>
-      <span class="alert-priority-detail">{{ insight.detail }}</span>
-      <button class="insight-close-btn" @click.stop="dismissInsight(insight)">×</button>
-    </div>
-
-    <DashQuickActions
-      :ai-summary="aiSummary"
-      :ai-insights="aiInsights"
-      :is-refreshing-insights="isRefreshingInsights"
-      @navigate="$router.push($event)"
-      @refresh-insights="refreshInsights"
-    />
-
-    <div class="date-todo-section">
-      <div class="date-picker-container">
-        <div class="date-picker-header">
-          <div class="dp-header-left">
-            <span class="dp-icon"><Icon name="calendar" :size="14" /></span>
-            <div class="dp-year-month-selectors">
-              <select class="dp-year-select" v-model="dpYear">
-                <option v-for="y in dpYears" :key="y" :value="y">{{ y }}年</option>
-              </select>
-              <select class="dp-month-select" v-model="dpMonth">
-                <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
-              </select>
-            </div>
-          </div>
-          <div class="date-picker-nav">
-            <button @click="dpPrevYear" title="上一年" class="dp-nav-btn">«</button>
-            <button @click="dpPrevMonth" title="上一月" class="dp-nav-btn"><Icon name="chevronLeft" :size="14" /></button>
-            <button class="dp-today-btn" @click="dpGoToday">今天</button>
-            <button @click="dpNextMonth" title="下一月" class="dp-nav-btn"><Icon name="chevronRight" :size="14" /></button>
-            <button @click="dpNextYear" title="下一年" class="dp-nav-btn">»</button>
-          </div>
+      <!-- 紧凑指标条 -->
+      <div class="compact-metrics">
+        <div class="compact-metric" :title="metricTrends.todayRevenue.tooltip">
+          <div class="compact-metric-dot" style="background: var(--color-success)"></div>
+          <span class="compact-metric-label">今日营收</span>
+          <span class="compact-metric-value">¥{{ formatNumber(todayTransactionAmount) }}</span>
+          <span class="compact-metric-trend" :class="metricTrends.todayRevenue.direction">
+            {{ metricTrends.todayRevenue.arrow }}
+          </span>
         </div>
-        <div class="dp-manual-input-row">
-          <label class="dp-input-label">手动输入：</label>
-          <input type="date" class="dp-manual-input" v-model="dpManualDate">
-          <button class="btn btn-ghost btn-sm dp-apply-btn" @click="dpApplyManual">应用</button>
+        <div class="compact-metric-sep"></div>
+        <div class="compact-metric" :title="metricTrends.monthRevenue.tooltip">
+          <div class="compact-metric-dot" style="background: var(--color-accent)"></div>
+          <span class="compact-metric-label">本月营收</span>
+          <span class="compact-metric-value">¥{{ formatNumber(totalRevenue) }}</span>
+          <span class="compact-metric-trend" :class="metricTrends.monthRevenue.direction">
+            {{ metricTrends.monthRevenue.arrow }}
+          </span>
         </div>
-        <div class="date-picker-body">
-          <div class="date-picker-weekdays">
-            <div class="date-picker-weekday" v-for="d in ['日','一','二','三','四','五','六']" :key="d">{{ d }}</div>
-          </div>
-          <div class="date-picker-days">
-            <div
-              v-for="day in dpDays"
-              :key="day.key"
-              class="dp-day"
-              :class="[
-                { 'other-month': !day.currentMonth },
-                { today: day.isToday },
-                { selected: day.date === dpSelectedDate },
-                { 'has-todo': day.todoCount > 0 }
-              ]"
-              @click="dpSelectDate(day.date)"
-            >
-              {{ day.day }}
-              <span v-if="day.todoCount > 0" class="dp-day-dot"></span>
-            </div>
-          </div>
+        <div class="compact-metric-sep"></div>
+        <div class="compact-metric" :title="metricTrends.collectionRate.tooltip">
+          <div
+            class="compact-metric-dot"
+            :style="{ background: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }"
+          ></div>
+          <span class="compact-metric-label">回款率</span>
+          <span
+            class="compact-metric-value"
+            :style="{ color: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }"
+          >
+            {{ collectionRate }}
+            <span class="compact-metric-unit">%</span>
+          </span>
+          <span class="compact-metric-trend" :class="metricTrends.collectionRate.direction">
+            {{ metricTrends.collectionRate.arrow }}
+          </span>
         </div>
-        <div class="date-picker-footer">
-          <div class="dp-selected-info">
-            <span>已选择：{{ dpSelectedDate || '今天' }}</span>
-            <span class="dp-weekday-label">{{ dpSelectedWeekday }}</span>
-          </div>
-          <span class="dp-task-count">{{ dpSelectedTodoCount }} 项待办</span>
+        <div class="compact-metric-sep"></div>
+        <div class="compact-metric" :title="metricTrends.pendingOrders.tooltip">
+          <div class="compact-metric-dot" style="background: var(--color-warning)"></div>
+          <span class="compact-metric-label">待处理订单</span>
+          <span class="compact-metric-value">{{ dataStore.pendingQuotationCount }}</span>
+          <span class="compact-metric-trend" :class="metricTrends.pendingOrders.direction">
+            {{ metricTrends.pendingOrders.arrow }}
+          </span>
+        </div>
+        <div class="compact-metric-sep"></div>
+        <div class="compact-metric" :title="metricTrends.stockAlert.tooltip">
+          <div
+            class="compact-metric-dot"
+            :style="{
+              background:
+                inventoryStore.lowStockCount + inventoryStore.exhaustedCount > 0
+                  ? 'var(--color-danger)'
+                  : 'var(--color-info)'
+            }"
+          ></div>
+          <span class="compact-metric-label">库存预警</span>
+          <span
+            class="compact-metric-value"
+            :style="{
+              color: inventoryStore.lowStockCount + inventoryStore.exhaustedCount > 0 ? 'var(--color-danger)' : ''
+            }"
+          >
+            {{ inventoryStore.lowStockCount + inventoryStore.exhaustedCount }}
+            <span class="compact-metric-unit">种</span>
+          </span>
+          <span class="compact-metric-trend" :class="metricTrends.stockAlert.direction">
+            {{ metricTrends.stockAlert.arrow }}
+          </span>
         </div>
       </div>
 
-      <div class="panel-card todo-panel-wrapper">
-        <div class="panel-card-header">
-          <span class="panel-card-title"><Icon name="list" :size="14" /> 待办事项</span>
-          <div style="display:flex;gap:var(--space-2);align-items:center;flex-wrap:wrap">
-            <div class="todo-view-toggle">
-              <button
-                v-for="v in todoViewModes"
-                :key="v.key"
-                class="todo-view-btn"
-                :class="{ active: todoViewMode === v.key }"
-                @click="todoViewMode = v.key"
-              >{{ v.label }} <Icon :name="v.icon" :size="14" /></button>
-            </div>
-            <span class="dp-date-label">{{ dpSelectedDate || '今天' }}</span>
-            <div class="todo-filters">
-              <button
-                v-for="f in todoFilterOptions"
-                :key="f.key"
-                class="todo-filter-btn"
-                :class="{ active: todoFilter === f.key }"
-                @click="todoFilter = f.key"
-              >{{ f.label }}</button>
-            </div>
-            <button class="btn btn-primary btn-sm" @click="showTodoForm = !showTodoForm">{{ showTodoForm ? '取消' : '+ 新建' }}</button>
-          </div>
+      <!-- 折叠统计区 -->
+      <div class="collapsible-stats">
+        <div class="collapsible-stats-header" @click="showDashStatsExpanded = !showDashStatsExpanded">
+          <span class="collapsible-stats-title">
+            <Icon name="chart" :size="14" />
+            统计概览
+          </span>
+          <span class="collapsible-stats-toggle" :class="{ expanded: showDashStatsExpanded }">▼</span>
         </div>
-        <div class="panel-card-body">
-          <div v-if="showTodoForm" class="todo-add-form">
-            <input type="text" v-model="newTodoTitle" placeholder="输入待办事项..." @keydown.enter="addNewTodo">
-            <select v-model="newTodoPriority">
-              <option value="medium">中</option>
-              <option value="high">高</option>
-              <option value="low">低</option>
-            </select>
-            <input type="date" v-model="newTodoDue">
-            <button class="btn btn-primary btn-sm" @click="addNewTodo">添加</button>
-            <button class="btn btn-ghost btn-sm" @click="showTodoForm = false">取消</button>
-          </div>
-          <div class="todo-toolbar">
-            <div class="todo-priority-filters">
-              <div class="todo-priority-btn p-all" :class="{ active: todoPriorityFilter === 'all' }" @click="todoPriorityFilter = 'all'" title="全部优先级"></div>
-              <div class="todo-priority-btn p-high" :class="{ active: todoPriorityFilter === 'high' }" @click="todoPriorityFilter = 'high'" title="高优先级"></div>
-              <div class="todo-priority-btn p-medium" :class="{ active: todoPriorityFilter === 'medium' }" @click="todoPriorityFilter = 'medium'" title="中优先级"></div>
-              <div class="todo-priority-btn p-low" :class="{ active: todoPriorityFilter === 'low' }" @click="todoPriorityFilter = 'low'" title="低优先级"></div>
-            </div>
-            <div class="todo-toolbar-right">
-              <button class="btn btn-ghost btn-sm" @click="completeAllTodos"><Icon name="check" :size="14" /> 全部完成</button>
-              <button class="btn btn-ghost btn-sm" @click="clearCompletedTodos"><Icon name="delete" :size="14" /> 清除已完成</button>
-            </div>
-          </div>
+        <div v-show="showDashStatsExpanded" class="collapsible-stats-body">
+          <DashStatsCards
+            :total-revenue="totalRevenue"
+            :revenue-growth="revenueGrowth"
+            :collection-rate="collectionRate"
+            :month-collected="monthCollected"
+            :quotation-store="quotationStore"
+            :contract-store="contractStore"
+            :inventory-store="inventoryStore"
+            :todo-store="todoStore"
+            :stat-cards="statCards"
+            :format-number="formatNumber"
+          />
+        </div>
+      </div>
 
-          <!-- <Icon name="table" :size="14" /> 表格视图 -->
-          <div v-if="todoViewMode === 'table'" class="todo-table-view">
-            <table class="todo-table">
-              <thead>
-                <tr>
-                  <th>状态</th>
-                  <th>待办事项</th>
-                  <th>优先级</th>
-                  <th>截止日期</th>
-                  <th>操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="todo in filteredDpTodos" :key="todo.id" :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo), 'priority-high-border': todo.priority === 'high' }">
-                  <td>
-                    <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                      <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
-                      <span v-else class="todo-uncheck">[未完成]</span>
-                    </button>
-                  </td>
-                  <td class="todo-table-title">{{ todo.title }}</td>
-                  <td><span class="todo-priority" :class="'priority-' + todo.priority">{{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}</span></td>
-                  <td><span class="todo-due" :class="{ overdue: isOverdue(todo) }">{{ todo.dueDate || '-' }}</span></td>
-                  <td>
-                    <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)"><Icon name="delete" :size="14" /></button>
-                  </td>
-                </tr>
-                <tr v-if="filteredDpTodos.length === 0">
-                  <td colspan="5" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+      <DashWeekView
+        :week-days="weekDays"
+        :dp-selected-date="dpSelectedDate"
+        :week-range-label="weekRangeLabel"
+        @dp-select-date="dpSelectDate"
+        @week-prev="weekPrev"
+        @week-next="weekNext"
+        @week-go-today="weekGoToday"
+      />
 
-          <!-- <Icon name="list" :size="14" /> 列表视图（默认） -->
-          <div v-if="todoViewMode === 'list'" class="todo-list">
-            <div
-              v-for="todo in filteredDpTodos"
-              :key="todo.id"
-              class="todo-quick-item"
-              :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo), 'priority-high-border': todo.priority === 'high' }"
-            >
-              <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
-                <span v-else class="todo-uncheck">[未完成]</span>
-              </button>
-              <div class="todo-info">
-                <span class="todo-title">{{ todo.title }}</span>
-                <span class="todo-due" :class="{ overdue: isOverdue(todo) }">{{ todo.dueDate }}</span>
+      <DashCharts ref="chartsRef" />
+
+      <DashAlerts :alerts="alerts" :recent-activities="recentActivities" @navigate="$router.push($event)" />
+
+      <!-- 智能洞察条 -->
+      <div
+        v-for="(insight, idx) in visibleSmartInsights"
+        :key="idx"
+        class="alert-priority-bar"
+        :class="insight.level"
+        @click="handleInsightClick(insight)"
+      >
+        <span class="alert-priority-icon">{{ insight.icon }}</span>
+        <span class="alert-priority-text">{{ insight.text }}</span>
+        <span class="alert-priority-detail">{{ insight.detail }}</span>
+        <button class="insight-close-btn" @click.stop="dismissInsight(insight)">×</button>
+      </div>
+
+      <DashQuickActions
+        :ai-summary="aiSummary"
+        :ai-insights="aiInsights"
+        :is-refreshing-insights="isRefreshingInsights"
+        @navigate="$router.push($event)"
+        @refresh-insights="refreshInsights"
+      />
+
+      <div class="date-todo-section">
+        <div class="date-picker-container">
+          <div class="date-picker-header">
+            <div class="dp-header-left">
+              <span class="dp-icon"><Icon name="calendar" :size="14" /></span>
+              <div class="dp-year-month-selectors">
+                <select v-model="dpYear" class="dp-year-select">
+                  <option v-for="y in dpYears" :key="y" :value="y">{{ y }}年</option>
+                </select>
+                <select v-model="dpMonth" class="dp-month-select">
+                  <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
+                </select>
               </div>
-              <span class="todo-priority" :class="'priority-' + todo.priority">
-                {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
-              </span>
             </div>
-            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></div>
+            <div class="date-picker-nav">
+              <button title="上一年" class="dp-nav-btn" @click="dpPrevYear">«</button>
+              <button title="上一月" class="dp-nav-btn" @click="dpPrevMonth">
+                <Icon name="chevronLeft" :size="14" />
+              </button>
+              <button class="dp-today-btn" @click="dpGoToday">今天</button>
+              <button title="下一月" class="dp-nav-btn" @click="dpNextMonth">
+                <Icon name="chevronRight" :size="14" />
+              </button>
+              <button title="下一年" class="dp-nav-btn" @click="dpNextYear">»</button>
+            </div>
           </div>
+          <div class="dp-manual-input-row">
+            <label class="dp-input-label">手动输入：</label>
+            <input v-model="dpManualDate" type="date" class="dp-manual-input" />
+            <button class="btn btn-ghost btn-sm dp-apply-btn" @click="dpApplyManual">应用</button>
+          </div>
+          <div class="date-picker-body">
+            <div class="date-picker-weekdays">
+              <div v-for="d in ['日', '一', '二', '三', '四', '五', '六']" :key="d" class="date-picker-weekday">
+                {{ d }}
+              </div>
+            </div>
+            <div class="date-picker-days">
+              <div
+                v-for="day in dpDays"
+                :key="day.key"
+                class="dp-day"
+                :class="[
+                  { 'other-month': !day.currentMonth },
+                  { today: day.isToday },
+                  { selected: day.date === dpSelectedDate },
+                  { 'has-todo': day.todoCount > 0 }
+                ]"
+                @click="dpSelectDate(day.date)"
+              >
+                {{ day.day }}
+                <span v-if="day.todoCount > 0" class="dp-day-dot"></span>
+              </div>
+            </div>
+          </div>
+          <div class="date-picker-footer">
+            <div class="dp-selected-info">
+              <span>已选择：{{ dpSelectedDate || '今天' }}</span>
+              <span class="dp-weekday-label">{{ dpSelectedWeekday }}</span>
+            </div>
+            <span class="dp-task-count">{{ dpSelectedTodoCount }} 项待办</span>
+          </div>
+        </div>
 
-          <!-- <Icon name="card" :size="14" /> 卡片视图 -->
-          <div v-if="todoViewMode === 'card'" class="todo-card-view">
-            <div
-              v-for="todo in filteredDpTodos"
-              :key="todo.id"
-              class="todo-card-item"
-              :class="[
-                'priority-border-' + todo.priority,
-                { completed: todo.status === 'completed', overdue: isOverdue(todo) }
-              ]"
-            >
-              <div class="todo-card-top">
+        <div class="panel-card todo-panel-wrapper">
+          <div class="panel-card-header">
+            <span class="panel-card-title">
+              <Icon name="list" :size="14" />
+              待办事项
+            </span>
+            <div style="display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap">
+              <div class="todo-view-toggle">
+                <button
+                  v-for="v in todoViewModes"
+                  :key="v.key"
+                  class="todo-view-btn"
+                  :class="{ active: todoViewMode === v.key }"
+                  @click="todoViewMode = v.key"
+                >
+                  {{ v.label }}
+                  <Icon :name="v.icon" :size="14" />
+                </button>
+              </div>
+              <span class="dp-date-label">{{ dpSelectedDate || '今天' }}</span>
+              <div class="todo-filters">
+                <button
+                  v-for="f in todoFilterOptions"
+                  :key="f.key"
+                  class="todo-filter-btn"
+                  :class="{ active: todoFilter === f.key }"
+                  @click="todoFilter = f.key"
+                >
+                  {{ f.label }}
+                </button>
+              </div>
+              <button class="btn btn-primary btn-sm" @click="showTodoForm = !showTodoForm">
+                {{ showTodoForm ? '取消' : '+ 新建' }}
+              </button>
+            </div>
+          </div>
+          <div class="panel-card-body">
+            <div v-if="showTodoForm" class="todo-add-form">
+              <input v-model="newTodoTitle" type="text" placeholder="输入待办事项..." @keydown.enter="addNewTodo" />
+              <select v-model="newTodoPriority">
+                <option value="medium">中</option>
+                <option value="high">高</option>
+                <option value="low">低</option>
+              </select>
+              <input v-model="newTodoDue" type="date" />
+              <button class="btn btn-primary btn-sm" @click="addNewTodo">添加</button>
+              <button class="btn btn-ghost btn-sm" @click="showTodoForm = false">取消</button>
+            </div>
+            <div class="todo-toolbar">
+              <div class="todo-priority-filters">
+                <div
+                  class="todo-priority-btn p-all"
+                  :class="{ active: todoPriorityFilter === 'all' }"
+                  title="全部优先级"
+                  @click="todoPriorityFilter = 'all'"
+                ></div>
+                <div
+                  class="todo-priority-btn p-high"
+                  :class="{ active: todoPriorityFilter === 'high' }"
+                  title="高优先级"
+                  @click="todoPriorityFilter = 'high'"
+                ></div>
+                <div
+                  class="todo-priority-btn p-medium"
+                  :class="{ active: todoPriorityFilter === 'medium' }"
+                  title="中优先级"
+                  @click="todoPriorityFilter = 'medium'"
+                ></div>
+                <div
+                  class="todo-priority-btn p-low"
+                  :class="{ active: todoPriorityFilter === 'low' }"
+                  title="低优先级"
+                  @click="todoPriorityFilter = 'low'"
+                ></div>
+              </div>
+              <div class="todo-toolbar-right">
+                <button class="btn btn-ghost btn-sm" @click="completeAllTodos">
+                  <Icon name="check" :size="14" />
+                  全部完成
+                </button>
+                <button class="btn btn-ghost btn-sm" @click="clearCompletedTodos">
+                  <Icon name="delete" :size="14" />
+                  清除已完成
+                </button>
+              </div>
+            </div>
+
+            <!-- <Icon name="table" :size="14" /> 表格视图 -->
+            <div v-if="todoViewMode === 'table'" class="todo-table-view">
+              <table class="todo-table">
+                <thead>
+                  <tr>
+                    <th>状态</th>
+                    <th>待办事项</th>
+                    <th>优先级</th>
+                    <th>截止日期</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="todo in filteredDpTodos"
+                    :key="todo.id"
+                    :class="{
+                      completed: todo.status === 'completed',
+                      overdue: isOverdue(todo),
+                      'priority-high-border': todo.priority === 'high'
+                    }"
+                  >
+                    <td>
+                      <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
+                        <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
+                        <span v-else class="todo-uncheck">[未完成]</span>
+                      </button>
+                    </td>
+                    <td class="todo-table-title">{{ todo.title }}</td>
+                    <td>
+                      <span class="todo-priority" :class="'priority-' + todo.priority">
+                        {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="todo-due" :class="{ overdue: isOverdue(todo) }">{{ todo.dueDate || '-' }}</span>
+                    </td>
+                    <td>
+                      <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)">
+                        <Icon name="delete" :size="14" />
+                      </button>
+                    </td>
+                  </tr>
+                  <tr v-if="filteredDpTodos.length === 0">
+                    <td colspan="5" class="todo-empty">
+                      暂无待办事项
+                      <Icon name="check" :size="14" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- <Icon name="list" :size="14" /> 列表视图（默认） -->
+            <div v-if="todoViewMode === 'list'" class="todo-list">
+              <div
+                v-for="todo in filteredDpTodos"
+                :key="todo.id"
+                class="todo-quick-item"
+                :class="{
+                  completed: todo.status === 'completed',
+                  overdue: isOverdue(todo),
+                  'priority-high-border': todo.priority === 'high'
+                }"
+              >
                 <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                  <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                  <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
                   <span v-else class="todo-uncheck">[未完成]</span>
                 </button>
+                <div class="todo-info">
+                  <span class="todo-title">{{ todo.title }}</span>
+                  <span class="todo-due" :class="{ overdue: isOverdue(todo) }">{{ todo.dueDate }}</span>
+                </div>
                 <span class="todo-priority" :class="'priority-' + todo.priority">
                   {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
                 </span>
               </div>
-              <div class="todo-card-title">{{ todo.title }}</div>
-              <div class="todo-card-meta">
-                <span class="todo-due" :class="{ overdue: isOverdue(todo) }"><Icon name="calendar" :size="14" /> {{ todo.dueDate || '无截止日期' }}</span>
-                <button class="btn btn-ghost btn-sm" @click="todoStore.deleteTodo(todo.id)" style="padding:0 4px;font-size:12px"><Icon name="delete" :size="14" /> 删除</button>
+              <div v-if="filteredDpTodos.length === 0" class="todo-empty">
+                暂无待办事项
+                <Icon name="check" :size="14" />
               </div>
             </div>
-            <div v-if="filteredDpTodos.length === 0" class="todo-empty">暂无待办事项 <Icon name="check" :size="14" /></div>
-          </div>
 
-          <!-- <Icon name="calendar" :size="14" /> 日历视图 -->
-          <div v-if="todoViewMode === 'calendar'" class="todo-calendar-view">
-            <div class="todo-cal-nav">
-              <button class="dp-nav-btn" @click="todoCalPrevYear">«</button>
-              <button class="dp-nav-btn" @click="todoCalPrevMonth"><Icon name="chevronLeft" :size="14" /></button>
-              <button class="dp-today-btn" @click="todoCalGoToday">今天</button>
-              <button class="dp-nav-btn" @click="todoCalNextMonth"><Icon name="chevronRight" :size="14" /></button>
-              <button class="dp-nav-btn" @click="todoCalNextYear">»</button>
-              <span class="todo-cal-label">{{ todoCalYear }}年{{ todoCalMonth }}月</span>
-            </div>
-            <div class="todo-cal-weekdays">
-              <div v-for="d in ['日','一','二','三','四','五','六']" :key="d" class="todo-cal-weekday">{{ d }}</div>
-            </div>
-            <div class="todo-cal-days">
+            <!-- <Icon name="card" :size="14" /> 卡片视图 -->
+            <div v-if="todoViewMode === 'card'" class="todo-card-view">
               <div
-                v-for="day in todoCalDays"
-                :key="day.key"
-                class="todo-cal-day"
-                :class="{ 'other-month': !day.currentMonth, today: day.isToday, selected: day.date === todoCalSelectedDate }"
-                @click="todoCalSelectDate(day.date)"
+                v-for="todo in filteredDpTodos"
+                :key="todo.id"
+                class="todo-card-item"
+                :class="[
+                  'priority-border-' + todo.priority,
+                  { completed: todo.status === 'completed', overdue: isOverdue(todo) }
+                ]"
               >
-                <div class="todo-cal-day-num">{{ day.day }}</div>
-                <div class="todo-cal-day-items">
-                  <div
-                    v-for="todo in day.todos"
-                    :key="todo.id"
-                    class="todo-cal-dot"
-                    :class="'priority-dot-' + todo.priority"
-                    :title="todo.title"
-                    @click.stop="todoStore.toggleTodo(todo.id, todo.auto || false)"
-                  ></div>
-                </div>
-              </div>
-            </div>
-            <div v-if="todoCalSelectedTodos.length > 0" class="todo-cal-detail">
-              <div class="todo-cal-detail-header">{{ todoCalSelectedDate }} 的待办 ({{ todoCalSelectedTodos.length }})</div>
-              <div class="todo-cal-detail-list">
-                <div
-                  v-for="todo in todoCalSelectedTodos"
-                  :key="todo.id"
-                  class="todo-quick-item"
-                  :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }"
-                >
+                <div class="todo-card-top">
                   <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
                     <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
                     <span v-else class="todo-uncheck">[未完成]</span>
                   </button>
-                  <div class="todo-info">
-                    <span class="todo-title">{{ todo.title }}</span>
-                    <span class="todo-due">{{ todo.dueDate }}</span>
-                  </div>
                   <span class="todo-priority" :class="'priority-' + todo.priority">
                     {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
                   </span>
                 </div>
+                <div class="todo-card-title">{{ todo.title }}</div>
+                <div class="todo-card-meta">
+                  <span class="todo-due" :class="{ overdue: isOverdue(todo) }">
+                    <Icon name="calendar" :size="14" />
+                    {{ todo.dueDate || '无截止日期' }}
+                  </span>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    style="padding: 0 4px; font-size: 12px"
+                    @click="todoStore.deleteTodo(todo.id)"
+                  >
+                    <Icon name="delete" :size="14" />
+                    删除
+                  </button>
+                </div>
+              </div>
+              <div v-if="filteredDpTodos.length === 0" class="todo-empty">
+                暂无待办事项
+                <Icon name="check" :size="14" />
               </div>
             </div>
-          </div>
 
-          <!-- <Icon name="calendar" :size="14" /> 周视图 -->
-          <div v-if="todoViewMode === 'week'" class="todo-week-view">
-            <div class="todo-week-nav">
-              <button class="dp-nav-btn" @click="todoWeekPrev"><Icon name="chevronLeft" :size="14" /> 上一周</button>
-              <button class="dp-today-btn" @click="todoWeekGoToday">本周</button>
-              <button class="dp-nav-btn" @click="todoWeekNext">下一周 <Icon name="chevronRight" :size="14" /></button>
-              <span class="todo-cal-label">{{ todoWeekRangeLabel }}</span>
-            </div>
-            <div class="todo-week-grid">
-              <div
-                v-for="day in todoWeekDays"
-                :key="day.date"
-                class="todo-week-col"
-                :class="{ today: day.isToday }"
-              >
-                <div class="todo-week-header">
-                  <div class="todo-week-name">{{ day.weekday }}</div>
-                  <div class="todo-week-num" :class="{ 'is-today': day.isToday }">{{ day.dayNum }}</div>
+            <!-- <Icon name="calendar" :size="14" /> 日历视图 -->
+            <div v-if="todoViewMode === 'calendar'" class="todo-calendar-view">
+              <div class="todo-cal-nav">
+                <button class="dp-nav-btn" @click="todoCalPrevYear">«</button>
+                <button class="dp-nav-btn" @click="todoCalPrevMonth"><Icon name="chevronLeft" :size="14" /></button>
+                <button class="dp-today-btn" @click="todoCalGoToday">今天</button>
+                <button class="dp-nav-btn" @click="todoCalNextMonth"><Icon name="chevronRight" :size="14" /></button>
+                <button class="dp-nav-btn" @click="todoCalNextYear">»</button>
+                <span class="todo-cal-label">{{ todoCalYear }}年{{ todoCalMonth }}月</span>
+              </div>
+              <div class="todo-cal-weekdays">
+                <div v-for="d in ['日', '一', '二', '三', '四', '五', '六']" :key="d" class="todo-cal-weekday">
+                  {{ d }}
                 </div>
-                <div class="todo-week-items">
+              </div>
+              <div class="todo-cal-days">
+                <div
+                  v-for="day in todoCalDays"
+                  :key="day.key"
+                  class="todo-cal-day"
+                  :class="{
+                    'other-month': !day.currentMonth,
+                    today: day.isToday,
+                    selected: day.date === todoCalSelectedDate
+                  }"
+                  @click="todoCalSelectDate(day.date)"
+                >
+                  <div class="todo-cal-day-num">{{ day.day }}</div>
+                  <div class="todo-cal-day-items">
+                    <div
+                      v-for="todo in day.todos"
+                      :key="todo.id"
+                      class="todo-cal-dot"
+                      :class="'priority-dot-' + todo.priority"
+                      :title="todo.title"
+                      @click.stop="todoStore.toggleTodo(todo.id, todo.auto || false)"
+                    ></div>
+                  </div>
+                </div>
+              </div>
+              <div v-if="todoCalSelectedTodos.length > 0" class="todo-cal-detail">
+                <div class="todo-cal-detail-header">
+                  {{ todoCalSelectedDate }} 的待办 ({{ todoCalSelectedTodos.length }})
+                </div>
+                <div class="todo-cal-detail-list">
                   <div
-                    v-for="todo in day.todos"
+                    v-for="todo in todoCalSelectedTodos"
                     :key="todo.id"
-                    class="todo-week-item"
-                    :class="[
-                      'priority-border-' + todo.priority,
-                      { completed: todo.status === 'completed', overdue: isOverdue(todo) }
-                    ]"
-                    @click="todoStore.toggleTodo(todo.id, todo.auto || false)"
+                    class="todo-quick-item"
+                    :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }"
                   >
-                    <span class="todo-week-item-title">{{ todo.title }}</span>
-                    <span class="todo-priority" :class="'priority-' + todo.priority" style="font-size:9px">
+                    <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
+                      <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                      <span v-else class="todo-uncheck">[未完成]</span>
+                    </button>
+                    <div class="todo-info">
+                      <span class="todo-title">{{ todo.title }}</span>
+                      <span class="todo-due">{{ todo.dueDate }}</span>
+                    </div>
+                    <span class="todo-priority" :class="'priority-' + todo.priority">
                       {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
                     </span>
                   </div>
-                  <div v-if="day.todos.length === 0" class="todo-week-empty">-</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- <Icon name="calendar" :size="14" /> 周视图 -->
+            <div v-if="todoViewMode === 'week'" class="todo-week-view">
+              <div class="todo-week-nav">
+                <button class="dp-nav-btn" @click="todoWeekPrev">
+                  <Icon name="chevronLeft" :size="14" />
+                  上一周
+                </button>
+                <button class="dp-today-btn" @click="todoWeekGoToday">本周</button>
+                <button class="dp-nav-btn" @click="todoWeekNext">
+                  下一周
+                  <Icon name="chevronRight" :size="14" />
+                </button>
+                <span class="todo-cal-label">{{ todoWeekRangeLabel }}</span>
+              </div>
+              <div class="todo-week-grid">
+                <div v-for="day in todoWeekDays" :key="day.date" class="todo-week-col" :class="{ today: day.isToday }">
+                  <div class="todo-week-header">
+                    <div class="todo-week-name">{{ day.weekday }}</div>
+                    <div class="todo-week-num" :class="{ 'is-today': day.isToday }">{{ day.dayNum }}</div>
+                  </div>
+                  <div class="todo-week-items">
+                    <div
+                      v-for="todo in day.todos"
+                      :key="todo.id"
+                      class="todo-week-item"
+                      :class="[
+                        'priority-border-' + todo.priority,
+                        { completed: todo.status === 'completed', overdue: isOverdue(todo) }
+                      ]"
+                      @click="todoStore.toggleTodo(todo.id, todo.auto || false)"
+                    >
+                      <span class="todo-week-item-title">{{ todo.title }}</span>
+                      <span class="todo-priority" :class="'priority-' + todo.priority" style="font-size: 9px">
+                        {{ todo.priority === 'high' ? '高' : todo.priority === 'medium' ? '中' : '低' }}
+                      </span>
+                    </div>
+                    <div v-if="day.todos.length === 0" class="todo-week-empty">-</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
-    </div>
     </div>
   </div>
 </template>
@@ -440,6 +583,8 @@ import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import { useContractStore } from '@/modules/sales/stores/contract'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useCollectionStore } from '@/modules/finance/stores/collection'
+import { useDataCenterStore } from '@/stores/dataCenter'
+import { seedAllStores } from '@/utils/seedData'
 import { formatNumber } from '@/utils/format'
 import DashStatsCards from '@/components/dashboard/DashStatsCards.vue'
 import DashWeekView from '@/components/dashboard/DashWeekView.vue'
@@ -454,6 +599,7 @@ const quotationStore = useQuotationStore()
 const contractStore = useContractStore()
 const inventoryStore = useInventoryStore()
 const collectionStore = useCollectionStore()
+const dataCenter = useDataCenterStore()
 
 const isLoading = ref(true)
 const showDashStatsExpanded = ref(false)
@@ -483,7 +629,7 @@ function getRangeStart() {
 const totalRevenue = computed(() => {
   const start = getRangeStart()
   return contractStore.contracts
-    .filter(c => c.signDate && c.signDate >= start && c.status !== 'cancelled' && c.status !== 'draft')
+    .filter((c) => c.signDate && c.signDate >= start && c.status !== 'cancelled' && c.status !== 'draft')
     .reduce((s, c) => s + (c.totalAmount || 0), 0)
 })
 
@@ -500,7 +646,10 @@ const revenueGrowth = computed(() => {
 const monthCollected = computed(() => {
   const start = getRangeStart()
   return collectionStore.collections
-    .filter(c => c.status !== 'voided' && (c.status === 'confirmed' || c.status === 'completed') && c.date && c.date >= start)
+    .filter(
+      (c) =>
+        c.status !== 'voided' && (c.status === 'confirmed' || c.status === 'completed') && c.date && c.date >= start
+    )
     .reduce((s, c) => s + (parseFloat(c.amount) || 0), 0)
 })
 
@@ -513,72 +662,100 @@ const collectionRate = computed(() => {
 const todayTransactionCount = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
   let count = 0
-  contractStore.contracts.forEach(c => { if (c.signDate === today && c.status !== 'cancelled' && c.status !== 'draft') count++ })
-  collectionStore.collections.forEach(c => { if (c.date === today && c.status !== 'voided') count++ })
-  dataStore.quotations.forEach(q => { if (q.date === today) count++ })
+  contractStore.contracts.forEach((c) => {
+    if (c.signDate === today && c.status !== 'cancelled' && c.status !== 'draft') count++
+  })
+  collectionStore.collections.forEach((c) => {
+    if (c.date === today && c.status !== 'voided') count++
+  })
+  dataStore.quotations.forEach((q) => {
+    if (q.date === today) count++
+  })
   return count
 })
 
 const todayTransactionAmount = computed(() => {
   const today = new Date().toISOString().slice(0, 10)
   let amount = 0
-  contractStore.contracts.forEach(c => { if (c.signDate === today && c.status !== 'cancelled' && c.status !== 'draft') amount += (c.totalAmount || 0) })
-  collectionStore.collections.forEach(c => { if (c.date === today && c.status !== 'voided') amount += (parseFloat(c.amount) || 0) })
-  dataStore.quotations.forEach(q => { if (q.date === today) amount += (q.total || q.subtotal || 0) })
+  contractStore.contracts.forEach((c) => {
+    if (c.signDate === today && c.status !== 'cancelled' && c.status !== 'draft') amount += c.totalAmount || 0
+  })
+  collectionStore.collections.forEach((c) => {
+    if (c.date === today && c.status !== 'voided') amount += parseFloat(c.amount) || 0
+  })
+  dataStore.quotations.forEach((q) => {
+    if (q.date === today) amount += q.total || q.subtotal || 0
+  })
   return amount
 })
 
 const statCards = computed(() => [
   {
-    icon: 'building', label: '客户总数',
+    icon: 'building',
+    label: '客户总数',
     value: customerStore.activeCount,
     change: `共 ${customerStore.customers.length} 个客户`,
-    color: 'var(--color-accent)', bgColor: 'var(--color-accent-subtle)'
+    color: 'var(--color-accent)',
+    bgColor: 'var(--color-accent-subtle)'
   },
   {
-    icon: 'edit', label: '本月报价',
+    icon: 'edit',
+    label: '本月报价',
     value: dataStore.quotations.length,
     change: `${dataStore.pendingQuotationCount} 待处理`,
-    color: 'var(--color-success)', bgColor: 'var(--color-success-subtle)',
+    color: 'var(--color-success)',
+    bgColor: 'var(--color-success-subtle)',
     changeColor: 'var(--color-success)'
   },
   {
-    icon: 'package', label: '库存品类',
+    icon: 'package',
+    label: '库存品类',
     value: inventoryStore.enrichedInventory.length,
     change: `${inventoryStore.lowStockCount + inventoryStore.exhaustedCount} 低库存预警`,
-    color: 'var(--color-warning)', bgColor: 'var(--color-warning-subtle)',
+    color: 'var(--color-warning)',
+    bgColor: 'var(--color-warning-subtle)',
     changeColor: inventoryStore.lowStockCount + inventoryStore.exhaustedCount > 0 ? 'var(--color-danger)' : undefined
   },
   {
-    icon: 'file', label: '本月合同',
-    value: contractStore.contracts.filter(c => c.signDate && c.signDate >= getRangeStart() && c.status !== 'cancelled').length,
+    icon: 'file',
+    label: '本月合同',
+    value: contractStore.contracts.filter(
+      (c) => c.signDate && c.signDate >= getRangeStart() && c.status !== 'cancelled'
+    ).length,
     change: `${contractStore.signedCount} 已签订`,
-    color: 'var(--color-purple)', bgColor: 'var(--color-purple-subtle)'
+    color: 'var(--color-purple)',
+    bgColor: 'var(--color-purple-subtle)'
   },
   {
-    icon: 'list', label: '待办事项',
+    icon: 'list',
+    label: '待办事项',
     value: todoStore.stats.pending,
     change: todoStore.stats.overdue > 0 ? `${todoStore.stats.overdue} 项逾期` : '无逾期',
-    color: 'var(--color-danger)', bgColor: 'var(--color-danger-subtle)',
+    color: 'var(--color-danger)',
+    bgColor: 'var(--color-danger-subtle)',
     changeColor: todoStore.stats.overdue > 0 ? 'var(--color-danger)' : undefined
   },
   {
-    icon: 'card', label: '今日交易',
+    icon: 'card',
+    label: '今日交易',
     value: todayTransactionCount,
     change: '¥' + formatNumber(todayTransactionAmount),
-    color: 'var(--color-info)', bgColor: 'var(--color-info-subtle)'
+    color: 'var(--color-info)',
+    bgColor: 'var(--color-info-subtle)'
   },
   {
-    icon: 'clock', label: '待回款金额',
+    icon: 'clock',
+    label: '待回款金额',
     value: '¥' + formatNumber(Math.max(0, totalRevenue.value - monthCollected.value)),
     change: '应收未收',
-    color: 'var(--color-danger)', bgColor: 'var(--color-danger-subtle)'
+    color: 'var(--color-danger)',
+    bgColor: 'var(--color-danger-subtle)'
   }
 ])
 
 const alerts = computed(() => {
   const list = []
-  inventoryStore.alertItems.forEach(item => {
+  inventoryStore.alertItems.forEach((item) => {
     list.push({
       id: 'stock-' + item.id,
       level: item.alertStatus === 'exhausted' ? 'danger' : 'warning',
@@ -587,15 +764,17 @@ const alerts = computed(() => {
       time: '实时'
     })
   })
-  todoStore.allTodos.filter(t => t.status !== 'completed' && isOverdue(t)).forEach(todo => {
-    list.push({
-      id: 'todo-' + todo.id,
-      level: 'danger',
-      title: `待办逾期: ${todo.title}`,
-      desc: `截止日期 ${todo.dueDate} 已过期`,
-      time: todo.dueDate
+  todoStore.allTodos
+    .filter((t) => t.status !== 'completed' && isOverdue(t))
+    .forEach((todo) => {
+      list.push({
+        id: 'todo-' + todo.id,
+        level: 'danger',
+        title: `待办逾期: ${todo.title}`,
+        desc: `截止日期 ${todo.dueDate} 已过期`,
+        time: todo.dueDate
+      })
     })
-  })
   return list
 })
 
@@ -617,10 +796,10 @@ const recentActivities = computed(() => {
   }
 
   contractStore.contracts
-    .filter(c => c.createdAt)
+    .filter((c) => c.createdAt)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 2)
-    .forEach(c => {
+    .forEach((c) => {
       activities.push({
         id: 'contract-' + c.id,
         text: `${c.partyA || '客户'} ${c.status === 'signed' ? '合同签署' : '合同创建'}`,
@@ -630,10 +809,10 @@ const recentActivities = computed(() => {
     })
 
   collectionStore.collections
-    .filter(c => c.createdAt)
+    .filter((c) => c.createdAt)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 2)
-    .forEach(c => {
+    .forEach((c) => {
       activities.push({
         id: 'collection-' + c.id,
         text: `${c.customerName || '客户'} 回款 ¥${formatNumber(parseFloat(c.amount) || 0)} ${c.status === 'confirmed' ? '已确认' : '待确认'}`,
@@ -643,10 +822,10 @@ const recentActivities = computed(() => {
     })
 
   customerStore.customers
-    .filter(c => c.createdAt)
+    .filter((c) => c.createdAt)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 1)
-    .forEach(c => {
+    .forEach((c) => {
       activities.push({
         id: 'customer-' + c.id,
         text: `${c.name} 新客户建档`,
@@ -655,11 +834,18 @@ const recentActivities = computed(() => {
       })
     })
 
-  return activities.sort((a, b) => {
-    const order = { '刚刚': 0, '分钟前': 1, '小时前': 2, '天前': 3 }
-    const getOrd = t => { for (const [k, v] of Object.entries(order)) { if (t.includes(k)) return v } return 9 }
-    return getOrd(a.time) - getOrd(b.time)
-  }).slice(0, 5)
+  return activities
+    .sort((a, b) => {
+      const order = { 刚刚: 0, 分钟前: 1, 小时前: 2, 天前: 3 }
+      const getOrd = (t) => {
+        for (const [k, v] of Object.entries(order)) {
+          if (t.includes(k)) return v
+        }
+        return 9
+      }
+      return getOrd(a.time) - getOrd(b.time)
+    })
+    .slice(0, 5)
 })
 
 const aiSummary = computed(() => {
@@ -734,7 +920,7 @@ const smartInsights = computed(() => {
 const dismissedInsightTexts = ref(new Set())
 
 const visibleSmartInsights = computed(() => {
-  return smartInsights.value.filter(insight => !dismissedInsightTexts.value.has(insight.text))
+  return smartInsights.value.filter((insight) => !dismissedInsightTexts.value.has(insight.text))
 })
 
 function dismissInsight(insight) {
@@ -769,11 +955,31 @@ const metricTrends = computed(() => {
   const stockTooltip = `低库存 ${inventoryStore.lowStockCount} 种 / 售罄 ${inventoryStore.exhaustedCount} 种`
 
   return {
-    todayRevenue: { direction: todayTrend, arrow: todayTrend === 'up' ? '↑' : todayTrend === 'down' ? '↓' : '→', tooltip: todayTooltip },
-    monthRevenue: { direction: monthTrend, arrow: monthTrend === 'up' ? '↑' : monthTrend === 'down' ? '↓' : '→', tooltip: monthTooltip },
-    collectionRate: { direction: rateTrend, arrow: rateTrend === 'up' ? '↑' : rateTrend === 'down' ? '↓' : '→', tooltip: rateTooltip },
-    pendingOrders: { direction: pendingTrend, arrow: pendingTrend === 'up' ? '↑' : pendingTrend === 'down' ? '↓' : '→', tooltip: pendingTooltip },
-    stockAlert: { direction: stockTrend, arrow: stockTrend === 'up' ? '↑' : stockTrend === 'down' ? '↓' : '→', tooltip: stockTooltip }
+    todayRevenue: {
+      direction: todayTrend,
+      arrow: todayTrend === 'up' ? '↑' : todayTrend === 'down' ? '↓' : '→',
+      tooltip: todayTooltip
+    },
+    monthRevenue: {
+      direction: monthTrend,
+      arrow: monthTrend === 'up' ? '↑' : monthTrend === 'down' ? '↓' : '→',
+      tooltip: monthTooltip
+    },
+    collectionRate: {
+      direction: rateTrend,
+      arrow: rateTrend === 'up' ? '↑' : rateTrend === 'down' ? '↓' : '→',
+      tooltip: rateTooltip
+    },
+    pendingOrders: {
+      direction: pendingTrend,
+      arrow: pendingTrend === 'up' ? '↑' : pendingTrend === 'down' ? '↓' : '→',
+      tooltip: pendingTooltip
+    },
+    stockAlert: {
+      direction: stockTrend,
+      arrow: stockTrend === 'up' ? '↑' : stockTrend === 'down' ? '↓' : '→',
+      tooltip: stockTooltip
+    }
   }
 })
 
@@ -789,6 +995,19 @@ function refreshData() {
   // 触发store数据重新计算（computed属性会自动响应）
   // 强制刷新insights
   refreshInsights()
+}
+
+/* 是否显示灌入演示数据按钮（数据为空时显示） */
+const showSeedButton = computed(() => {
+  return customerStore.customers.length === 0 && quotationStore.quotations.length === 0
+})
+
+/* 灌入演示数据 */
+function handleSeedData() {
+  if (!confirm('确定要灌入演示数据吗？这将生成约300条虚假数据用于测试。')) return
+  const result = seedAllStores(dataCenter)
+  alert(`演示数据灌入完成！\n客户: ${result.customers}\n报价单: ${result.quotations}\n合同: ${result.contracts}\n交易: ${result.transactions}\n采购: ${result.purchases}\n库存: ${result.inventory}\n回款: ${result.collections}\n送货: ${result.deliveries}\n待办: ${result.todos}`)
+  refreshData()
 }
 
 const isRefreshingInsights = ref(false)
@@ -848,15 +1067,23 @@ const todoCalDays = computed(() => {
     const py = month === 1 ? year - 1 : year
     const date = `${py}-${String(pm).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     result.push({
-      key: date, day, currentMonth: false, isToday: date === today, date,
-      todos: todoStore.allTodos.filter(t => t.dueDate === date).slice(0, 3)
+      key: date,
+      day,
+      currentMonth: false,
+      isToday: date === today,
+      date,
+      todos: todoStore.allTodos.filter((t) => t.dueDate === date).slice(0, 3)
     })
   }
   for (let i = 1; i <= daysInMonth; i++) {
     const date = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
     result.push({
-      key: date, day: i, currentMonth: true, isToday: date === today, date,
-      todos: todoStore.allTodos.filter(t => t.dueDate === date).slice(0, 3)
+      key: date,
+      day: i,
+      currentMonth: true,
+      isToday: date === today,
+      date,
+      todos: todoStore.allTodos.filter((t) => t.dueDate === date).slice(0, 3)
     })
   }
   const remaining = 42 - result.length
@@ -865,15 +1092,19 @@ const todoCalDays = computed(() => {
     const ny = month === 12 ? year + 1 : year
     const date = `${ny}-${String(nm).padStart(2, '0')}-${String(i).padStart(2, '0')}`
     result.push({
-      key: date, day: i, currentMonth: false, isToday: date === today, date,
-      todos: todoStore.allTodos.filter(t => t.dueDate === date).slice(0, 3)
+      key: date,
+      day: i,
+      currentMonth: false,
+      isToday: date === today,
+      date,
+      todos: todoStore.allTodos.filter((t) => t.dueDate === date).slice(0, 3)
     })
   }
   return result
 })
 
 const todoCalSelectedTodos = computed(() => {
-  return todoStore.allTodos.filter(t => t.dueDate === todoCalSelectedDate.value)
+  return todoStore.allTodos.filter((t) => t.dueDate === todoCalSelectedDate.value)
 })
 
 const todoWeekOffset = ref(0)
@@ -890,7 +1121,7 @@ const todoWeekDays = computed(() => {
     const d = new Date(monday)
     d.setDate(monday.getDate() + i)
     const dateStr = d.toISOString().slice(0, 10)
-    const dayTodos = todoStore.allTodos.filter(t => t.dueDate === dateStr)
+    const dayTodos = todoStore.allTodos.filter((t) => t.dueDate === dateStr)
     result.push({
       date: dateStr,
       dayNum: d.getDate(),
@@ -909,15 +1140,23 @@ const todoWeekRangeLabel = computed(() => {
   return `${first.date.slice(5)} ~ ${last.date.slice(5)}`
 })
 
-function todoCalPrevYear() { todoCalYear.value-- }
-function todoCalNextYear() { todoCalYear.value++ }
+function todoCalPrevYear() {
+  todoCalYear.value--
+}
+function todoCalNextYear() {
+  todoCalYear.value++
+}
 function todoCalPrevMonth() {
-  if (todoCalMonth.value === 1) { todoCalMonth.value = 12; todoCalYear.value-- }
-  else todoCalMonth.value--
+  if (todoCalMonth.value === 1) {
+    todoCalMonth.value = 12
+    todoCalYear.value--
+  } else todoCalMonth.value--
 }
 function todoCalNextMonth() {
-  if (todoCalMonth.value === 12) { todoCalMonth.value = 1; todoCalYear.value++ }
-  else todoCalMonth.value++
+  if (todoCalMonth.value === 12) {
+    todoCalMonth.value = 1
+    todoCalYear.value++
+  } else todoCalMonth.value++
 }
 function todoCalGoToday() {
   const now = new Date()
@@ -925,10 +1164,18 @@ function todoCalGoToday() {
   todoCalMonth.value = now.getMonth() + 1
   todoCalSelectedDate.value = now.toISOString().slice(0, 10)
 }
-function todoCalSelectDate(date) { todoCalSelectedDate.value = date }
-function todoWeekPrev() { todoWeekOffset.value-- }
-function todoWeekNext() { todoWeekOffset.value++ }
-function todoWeekGoToday() { todoWeekOffset.value = 0 }
+function todoCalSelectDate(date) {
+  todoCalSelectedDate.value = date
+}
+function todoWeekPrev() {
+  todoWeekOffset.value--
+}
+function todoWeekNext() {
+  todoWeekOffset.value++
+}
+function todoWeekGoToday() {
+  todoWeekOffset.value = 0
+}
 
 const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -944,7 +1191,7 @@ const weekDays = computed(() => {
     const d = new Date(monday)
     d.setDate(monday.getDate() + i)
     const dateStr = d.toISOString().slice(0, 10)
-    const dayTodos = todoStore.allTodos.filter(t => t.dueDate === dateStr)
+    const dayTodos = todoStore.allTodos.filter((t) => t.dueDate === dateStr)
     result.push({
       date: dateStr,
       dayNum: d.getDate(),
@@ -963,9 +1210,15 @@ const weekRangeLabel = computed(() => {
   return `${first.date.slice(5)} ~ ${last.date.slice(5)}`
 })
 
-function weekPrev() { weekOffset.value-- }
-function weekNext() { weekOffset.value++ }
-function weekGoToday() { weekOffset.value = 0 }
+function weekPrev() {
+  weekOffset.value--
+}
+function weekNext() {
+  weekOffset.value++
+}
+function weekGoToday() {
+  weekOffset.value = 0
+}
 
 const weekdays = ['日', '一', '二', '三', '四', '五', '六']
 
@@ -989,12 +1242,28 @@ const dpDays = computed(() => {
     const pm = month === 1 ? 12 : month - 1
     const py = month === 1 ? year - 1 : year
     const date = `${py}-${String(pm).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-    result.push({ key: date, day, currentMonth: false, isToday: date === today, selected: date === dpSelectedDate.value, date, todoCount: todoStore.allTodos.filter(t => t.dueDate === date && t.status !== 'completed').length })
+    result.push({
+      key: date,
+      day,
+      currentMonth: false,
+      isToday: date === today,
+      selected: date === dpSelectedDate.value,
+      date,
+      todoCount: todoStore.allTodos.filter((t) => t.dueDate === date && t.status !== 'completed').length
+    })
   }
 
   for (let i = 1; i <= daysInMonth; i++) {
     const date = `${year}-${String(month).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-    result.push({ key: date, day: i, currentMonth: true, isToday: date === today, selected: date === dpSelectedDate.value, date, todoCount: todoStore.allTodos.filter(t => t.dueDate === date && t.status !== 'completed').length })
+    result.push({
+      key: date,
+      day: i,
+      currentMonth: true,
+      isToday: date === today,
+      selected: date === dpSelectedDate.value,
+      date,
+      todoCount: todoStore.allTodos.filter((t) => t.dueDate === date && t.status !== 'completed').length
+    })
   }
 
   const remaining = 42 - result.length
@@ -1002,41 +1271,57 @@ const dpDays = computed(() => {
     const nm = month === 12 ? 1 : month + 1
     const ny = month === 12 ? year + 1 : year
     const date = `${ny}-${String(nm).padStart(2, '0')}-${String(i).padStart(2, '0')}`
-    result.push({ key: date, day: i, currentMonth: false, isToday: date === today, selected: date === dpSelectedDate.value, date, todoCount: todoStore.allTodos.filter(t => t.dueDate === date && t.status !== 'completed').length })
+    result.push({
+      key: date,
+      day: i,
+      currentMonth: false,
+      isToday: date === today,
+      selected: date === dpSelectedDate.value,
+      date,
+      todoCount: todoStore.allTodos.filter((t) => t.dueDate === date && t.status !== 'completed').length
+    })
   }
 
   return result
 })
 
 const dpSelectedTodoCount = computed(() => {
-  return todoStore.allTodos.filter(t => t.dueDate === dpSelectedDate.value && t.status !== 'completed').length
+  return todoStore.allTodos.filter((t) => t.dueDate === dpSelectedDate.value && t.status !== 'completed').length
 })
 
 const filteredDpTodos = computed(() => {
   let list = todoStore.allTodos
   if (todoFilter.value === 'today') {
     const today = new Date().toISOString().slice(0, 10)
-    list = list.filter(t => t.dueDate === today)
+    list = list.filter((t) => t.dueDate === today)
   } else if (todoFilter.value === 'overdue') {
-    list = list.filter(t => t.status !== 'completed' && isOverdue(t))
+    list = list.filter((t) => t.status !== 'completed' && isOverdue(t))
   } else if (todoFilter.value === 'completed') {
-    list = list.filter(t => t.status === 'completed')
+    list = list.filter((t) => t.status === 'completed')
   }
   if (todoPriorityFilter.value !== 'all') {
-    list = list.filter(t => t.priority === todoPriorityFilter.value)
+    list = list.filter((t) => t.priority === todoPriorityFilter.value)
   }
   return list.slice(0, 10)
 })
 
-function dpPrevYear() { dpYear.value-- }
-function dpNextYear() { dpYear.value++ }
+function dpPrevYear() {
+  dpYear.value--
+}
+function dpNextYear() {
+  dpYear.value++
+}
 function dpPrevMonth() {
-  if (dpMonth.value === 1) { dpMonth.value = 12; dpYear.value-- }
-  else dpMonth.value--
+  if (dpMonth.value === 1) {
+    dpMonth.value = 12
+    dpYear.value--
+  } else dpMonth.value--
 }
 function dpNextMonth() {
-  if (dpMonth.value === 12) { dpMonth.value = 1; dpYear.value++ }
-  else dpMonth.value++
+  if (dpMonth.value === 12) {
+    dpMonth.value = 1
+    dpYear.value++
+  } else dpMonth.value++
 }
 function dpGoToday() {
   const now = new Date()
@@ -1044,7 +1329,9 @@ function dpGoToday() {
   dpMonth.value = now.getMonth() + 1
   dpSelectedDate.value = now.toISOString().slice(0, 10)
 }
-function dpSelectDate(date) { dpSelectedDate.value = date }
+function dpSelectDate(date) {
+  dpSelectedDate.value = date
+}
 function dpApplyManual() {
   if (dpManualDate.value) {
     const d = new Date(dpManualDate.value)
@@ -1068,7 +1355,7 @@ function addNewTodo() {
   showTodoForm.value = false
 }
 function completeAllTodos() {
-  todoStore.allTodos.forEach(t => {
+  todoStore.allTodos.forEach((t) => {
     if (t.status !== 'completed') todoStore.toggleTodo(t.id, t.auto || false)
   })
 }
@@ -1135,15 +1422,26 @@ onUnmounted(() => {
   gap: var(--space-4);
 }
 .skeleton {
-  background: linear-gradient(90deg, var(--color-bg-tertiary) 25%, var(--color-surface-hover) 50%, var(--color-bg-tertiary) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-tertiary) 25%,
+    var(--color-surface-hover) 50%,
+    var(--color-bg-tertiary) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: var(--radius-sm);
 }
-.skeleton-card { height: 100px; }
+.skeleton-card {
+  height: 100px;
+}
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 .date-todo-section {
   display: grid;
@@ -1168,12 +1466,15 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-2);
 }
-.dp-icon { font-size: 18px; }
+.dp-icon {
+  font-size: 18px;
+}
 .dp-year-month-selectors {
   display: flex;
   gap: var(--space-1);
 }
-.dp-year-select, .dp-month-select {
+.dp-year-select,
+.dp-month-select {
   background: var(--color-bg-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -1194,7 +1495,9 @@ onUnmounted(() => {
   padding: var(--space-1) var(--space-2);
   font-size: 12px;
 }
-.dp-nav-btn:hover { background: var(--color-accent-subtle); }
+.dp-nav-btn:hover {
+  background: var(--color-accent-subtle);
+}
 .dp-today-btn {
   background: var(--color-accent-subtle);
   border: 1px solid var(--color-accent);
@@ -1213,7 +1516,9 @@ onUnmounted(() => {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
-.dp-input-label { white-space: nowrap; }
+.dp-input-label {
+  white-space: nowrap;
+}
 .dp-manual-input {
   flex: 1;
   background: var(--color-bg-primary);
@@ -1245,10 +1550,22 @@ onUnmounted(() => {
   position: relative;
   transition: all 0.15s;
 }
-.dp-day:hover { background: var(--color-accent-subtle); }
-.dp-day.other-month { color: var(--color-text-tertiary); opacity: 0.4; }
-.dp-day.today { background: var(--color-accent-subtle); font-weight: 700; color: var(--color-accent); }
-.dp-day.selected { background: var(--color-accent); color: #fff; }
+.dp-day:hover {
+  background: var(--color-accent-subtle);
+}
+.dp-day.other-month {
+  color: var(--color-text-tertiary);
+  opacity: 0.4;
+}
+.dp-day.today {
+  background: var(--color-accent-subtle);
+  font-weight: 700;
+  color: var(--color-accent);
+}
+.dp-day.selected {
+  background: var(--color-accent);
+  color: #fff;
+}
 .dp-day-dot {
   position: absolute;
   bottom: 2px;
@@ -1259,7 +1576,9 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--color-danger);
 }
-.dp-day.selected .dp-day-dot { background: #fff; }
+.dp-day.selected .dp-day-dot {
+  background: #fff;
+}
 .date-picker-footer {
   display: flex;
   justify-content: space-between;
@@ -1270,9 +1589,17 @@ onUnmounted(() => {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
 }
-.dp-weekday-label { margin-left: var(--space-2); color: var(--color-text-tertiary); }
-.dp-task-count { color: var(--color-accent); font-weight: 600; }
-.todo-panel-wrapper { flex: 1; }
+.dp-weekday-label {
+  margin-left: var(--space-2);
+  color: var(--color-text-tertiary);
+}
+.dp-task-count {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.todo-panel-wrapper {
+  flex: 1;
+}
 .dp-date-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
@@ -1308,7 +1635,8 @@ onUnmounted(() => {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
-.todo-add-form input, .todo-add-form select {
+.todo-add-form input,
+.todo-add-form select {
   background: var(--color-bg-secondary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -1316,7 +1644,9 @@ onUnmounted(() => {
   padding: var(--space-1) var(--space-2);
   font-size: var(--font-size-sm);
 }
-.todo-add-form input[type="text"] { flex: 1; }
+.todo-add-form input[type='text'] {
+  flex: 1;
+}
 .todo-toolbar {
   display: flex;
   justify-content: space-between;
@@ -1335,11 +1665,22 @@ onUnmounted(() => {
   border: 2px solid transparent;
   transition: all 0.15s;
 }
-.todo-priority-btn.p-all { background: var(--color-bg-tertiary); }
-.todo-priority-btn.p-high { background: var(--color-danger); }
-.todo-priority-btn.p-medium { background: var(--color-warning); }
-.todo-priority-btn.p-low { background: var(--color-info); }
-.todo-priority-btn.active { border-color: var(--color-text-primary); transform: scale(1.2); }
+.todo-priority-btn.p-all {
+  background: var(--color-bg-tertiary);
+}
+.todo-priority-btn.p-high {
+  background: var(--color-danger);
+}
+.todo-priority-btn.p-medium {
+  background: var(--color-warning);
+}
+.todo-priority-btn.p-low {
+  background: var(--color-info);
+}
+.todo-priority-btn.active {
+  border-color: var(--color-text-primary);
+  transform: scale(1.2);
+}
 .todo-toolbar-right {
   display: flex;
   gap: var(--space-2);
@@ -1401,9 +1742,19 @@ onUnmounted(() => {
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
-.priority-high { background: var(--color-danger-subtle); color: var(--color-danger); font-weight: 700; }
-.priority-medium { background: var(--color-warning-subtle); color: var(--color-warning); }
-.priority-low { background: var(--color-info-subtle); color: var(--color-info); }
+.priority-high {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  font-weight: 700;
+}
+.priority-medium {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.priority-low {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
 .todo-empty {
   text-align: center;
   padding: var(--space-6) 0;
@@ -1428,7 +1779,9 @@ onUnmounted(() => {
   color: var(--color-accent);
   border-color: var(--color-accent);
 }
-.todo-table-view { overflow-x: auto; }
+.todo-table-view {
+  overflow-x: auto;
+}
 .todo-table {
   width: 100%;
   border-collapse: collapse;
@@ -1443,11 +1796,19 @@ onUnmounted(() => {
   font-size: var(--font-size-xs);
   white-space: nowrap;
 }
-.todo-table td {padding: var(--space-2) var(--space-3);
+.todo-table td {
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-  vertical-align: middle; overflow-wrap: break-word; word-wrap: break-word}
-.todo-table tr.completed { opacity: 0.5; }
-.todo-table tr.overdue { border-left: 3px solid var(--color-danger); }
+  vertical-align: middle;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.todo-table tr.completed {
+  opacity: 0.5;
+}
+.todo-table tr.overdue {
+  border-left: 3px solid var(--color-danger);
+}
 .todo-table-title {
   max-width: 300px;
   overflow: hidden;
@@ -1466,12 +1827,24 @@ onUnmounted(() => {
   padding: var(--space-3);
   transition: all 0.15s;
 }
-.todo-card-item:hover { border-color: var(--color-accent); }
-.todo-card-item.completed { opacity: 0.5; }
-.todo-card-item.overdue { border-color: var(--color-danger); }
-.todo-card-item.priority-border-high { border-left: 3px solid var(--color-danger); }
-.todo-card-item.priority-border-medium { border-left: 3px solid var(--color-warning); }
-.todo-card-item.priority-border-low { border-left: 3px solid var(--color-info); }
+.todo-card-item:hover {
+  border-color: var(--color-accent);
+}
+.todo-card-item.completed {
+  opacity: 0.5;
+}
+.todo-card-item.overdue {
+  border-color: var(--color-danger);
+}
+.todo-card-item.priority-border-high {
+  border-left: 3px solid var(--color-danger);
+}
+.todo-card-item.priority-border-medium {
+  border-left: 3px solid var(--color-warning);
+}
+.todo-card-item.priority-border-low {
+  border-left: 3px solid var(--color-info);
+}
 .todo-card-top {
   display: flex;
   justify-content: space-between;
@@ -1492,7 +1865,8 @@ onUnmounted(() => {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
 }
-.todo-calendar-view { }
+.todo-calendar-view {
+}
 .todo-cal-nav {
   display: flex;
   align-items: center;
@@ -1515,7 +1889,10 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
   margin-bottom: var(--space-1);
 }
-.todo-cal-weekday { padding: var(--space-1) 0; font-weight: 600; }
+.todo-cal-weekday {
+  padding: var(--space-1) 0;
+  font-weight: 600;
+}
 .todo-cal-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1530,13 +1907,35 @@ onUnmounted(() => {
   transition: all 0.15s;
   background: var(--color-bg-primary);
 }
-.todo-cal-day:hover { border-color: var(--color-accent); background: var(--color-accent-subtle); }
-.todo-cal-day.other-month { opacity: 0.35; }
-.todo-cal-day.today { border-color: var(--color-accent); background: var(--color-accent-subtle); }
-.todo-cal-day.selected { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
-.todo-cal-day-num { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-1); }
-.todo-cal-day.today .todo-cal-day-num { color: var(--color-accent); }
-.todo-cal-day-items { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.todo-cal-day:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+.todo-cal-day.other-month {
+  opacity: 0.35;
+}
+.todo-cal-day.today {
+  border-color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+.todo-cal-day.selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+.todo-cal-day-num {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-1);
+}
+.todo-cal-day.today .todo-cal-day-num {
+  color: var(--color-accent);
+}
+.todo-cal-day-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
 .todo-cal-dot {
   width: 7px;
   height: 7px;
@@ -1544,10 +1943,18 @@ onUnmounted(() => {
   cursor: pointer;
   transition: transform 0.15s;
 }
-.todo-cal-dot:hover { transform: scale(1.5); }
-.todo-cal-dot.priority-dot-high { background: var(--color-danger); }
-.todo-cal-dot.priority-dot-medium { background: var(--color-warning); }
-.todo-cal-dot.priority-dot-low { background: var(--color-info); }
+.todo-cal-dot:hover {
+  transform: scale(1.5);
+}
+.todo-cal-dot.priority-dot-high {
+  background: var(--color-danger);
+}
+.todo-cal-dot.priority-dot-medium {
+  background: var(--color-warning);
+}
+.todo-cal-dot.priority-dot-low {
+  background: var(--color-info);
+}
 .todo-cal-detail {
   margin-top: var(--space-3);
   border-top: 1px solid var(--color-border);
@@ -1564,7 +1971,8 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--space-2);
 }
-.todo-week-view { }
+.todo-week-view {
+}
 .todo-week-nav {
   display: flex;
   align-items: center;
@@ -1606,7 +2014,9 @@ onUnmounted(() => {
   color: var(--color-text-primary);
   margin-top: var(--space-1);
 }
-.todo-week-num.is-today { color: var(--color-accent); }
+.todo-week-num.is-today {
+  color: var(--color-accent);
+}
 .todo-week-items {
   flex: 1;
   display: flex;
@@ -1622,12 +2032,25 @@ onUnmounted(() => {
   overflow: hidden;
   border-left: 3px solid transparent;
 }
-.todo-week-item:hover { background: var(--color-bg-tertiary); }
-.todo-week-item.completed { opacity: 0.4; text-decoration: line-through; }
-.todo-week-item.overdue { background: var(--color-danger-subtle); }
-.todo-week-item.priority-border-high { border-left-color: var(--color-danger); }
-.todo-week-item.priority-border-medium { border-left-color: var(--color-warning); }
-.todo-week-item.priority-border-low { border-left-color: var(--color-info); }
+.todo-week-item:hover {
+  background: var(--color-bg-tertiary);
+}
+.todo-week-item.completed {
+  opacity: 0.4;
+  text-decoration: line-through;
+}
+.todo-week-item.overdue {
+  background: var(--color-danger-subtle);
+}
+.todo-week-item.priority-border-high {
+  border-left-color: var(--color-danger);
+}
+.todo-week-item.priority-border-medium {
+  border-left-color: var(--color-warning);
+}
+.todo-week-item.priority-border-low {
+  border-left-color: var(--color-info);
+}
 .todo-week-item-title {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1700,8 +2123,14 @@ onUnmounted(() => {
   }
 }
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ====== 紧凑指标条增强 ====== */
@@ -1779,7 +2208,12 @@ onUnmounted(() => {
   animation: overduePulse 2s ease-in-out infinite;
 }
 @keyframes overduePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-  50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  }
 }
 </style>
