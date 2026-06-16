@@ -134,6 +134,13 @@ export const useCustomerStore = defineStore('customer', () => {
   }
 
   function addCustomer(data) {
+    /* 信用额度校验：余额不能超过信用额度 */
+    const balance = parseFloat(data.balance) || 0
+    const creditLimit = parseFloat(data.creditLimit) || 0
+    if (creditLimit > 0 && balance > creditLimit) {
+      return { success: false, error: `余额 ${balance} 超过信用额度 ${creditLimit}，请调整后再添加。` }
+    }
+
     const customer = {
       id: generateId('c'),
       customerNo: generateCustomerNo(),
@@ -167,6 +174,16 @@ export const useCustomerStore = defineStore('customer', () => {
   }
 
   function updateCustomer(id, updates) {
+    /* 信用额度校验：更新后余额不能超过信用额度 */
+    const existing = customers.value.find((c) => c.id === id)
+    if (existing) {
+      const newBalance = parseFloat(updates.balance) ?? parseFloat(existing.balance) ?? 0
+      const newCreditLimit = parseFloat(updates.creditLimit) ?? parseFloat(existing.creditLimit) ?? 0
+      if (newCreditLimit > 0 && newBalance > newCreditLimit) {
+        return { success: false, error: `余额 ${newBalance} 超过信用额度 ${newCreditLimit}，请调整后再更新。` }
+      }
+    }
+
     const idx = customers.value.findIndex((c) => c.id === id)
     if (idx !== -1) {
       customers.value[idx] = { ...customers.value[idx], ...updates, updatedBy: getCurrentUser() }

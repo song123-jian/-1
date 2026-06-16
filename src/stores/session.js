@@ -2,9 +2,12 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
 const SESSION_KEY = 'gj_erp_session'
+const REMEMBERED_ROLE_KEY = 'gj_erp_remembered_role'
 
 /* 会话超时时间：30分钟（毫秒） */
 const SESSION_TIMEOUT = 30 * 60 * 1000
+/* 单人模式会话超时时间：24小时 */
+const SESSION_TIMEOUT_SOLO = 24 * 60 * 60 * 1000
 
 /* 可用角色列表（与 permission store 保持一致） */
 const AVAILABLE_ROLES = ['管理员', '总经理', '销售主管', '销售员', '仓库主管', '仓管员', '财务', '查看者']
@@ -73,6 +76,12 @@ export const useSessionStore = defineStore('session', () => {
   /* 登录时间 */
   const loginTime = ref(null)
 
+  /* 记住的角色 */
+  const rememberedRole = ref(null)
+
+  /* 是否为单人模式 */
+  const isSoloMode = ref(false)
+
   /* Presence 频道引用 */
   let _presenceChannel = null
 
@@ -99,12 +108,21 @@ export const useSessionStore = defineStore('session', () => {
    */
   function restoreSession() {
     try {
+      /* 恢复记住的角色 */
+      const savedRole = localStorage.getItem(REMEMBERED_ROLE_KEY)
+      if (savedRole && AVAILABLE_ROLES.includes(savedRole)) {
+        rememberedRole.value = savedRole
+        isSoloMode.value = true
+      }
+
       const saved = localStorage.getItem(SESSION_KEY)
       if (saved) {
         const data = JSON.parse(saved)
         if (data.role && AVAILABLE_ROLES.includes(data.role)) {
+          /* 根据模式选择超时时间 */
+          const timeout = isSoloMode.value ? SESSION_TIMEOUT_SOLO : SESSION_TIMEOUT
           /* 检查会话是否已超时 */
-          if (data.lastActiveTime && Date.now() - data.lastActiveTime > SESSION_TIMEOUT) {
+          if (data.lastActiveTime && Date.now() - data.lastActiveTime > timeout) {
             clearSession()
             return false
           }
@@ -127,7 +145,7 @@ export const useSessionStore = defineStore('session', () => {
    * 选择角色并创建会话
    * @param {string} role - 角色名称（中文）
    */
-  function selectRole(role) {
+  function selectRole(role, remember = false) {
     if (!AVAILABLE_ROLES.includes(role)) {
       console.warn('[会话] 无效角色:', role)
       return
@@ -140,6 +158,21 @@ export const useSessionStore = defineStore('session', () => {
     sessionId.value = generateSessionId(role, deviceFingerprint.value)
     loginTime.value = new Date().toISOString()
     lastActiveTime.value = Date.now()
+
+    /* 记住角色 */
+    if (remember) {
+      rememberedRole.value = role
+      isSoloMode.value = true
+      try {
+        localStorage.setItem(REMEMBERED_ROLE_KEY, role)
+      } catch (e) { /* 忽略 */ }
+    } else {
+      rememberedRole.value = null
+      isSoloMode.value = false
+      try {
+        localStorage.removeItem(REMEMBERED_ROLE_KEY)
+      } catch (e) { /* 忽略 */ }
+    }
 
     /* 持久化到 localStorage */
     const sessionData = {
@@ -167,11 +200,85 @@ export const useSessionStore = defineStore('session', () => {
     sessionId.value = null
     loginTime.value = null
     lastActiveTime.value = null
-    /* 保留设备指纹，同一设备无需重新生成 */
+    /* 保留设备指纹和记住的角色，同一设备无需重新生成 */
     try {
       localStorage.removeItem(SESSION_KEY)
     } catch (e) {
       /* 忽略 */
+    }
+  }
+
+  /**
+   * 快速切换角色（无需退出到选择页）
+   * @param {string} newRole - 新角色名称
+   * @returns {boolean} 是否切换成功
+   */
+  function switchRole(newRole) {
+    if (!AVAILABLE_ROLES.includes(newRole)) {
+      console.warn('[会话] 无效角色:', newRole)
+      return false
+    }
+    /* 保留设备指纹 */
+    const fingerprint = deviceFingerprint.value || generateDeviceFingerprint()
+    deviceFingerprint.value = fingerprint
+
+    currentRole.value = newRole
+    sessionId.value = generateSessionId(newRole, fingerprint)
+    loginTime.value = new Date().toISOString()
+    lastActiveTime.value = Date.now()
+
+    /* 更新记住的角色 */
+    if (rememberedRole.value) {
+      rememberedRole.value = newRole
+      try {
+        localStorage.setItem(REMEMBERED_ROLE_KEY, newRole)
+      } catch (e) { /* 忽略 */ }
+    }
+
+    /* 持久化 */
+    const sessionData = {
+      role: currentRole.value,
+      sessionId: sessionId.value,
+      deviceFingerprint: deviceFingerprint.value,
+      loginTime: loginTime.value,
+      lastActiveTime: lastActiveTime.value
+    }
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData))
+    } catch (e) { /* 忽略 */ }
+
+    return true
+  }
+
+  /**
+   * 使用记住的角色自动登录
+   * @returns {boolean} 是否自动登录成功
+   */
+  function autoLoginWithRememberedRole() {
+    if (rememberedRole.value && AVAILABLE_ROLES.includes(rememberedRole.value)) {
+      selectRole(rememberedRole.value, true)
+      return true
+    }
+    return false
+  }
+
+  /**
+   * 设置记住角色
+   * @param {boolean} remember - 是否记住
+   */
+  function setRememberRole(remember) {
+    if (remember && currentRole.value) {
+      rememberedRole.value = currentRole.value
+      isSoloMode.value = true
+      try {
+        localStorage.setItem(REMEMBERED_ROLE_KEY, currentRole.value)
+      } catch (e) { /* 忽略 */ }
+    } else {
+      rememberedRole.value = null
+      isSoloMode.value = false
+      try {
+        localStorage.removeItem(REMEMBERED_ROLE_KEY)
+      } catch (e) { /* 忽略 */ }
     }
   }
 
@@ -198,9 +305,12 @@ export const useSessionStore = defineStore('session', () => {
    * @returns {boolean} true 表示已过期并已清除会话，false 表示未过期
    */
   function checkSessionExpiry() {
-    if (currentRole.value && lastActiveTime.value && Date.now() - lastActiveTime.value > SESSION_TIMEOUT) {
-      clearSession()
-      return true // 已过期
+    if (currentRole.value && lastActiveTime.value) {
+      const timeout = isSoloMode.value ? SESSION_TIMEOUT_SOLO : SESSION_TIMEOUT
+      if (Date.now() - lastActiveTime.value > timeout) {
+        clearSession()
+        return true
+      }
     }
     return false
   }
@@ -271,6 +381,8 @@ export const useSessionStore = defineStore('session', () => {
     onlineMembers,
     lastActiveTime,
     loginTime,
+    rememberedRole,
+    isSoloMode,
     isLoggedIn,
     currentUser,
     roleName,
@@ -278,6 +390,9 @@ export const useSessionStore = defineStore('session', () => {
     restoreSession,
     selectRole,
     clearSession,
+    switchRole,
+    autoLoginWithRememberedRole,
+    setRememberRole,
     updateActivity,
     checkSessionExpiry,
     subscribePresence,

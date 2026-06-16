@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from '@/stores/session'
 import { usePermissionStore } from '@/stores/permission'
+import { RoleGroups } from '@/constants/roles'
 
 /* 需要管理员权限的路由 */
 const ADMIN_ONLY_ROUTES = ['Approvals', 'SalesPermission', 'SystemManagement', 'SettingsParams', 'DatabaseConnection']
@@ -195,7 +196,7 @@ const routes = [
   {
     path: '/data-screen',
     name: 'DataScreen',
-    component: () => import('@/modules/report/views/DataScreen.vue'),
+    component: () => import('@/views/DataScreen/index.vue'),
     meta: { title: '数据大屏', icon: 'database' }
   },
   {
@@ -308,19 +309,19 @@ router.beforeEach((to, from) => {
   const permStore = usePermissionStore()
 
   /* 管理员专属路由 */
-  if (ADMIN_ONLY_ROUTES.includes(to.name) && !['管理员', '总经理'].includes(role)) {
+  if (ADMIN_ONLY_ROUTES.includes(to.name) && !RoleGroups.ADMIN_AND_GM.includes(role)) {
     return { name: 'Dashboard' }
   }
 
   /* 财务相关路由：财务/管理员/总经理可访问 */
-  if (FINANCE_ROUTES.includes(to.name) && !['管理员', '总经理', '财务'].includes(role)) {
+  if (FINANCE_ROUTES.includes(to.name) && !RoleGroups.FINANCE_ACCESS.includes(role)) {
     /* 查看者也可以查看月度统计 */
     if (to.name === 'MonthlyStats' && role === '查看者') return true
     return { name: 'Dashboard' }
   }
 
   /* 仓位管理：仓储角色/管理员/总经理可访问 */
-  if (WAREHOUSE_ROUTES.includes(to.name) && !['管理员', '总经理', '仓库主管', '仓管员'].includes(role)) {
+  if (WAREHOUSE_ROUTES.includes(to.name) && !RoleGroups.WAREHOUSE_ACCESS.includes(role)) {
     return { name: 'Dashboard' }
   }
 
@@ -328,7 +329,7 @@ router.beforeEach((to, from) => {
   const routePerm = ROUTE_PERM_MAP[to.name]
   if (routePerm) {
     /* 管理员和总经理拥有所有路由权限，不受权限矩阵数据影响 */
-    if (['管理员', '总经理'].includes(role)) {
+    if (RoleGroups.ADMIN_AND_GM.includes(role)) {
       return true
     }
     const hasPerm = permStore.getPerm(role, routePerm.module, routePerm.action)

@@ -92,7 +92,7 @@ export function getAllowedPermissions(moduleKey) {
 /**
  * v-permission 自定义指令
  * 用法：v-permission="{ module: 'quote_contract', perm: 'canDeleteQuote' }"
- * 当权限被拒绝时隐藏元素
+ * 当权限被拒绝时移除DOM元素，替换为注释占位符
  */
 export const vPermission = {
   mounted(el, binding) {
@@ -100,20 +100,27 @@ export const vPermission = {
     if (!module || !perm) return
 
     if (!checkPermission(module, perm)) {
-      el.hidden = true
-      el.setAttribute('aria-hidden', 'true')
+      const placeholder = document.createComment(' v-permission: denied ')
+      el.__vPerm = { placeholder, original: el }
+      el.parentNode.replaceChild(placeholder, el)
     }
   },
   updated(el, binding) {
     const { module, perm } = binding.value || {}
     if (!module || !perm) return
 
-    if (!checkPermission(module, perm)) {
-      el.hidden = true
-      el.setAttribute('aria-hidden', 'true')
-    } else {
-      el.hidden = false
-      el.removeAttribute('aria-hidden')
+    const hasPermission = checkPermission(module, perm)
+    const vPerm = el.__vPerm
+
+    if (hasPermission && vPerm && vPerm.placeholder) {
+      // 权限恢复：从占位符恢复原始元素
+      vPerm.placeholder.parentNode.replaceChild(el, vPerm.placeholder)
+      el.__vPerm = null
+    } else if (!hasPermission && !vPerm) {
+      // 权限被拒绝且元素当前可见：替换为占位符
+      const placeholder = document.createComment(' v-permission: denied ')
+      el.__vPerm = { placeholder, original: el }
+      el.parentNode.replaceChild(placeholder, el)
     }
   }
 }

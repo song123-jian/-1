@@ -72,8 +72,26 @@
       </div>
       <LanguageSwitcher />
       <NotificationBell />
-      <div class="topbar-user">
+      <div class="topbar-user" @click="showRoleMenu = !showRoleMenu">
         <div class="user-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
+        <span class="user-role-name">{{ sessionStore.roleName }}</span>
+        <svg class="user-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        <!-- 角色快速切换下拉菜单 -->
+        <div v-if="showRoleMenu" class="role-switch-dropdown">
+          <div class="role-dropdown-header">切换身份</div>
+          <button
+            v-for="role in sessionStore.availableRoles"
+            :key="role"
+            class="role-dropdown-item"
+            :class="{ active: sessionStore.currentRole === role }"
+            @click.stop="onSwitchRole(role)"
+          >
+            <span class="role-check">{{ sessionStore.currentRole === role ? '✓' : '' }}</span>
+            {{ role }}
+          </button>
+          <div class="role-dropdown-divider"></div>
+          <button class="role-dropdown-item role-logout" @click.stop="onLogout">退出登录</button>
+        </div>
       </div>
     </div>
   </header>
@@ -108,6 +126,7 @@ const searchQuery = ref('')
 const searchCollapsed = ref(false)
 const showSearchResults = ref(false)
 const showThemeMenu = ref(false)
+const showRoleMenu = ref(false)
 let debounceTimer = null
 
 const pageTitle = computed(() => route.meta.title || '冠久ERP')
@@ -231,9 +250,25 @@ function onSearchResultClick(item) {
   }
 }
 
+function onSwitchRole(role) {
+  sessionStore.switchRole(role)
+  showRoleMenu.value = false
+  /* 刷新当前页面以重新加载权限相关数据 */
+  router.go(0)
+}
+
+function onLogout() {
+  sessionStore.clearSession()
+  showRoleMenu.value = false
+  router.replace('/')
+}
+
 function handleClickOutside(e) {
   if (!e.target.closest('.topbar-search')) {
     showSearchResults.value = false
+  }
+  if (!e.target.closest('.topbar-user')) {
+    showRoleMenu.value = false
   }
 }
 
@@ -335,6 +370,7 @@ onBeforeUnmount(() => {
 }
 .topbar-search:focus-within {
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle), 0 0 12px rgba(59, 130, 246, 0.1);
 }
 .search-icon {
   font-size: 14px;
@@ -376,9 +412,13 @@ onBeforeUnmount(() => {
   background: var(--color-surface-hover);
   color: var(--color-accent);
 }
+.mode-toggle-btn:hover .mode-icon {
+  transform: rotate(180deg);
+}
 .mode-icon {
   width: 18px;
   height: 18px;
+  transition: transform 0.5s ease;
 }
 
 .topbar-theme-switcher {
@@ -387,8 +427,8 @@ onBeforeUnmount(() => {
   align-items: center;
 }
 .theme-dot {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: var(--radius-full);
   border: 2px solid transparent;
   cursor: pointer;
@@ -399,7 +439,8 @@ onBeforeUnmount(() => {
 }
 .theme-dot.active {
   border-color: var(--color-text-primary);
-  box-shadow: 0 0 0 2px var(--color-bg-primary);
+  box-shadow: 0 0 0 2px var(--color-bg-primary), 0 0 8px rgba(59, 130, 246, 0.3);
+  transform: scale(1.15);
 }
 .theme-more {
   font-size: 12px;
@@ -452,6 +493,15 @@ onBeforeUnmount(() => {
 .topbar-user {
   display: flex;
   align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  position: relative;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+}
+.topbar-user:hover {
+  background: var(--color-surface-hover);
 }
 .user-avatar {
   width: 32px;
@@ -464,6 +514,83 @@ onBeforeUnmount(() => {
   justify-content: center;
   font-size: var(--font-size-sm);
   font-weight: 600;
+  flex-shrink: 0;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+.user-role-name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
+
+/* 角色切换下拉菜单 */
+.role-switch-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-popover, 9999);
+  min-width: 160px;
+  padding: var(--space-1) 0;
+}
+.role-dropdown-header {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 600;
+}
+.role-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  text-align: left;
+}
+.role-dropdown-item:hover {
+  background: var(--color-surface-hover);
+}
+.role-dropdown-item.active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  font-weight: 500;
+}
+.role-check {
+  width: 16px;
+  text-align: center;
+  font-size: var(--font-size-xs);
+  color: var(--color-accent);
+}
+.role-dropdown-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: var(--space-1) 0;
+}
+.role-logout {
+  color: var(--color-danger, #EF4444);
+}
+.role-logout:hover {
+  background: rgba(239, 68, 68, 0.1);
 }
 
 /* 平板适配 */
@@ -520,10 +647,11 @@ onBeforeUnmount(() => {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl), 0 0 20px rgba(0, 0, 0, 0.15);
   z-index: var(--z-popover, 9999);
   max-height: 320px;
   overflow-y: auto;
+  animation: fadeInDown 200ms ease;
 }
 .search-result-item {
   display: flex;
@@ -562,5 +690,16 @@ onBeforeUnmount(() => {
   text-align: center;
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

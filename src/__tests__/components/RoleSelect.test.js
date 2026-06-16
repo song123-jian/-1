@@ -93,8 +93,9 @@ describe('RoleSelect 组件', () => {
       expect(btn.attributes('disabled')).toBeDefined()
     })
 
-    it('应渲染在线成员区域', () => {
+    it('应渲染在线成员区域（非单人模式）', () => {
       const wrapper = mountComponent()
+      /* 默认非单人模式，应显示在线成员区域 */
       expect(wrapper.find('.online-section').exists()).toBe(true)
     })
 
@@ -104,9 +105,24 @@ describe('RoleSelect 组件', () => {
       expect(wrapper.find('.online-empty').text()).toContain('暂无其他成员在线')
     })
 
+    it('单人模式下应隐藏在线成员区域', async () => {
+      sessionStore.isSoloMode = true
+      const wrapper = mountComponent()
+      await flushPromises()
+      expect(wrapper.find('.online-section').exists()).toBe(false)
+    })
+
     it('应渲染底部文字', () => {
       const wrapper = mountComponent()
+      /* 默认非单人模式显示团队共享模式 */
       expect(wrapper.find('.role-footer').text()).toContain('团队共享模式')
+    })
+
+    it('单人模式下底部应显示个人使用模式', async () => {
+      sessionStore.isSoloMode = true
+      const wrapper = mountComponent()
+      await flushPromises()
+      expect(wrapper.find('.role-footer').text()).toContain('个人使用模式')
     })
   })
 
@@ -153,7 +169,7 @@ describe('RoleSelect 组件', () => {
       // 点击进入
       await wrapper.find('.enter-btn').trigger('click')
 
-      expect(selectRoleSpy).toHaveBeenCalledWith('管理员')
+      expect(selectRoleSpy).toHaveBeenCalledWith('管理员', false)
       expect(mockPush).toHaveBeenCalledWith('/dashboard')
 
       selectRoleSpy.mockRestore()
@@ -214,6 +230,35 @@ describe('RoleSelect 组件', () => {
       await flushPromises()
 
       expect(wrapper.find('.online-count').text()).toBe('3人')
+    })
+  })
+
+  /* ===== 记住身份 ===== */
+  describe('记住身份', () => {
+    it('应渲染记住身份复选框', () => {
+      const wrapper = mountComponent()
+      expect(wrapper.find('.remember-check').exists()).toBe(true)
+      expect(wrapper.find('.remember-label').text()).toBe('记住我的身份')
+    })
+
+    it('勾选记住身份后进入系统应传入 remember=true', async () => {
+      const wrapper = mountComponent()
+      const selectRoleSpy = vi.spyOn(sessionStore, 'selectRole')
+
+      await wrapper.findAll('.role-card')[0].trigger('click')
+      await wrapper.find('input[type="checkbox"]').setValue(true)
+      await wrapper.find('.enter-btn').trigger('click')
+
+      expect(selectRoleSpy).toHaveBeenCalledWith('管理员', true)
+      selectRoleSpy.mockRestore()
+    })
+
+    it('有记住的角色时应自动选中该角色', async () => {
+      sessionStore.rememberedRole = '财务'
+      const wrapper = mountComponent()
+      await flushPromises()
+      expect(wrapper.vm.selectedRole).toBe('财务')
+      expect(wrapper.vm.rememberRole).toBe(true)
     })
   })
 })

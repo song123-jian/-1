@@ -37,7 +37,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -62,7 +62,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -87,7 +87,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -112,7 +112,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -137,7 +137,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
             <span v-if="item.badge" class="nav-item-badge">{{ item.badge }}</span>
           </router-link>
@@ -155,7 +155,7 @@
         </div>
         <div class="nav-section-body">
           <div class="nav-item has-submenu" @click="toggleSettingsSubmenu" :class="{ open: settingsSubmenuOpen }">
-            <span class="nav-item-icon"><Icon name="setting" :size="16" /></span>
+            <span class="nav-item-icon"><Icon name="setting" :size="18" /></span>
             <span class="nav-item-text">系统设置</span>
             <span class="nav-item-badge settings-toggle-badge"><Icon :name="settingsSubmenuOpen ? 'chevronDown' : 'chevronRight'" :size="12" /></span>
           </div>
@@ -168,7 +168,7 @@
               :class="{ active: isItemActive(item) }"
               @contextmenu.prevent="onNavContext($event, item)"
             >
-              <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+              <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
               <span class="nav-item-text">{{ item.label }}</span>
             </router-link>
           </div>
@@ -180,7 +180,7 @@
             :class="{ active: isItemActive(item) }"
             @contextmenu.prevent="onNavContext($event, item)"
           >
-            <span class="nav-item-icon"><Icon :name="item.icon" :size="16" /></span>
+            <span class="nav-item-icon"><Icon :name="item.icon" :size="18" /></span>
             <span class="nav-item-text">{{ item.label }}</span>
           </router-link>
         </div>
@@ -582,9 +582,11 @@ const systemItems = computed(() => [
 }
 
 .sidebar-logo {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--color-accent), var(--color-purple));
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-purple, #8b5cf6), #ec4899);
+  background-size: 200% 200%;
+  animation: gradientShift 4s ease infinite;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
@@ -593,6 +595,7 @@ const systemItems = computed(() => [
   font-weight: 700;
   font-size: var(--font-size-base);
   flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
 }
 
 .sidebar-brand {
@@ -812,7 +815,7 @@ const systemItems = computed(() => [
   transition: background var(--transition-fast);
 }
 .nav-item:hover {
-  background: var(--color-accent-subtle);
+  background: linear-gradient(90deg, var(--color-accent-subtle), transparent);
   color: var(--color-text-primary);
 }
 .nav-item:hover::before {
@@ -822,7 +825,7 @@ const systemItems = computed(() => [
   transform: scale(0.98);
 }
 .nav-item.active {
-  background: var(--color-accent-subtle);
+  background: linear-gradient(90deg, var(--color-accent-subtle), transparent);
   color: var(--color-accent);
   font-weight: 600;
 }
@@ -853,6 +856,7 @@ const systemItems = computed(() => [
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-full);
   font-weight: 600;
+  animation: fadeInScale 300ms ease;
 }
 .settings-toggle-badge {
   background: var(--color-accent-subtle);
@@ -972,6 +976,8 @@ const systemItems = computed(() => [
   font-weight: 600;
   font-size: var(--font-size-sm);
   flex-shrink: 0;
+  border: 2px solid var(--color-surface);
+  box-shadow: 0 0 0 1px var(--color-accent);
 }
 .sidebar-user-info {
   overflow: hidden;
@@ -999,6 +1005,18 @@ const systemItems = computed(() => [
     height: 32px;
     font-size: var(--font-size-sm);
   }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeInScale {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 @keyframes favPulse {

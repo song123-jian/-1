@@ -7,6 +7,7 @@
  * - 版本回滚/恢复
  * - 版本标签与注释
  * - 历史清理策略
+ * - 存储优化：仅存储 diff 而非完整快照
  */
 
 import eventBus, { DataEvents } from './eventBus'
@@ -32,7 +33,7 @@ const DEFAULT_CONFIG = {
 
 class VersionControl {
   constructor() {
-    /* 版本存储：moduleId [右] itemId [右] [version] */
+    /* 版本存储：moduleId → itemId → [version] */
     this._versions = new Map()
     /* 配置 */
     this._config = { ...DEFAULT_CONFIG }
@@ -80,6 +81,48 @@ class VersionControl {
   }
 
   /**
+   * 计算两个数据对象之间的 diff（仅返回变更字段）
+   * @param {*} oldData - 旧数据
+   * @param {*} newData - 新数据
+   * @returns {Array} 变更列表 [{field, oldValue, newValue}]
+   */
+  _computeDiff(oldData, newData) {
+    if (!oldData && !newData) return []
+    if (!oldData) {
+      return Object.keys(newData).map(key => ({
+        field: key,
+        oldValue: undefined,
+        newValue: newData[key]
+      }))
+    }
+    if (!newData) {
+      return Object.keys(oldData).map(key => ({
+        field: key,
+        oldValue: oldData[key],
+        newValue: undefined
+      }))
+    }
+    const changes = []
+    const allKeys = new Set([...Object.keys(oldData), ...Object.keys(newData)])
+
+    for (const key of allKeys) {
+      if (key.startsWith('_') || key === 'updatedAt' || key === 'updatedBy') continue
+      const oldVal = oldData[key]
+      const newVal = newData[key]
+
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        changes.push({
+          field: key,
+          oldValue: oldVal,
+          newValue: newVal
+        })
+      }
+    }
+
+    return changes
+  }
+
+  /**
    * 记录一个版本
    * @param {string} module - 模块名
    * @param {string} itemId - 数据项ID
@@ -102,19 +145,29 @@ class VersionControl {
     /* 计算版本号 */
     const versionNumber = versions.length + 1
 
+    /* 计算 diff */
+    const changes = meta.changes
+      ? (Array.isArray(meta.changes) ? meta.changes : this._computeDiff(oldData, newData))
+      : this._computeDiff(oldData, newData)
+
     const version = {
       id: `v_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       module,
       itemId,
       version: versionNumber,
       action: meta.action || 'update',
-      oldData: oldData ? JSON.parse(JSON.stringify(oldData)) : null,
+      changes,
       newData: newData ? JSON.parse(JSON.stringify(newData)) : null,
-      changes: meta.changes || this._computeChanges(oldData, newData),
       user: meta.user || 'system',
       label: meta.label || '',
       timestamp: Date.now(),
       datetime: new Date().toISOString()
+    }
+
+    /* 之前最新版本移除 newData，仅保留 diff */
+    if (versions.length > 0) {
+      const previousLatest = versions[versions.length - 1]
+      delete previousLatest.newData
     }
 
     versions.push(version)
@@ -185,6 +238,86 @@ class VersionControl {
   }
 
   /**
+   * 从第一个可用快照开始重放变更，重建目标版本的数据
+   * @param {string} module - 模块名
+   * @param {string} itemId - 数据项ID
+   * @param {string} targetVersionId - 目标版本ID
+   * @returns {*|null} 重建后的数据
+   */
+  _reconstructData(module, itemId, targetVersionId) {
+    const versions = this._versions.get(module)?.get(itemId)
+    if (!versions || versions.length === 0) return null
+
+    const targetIdx = versions.findIndex(v => v.id === targetVersionId)
+    if (targetIdx === -1) return null
+
+    /* 找到目标版本之前（含）最近的包含 newData 的版本作为起点 */
+    let startIdx = -1
+    for (let i = targetIdx; i >= 0; i--) {
+      if (versions[i].newData !== undefined && versions[i].newData !== null) {
+        startIdx = i
+        break
+      }
+    }
+
+    /* 如果没有找到有 newData 的版本，从第一个版本开始构建 */
+    if (startIdx === -1) {
+      /* 第一个版本是 create，从空对象开始 */
+      let data = {}
+      for (let i = 0; i <= targetIdx; i++) {
+        const v = versions[i]
+        if (v.action === 'create' && v.changes) {
+          for (const change of v.changes) {
+            if (change.newValue !== undefined) {
+              data[change.field] = change.newValue
+            }
+          }
+        } else if (v.action === 'delete') {
+          data = null
+        } else if (v.changes) {
+          for (const change of v.changes) {
+            if (change.newValue === undefined) {
+              delete data[change.field]
+            } else {
+              data[change.field] = change.newValue
+            }
+          }
+        }
+      }
+      return data
+    }
+
+    /* 从 startIdx 的 newData 开始，重放后续变更到 targetIdx */
+    let data = JSON.parse(JSON.stringify(versions[startIdx].newData))
+    for (let i = startIdx + 1; i <= targetIdx; i++) {
+      const v = versions[i]
+      if (v.action === 'delete') {
+        data = null
+      } else if (v.action === 'create') {
+        data = {}
+        if (v.changes) {
+          for (const change of v.changes) {
+            if (change.newValue !== undefined) {
+              data[change.field] = change.newValue
+            }
+          }
+        }
+      } else if (v.changes) {
+        if (data === null) data = {}
+        for (const change of v.changes) {
+          if (change.newValue === undefined) {
+            delete data[change.field]
+          } else {
+            data[change.field] = change.newValue
+          }
+        }
+      }
+    }
+
+    return data
+  }
+
+  /**
    * 回滚到指定版本
    * @param {string} module - 模块名
    * @param {string} itemId - 数据项ID
@@ -195,7 +328,14 @@ class VersionControl {
     const version = this.getVersion(module, itemId, versionId)
     if (!version) return null
 
-    const restoredData = version.newData ? JSON.parse(JSON.stringify(version.newData)) : null
+    let restoredData
+    if (version.newData !== undefined) {
+      /* 最新版本或仍有 newData 的版本，直接使用 */
+      restoredData = version.newData ? JSON.parse(JSON.stringify(version.newData)) : null
+    } else {
+      /* 旧版本，需要通过重放变更重建数据 */
+      restoredData = this._reconstructData(module, itemId, versionId)
+    }
 
     /* 记录回滚操作 */
     this.recordVersion(module, itemId, null, restoredData, {
@@ -230,10 +370,18 @@ class VersionControl {
     const v2 = this.getVersion(module, itemId, versionId2)
     if (!v1 || !v2) return null
 
+    /* 获取两个版本的数据用于对比 */
+    const data1 = v1.newData !== undefined
+      ? v1.newData
+      : this._reconstructData(module, itemId, versionId1)
+    const data2 = v2.newData !== undefined
+      ? v2.newData
+      : this._reconstructData(module, itemId, versionId2)
+
     return {
       version1: v1,
       version2: v2,
-      diff: this._computeChanges(v1.newData, v2.newData)
+      diff: this._computeChanges(data1, data2)
     }
   }
 
@@ -333,6 +481,54 @@ class VersionControl {
   }
 
   /**
+   * 将旧格式版本数据迁移为新 diff 格式
+   * 旧格式：{ oldData, newData } → 新格式：{ changes, newData (仅最新) }
+   * @param {Array} versions - 版本列表
+   * @returns {Array} 迁移后的版本列表
+   */
+  _migrateVersions(versions) {
+    if (!versions || versions.length === 0) return versions
+
+    for (let i = 0; i < versions.length; i++) {
+      const v = versions[i]
+
+      /* 检测旧格式：有 oldData 字段 */
+      if (v.oldData !== undefined) {
+        /* 计算 diff */
+        if (v.oldData && v.newData) {
+          v.changes = this._computeDiff(v.oldData, v.newData)
+        } else if (v.oldData === null && v.newData) {
+          /* create 操作 */
+          v.changes = Object.keys(v.newData).map(key => ({
+            field: key,
+            oldValue: undefined,
+            newValue: v.newData[key]
+          }))
+        } else if (v.oldData && v.newData === null) {
+          /* delete 操作 */
+          v.changes = Object.keys(v.oldData).map(key => ({
+            field: key,
+            oldValue: v.oldData[key],
+            newValue: undefined
+          }))
+        } else {
+          v.changes = v.changes || []
+        }
+
+        /* 删除 oldData */
+        delete v.oldData
+      }
+
+      /* 仅最新版本保留 newData */
+      if (i < versions.length - 1) {
+        delete v.newData
+      }
+    }
+
+    return versions
+  }
+
+  /**
    * 保存到localStorage
    */
   _saveToStorage() {
@@ -362,7 +558,9 @@ class VersionControl {
         for (const [module, itemMap] of Object.entries(data)) {
           const m = new Map()
           for (const [itemId, versions] of Object.entries(itemMap)) {
-            m.set(itemId, versions)
+            /* 迁移旧格式数据 */
+            const migrated = this._migrateVersions(versions)
+            m.set(itemId, migrated)
           }
           this._versions.set(module, m)
         }

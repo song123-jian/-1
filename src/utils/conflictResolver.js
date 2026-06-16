@@ -6,7 +6,35 @@
 /**
  * 默认应用密钥，用于派生默认key
  */
-const DEFAULT_APP_KEY = 'gj_erp';
+const DEFAULT_APP_KEY = 'gj_erp'
+
+/**
+ * 递归深度比较两个值是否相等
+ * @param {*} a - 第一个值
+ * @param {*} b - 第二个值
+ * @returns {boolean} 是否深度相等
+ */
+export function deepEqual(a, b) {
+  // 处理 null/undefined
+  if (a === null || b === null) return a === b
+  if (a === undefined || b === undefined) return a === b
+
+  // 处理原始类型
+  if (typeof a !== 'object' || typeof b !== 'object') return a === b
+
+  // 处理数组
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return false
+    if (a.length !== b.length) return false
+    return a.every((item, index) => deepEqual(item, b[index]))
+  }
+
+  // 处理对象
+  const keysA = Object.keys(a)
+  const keysB = Object.keys(b)
+  if (keysA.length !== keysB.length) return false
+  return keysA.every((key) => Object.prototype.hasOwnProperty.call(b, key) && deepEqual(a[key], b[key]))
+}
 
 /**
  * 解析数据的时间戳
@@ -142,8 +170,8 @@ export function detectConflicts(localData, serverData, idKey = 'id') {
     const serverItem = serverMap.get(localItem[idKey])
     if (!serverItem) continue
 
-    // 比较两个对象是否相同（简单深比较）
-    const isSame = JSON.stringify(localItem) === JSON.stringify(serverItem)
+    // 比较两个对象是否相同（递归深比较）
+    const isSame = deepEqual(localItem, serverItem)
     if (!isSame) {
       conflicts.push({
         id: localItem[idKey],
