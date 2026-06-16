@@ -138,14 +138,24 @@ async function init(url, anonKey, options = {}) {
 }
 
 /**
- * 自动从 localStorage 恢复连接
+ * 自动从 localStorage 恢复连接，若无则从 .env 默认配置连接
  */
 async function autoInit() {
+  // 优先从 localStorage 恢复（用户手动配置的）
   const url = localStorage.getItem(STORAGE_URL_KEY)
   const key = await decryptKey(localStorage.getItem(STORAGE_KEY_KEY))
   if (url && key) {
     return init(url, key)
   }
+
+  // 回退到 .env 默认配置
+  const envUrl = import.meta.env.VITE_SUPABASE_URL
+  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+  if (envUrl && envKey) {
+    console.info('[Supabase] 使用 .env 默认配置连接')
+    return init(envUrl, envKey)
+  }
+
   return null
 }
 
