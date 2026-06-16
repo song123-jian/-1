@@ -7,17 +7,38 @@ const CONFIG_URL_KEY = 'gj_erp_sb_url'
 const CONFIG_KEY_KEY = 'gj_erp_sb_key'
 const SYNC_STATUS_KEY = 'gj_erp_sb_sync_status'
 
-function decodeKey(encoded) {
+/* AES-GCM 解密（与 lib/supabase.js 保持一致） */
+const APP_SECRET = 'gj_erp_v1_secret_key_2024'
+
+async function getCryptoKey() {
+  const enc = new TextEncoder()
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(APP_SECRET), { name: 'PBKDF2' }, false, ['deriveKey'])
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: enc.encode('gj_erp_salt'), iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['decrypt']
+  )
+}
+
+async function decryptKey(cipherText) {
   try {
-    return decodeURIComponent(atob(encoded))
-  } catch {
+    if (!cipherText) return ''
+    const key = await getCryptoKey()
+    const combined = Uint8Array.from(atob(cipherText), (c) => c.charCodeAt(0))
+    const iv = combined.slice(0, 12)
+    const encrypted = combined.slice(12)
+    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted)
+    return new TextDecoder().decode(decrypted)
+  } catch (e) {
     return ''
   }
 }
 
 export const useSupabaseStore = defineStore('supabase', () => {
   const url = ref(localStorage.getItem(CONFIG_URL_KEY) || '')
-  const anonKey = ref(decodeKey(localStorage.getItem(CONFIG_KEY_KEY)) || '')
+  const anonKey = ref('')
   const connected = ref(false)
   const connecting = ref(false)
   const testing = ref(false)
@@ -59,7 +80,7 @@ export const useSupabaseStore = defineStore('supabase', () => {
   async function connect() {
     connecting.value = true
     try {
-      const client = SupabaseClient.init(url.value, anonKey.value)
+      const client = await SupabaseClient.init(url.value, anonKey.value)
       if (client) {
         connected.value = true
         return { success: true }
@@ -88,13 +109,19 @@ export const useSupabaseStore = defineStore('supabase', () => {
    * 自动恢复连接
    */
   async function autoConnect() {
-    const client = SupabaseClient.autoInit()
-    if (client) {
-      connected.value = true
-      // 同步更新 store 中的配置，确保表单显示已保存的连接信息
-      url.value = localStorage.getItem(CONFIG_URL_KEY) || ''
-      anonKey.value = decodeKey(localStorage.getItem(CONFIG_KEY_KEY)) || ''
-      return true
+    try {
+      const client = await SupabaseClient.autoInit()
+      if (client) {
+        connected.value = true
+        // 同步更新 store 中的配置
+        url.value = localStorage.getItem(CONFIG_URL_KEY) || ''
+        const storedKey = await decryptKey(localStorage.getItem(CONFIG_KEY_KEY))
+        anonKey.value = storedKey || ''
+        console.info('[SupabaseStore] 自动连接成功')
+        return true
+      }
+    } catch (e) {
+      console.warn('[SupabaseStore] 自动连接失败:', e.message)
     }
     return false
   }

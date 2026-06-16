@@ -387,16 +387,17 @@ function reconnect() {
   // 清理现有自动订阅（不清理手动订阅，由 unsubscribeAll 处理）
   unsubscribeAllAuto()
 
-  // 重新初始化客户端
-  const client = init(_config.url, _config.anonKey)
+  // 重新初始化客户端（init是async，但reconnect在定时器中调用，不阻塞）
+  init(_config.url, _config.anonKey).then((client) => {
+    if (client && hadAutoSubscriptions && savedCallbacks) {
+      // 恢复自动订阅
+      autoSubscribeTables(savedCallbacks)
+      console.info('[Supabase] 重连并恢复自动订阅成功')
+    }
+  })
 
-  if (client && hadAutoSubscriptions && savedCallbacks) {
-    // 恢复自动订阅
-    autoSubscribeTables(savedCallbacks)
-    console.info('[Supabase] 重连并恢复自动订阅成功')
-  }
-
-  return client
+  // 返回当前客户端状态（重连是异步的，调用方不应依赖返回值）
+  return _client
 }
 
 export const SupabaseClient = {
