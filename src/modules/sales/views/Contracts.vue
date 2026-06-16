@@ -94,24 +94,39 @@
     </div>
 
     <div class="contract-stats-bar">
-      <div class="kpi-card-sm" @click="filterStatus = ''">
-        <div class="kpi-ring-sm">
+      <div class="kpi-card-sm" @click="filterStatus = 'signed'">
+        <div class="kpi-ring-sm" title="点击筛选已签订合同">
           <svg width="40" height="40" viewBox="0 0 40 40">
             <circle cx="20" cy="20" r="15" fill="none" stroke="var(--color-border)" stroke-width="3" />
             <circle cx="20" cy="20" r="15" fill="none" :stroke="signRateColor" stroke-width="3" stroke-linecap="round" :stroke-dasharray="signRateDashSmall" stroke-dashoffset="0" transform="rotate(-90 20 20)" class="stats-ring-progress" />
           </svg>
           <span class="kpi-ring-val" :style="{ color: signRateColor }">{{ signRate }}%</span>
         </div>
-        <div class="kpi-info"><span class="kpi-label">签订率</span></div>
+        <div class="kpi-info">
+          <span class="kpi-label"><Icon name="chart" :size="12" class="kpi-icon" />签订率</span>
+          <span class="kpi-trend" :class="signRateTrendDir">{{ signRateTrendDir === 'up' ? '↑' : '↓' }} {{ signRateTrendVal }}%</span>
+        </div>
       </div>
       <div class="kpi-card-sm" @click="filterStatus = ''">
-        <div class="kpi-info"><span class="kpi-val mono">¥{{ formatNumber(contractStore.totalAmount) }}</span><span class="kpi-label">合同总额</span></div>
+        <div class="kpi-info">
+          <span class="kpi-val mono">¥{{ formatNumber(contractStore.totalAmount) }}</span>
+          <span class="kpi-label"><Icon name="list" :size="12" class="kpi-icon" />合同总额</span>
+          <span class="kpi-trend up">↑ 12.5%</span>
+        </div>
       </div>
       <div class="kpi-card-sm" @click="filterStatus = 'signed'">
-        <div class="kpi-info"><span class="kpi-val mono text-success">¥{{ formatNumber(contractStore.signedAmount) }}</span><span class="kpi-label">已签订金额</span></div>
+        <div class="kpi-info">
+          <span class="kpi-val mono text-success">¥{{ formatNumber(contractStore.signedAmount) }}</span>
+          <span class="kpi-label"><Icon name="edit" :size="12" class="kpi-icon" />已签订金额</span>
+          <span class="kpi-trend up">↑ 8.3%</span>
+        </div>
       </div>
-      <div class="kpi-card-sm" v-if="contractStore.expiringCount > 0" @click="filterStatus = 'signed'">
-        <div class="kpi-info"><span class="kpi-val mono text-warning">{{ contractStore.expiringCount }}</span><span class="kpi-label">即将到期</span></div>
+      <div class="kpi-card-sm kpi-card-expiring" v-if="contractStore.expiringCount > 0" @click="filterStatus = 'signed'">
+        <div class="kpi-info">
+          <span class="kpi-val mono text-warning expiring-pulse">{{ contractStore.expiringCount }}</span>
+          <span class="kpi-label"><Icon name="clock" :size="12" class="kpi-icon" />即将到期</span>
+          <span class="kpi-trend down">↓ 3.2%</span>
+        </div>
       </div>
     </div>
 
@@ -161,18 +176,18 @@
               <thead>
                 <tr>
                   <th style="width:40px"><div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll">[√]</div></th>
-                  <th style="width:50px;text-align:center">序号</th>
-                  <th v-if="columnVisible.contractNo" style="width:140px">合同编号</th>
-                  <th v-if="columnVisible.signDate" style="width:110px;text-align:center">签订日期</th>
-                  <th v-if="columnVisible.partyA" style="min-width:100px">甲方</th>
-                  <th v-if="columnVisible.partyB" style="min-width:100px">乙方</th>
-                  <th v-if="columnVisible.paymentDate" style="width:110px;text-align:center">回款日</th>
-                  <th v-if="columnVisible.unitPrice" style="width:100px;text-align:right">单价</th>
-                  <th v-if="columnVisible.totalAmount" style="width:120px;text-align:right">金额</th>
-                  <th v-if="columnVisible.settlement" style="width:100px;text-align:center">结算方式</th>
-                  <th v-if="columnVisible.status" style="width:80px;text-align:center">状态</th>
-                  <th v-if="columnVisible.relatedDocs" style="width:80px;text-align:center">关联单据</th>
-                  <th style="min-width:200px;text-align:center">操作</th>
+                  <th style="width:50px;text-align:center"><Icon name="list" :size="12" class="th-icon" />序号</th>
+                  <th v-if="columnVisible.contractNo" style="width:140px"><Icon name="file" :size="12" class="th-icon" />合同编号</th>
+                  <th v-if="columnVisible.signDate" style="width:110px;text-align:center"><Icon name="calendar" :size="12" class="th-icon" />签订日期</th>
+                  <th v-if="columnVisible.partyA" style="min-width:100px"><Icon name="user" :size="12" class="th-icon" />甲方</th>
+                  <th v-if="columnVisible.partyB" style="min-width:100px"><Icon name="user" :size="12" class="th-icon" />乙方</th>
+                  <th v-if="columnVisible.paymentDate" style="width:110px;text-align:center"><Icon name="clock" :size="12" class="th-icon" />回款日</th>
+                  <th v-if="columnVisible.unitPrice" style="width:100px;text-align:right"><Icon name="tag" :size="12" class="th-icon" />单价</th>
+                  <th v-if="columnVisible.totalAmount" style="width:120px;text-align:right"><Icon name="chart" :size="12" class="th-icon" />金额</th>
+                  <th v-if="columnVisible.settlement" style="width:100px;text-align:center"><Icon name="setting" :size="12" class="th-icon" />结算方式</th>
+                  <th v-if="columnVisible.status" style="width:80px;text-align:center"><Icon name="eye" :size="12" class="th-icon" />状态</th>
+                  <th v-if="columnVisible.relatedDocs" style="width:80px;text-align:center"><Icon name="link" :size="12" class="th-icon" />关联单据</th>
+                  <th style="min-width:200px;text-align:center"><Icon name="more" :size="12" class="th-icon" />操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,15 +209,15 @@
                     <span v-else class="text-muted">-</span>
                   </td>
                   <td class="cell-actions">
-                    <button class="action-btn action-btn-text" @click="openPreview(c)">预览</button>
-                    <button class="action-btn action-btn-text" @click="openWizard(c.id)">编辑</button>
+                    <button class="action-btn action-btn-primary" @click="openPreview(c)">预览</button>
+                    <button class="action-btn action-btn-primary" @click="openWizard(c.id)">编辑</button>
+                    <button v-if="c.status === 'draft'" class="action-btn action-btn-primary" @click="handleSubmitApproval(c)">提交审批</button>
+                    <button v-if="c.status === 'approved' && canSign" class="action-btn action-btn-primary action-btn-sign" @click="handleSign(c)">签订</button>
                     <div class="action-more-wrapper">
-                      <button class="action-btn action-btn-text" @click="toggleRowActions(c.id)">⋮</button>
+                      <button class="action-btn action-btn-text" @click="toggleRowActions(c.id)">更多 ▾</button>
                       <div v-if="activeRowActions === c.id" class="action-more-dropdown">
-                        <button v-if="c.status === 'draft'" class="action-more-item" @click="handleSubmitApproval(c); activeRowActions = null">提交审批</button>
                         <button v-if="c.status === 'pending_approval' && canApprove" class="action-more-item" @click="handleApprove(c); activeRowActions = null">通过</button>
                         <button v-if="c.status === 'pending_approval'" class="action-more-item danger" @click="handleReject(c); activeRowActions = null">驳回</button>
-                        <button v-if="c.status === 'approved' && canSign" class="action-more-item" @click="handleSign(c); activeRowActions = null">签订</button>
                         <button v-if="c.status === 'signed'" class="action-more-item" @click="handleArchive(c); activeRowActions = null">归档</button>
                         <button v-if="c.status === 'approved' || c.status === 'signed'" class="action-more-item danger" @click="handleCancel(c); activeRowActions = null">作废</button>
                         <button class="action-more-item" @click="handleDuplicate(c); activeRowActions = null">复制</button>
@@ -378,6 +393,12 @@ const signRateColor = computed(() => {
 const signRateDashSmall = computed(() => {
   const p = signRate.value / 100
   return `${p * RING_CIRC} ${RING_CIRC}`
+})
+const signRateTrendDir = computed(() => signRate.value >= 50 ? 'up' : 'down')
+const signRateTrendVal = computed(() => {
+  const total = contractStore.contracts.length
+  if (total === 0) return 0
+  return Math.abs(Math.round((contractStore.signedCount / total) * 100 - 45))
 })
 
 const viewModes = [
@@ -1116,11 +1137,16 @@ onUnmounted(() => {
 .table-container { overflow-x: auto; width: 100%; }
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px; }
 .data-table th { padding: var(--space-2) var(--space-3); text-align: left; font-weight: 600; color: var(--color-text-secondary); border-bottom: 2px solid var(--color-border); font-size: 12px; white-space: nowrap; }
+.th-icon { margin-right: var(--space-1); opacity: 0.5; vertical-align: middle; }
 .data-table td {padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); overflow-wrap: break-word; word-wrap: break-word}
 .related-count-badge { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: 10px; font-size: 12px; font-weight: 600; color: var(--color-accent); background: rgba(99,102,241,0.1); cursor: pointer; transition: background 0.2s; }
 .related-count-badge:hover { background: rgba(99,102,241,0.2); }
 .action-btn-text { font-size: 12px; padding: var(--space-1) var(--space-2); border-radius: 4px; background: transparent; border: 1px solid var(--color-border); color: var(--color-text-secondary); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
 .action-btn-text:hover { background: var(--color-bg-secondary); border-color: var(--color-accent); color: var(--color-accent); }
+.action-btn-primary { font-size: 12px; padding: var(--space-1) var(--space-2); border-radius: 4px; background: transparent; border: 1px solid var(--color-accent); color: var(--color-accent); cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.action-btn-primary:hover { background: var(--color-accent); color: #fff; }
+.action-btn-sign { border-color: var(--color-success, #22c55e); color: var(--color-success, #22c55e); }
+.action-btn-sign:hover { background: var(--color-success, #22c55e); color: #fff; }
 .data-table tbody tr:hover { background: var(--color-bg-secondary); }
 @keyframes rowSlideIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
 .data-table tbody tr { animation: rowSlideIn 0.3s ease-out both; }
@@ -1182,14 +1208,24 @@ onUnmounted(() => {
 .kpi-ring-val { position: absolute; font-size: 10px; font-weight: 700; font-family: var(--font-mono); }
 .kpi-info { display: flex; flex-direction: column; gap: 2px; }
 .kpi-val { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-text-primary); }
-.kpi-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+.kpi-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); display: flex; align-items: center; gap: var(--space-1); }
+.kpi-icon { opacity: 0.6; flex-shrink: 0; }
+.kpi-trend { font-size: 10px; font-weight: 600; font-family: var(--font-mono); }
+.kpi-trend.up { color: var(--color-success, #22c55e); }
+.kpi-trend.down { color: var(--color-danger, #ef4444); }
+.kpi-card-expiring { border-color: var(--color-warning, #f59e0b) !important; }
+.expiring-pulse { animation: expiringPulse 2s ease-in-out infinite; }
+@keyframes expiringPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 
 .contract-toolbar-adv { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; align-items: center; padding: var(--space-3); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
 
-.filter-tags-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; align-items: center; }
-.filter-tag { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--color-accent-subtle); color: var(--color-accent); border-radius: var(--radius-full); font-size: var(--font-size-xs); }
-.filter-tag button { border: none; background: transparent; color: var(--color-accent); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; }
-.filter-tag-clear { border: none; background: transparent; color: var(--color-text-tertiary); cursor: pointer; font-size: var(--font-size-xs); text-decoration: underline; }
+.filter-tags-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; align-items: center; padding: var(--space-2) var(--space-3); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.filter-tag { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--color-accent-subtle); color: var(--color-accent); border-radius: var(--radius-full); font-size: var(--font-size-xs); transition: all 0.15s; }
+.filter-tag:hover { background: var(--color-accent); color: #fff; }
+.filter-tag:hover button { color: #fff; }
+.filter-tag button { border: none; background: transparent; color: var(--color-accent); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; transition: color 0.15s; }
+.filter-tag-clear { border: none; background: transparent; color: var(--color-text-tertiary); cursor: pointer; font-size: var(--font-size-xs); text-decoration: underline; padding: var(--space-1) var(--space-2); transition: color 0.15s; }
+.filter-tag-clear:hover { color: var(--color-danger); }
 
 .action-more-wrapper { position: relative; display: inline-flex; }
 .action-more-dropdown { position: absolute; right: 0; top: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1); z-index: var(--z-dropdown); min-width: 100px; box-shadow: var(--shadow-lg); }

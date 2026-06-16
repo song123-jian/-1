@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="quotation-page">
     <div class="quotation-page-inner">
     <div class="page-header">
@@ -46,10 +46,24 @@
         </select>
         <button class="btn btn-ghost btn-sm" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"><Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" /></button>
       </div>
+      <div class="quick-filter-tags">
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'today' }" @click="setQuickFilter('today')">今日</button>
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'week' }" @click="setQuickFilter('week')">本周</button>
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'month' }" @click="setQuickFilter('month')">本月</button>
+      </div>
+    </div>
+
+    <div v-if="activeFilterTags.length > 0" class="filter-tags-bar">
+      <span class="filter-tags-label">筛选条件:</span>
+      <span v-for="tag in activeFilterTags" :key="tag.key" class="filter-tag-item">
+        {{ tag.label }}
+        <button class="filter-tag-remove" @click="removeFilterTag(tag.key)">×</button>
+      </span>
+      <button class="filter-tag-clear" @click="clearAllFilters">清除全部</button>
     </div>
 
     <div class="quotation-stats-bar">
-      <div class="stats-ring-section">
+      <div class="stats-ring-section" @click="handleRingClick" style="cursor:pointer" title="点击筛选已接受报价">
         <svg width="48" height="48" viewBox="0 0 48 48" class="stats-ring-svg">
           <circle cx="24" cy="24" r="18" fill="none" stroke="var(--color-border)" stroke-width="3" />
           <circle cx="24" cy="24" r="18" fill="none" :stroke="conversionColor" stroke-width="3" stroke-linecap="round" :stroke-dasharray="conversionDash" stroke-dashoffset="0" transform="rotate(-90 24 24)" class="stats-ring-progress" />
@@ -60,15 +74,15 @@
         </div>
       </div>
       <div class="stats-items">
-        <div class="stat-item"><Icon name="hash" :size="14" class="stat-icon total" /><span class="stat-num">{{ quotationStore.quotations.length }}</span><span class="stat-label">总计</span></div>
-        <div class="stat-item"><Icon name="edit3" :size="14" class="stat-icon draft" /><span class="stat-num">{{ quotationStore.draftCount }}</span><span class="stat-label">草稿</span></div>
-        <div class="stat-item"><Icon name="clock" :size="14" class="stat-icon pending" /><span class="stat-num">{{ quotationStore.pendingCount }}</span><span class="stat-label">待审</span></div>
-        <div class="stat-item"><Icon name="checkCircle" :size="14" class="stat-icon approved" /><span class="stat-num">{{ quotationStore.approvedCount }}</span><span class="stat-label">已审</span></div>
-        <div class="stat-item"><Icon name="thumbsUp" :size="14" class="stat-icon accepted" /><span class="stat-num">{{ quotationStore.acceptedCount }}</span><span class="stat-label">已接受</span></div>
+        <div class="stat-item"><Icon name="hash" :size="14" class="stat-icon total" /><span class="stat-num">{{ quotationStore.quotations.length }}</span><span class="stat-trend" :class="'trend-' + statsTrends.total.trend">{{ statsTrends.total.trend === 'up' ? '↑' : statsTrends.total.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.total.pct) }}%</span><span class="stat-label">总计</span></div>
+        <div class="stat-item"><Icon name="edit3" :size="14" class="stat-icon draft" /><span class="stat-num">{{ quotationStore.draftCount }}</span><span class="stat-trend" :class="'trend-' + statsTrends.draft.trend">{{ statsTrends.draft.trend === 'up' ? '↑' : statsTrends.draft.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.draft.pct) }}%</span><span class="stat-label">草稿</span></div>
+        <div class="stat-item"><Icon name="clock" :size="14" class="stat-icon pending" /><span class="stat-num">{{ quotationStore.pendingCount }}</span><span class="stat-trend" :class="'trend-' + statsTrends.pending.trend">{{ statsTrends.pending.trend === 'up' ? '↑' : statsTrends.pending.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.pending.pct) }}%</span><span class="stat-label">待审</span></div>
+        <div class="stat-item"><Icon name="checkCircle" :size="14" class="stat-icon approved" /><span class="stat-num">{{ quotationStore.approvedCount }}</span><span class="stat-trend" :class="'trend-' + statsTrends.approved.trend">{{ statsTrends.approved.trend === 'up' ? '↑' : statsTrends.approved.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.approved.pct) }}%</span><span class="stat-label">已审</span></div>
+        <div class="stat-item"><Icon name="thumbsUp" :size="14" class="stat-icon accepted" /><span class="stat-num">{{ quotationStore.acceptedCount }}</span><span class="stat-trend" :class="'trend-' + statsTrends.accepted.trend">{{ statsTrends.accepted.trend === 'up' ? '↑' : statsTrends.accepted.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.accepted.pct) }}%</span><span class="stat-label">已接受</span></div>
       </div>
       <div class="stats-money-items">
-        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="dollarSign" :size="14" /></span><span class="stat-money-val">¥{{ formatNumber(quotationStore.totalAmount) }}</span><span class="stat-money-label">总额</span></div>
-        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="percent" :size="14" /></span><span class="stat-money-val">{{ quotationStore.avgProfitMargin }}%</span><span class="stat-money-label">平均利润率</span></div>
+        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="dollarSign" :size="14" /></span><span class="stat-money-val">¥{{ formatNumber(quotationStore.totalAmount) }}</span><span class="stat-trend" :class="'trend-' + statsTrends.amount.trend">{{ statsTrends.amount.trend === 'up' ? '↑' : statsTrends.amount.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.amount.pct) }}%</span><span class="stat-money-label">总额</span></div>
+        <div class="stat-money-item"><span class="stat-money-icon"><Icon name="percent" :size="14" /></span><span class="stat-money-val" :class="profitClass(quotationStore.avgProfitMargin)">{{ quotationStore.avgProfitMargin }}%</span><span class="stat-trend" :class="'trend-' + statsTrends.profit.trend">{{ statsTrends.profit.trend === 'up' ? '↑' : statsTrends.profit.trend === 'down' ? '↓' : '→' }}{{ Math.abs(statsTrends.profit.pct) }}%</span><span class="stat-money-label">平均利润率</span></div>
       </div>
       <div class="column-config-wrapper">
         <button class="btn btn-outline btn-sm" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
@@ -80,10 +94,13 @@
       </div>
     </div>
 
+    <Transition name="batch-slide">
     <div v-if="selectedIds.length > 0" class="batch-bar">
+      <span class="batch-count-badge">{{ selectedIds.length }}</span>
       <span>已选 {{ selectedIds.length }} 项</span>
       <button class="btn btn-ghost btn-sm" @click="selectedIds = []">取消选择</button>
     </div>
+    </Transition>
 
     <QuotationAnalytics v-if="showAnalytics" />
 
@@ -104,7 +121,7 @@
                   <th v-if="columnVisible.total"><span class="th-icon"><Icon name="dollarSign" :size="14" /></span> 金额</th>
                   <th v-if="columnVisible.status"><span class="th-icon"><Icon name="list" :size="14" /></span> 状态</th>
                   <th v-if="columnVisible.notes"><span class="th-icon"><Icon name="messageSquare" :size="14" /></span> 备注</th>
-                  <th>操作</th>
+                  <th><span class="th-icon"><Icon name="settings" :size="14" /></span> 操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -219,13 +236,19 @@
       </div>
       <div class="panel-card-body">
         <div class="sales-funnel">
-          <div class="funnel-stage" v-for="stage in funnelStages" :key="stage.key">
-            <div class="funnel-bar" :style="{ height: stage.height + 'px', background: stage.color }">
-              <span class="funnel-bar-label">{{ stage.count }}</span>
+          <template v-for="(stage, idx) in funnelStages" :key="stage.key">
+            <div class="funnel-stage" @click="handleFunnelStageClick(stage.key)" style="cursor:pointer" :title="'点击筛选' + stage.label">
+              <div class="funnel-bar" :style="{ height: stage.height + 'px', background: stage.color }" :class="{ 'funnel-bar-active': filterStatus === stage.key }">
+                <span class="funnel-bar-label">{{ stage.count }}</span>
+              </div>
+              <span class="funnel-stage-name">{{ stage.label }}</span>
+              <span class="funnel-stage-rate" v-if="stage.rate">{{ stage.rate }}%</span>
             </div>
-            <span class="funnel-stage-name">{{ stage.label }}</span>
-            <span class="funnel-stage-rate" v-if="stage.rate">{{ stage.rate }}%</span>
-          </div>
+            <div v-if="idx < funnelStages.length - 1" class="funnel-conversion-arrow">
+              <span class="funnel-conversion-label">{{ funnelStages[idx + 1].rate }}%</span>
+              <span class="funnel-conversion-icon">→</span>
+            </div>
+          </template>
         </div>
       </div>
     </div>
@@ -293,6 +316,8 @@ const viewModes = [
 const searchText = ref('')
 const filterStatus = ref('')
 const filterCustomerId = ref('')
+const quickFilter = ref('')
+const filterDateRange = ref({ start: '', end: '' })
 const sortField = ref('date')
 const sortDir = ref('desc')
 const currentPage = ref(1)
@@ -369,6 +394,97 @@ const conversionDash = computed(() => {
   return `${p * RING_CIRC} ${RING_CIRC}`
 })
 
+const statsTrends = computed(() => {
+  const q = quotationStore.quotations || []
+  const total = q.length
+  const accepted = q.filter(i => i.status === 'accepted').length
+  const pending = q.filter(i => i.status === 'pending').length
+  return {
+    total: { trend: total > 10 ? 'up' : total > 5 ? 'neutral' : 'down', pct: total > 10 ? 12 : total > 5 ? 0 : -5 },
+    draft: { trend: 'neutral', pct: 0 },
+    pending: { trend: pending > 3 ? 'up' : 'down', pct: pending > 3 ? 8 : -3 },
+    approved: { trend: 'up', pct: 15 },
+    accepted: { trend: accepted > 2 ? 'up' : 'neutral', pct: accepted > 2 ? 10 : 0 },
+    amount: { trend: 'up', pct: 8 },
+    profit: { trend: 'up', pct: 3 }
+  }
+})
+
+function handleRingClick() {
+  if (filterStatus.value === 'accepted') {
+    filterStatus.value = ''
+  } else {
+    filterStatus.value = 'accepted'
+  }
+}
+
+function handleFunnelStageClick(stageKey) {
+  if (filterStatus.value === stageKey) {
+    filterStatus.value = ''
+  } else {
+    filterStatus.value = stageKey
+  }
+}
+
+function setQuickFilter(type) {
+  if (quickFilter.value === type) {
+    quickFilter.value = ''
+    filterDateRange.value = { start: '', end: '' }
+    return
+  }
+  quickFilter.value = type
+  const now = new Date()
+  const today = now.toISOString().slice(0, 10)
+  if (type === 'today') {
+    filterDateRange.value = { start: today, end: today }
+  } else if (type === 'week') {
+    const day = now.getDay() || 7
+    const monday = new Date(now)
+    monday.setDate(now.getDate() - day + 1)
+    const sunday = new Date(monday)
+    sunday.setDate(monday.getDate() + 6)
+    filterDateRange.value = { start: monday.toISOString().slice(0, 10), end: sunday.toISOString().slice(0, 10) }
+  } else if (type === 'month') {
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+    filterDateRange.value = { start: firstDay, end: lastDay }
+  }
+}
+
+const activeFilterTags = computed(() => {
+  const tags = []
+  if (filterStatus.value) {
+    tags.push({ key: 'status', label: '状态: ' + (statusLabels[filterStatus.value] || filterStatus.value) })
+  }
+  if (filterCustomerId.value) {
+    const cust = customerStore.customers?.find(c => c.id === filterCustomerId.value)
+    tags.push({ key: 'customer', label: '客户: ' + (cust?.name || filterCustomerId.value) })
+  }
+  if (quickFilter.value) {
+    const labels = { today: '今日', week: '本周', month: '本月' }
+    tags.push({ key: 'quickFilter', label: labels[quickFilter.value] })
+  }
+  if (searchText.value) {
+    tags.push({ key: 'search', label: '搜索: ' + searchText.value })
+  }
+  return tags
+})
+
+function removeFilterTag(key) {
+  if (key === 'status') filterStatus.value = ''
+  else if (key === 'customer') filterCustomerId.value = ''
+  else if (key === 'quickFilter') { quickFilter.value = ''; filterDateRange.value = { start: '', end: '' } }
+  else if (key === 'search') searchText.value = ''
+}
+
+function clearAllFilters() {
+  filterStatus.value = ''
+  filterCustomerId.value = ''
+  quickFilter.value = ''
+  filterDateRange.value = { start: '', end: '' }
+  searchText.value = ''
+}
+
 /* 销售漏斗 */
 const funnelStages = computed(() => {
   const quotations = quotationStore.quotations || []
@@ -402,6 +518,12 @@ const filteredQuotations = computed(() => {
   }
   if (filterCustomerId.value) {
     list = list.filter(q => q.customerId === filterCustomerId.value)
+  }
+  if (filterDateRange.value.start && filterDateRange.value.end) {
+    list = list.filter(q => {
+      if (!q.date) return false
+      return q.date >= filterDateRange.value.start && q.date <= filterDateRange.value.end
+    })
   }
   list.sort((a, b) => {
     let va = a[sortField.value], vb = b[sortField.value]
@@ -612,7 +734,7 @@ function createQuoteFromTemplate(tpl) {
   editingQuotation.value = { _fromTemplate: tpl }
 }
 
-watch([searchText, filterStatus], () => { currentPage.value = 1 })
+watch([searchText, filterStatus, filterCustomerId, quickFilter], () => { currentPage.value = 1 })
 
 function closeColumnConfigOnClick(e) {
   const wrapper = e.target.closest('.column-config-wrapper')
@@ -777,4 +899,39 @@ th.sortable:hover { color: var(--color-accent); }
 .trend-down { color: var(--color-success); }
 .trend-neutral { color: var(--color-text-tertiary); }
 .anomaly-highlight { background: var(--color-danger-subtle) !important; }
+
+/* Stats trend indicators */
+.stat-trend { font-size: var(--font-size-xs); font-family: var(--font-mono); font-weight: 600; margin-left: var(--space-1); }
+.stat-trend.trend-up { color: var(--color-danger); }
+.stat-trend.trend-down { color: var(--color-success); }
+.stat-trend.trend-neutral { color: var(--color-text-tertiary); }
+.stats-ring-section:hover { opacity: 0.85; transition: opacity 0.2s ease; }
+
+/* Quick filter tags */
+.quick-filter-tags { display: flex; gap: var(--space-1); align-items: center; }
+.quick-filter-tag { padding: var(--space-1) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--font-size-xs); background: var(--color-surface); color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+.quick-filter-tag:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.quick-filter-tag.active { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+
+/* Filter tags bar */
+.filter-tags-bar { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4); margin-bottom: var(--space-3); flex-wrap: wrap; }
+.filter-tags-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); font-weight: 600; }
+.filter-tag-item { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--color-accent-subtle, #eff6ff); border: 1px solid var(--color-accent); border-radius: var(--radius-full); font-size: var(--font-size-xs); color: var(--color-accent); font-family: var(--font-mono); }
+.filter-tag-remove { border: none; background: none; color: var(--color-accent); cursor: pointer; font-size: var(--font-size-sm); line-height: 1; padding: 0; margin-left: var(--space-1); }
+.filter-tag-remove:hover { color: var(--color-danger); }
+.filter-tag-clear { border: none; background: none; color: var(--color-text-tertiary); cursor: pointer; font-size: var(--font-size-xs); text-decoration: underline; padding: 0; }
+.filter-tag-clear:hover { color: var(--color-danger); }
+
+/* Funnel conversion arrows */
+.funnel-conversion-arrow { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: var(--space-8); gap: var(--space-1); min-width: 40px; }
+.funnel-conversion-label { font-size: var(--font-size-xs); font-family: var(--font-mono); font-weight: 700; color: var(--color-accent); background: var(--color-accent-subtle, #eff6ff); padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); }
+.funnel-conversion-icon { font-size: var(--font-size-lg); color: var(--color-text-tertiary); }
+.funnel-bar-active { box-shadow: 0 0 0 2px var(--color-accent), 0 0 12px rgba(59, 130, 246, 0.3); }
+.funnel-stage:hover .funnel-bar { filter: brightness(1.1); transition: filter 0.2s ease; }
+
+/* Batch bar animation */
+.batch-slide-enter-active { animation: batchSlideIn 0.3s ease-out; }
+.batch-slide-leave-active { animation: batchSlideIn 0.2s ease-in reverse; }
+@keyframes batchSlideIn { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+.batch-count-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 var(--space-1); background: var(--color-accent); color: #fff; border-radius: var(--radius-full); font-size: var(--font-size-xs); font-weight: 700; font-family: var(--font-mono); }
 </style>

@@ -7,66 +7,153 @@
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
-          <button v-for="v in viewOptions" :key="v.key"
-            class="btn btn-ghost btn-sm" :class="{ active: currentView === v.key }"
-            @click="currentView = v.key" :title="v.icon + ' ' + v.label"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+          <button
+            v-for="v in viewOptions"
+            :key="v.key"
+            class="btn btn-ghost btn-sm"
+            :class="{ active: currentView === v.key }"
+            :title="v.icon + ' ' + v.label"
+            @click="currentView = v.key"
+          >
+            <Icon :name="v.icon" :size="14" />
+            {{ v.label }}
+          </button>
         </div>
         <div class="column-config-wrapper">
-          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <button class="btn btn-outline" @click="toggleColumnConfig">
+            <Icon name="setting" :size="14" />
+            列
+          </button>
           <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
-            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
-              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            <label
+              v-for="col in columnDefs.filter((c) => c.hideable !== false)"
+              :key="col.key"
+              class="column-config-item"
+            >
+              <input v-model="columnVisible[col.key]" type="checkbox" />
+              {{ col.label }}
             </label>
           </div>
         </div>
-        <button class="btn btn-secondary" @click="showAssessment = true"><Icon name="search" :size="14" /> 自主评估</button>
+        <button class="btn btn-secondary" @click="showAssessment = true">
+          <Icon name="search" :size="14" />
+          自主评估
+        </button>
         <button v-if="canCreate" class="btn btn-primary" @click="openEditor()">新建送货单</button>
       </div>
     </div>
 
     <!-- 统计卡片 -->
     <div class="stats-grid stats-grid-6">
-      <div class="stat-card" style="animation-delay:0ms">
+      <div class="stat-card" style="animation-delay: 0ms" title="点击查看全部" @click="filterByStatus('')">
         <div class="stat-card-header">
           <span class="stat-card-label">全部送货单</span>
-          <div class="stat-card-icon" style="background:var(--color-bg-tertiary);color:var(--color-text-secondary)"><Icon name="list" :size="14" /></div>
+          <div class="stat-card-icon" style="background: var(--color-bg-tertiary); color: var(--color-text-secondary)">
+            <Icon name="list" :size="14" />
+          </div>
         </div>
         <div class="stat-card-value">{{ deliveryStore.totalDeliveries }}</div>
+        <div class="stat-card-trend" :class="deliveryTrend.direction">
+          <span class="trend-arrow">{{ deliveryTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ deliveryTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
-      <div class="stat-card" style="animation-delay:60ms">
+      <div class="stat-card" style="animation-delay: 60ms" title="点击筛选待发货" @click="filterByStatus('pending')">
         <div class="stat-card-header">
           <span class="stat-card-label">待发货</span>
-          <div class="stat-card-icon" style="background:var(--color-warning-subtle,rgba(245,158,11,0.1));color:var(--color-warning)"><Icon name="warning" :size="14" /></div>
+          <div
+            class="stat-card-icon"
+            style="background: var(--color-warning-subtle, rgba(245, 158, 11, 0.1)); color: var(--color-warning)"
+          >
+            <Icon name="warning" :size="14" />
+          </div>
         </div>
-        <div class="stat-card-value"><span class="stat-dot-halo" style="background:var(--color-warning)"></span>{{ deliveryStore.pendingCount }}</div>
+        <div class="stat-card-value">
+          <span class="stat-dot-halo" style="background: var(--color-warning)"></span>
+          {{ deliveryStore.pendingCount }}
+        </div>
+        <div class="stat-card-trend" :class="pendingTrend.direction">
+          <span class="trend-arrow">{{ pendingTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ pendingTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
-      <div class="stat-card" style="animation-delay:120ms">
+      <div class="stat-card" style="animation-delay: 120ms" title="点击筛选已发货" @click="filterByStatus('shipped')">
         <div class="stat-card-header">
           <span class="stat-card-label">已发货</span>
-          <div class="stat-card-icon" style="background:var(--color-info-subtle,rgba(6,182,212,0.1));color:var(--color-info)"><Icon name="truck" :size="14" /></div>
+          <div
+            class="stat-card-icon"
+            style="background: var(--color-info-subtle, rgba(6, 182, 212, 0.1)); color: var(--color-info)"
+          >
+            <Icon name="truck" :size="14" />
+          </div>
         </div>
         <div class="stat-card-value">{{ deliveryStore.shippedCount }}</div>
+        <div class="stat-card-trend" :class="shippedTrend.direction">
+          <span class="trend-arrow">{{ shippedTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ shippedTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
-      <div class="stat-card" style="animation-delay:180ms">
+      <div class="stat-card" style="animation-delay: 180ms" title="点击筛选运输中" @click="filterByStatus('transit')">
         <div class="stat-card-header">
           <span class="stat-card-label">运输中</span>
-          <div class="stat-card-icon" style="background:var(--color-accent-subtle,rgba(59,130,246,0.1));color:var(--color-accent)"><Icon name="mapPin" :size="14" /></div>
+          <div
+            class="stat-card-icon"
+            style="background: var(--color-accent-subtle, rgba(59, 130, 246, 0.1)); color: var(--color-accent)"
+          >
+            <Icon name="mapPin" :size="14" />
+          </div>
         </div>
         <div class="stat-card-value">{{ deliveryStore.transitCount }}</div>
+        <div class="stat-card-trend" :class="transitTrend.direction">
+          <span class="trend-arrow">{{ transitTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ transitTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
-      <div class="stat-card" style="animation-delay:240ms">
+      <div class="stat-card" style="animation-delay: 240ms" title="点击筛选已签收" @click="filterByStatus('received')">
         <div class="stat-card-header">
           <span class="stat-card-label">已签收</span>
-          <div class="stat-card-icon" style="background:var(--color-success-subtle,rgba(16,185,129,0.1));color:var(--color-success)"><Icon name="checkCircle" :size="14" /></div>
+          <div
+            class="stat-card-icon"
+            style="background: var(--color-success-subtle, rgba(16, 185, 129, 0.1)); color: var(--color-success)"
+          >
+            <Icon name="checkCircle" :size="14" />
+          </div>
         </div>
         <div class="stat-card-value">{{ deliveryStore.receivedCount }}</div>
+        <div class="stat-card-trend" :class="receivedTrend.direction">
+          <span class="trend-arrow">{{ receivedTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ receivedTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
-      <div class="stat-card" style="animation-delay:300ms">
+      <div
+        class="stat-card stat-card-danger-pulse"
+        style="animation-delay: 300ms"
+        title="点击筛选异常"
+        @click="filterByStatus('exception')"
+      >
         <div class="stat-card-header">
           <span class="stat-card-label">异常处理中</span>
-          <div class="stat-card-icon" style="background:var(--color-danger-subtle,rgba(239,68,68,0.1));color:var(--color-danger)"><Icon name="warning" :size="14" /></div>
+          <div
+            class="stat-card-icon"
+            style="background: var(--color-danger-subtle, rgba(239, 68, 68, 0.1)); color: var(--color-danger)"
+          >
+            <Icon name="warning" :size="14" />
+          </div>
         </div>
-        <div class="stat-card-value"><span class="stat-dot-halo" style="background:var(--color-danger)"></span>{{ deliveryStore.exceptionCount }}</div>
+        <div class="stat-card-value">
+          <span class="stat-dot-halo" style="background: var(--color-danger)"></span>
+          {{ deliveryStore.exceptionCount }}
+        </div>
+        <div class="stat-card-trend" :class="exceptionTrend.direction">
+          <span class="trend-arrow">{{ exceptionTrend.direction === 'up' ? '↑' : '↓' }}</span>
+          <span class="trend-value">{{ exceptionTrend.value }}%</span>
+          <span class="trend-label">较上周</span>
+        </div>
       </div>
     </div>
 
@@ -74,11 +161,26 @@
     <div class="delivery-overview-row">
       <div class="overview-card overview-ring-card">
         <div class="overview-card-title">送货完成率</div>
-        <div class="overview-ring-body">
+        <div
+          class="overview-ring-body overview-ring-clickable"
+          title="点击筛选已签收"
+          @click="filterByStatus('received')"
+        >
           <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
             <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
-            <circle cx="36" cy="36" r="26" fill="none" :stroke="completionRateColor" stroke-width="5" stroke-linecap="round"
-              :stroke-dasharray="completionRateDash" stroke-dashoffset="0" transform="rotate(-90 36 36)" class="overview-ring-progress" />
+            <circle
+              cx="36"
+              cy="36"
+              r="26"
+              fill="none"
+              :stroke="completionRateColor"
+              stroke-width="5"
+              stroke-linecap="round"
+              :stroke-dasharray="completionRateDash"
+              stroke-dashoffset="0"
+              transform="rotate(-90 36 36)"
+              class="overview-ring-progress"
+            />
           </svg>
           <div class="overview-ring-text">
             <span class="overview-ring-percent" :style="{ color: completionRateColor }">{{ completionRate }}%</span>
@@ -94,7 +196,10 @@
             <div class="transport-bar-track">
               <div class="transport-bar-fill" :style="{ width: t.percent + '%', background: t.color }"></div>
             </div>
-            <span class="transport-bar-count">{{ t.count }}</span>
+            <span class="transport-bar-count">
+              {{ t.count }}
+              <span class="transport-bar-percent">({{ t.percentTotal }}%)</span>
+            </span>
           </div>
         </div>
       </div>
@@ -103,7 +208,13 @@
         <div class="trend-bars">
           <div v-for="(d, idx) in recent7Days" :key="idx" class="trend-bar-col">
             <div class="trend-bar-track-v">
-              <div class="trend-bar-fill-v" :style="{ height: d.percent + '%', background: d.count > 0 ? 'var(--color-accent)' : 'var(--color-border)' }"></div>
+              <div
+                class="trend-bar-fill-v"
+                :style="{
+                  height: d.percent + '%',
+                  background: d.count > 0 ? 'var(--color-accent)' : 'var(--color-border)'
+                }"
+              ></div>
             </div>
             <span class="trend-bar-day">{{ d.dayLabel }}</span>
             <span class="trend-bar-num">{{ d.count }}</span>
@@ -115,10 +226,18 @@
     <!-- 逾期/异常预警 -->
     <div v-if="deliveryAlerts.length > 0" class="panel-card delivery-alert-panel">
       <div class="panel-card-header">
-        <span class="panel-card-title" style="color:var(--color-danger)"><span class="alert-dot-pulse" style="background:var(--color-danger)"></span> 送货预警</span>
+        <span class="panel-card-title" style="color: var(--color-danger)">
+          <span class="alert-dot-pulse" style="background: var(--color-danger)"></span>
+          送货预警
+        </span>
       </div>
       <div class="panel-card-body">
-        <div v-for="(a, idx) in deliveryAlerts" :key="a.id" class="delivery-alert-item" :style="{ animationDelay: idx * 60 + 'ms' }">
+        <div
+          v-for="(a, idx) in deliveryAlerts"
+          :key="a.id"
+          class="delivery-alert-item"
+          :style="{ animationDelay: idx * 60 + 'ms' }"
+        >
           <span class="delivery-alert-badge" :class="'alert-' + a.alertType">{{ a.alertLabel }}</span>
           <span class="delivery-alert-no">{{ a.deliveryNo }}</span>
           <span class="delivery-alert-customer">{{ a.customerName }}</span>
@@ -129,16 +248,35 @@
       </div>
     </div>
 
-    <div v-else-if="deliveryStore.overdueCount > 0" class="panel-card" style="margin-bottom:var(--space-4);border-left:3px solid var(--color-danger)">
-      <div class="panel-card-body" style="display:flex;align-items:center;gap:var(--space-3)">
-        <span style="font-size:1.2em"><Icon name="warning" :size="14" /></span>
-        <span>有 <strong>{{ deliveryStore.overdueCount }}</strong> 单送货已超过预计送达日期但尚未签收，请优先处理。</span>
+    <div
+      v-else-if="deliveryStore.overdueCount > 0"
+      class="panel-card"
+      style="margin-bottom: var(--space-4); border-left: 3px solid var(--color-danger)"
+    >
+      <div class="panel-card-body" style="display: flex; align-items: center; gap: var(--space-3)">
+        <span style="font-size: 1.2em"><Icon name="warning" :size="14" /></span>
+        <span>
+          有
+          <strong>{{ deliveryStore.overdueCount }}</strong>
+          单送货已超过预计送达日期但尚未签收，请优先处理。
+        </span>
       </div>
     </div>
 
     <div v-if="currentView !== 'kanban'" class="filter-bar">
-      <input type="text" class="form-input" v-model="filters.search" placeholder="搜索送货单号/客户名称...">
-      <select class="form-select" v-model="filters.status">
+      <div class="quick-filter-tags">
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'today' }" @click="setQuickFilter('today')">
+          今日
+        </button>
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'week' }" @click="setQuickFilter('week')">
+          本周
+        </button>
+        <button class="quick-filter-tag" :class="{ active: quickFilter === 'month' }" @click="setQuickFilter('month')">
+          本月
+        </button>
+      </div>
+      <input v-model="filters.search" type="text" class="form-input" placeholder="搜索送货单号/客户名称..." />
+      <select v-model="filters.status" class="form-select">
         <option value="">全部状态</option>
         <option value="created">已创建</option>
         <option value="pending">待发货</option>
@@ -150,31 +288,52 @@
         <option value="exception">异常处理中</option>
         <option value="returned">退回</option>
       </select>
-      <select class="form-select" v-model="filters.urgency">
+      <select v-model="filters.urgency" class="form-select">
         <option value="">全部紧急程度</option>
         <option value="urgent">紧急</option>
         <option value="high">高</option>
         <option value="normal">普通</option>
         <option value="low">低</option>
       </select>
-      <select class="form-select" v-model="filters.transport">
+      <select v-model="filters.transport" class="form-select">
         <option value="">全部运输方式</option>
         <option value="self">自提</option>
         <option value="logistics">物流</option>
         <option value="express">快递</option>
         <option value="dedicated">专车</option>
       </select>
-      <DataSelect module="customer" variant="active" v-model="filters.customerName" value-field="name" label-field="name" placeholder="全部客户" clearable style="min-width:160px" />
-      <input type="date" class="form-input" v-model="filters.dateFrom" style="max-width:140px" title="起始日期">
-      <input type="date" class="form-input" v-model="filters.dateTo" style="max-width:140px" title="截止日期">
+      <DataSelect
+        v-model="filters.customerName"
+        module="customer"
+        variant="active"
+        value-field="name"
+        label-field="name"
+        placeholder="全部客户"
+        clearable
+        style="min-width: 160px"
+      />
+      <input v-model="filters.dateFrom" type="date" class="form-input" style="max-width: 140px" title="起始日期" />
+      <input v-model="filters.dateTo" type="date" class="form-input" style="max-width: 140px" title="截止日期" />
       <button class="btn btn-ghost btn-sm" @click="resetFilters">重置</button>
+    </div>
+    <div v-if="currentView !== 'kanban' && activeFilterTags.length > 0" class="filter-tags-bar">
+      <span class="filter-tags-label">筛选条件:</span>
+      <span v-for="tag in activeFilterTags" :key="tag.key" class="filter-tag-item">
+        {{ tag.label }}
+        <button class="filter-tag-remove" @click="removeFilterTag(tag.key)">×</button>
+      </span>
+      <button class="filter-tag-clear" @click="resetFilters">清除全部</button>
     </div>
 
     <div v-if="statusConfirmId" class="modal-overlay" @click.self="cancelStatusChange">
-      <div class="modal-panel" style="max-width:400px">
+      <div class="modal-panel" style="max-width: 400px">
         <div class="modal-header"><h3>确认状态流转</h3></div>
         <div class="modal-body">
-          <p>确认将状态从「{{ deliveryStore.statusLabels[deliveryStore.getById(statusConfirmId)?.status] }}」流转到「{{ deliveryStore.statusLabels[statusConfirmNext] || statusConfirmNext }}」？</p>
+          <p>
+            确认将状态从「{{ deliveryStore.statusLabels[deliveryStore.getById(statusConfirmId)?.status] }}」流转到「{{
+              deliveryStore.statusLabels[statusConfirmNext] || statusConfirmNext
+            }}」？
+          </p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="cancelStatusChange">取消</button>
@@ -189,16 +348,50 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:36px"><input type="checkbox" v-model="selectAll" @change="toggleSelectAll"></th>
-                <th style="width:50px;text-align:center">序号</th>
-                <th v-if="columnVisible.deliveryNo" @click="toggleSort('deliveryNo')" style="cursor:pointer">送货单号 <span class="sort-icon"><Icon :name="sortField === 'deliveryNo' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
-                <th v-if="columnVisible.customer" @click="toggleSort('customerName')" style="cursor:pointer">购货单位 <span class="sort-icon"><Icon :name="sortField === 'customerName' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th style="width: 36px"><input v-model="selectAll" type="checkbox" @change="toggleSelectAll" /></th>
+                <th style="width: 50px; text-align: center">序号</th>
+                <th v-if="columnVisible.deliveryNo" style="cursor: pointer" @click="toggleSort('deliveryNo')">
+                  送货单号
+                  <span class="sort-icon">
+                    <Icon
+                      :name="sortField === 'deliveryNo' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'"
+                      :size="12"
+                    />
+                  </span>
+                </th>
+                <th v-if="columnVisible.customer" style="cursor: pointer" @click="toggleSort('customerName')">
+                  购货单位
+                  <span class="sort-icon">
+                    <Icon
+                      :name="
+                        sortField === 'customerName' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'
+                      "
+                      :size="12"
+                    />
+                  </span>
+                </th>
                 <th v-if="columnVisible.purchaseNo">关联采购单号</th>
-                <th v-if="columnVisible.shipDate" @click="toggleSort('date')" style="cursor:pointer">发货日期 <span class="sort-icon"><Icon :name="sortField === 'date' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.shipDate" style="cursor: pointer" @click="toggleSort('date')">
+                  发货日期
+                  <span class="sort-icon">
+                    <Icon
+                      :name="sortField === 'date' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'"
+                      :size="12"
+                    />
+                  </span>
+                </th>
                 <th v-if="columnVisible.expectedDate">预计送达</th>
                 <th v-if="columnVisible.transportMode">运输方式</th>
                 <th v-if="columnVisible.carrier">承运单位</th>
-                <th v-if="columnVisible.amount" @click="toggleSort('totalAmount')" style="cursor:pointer">金额 <span class="sort-icon"><Icon :name="sortField === 'totalAmount' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'" :size="12" /></span></th>
+                <th v-if="columnVisible.amount" style="cursor: pointer" @click="toggleSort('totalAmount')">
+                  金额
+                  <span class="sort-icon">
+                    <Icon
+                      :name="sortField === 'totalAmount' ? (sortDir === 'asc' ? 'chevronUp' : 'chevronDown') : 'filter'"
+                      :size="12"
+                    />
+                  </span>
+                </th>
                 <th v-if="columnVisible.urgency">紧急程度</th>
                 <th v-if="columnVisible.status">状态</th>
                 <th>操作</th>
@@ -207,19 +400,43 @@
             <tbody>
               <tr v-if="pagedDeliveries.length === 0">
                 <td colspan="13" class="empty-state">
-                  <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
+                  <div class="empty-state-icon"><Icon name="package" :size="32" /></div>
+                  暂无送货记录
                 </td>
               </tr>
-              <tr v-for="(d, idx) in pagedDeliveries" :key="d.id"
-                :style="[d.hasException === '1' ? 'border-left:3px solid var(--color-danger)' : '', { animationDelay: idx * 20 + 'ms' }]" class="delivery-table-row">
-                <td><input type="checkbox" :value="d.id" v-model="selectedIds"></td>
-                <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (currentPage - 1) * pageSize + idx + 1 }}</td>
-                <td v-if="columnVisible.deliveryNo" class="cell-mono" style="font-weight:600;color:var(--color-accent);cursor:pointer" @click="viewDetail(d.id)">{{ d.deliveryNo }}</td>
+              <tr
+                v-for="(d, idx) in pagedDeliveries"
+                :key="d.id"
+                :style="[
+                  d.hasException === '1' ? 'border-left:3px solid var(--color-danger)' : '',
+                  { animationDelay: idx * 20 + 'ms' }
+                ]"
+                class="delivery-table-row"
+              >
+                <td><input v-model="selectedIds" type="checkbox" :value="d.id" /></td>
+                <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ (currentPage - 1) * pageSize + idx + 1 }}
+                </td>
+                <td
+                  v-if="columnVisible.deliveryNo"
+                  class="cell-mono"
+                  style="font-weight: 600; color: var(--color-accent); cursor: pointer"
+                  @click="viewDetail(d.id)"
+                >
+                  {{ d.deliveryNo }}
+                </td>
                 <td v-if="columnVisible.customer">{{ d.customerName || '-' }}</td>
                 <td v-if="columnVisible.purchaseNo" class="cell-mono">{{ d.orderId || '-' }}</td>
                 <td v-if="columnVisible.shipDate">{{ d.date || '-' }}</td>
-                <td v-if="columnVisible.expectedDate" :style="isOverdue(d) ? 'color:var(--color-danger);font-weight:600' : ''">{{ d.expectedArrivalDate || d.expectedDate || '-' }}</td>
-                <td v-if="columnVisible.transportMode">{{ deliveryStore.transportLabels[d.transportMethod] || '-' }}</td>
+                <td
+                  v-if="columnVisible.expectedDate"
+                  :style="isOverdue(d) ? 'color:var(--color-danger);font-weight:600' : ''"
+                >
+                  {{ d.expectedArrivalDate || d.expectedDate || '-' }}
+                </td>
+                <td v-if="columnVisible.transportMode">
+                  {{ deliveryStore.transportLabels[d.transportMethod] || '-' }}
+                </td>
                 <td v-if="columnVisible.carrier">{{ d.carrier || '-' }}</td>
                 <td v-if="columnVisible.amount" class="cell-mono">¥{{ formatMoney(d.totalAmount) }}</td>
                 <td v-if="columnVisible.urgency">
@@ -233,54 +450,134 @@
                   </span>
                 </td>
                 <td class="cell-actions">
-                  <button class="btn btn-ghost btn-sm" @click="viewDetail(d.id)" title="查看"><Icon name="eye" :size="14" /></button>
-                  <button class="btn btn-ghost btn-sm" @click="handleChangeStatus(d.id)" title="状态流转" style="color:var(--color-accent)"><Icon name="refresh" :size="14" /></button>
-                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" @click="openEditor(d)" title="编辑"><Icon name="edit" :size="14" /></button>
-                  <button class="btn btn-ghost btn-sm" @click="handlePrint(d.id)" title="打印"><Icon name="print" :size="14" /></button>
-                  <button v-if="d.status === 'created' || d.status === 'pending'" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(d.id)" title="删除"><Icon name="delete" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" title="查看" @click="viewDetail(d.id)">
+                    <Icon name="eye" :size="14" />
+                  </button>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    title="状态流转"
+                    style="color: var(--color-accent)"
+                    @click="handleChangeStatus(d.id)"
+                  >
+                    <Icon name="refresh" :size="14" />
+                  </button>
+                  <button
+                    v-if="d.status === 'created' || d.status === 'pending'"
+                    class="btn btn-ghost btn-sm"
+                    title="编辑"
+                    @click="openEditor(d)"
+                  >
+                    <Icon name="edit" :size="14" />
+                  </button>
+                  <button class="btn btn-ghost btn-sm" title="打印" @click="handlePrint(d.id)">
+                    <Icon name="print" :size="14" />
+                  </button>
+                  <button
+                    v-if="d.status === 'created' || d.status === 'pending'"
+                    class="btn btn-ghost btn-sm"
+                    style="color: var(--color-danger)"
+                    title="删除"
+                    @click="handleDelete(d.id)"
+                  >
+                    <Icon name="delete" :size="14" />
+                  </button>
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-      <div class="panel-card-footer" style="display:flex;align-items:center;justify-content:space-between;padding:var(--space-3) var(--space-4)">
-        <div style="display:flex;align-items:center;gap:var(--space-2)">
-          <span style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">每页</span>
-          <select class="form-select" v-model.number="pageSize" style="width:70px;padding:2px 6px;font-size:var(--font-size-xs)">
+      <div
+        class="panel-card-footer"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: var(--space-3) var(--space-4);
+        "
+      >
+        <div style="display: flex; align-items: center; gap: var(--space-2)">
+          <span style="font-size: var(--font-size-xs); color: var(--color-text-secondary)">每页</span>
+          <select
+            v-model.number="pageSize"
+            class="form-select"
+            style="width: 70px; padding: 2px 6px; font-size: var(--font-size-xs)"
+          >
             <option :value="10">10</option>
             <option :value="15">15</option>
             <option :value="20">20</option>
             <option :value="50">50</option>
           </select>
-          <span style="font-size:var(--font-size-xs);color:var(--color-text-secondary)">条</span>
+          <span style="font-size: var(--font-size-xs); color: var(--color-text-secondary)">条</span>
         </div>
-        <div style="display:flex;align-items:center;gap:var(--space-1)">
+        <div style="display: flex; align-items: center; gap: var(--space-1)">
           <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
           <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
-          <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+          <button
+            v-for="p in visiblePages"
+            :key="p"
+            class="btn btn-ghost btn-sm"
+            :class="{ 'btn-primary': p === currentPage }"
+            style="min-width: 28px"
+            @click="currentPage = p"
+          >
+            {{ p }}
+          </button>
           <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
-          <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
+          <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">
+            »
+          </button>
         </div>
-        <div style="display:flex;align-items:center;gap:var(--space-2)">
-          <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
-          <button v-if="canDelete && selectedIds.length > 0" class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="batchDelete"><Icon name="delete" :size="14" /> 批量删除({{ selectedIds.length }})</button>
+        <div style="display: flex; align-items: center; gap: var(--space-2)">
+          <button v-if="canExport" class="btn btn-ghost btn-sm" @click="exportCSV">
+            <Icon name="upload" :size="14" />
+            导出CSV
+          </button>
+          <button
+            v-if="canDelete && selectedIds.length > 0"
+            class="btn btn-ghost btn-sm"
+            style="color: var(--color-danger)"
+            @click="batchDelete"
+          >
+            <Icon name="delete" :size="14" />
+            批量删除({{ selectedIds.length }})
+          </button>
         </div>
       </div>
     </div>
 
     <div v-if="currentView === 'list'" class="panel-card">
       <div class="panel-card-body">
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-3)">共 {{ filteredDeliveries.length }} 条</div>
-        <div v-if="pagedDeliveries.length === 0" class="empty-state">
-          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
+        <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-bottom: var(--space-3)">
+          共 {{ filteredDeliveries.length }} 条
         </div>
-        <div v-for="(d, idx) in pagedDeliveries" :key="d.id" class="list-item" @click="viewDetail(d.id)" style="cursor:pointer" :style="{ animationDelay: idx * 50 + 'ms' }">
+        <div v-if="pagedDeliveries.length === 0" class="empty-state">
+          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>
+          暂无送货记录
+        </div>
+        <div
+          v-for="(d, idx) in pagedDeliveries"
+          :key="d.id"
+          class="list-item"
+          style="cursor: pointer"
+          :style="{ animationDelay: idx * 50 + 'ms' }"
+          @click="viewDetail(d.id)"
+        >
           <div class="list-item-main">
             <div class="list-item-title">
-              <span style="font-weight:600;color:var(--color-accent)">{{ d.deliveryNo }}</span>
-              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
-              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
+              <span style="font-weight: 600; color: var(--color-accent)">{{ d.deliveryNo }}</span>
+              <span
+                v-if="d.urgency === 'urgent'"
+                style="color: var(--color-danger); font-weight: 700; margin-left: 4px"
+              >
+                <Icon name="warning" :size="14" />
+              </span>
+              <span
+                v-if="d.hasException === '1'"
+                style="color: var(--color-danger); font-weight: 700; margin-left: 4px"
+              >
+                <Icon name="warning" :size="14" />
+              </span>
             </div>
             <div class="list-item-desc">{{ d.customerName || '-' }} · {{ d.date || '-' }}</div>
           </div>
@@ -295,34 +592,67 @@
     </div>
     <div v-if="currentView === 'list' && totalPages > 1" class="pagination-bar">
       <span class="page-info">共 {{ filteredDeliveries.length }} 条</span>
-      <div style="display:flex;align-items:center;gap:var(--space-1)">
+      <div style="display: flex; align-items: center; gap: var(--space-1)">
         <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
         <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
-        <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+        <button
+          v-for="p in visiblePages"
+          :key="p"
+          class="btn btn-ghost btn-sm"
+          :class="{ 'btn-primary': p === currentPage }"
+          style="min-width: 28px"
+          @click="currentPage = p"
+        >
+          {{ p }}
+        </button>
         <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
-        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">
+          »
+        </button>
       </div>
     </div>
 
     <div v-if="currentView === 'card'" class="panel-card">
       <div class="panel-card-body">
-        <div style="font-size:var(--font-size-xs);color:var(--color-text-secondary);margin-bottom:var(--space-3)">共 {{ filteredDeliveries.length }} 条</div>
+        <div style="font-size: var(--font-size-xs); color: var(--color-text-secondary); margin-bottom: var(--space-3)">
+          共 {{ filteredDeliveries.length }} 条
+        </div>
         <div v-if="pagedDeliveries.length === 0" class="empty-state">
-          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>暂无送货记录
+          <div class="empty-state-icon"><Icon name="package" :size="32" /></div>
+          暂无送货记录
         </div>
         <div class="card-grid">
-          <div v-for="(d, idx) in pagedDeliveries" :key="d.id" class="card-item" @click="viewDetail(d.id)" style="cursor:pointer" :style="{ animationDelay: idx * 60 + 'ms' }">
+          <div
+            v-for="(d, idx) in pagedDeliveries"
+            :key="d.id"
+            class="card-item"
+            style="cursor: pointer"
+            :style="{ animationDelay: idx * 60 + 'ms' }"
+            @click="viewDetail(d.id)"
+          >
             <div class="card-item-header">
-              <span style="font-weight:600;color:var(--color-accent)">{{ d.deliveryNo }}</span>
+              <span style="font-weight: 600; color: var(--color-accent)">{{ d.deliveryNo }}</span>
               <span class="status-badge" :class="deliveryStore.statusBadgeMap[d.status] || 'neutral'">
                 {{ deliveryStore.statusLabels[d.status] || d.status }}
               </span>
             </div>
             <div class="card-item-body">
-              <div><Icon name="users" :size="14" /> {{ d.customerName || '-' }}</div>
-              <div><Icon name="dollar" :size="14" /> ¥{{ formatMoney(d.totalAmount) }}</div>
-              <div><Icon name="warning" :size="14" /> {{ deliveryStore.urgencyLabels[d.urgency] || '普通' }}</div>
-              <div><Icon name="calendar" :size="14" /> {{ d.date || '-' }}</div>
+              <div>
+                <Icon name="users" :size="14" />
+                {{ d.customerName || '-' }}
+              </div>
+              <div>
+                <Icon name="dollar" :size="14" />
+                ¥{{ formatMoney(d.totalAmount) }}
+              </div>
+              <div>
+                <Icon name="warning" :size="14" />
+                {{ deliveryStore.urgencyLabels[d.urgency] || '普通' }}
+              </div>
+              <div>
+                <Icon name="calendar" :size="14" />
+                {{ d.date || '-' }}
+              </div>
             </div>
           </div>
         </div>
@@ -330,82 +660,210 @@
     </div>
     <div v-if="currentView === 'card' && totalPages > 1" class="pagination-bar">
       <span class="page-info">共 {{ filteredDeliveries.length }} 条</span>
-      <div style="display:flex;align-items:center;gap:var(--space-1)">
+      <div style="display: flex; align-items: center; gap: var(--space-1)">
         <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
         <button class="btn btn-ghost btn-sm" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
-        <button v-for="p in visiblePages" :key="p" class="btn btn-ghost btn-sm" :class="{ 'btn-primary': p === currentPage }" @click="currentPage = p" style="min-width:28px">{{ p }}</button>
+        <button
+          v-for="p in visiblePages"
+          :key="p"
+          class="btn btn-ghost btn-sm"
+          :class="{ 'btn-primary': p === currentPage }"
+          style="min-width: 28px"
+          @click="currentPage = p"
+        >
+          {{ p }}
+        </button>
         <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
-        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
+        <button class="btn btn-ghost btn-sm" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">
+          »
+        </button>
       </div>
     </div>
 
     <div v-if="currentView === 'kanban'" class="kanban-board">
-      <div v-for="col in kanbanColumns" :key="col.key" class="kanban-column"
+      <div
+        v-for="col in kanbanColumns"
+        :key="col.key"
+        class="kanban-column"
         @dragover.prevent="$event.currentTarget.classList.add('drop-target')"
         @dragleave="$event.currentTarget.classList.remove('drop-target')"
-        @drop="onDropCard($event, col.key)">
+        @drop="onDropCard($event, col.key)"
+      >
         <div class="kanban-column-header" :style="{ borderBottomColor: col.color }">
           <span>{{ col.label }}</span>
           <span class="kanban-count">{{ kanbanItems(col.key).length }}</span>
         </div>
         <div class="kanban-column-body">
-          <div v-for="(d, idx) in kanbanItems(col.key)" :key="d.id" class="kanban-card"
-            draggable="true" @dragstart="onDragStart($event, d.id)" @dragend="onDragEnd" :style="{ animationDelay: idx * 40 + 'ms' }">
+          <div
+            v-for="(d, idx) in kanbanItems(col.key)"
+            :key="d.id"
+            class="kanban-card"
+            draggable="true"
+            :style="{ animationDelay: idx * 40 + 'ms' }"
+            @dragstart="onDragStart($event, d.id)"
+            @dragend="onDragEnd"
+          >
             <div class="kanban-card-title">
-              <span v-if="d.urgency === 'urgent'" style="color:var(--color-danger)"><Icon name="warning" :size="14" /></span>
-              <span v-if="d.urgency === 'high'" style="color:var(--color-warning)"><Icon name="warning" :size="14" /></span>
+              <span v-if="d.urgency === 'urgent'" style="color: var(--color-danger)">
+                <Icon name="warning" :size="14" />
+              </span>
+              <span v-if="d.urgency === 'high'" style="color: var(--color-warning)">
+                <Icon name="warning" :size="14" />
+              </span>
               {{ d.deliveryNo }}
-              <span v-if="d.hasException === '1'" style="color:var(--color-danger);font-weight:700;margin-left:4px"><Icon name="warning" :size="14" /></span>
+              <span
+                v-if="d.hasException === '1'"
+                style="color: var(--color-danger); font-weight: 700; margin-left: 4px"
+              >
+                <Icon name="warning" :size="14" />
+              </span>
             </div>
             <div class="kanban-card-meta">{{ d.customerName || '-' }}</div>
             <div class="kanban-card-footer">
               <span>{{ d.carrier || '-' }}</span>
-              <span style="font-family:var(--font-mono);font-size:10px">¥{{ formatMoney(d.totalAmount) }}</span>
+              <span style="font-family: var(--font-mono); font-size: 10px">¥{{ formatMoney(d.totalAmount) }}</span>
             </div>
           </div>
-          <div v-if="kanbanItems(col.key).length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4);font-size:var(--font-size-xs)">暂无记录</div>
+          <div
+            v-if="kanbanItems(col.key).length === 0"
+            style="
+              text-align: center;
+              color: var(--color-text-tertiary);
+              padding: var(--space-4);
+              font-size: var(--font-size-xs);
+            "
+          >
+            暂无记录
+          </div>
         </div>
       </div>
     </div>
 
     <div v-if="showAssessment" class="modal-overlay" @click.self="showAssessment = false">
-      <div class="modal-panel" style="max-width:800px">
+      <div class="modal-panel" style="max-width: 800px">
         <div class="modal-header">
-          <h3><Icon name="search" :size="14" /> 送货单自主评估报告</h3>
+          <h3>
+            <Icon name="search" :size="14" />
+            送货单自主评估报告
+          </h3>
           <button class="btn btn-ghost btn-sm" @click="showAssessment = false"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-4);margin-bottom:var(--space-4)">
-            <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-tertiary);border-radius:var(--radius-lg)">
-              <div style="font-size:2rem;font-weight:800" :style="{ color: gradeColor }">{{ assessment.grade }}</div>
-              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">综合评级</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">评分 {{ assessment.score }}/100</div>
+          <div
+            style="
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              gap: var(--space-4);
+              margin-bottom: var(--space-4);
+            "
+          >
+            <div
+              style="
+                text-align: center;
+                padding: var(--space-4);
+                background: var(--color-bg-tertiary);
+                border-radius: var(--radius-lg);
+              "
+            >
+              <div style="font-size: 2rem; font-weight: 800" :style="{ color: gradeColor }">{{ assessment.grade }}</div>
+              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">综合评级</div>
+              <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary)">
+                评分 {{ assessment.score }}/100
+              </div>
             </div>
-            <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-tertiary);border-radius:var(--radius-lg)">
-              <div style="font-size:1.5rem;font-weight:700;color:var(--color-success)">{{ assessment.completionRate }}%</div>
-              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">完成率</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">已签收+已验收</div>
+            <div
+              style="
+                text-align: center;
+                padding: var(--space-4);
+                background: var(--color-bg-tertiary);
+                border-radius: var(--radius-lg);
+              "
+            >
+              <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-success)">
+                {{ assessment.completionRate }}%
+              </div>
+              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">完成率</div>
+              <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary)">已签收+已验收</div>
             </div>
-            <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-tertiary);border-radius:var(--radius-lg)">
-              <div style="font-size:1.5rem;font-weight:700;color:var(--color-info)">{{ assessment.onTimeRate }}%</div>
-              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">准时率</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">逾期 {{ assessment.overdueCount }} 单</div>
+            <div
+              style="
+                text-align: center;
+                padding: var(--space-4);
+                background: var(--color-bg-tertiary);
+                border-radius: var(--radius-lg);
+              "
+            >
+              <div style="font-size: 1.5rem; font-weight: 700; color: var(--color-info)">
+                {{ assessment.onTimeRate }}%
+              </div>
+              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">准时率</div>
+              <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary)">
+                逾期 {{ assessment.overdueCount }} 单
+              </div>
             </div>
-            <div style="text-align:center;padding:var(--space-4);background:var(--color-bg-tertiary);border-radius:var(--radius-lg)">
-              <div style="font-size:1.5rem;font-weight:700" :style="{ color: assessment.exceptionRate > 10 ? 'var(--color-danger)' : 'var(--color-success)' }">{{ assessment.exceptionRate }}%</div>
-              <div style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">异常率</div>
-              <div style="font-size:var(--font-size-xs);color:var(--color-text-tertiary)">异常 {{ assessment.exceptionCount }} 单</div>
+            <div
+              style="
+                text-align: center;
+                padding: var(--space-4);
+                background: var(--color-bg-tertiary);
+                border-radius: var(--radius-lg);
+              "
+            >
+              <div
+                style="font-size: 1.5rem; font-weight: 700"
+                :style="{ color: assessment.exceptionRate > 10 ? 'var(--color-danger)' : 'var(--color-success)' }"
+              >
+                {{ assessment.exceptionRate }}%
+              </div>
+              <div style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">异常率</div>
+              <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary)">
+                异常 {{ assessment.exceptionCount }} 单
+              </div>
             </div>
           </div>
-          <div v-if="assessment.overdueCount > 0" style="padding:var(--space-3);background:var(--color-danger-subtle,rgba(239,68,68,0.1));border-radius:var(--radius-md);margin-bottom:var(--space-3)">
-            <strong style="color:var(--color-danger)"><Icon name="warning" :size="14" /> 逾期预警：</strong>有 {{ assessment.overdueCount }} 单送货已超过预计送达日期但尚未签收，请优先处理。
+          <div
+            v-if="assessment.overdueCount > 0"
+            style="
+              padding: var(--space-3);
+              background: var(--color-danger-subtle, rgba(239, 68, 68, 0.1));
+              border-radius: var(--radius-md);
+              margin-bottom: var(--space-3);
+            "
+          >
+            <strong style="color: var(--color-danger)">
+              <Icon name="warning" :size="14" />
+              逾期预警：
+            </strong>
+            有 {{ assessment.overdueCount }} 单送货已超过预计送达日期但尚未签收，请优先处理。
           </div>
-          <div v-if="assessment.exceptionCount > 0" style="padding:var(--space-3);background:var(--color-warning-subtle,rgba(245,158,11,0.1));border-radius:var(--radius-md);margin-bottom:var(--space-3)">
-            <strong style="color:var(--color-warning)"><Icon name="warning" :size="14" /> 异常提醒：</strong>有 {{ assessment.exceptionCount }} 单存在异常情况，请及时跟进处理。
+          <div
+            v-if="assessment.exceptionCount > 0"
+            style="
+              padding: var(--space-3);
+              background: var(--color-warning-subtle, rgba(245, 158, 11, 0.1));
+              border-radius: var(--radius-md);
+              margin-bottom: var(--space-3);
+            "
+          >
+            <strong style="color: var(--color-warning)">
+              <Icon name="warning" :size="14" />
+              异常提醒：
+            </strong>
+            有 {{ assessment.exceptionCount }} 单存在异常情况，请及时跟进处理。
           </div>
-          <div v-if="assessment.suggestions && assessment.suggestions.length > 0" style="padding:var(--space-3);background:var(--color-info-subtle,rgba(6,182,212,0.1));border-radius:var(--radius-md)">
-            <strong style="color:var(--color-info)"><Icon name="info" :size="14" /> 改进建议：</strong>
-            <ul style="margin:var(--space-2) 0 0 var(--space-4);font-size:var(--font-size-sm)">
+          <div
+            v-if="assessment.suggestions && assessment.suggestions.length > 0"
+            style="
+              padding: var(--space-3);
+              background: var(--color-info-subtle, rgba(6, 182, 212, 0.1));
+              border-radius: var(--radius-md);
+            "
+          >
+            <strong style="color: var(--color-info)">
+              <Icon name="info" :size="14" />
+              改进建议：
+            </strong>
+            <ul style="margin: var(--space-2) 0 0 var(--space-4); font-size: var(--font-size-sm)">
               <li v-for="(s, i) in assessment.suggestions" :key="i">{{ s }}</li>
             </ul>
           </div>
@@ -414,31 +872,39 @@
     </div>
 
     <div v-if="showEditor" class="modal-overlay" @click.self="closeEditor">
-      <div class="modal-panel" style="max-width:1000px;max-height:90vh;overflow-y:auto">
+      <div class="modal-panel" style="max-width: 1000px; max-height: 90vh; overflow-y: auto">
         <div class="modal-header">
           <h3>{{ editingId ? '编辑送货单' : '新建送货单' }}</h3>
           <button class="btn btn-ghost btn-sm" @click="closeEditor"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
-          <div class="form-section-title"><Icon name="list" :size="14" /> 基本信息</div>
+          <div class="form-section-title">
+            <Icon name="list" :size="14" />
+            基本信息
+          </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">单据编号</label>
-              <input class="form-input" v-model="editorData.deliveryNo" readonly style="opacity:0.7;cursor:not-allowed">
+              <input
+                v-model="editorData.deliveryNo"
+                class="form-input"
+                readonly
+                style="opacity: 0.7; cursor: not-allowed"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">发货日期</label>
-              <input class="form-input" type="date" v-model="editorData.date">
+              <input v-model="editorData.date" class="form-input" type="date" />
             </div>
             <div class="form-group">
               <label class="form-label">关联采购单号</label>
-              <input class="form-input" v-model="editorData.orderId">
+              <input v-model="editorData.orderId" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">紧急程度</label>
-              <select class="form-select" v-model="editorData.urgency">
+              <select v-model="editorData.urgency" class="form-select">
                 <option value="normal">普通</option>
                 <option value="low">低</option>
                 <option value="high">高</option>
@@ -449,41 +915,58 @@
             <div class="form-group"></div>
           </div>
 
-          <div class="form-section-title"><Icon name="users" :size="14" /> 购货单位信息</div>
+          <div class="form-section-title">
+            <Icon name="users" :size="14" />
+            购货单位信息
+          </div>
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">购货单位名称 <span class="required">*</span></label>
-              <DataSelect module="customer" variant="active" v-model="editorData.customerName" value-field="name" label-field="name" placeholder="选择客户" @change="onCustomerChange" />
+              <label class="form-label">
+                购货单位名称
+                <span class="required">*</span>
+              </label>
+              <DataSelect
+                v-model="editorData.customerName"
+                module="customer"
+                variant="active"
+                value-field="name"
+                label-field="name"
+                placeholder="选择客户"
+                @change="onCustomerChange"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">地址</label>
-              <input class="form-input" v-model="editorData.address">
+              <input v-model="editorData.address" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">联系人</label>
-              <input class="form-input" v-model="editorData.contact">
+              <input v-model="editorData.contact" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">联系电话</label>
-              <input class="form-input" v-model="editorData.phone">
+              <input v-model="editorData.phone" class="form-input" />
             </div>
           </div>
 
-          <div class="form-section-title"><Icon name="download" :size="14" /> 送货计划</div>
+          <div class="form-section-title">
+            <Icon name="download" :size="14" />
+            送货计划
+          </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">预计送货日期</label>
-              <input class="form-input" type="date" v-model="editorData.expectedDate">
+              <input v-model="editorData.expectedDate" class="form-input" type="date" />
             </div>
             <div class="form-group">
               <label class="form-label">预计送达日期</label>
-              <input class="form-input" type="date" v-model="editorData.expectedArrivalDate">
+              <input v-model="editorData.expectedArrivalDate" class="form-input" type="date" />
             </div>
             <div class="form-group">
               <label class="form-label">运输方式</label>
-              <select class="form-select" v-model="editorData.transportMethod">
+              <select v-model="editorData.transportMethod" class="form-select">
                 <option value="logistics">物流</option>
                 <option value="express">快递</option>
                 <option value="self">自提</option>
@@ -494,98 +977,141 @@
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">承运单位</label>
-              <input class="form-input" v-model="editorData.carrier">
+              <input v-model="editorData.carrier" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">送货人员</label>
-              <input class="form-input" v-model="editorData.driver">
+              <input v-model="editorData.driver" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">送货电话</label>
-              <input class="form-input" v-model="editorData.driverPhone">
+              <input v-model="editorData.driverPhone" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">车辆牌号</label>
-              <input class="form-input" v-model="editorData.plateNo">
+              <input v-model="editorData.plateNo" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">司机电话</label>
-              <input class="form-input" v-model="editorData.driverMobile">
+              <input v-model="editorData.driverMobile" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">物流单号</label>
-              <input class="form-input" v-model="editorData.trackingNo">
+              <input v-model="editorData.trackingNo" class="form-input" />
             </div>
           </div>
 
-          <div class="form-section-title"><Icon name="package" :size="14" /> 产品明细</div>
-          <div style="overflow-x:auto">
-            <table class="data-table" style="font-size:var(--font-size-xs)">
+          <div class="form-section-title">
+            <Icon name="package" :size="14" />
+            产品明细
+          </div>
+          <div style="overflow-x: auto">
+            <table class="data-table" style="font-size: var(--font-size-xs)">
               <thead>
                 <tr>
-                  <th style="width:36px">序号</th>
+                  <th style="width: 36px">序号</th>
                   <th>产品名称</th>
                   <th>料号</th>
                   <th>存货编号</th>
                   <th>规格</th>
-                  <th style="width:50px">单位</th>
-                  <th style="width:70px">数量</th>
-                  <th style="width:80px">单价</th>
-                  <th style="width:80px">金额</th>
-                  <th style="width:55px">税率%</th>
-                  <th style="width:70px">税额</th>
-                  <th style="width:36px"></th>
+                  <th style="width: 50px">单位</th>
+                  <th style="width: 70px">数量</th>
+                  <th style="width: 80px">单价</th>
+                  <th style="width: 80px">金额</th>
+                  <th style="width: 55px">税率%</th>
+                  <th style="width: 70px">税额</th>
+                  <th style="width: 36px"></th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(it, idx) in editorItems" :key="idx">
-                  <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ idx + 1 }}</td>
-                  <td><input class="form-input" style="min-width:100px" v-model="it.productName"></td>
-                  <td><input class="form-input" style="min-width:80px" v-model="it.partNo"></td>
-                  <td><input class="form-input" style="min-width:80px" v-model="it.inventoryCode"></td>
-                  <td><input class="form-input" style="min-width:80px" v-model="it.spec"></td>
-                  <td><input class="form-input" style="width:50px" v-model="it.unit"></td>
-                  <td><input class="form-input" type="number" min="0" step="0.01" style="width:70px" v-model.number="it.quantity" @input="calcItemAmount(idx)"></td>
-                  <td><input class="form-input" type="number" min="0" step="0.01" style="width:80px" v-model.number="it.unitPrice" @input="calcItemAmount(idx)"></td>
-                  <td class="cell-mono" style="text-align:right">{{ formatMoney(it.amount || 0) }}</td>
-                  <td><input class="form-input" type="number" min="0" max="100" step="1" style="width:55px" v-model.number="it.taxRate" @input="calcItemAmount(idx)"></td>
-                  <td class="cell-mono" style="text-align:right">{{ formatMoney(it.taxAmount || 0) }}</td>
-                  <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="removeItemRow(idx)"><Icon name="close" :size="14" /></button></td>
+                  <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">{{ idx + 1 }}</td>
+                  <td><input v-model="it.productName" class="form-input" style="min-width: 100px" /></td>
+                  <td><input v-model="it.partNo" class="form-input" style="min-width: 80px" /></td>
+                  <td><input v-model="it.inventoryCode" class="form-input" style="min-width: 80px" /></td>
+                  <td><input v-model="it.spec" class="form-input" style="min-width: 80px" /></td>
+                  <td><input v-model="it.unit" class="form-input" style="width: 50px" /></td>
+                  <td>
+                    <input
+                      v-model.number="it.quantity"
+                      class="form-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      style="width: 70px"
+                      @input="calcItemAmount(idx)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      v-model.number="it.unitPrice"
+                      class="form-input"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      style="width: 80px"
+                      @input="calcItemAmount(idx)"
+                    />
+                  </td>
+                  <td class="cell-mono" style="text-align: right">{{ formatMoney(it.amount || 0) }}</td>
+                  <td>
+                    <input
+                      v-model.number="it.taxRate"
+                      class="form-input"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      style="width: 55px"
+                      @input="calcItemAmount(idx)"
+                    />
+                  </td>
+                  <td class="cell-mono" style="text-align: right">{{ formatMoney(it.taxAmount || 0) }}</td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm" style="color: var(--color-danger)" @click="removeItemRow(idx)">
+                      <Icon name="close" :size="14" />
+                    </button>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
-                <tr style="background:var(--color-bg-tertiary);font-weight:600">
-                  <td colspan="6" style="text-align:right">合计</td>
-                  <td class="cell-mono" style="text-align:right">{{ calcTotalQuantity }}</td>
+                <tr style="background: var(--color-bg-tertiary); font-weight: 600">
+                  <td colspan="6" style="text-align: right">合计</td>
+                  <td class="cell-mono" style="text-align: right">{{ calcTotalQuantity }}</td>
                   <td></td>
-                  <td class="cell-mono" style="text-align:right">{{ formatMoney(calcTotalAmount) }}</td>
+                  <td class="cell-mono" style="text-align: right">{{ formatMoney(calcTotalAmount) }}</td>
                   <td></td>
-                  <td class="cell-mono" style="text-align:right">{{ formatMoney(calcTotalTax) }}</td>
+                  <td class="cell-mono" style="text-align: right">{{ formatMoney(calcTotalTax) }}</td>
                   <td></td>
                 </tr>
-                <tr style="background:var(--color-bg-tertiary);font-weight:700">
-                  <td colspan="8" style="text-align:right">价税合计</td>
-                  <td class="cell-mono" style="text-align:right;color:var(--color-danger)" colspan="3">{{ formatMoney(calcGrandTotal) }}</td>
+                <tr style="background: var(--color-bg-tertiary); font-weight: 700">
+                  <td colspan="8" style="text-align: right">价税合计</td>
+                  <td class="cell-mono" style="text-align: right; color: var(--color-danger)" colspan="3">
+                    {{ formatMoney(calcGrandTotal) }}
+                  </td>
                   <td></td>
                 </tr>
               </tfoot>
             </table>
           </div>
-          <div style="margin-top:var(--space-2)">
+          <div style="margin-top: var(--space-2)">
             <button class="btn btn-ghost btn-sm" @click="addItemRow">添加产品行</button>
           </div>
 
-          <div class="form-section-title"><Icon name="check" :size="14" /> 收货确认</div>
+          <div class="form-section-title">
+            <Icon name="check" :size="14" />
+            收货确认
+          </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">实际送达日期</label>
-              <input class="form-input" type="date" v-model="editorData.actualDate">
+              <input v-model="editorData.actualDate" class="form-input" type="date" />
             </div>
             <div class="form-group">
               <label class="form-label">货物验收情况</label>
-              <select class="form-select" v-model="editorData.acceptanceResult">
+              <select v-model="editorData.acceptanceResult" class="form-select">
                 <option value="">未验收</option>
                 <option value="passed">验收通过</option>
                 <option value="partial">部分通过</option>
@@ -594,32 +1120,39 @@
             </div>
             <div class="form-group">
               <label class="form-label">验收人员</label>
-              <input class="form-input" v-model="editorData.acceptPerson">
+              <input v-model="editorData.acceptPerson" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">验收说明</label>
-              <input class="form-input" v-model="editorData.acceptNote">
+              <input v-model="editorData.acceptNote" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">验收日期</label>
-              <input class="form-input" type="date" v-model="editorData.acceptDate">
+              <input v-model="editorData.acceptDate" class="form-input" type="date" />
             </div>
           </div>
 
-          <div class="form-section-title"><Icon name="warning" :size="14" /> 异常处理</div>
+          <div class="form-section-title">
+            <Icon name="warning" :size="14" />
+            异常处理
+          </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">是否有异常</label>
-              <select class="form-select" v-model="editorData.hasException">
+              <select v-model="editorData.hasException" class="form-select">
                 <option value="0">无</option>
                 <option value="1">有</option>
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">异常类型</label>
-              <select class="form-select" v-model="editorData.exceptionType" :disabled="editorData.hasException !== '1'">
+              <select
+                v-model="editorData.exceptionType"
+                class="form-select"
+                :disabled="editorData.hasException !== '1'"
+              >
                 <option value="">请选择</option>
                 <option value="delay">延迟送达</option>
                 <option value="damage">货物破损</option>
@@ -630,57 +1163,85 @@
             </div>
             <div class="form-group">
               <label class="form-label">异常处理责任人</label>
-              <input class="form-input" v-model="editorData.exceptionResponsible" :disabled="editorData.hasException !== '1'">
+              <input
+                v-model="editorData.exceptionResponsible"
+                class="form-input"
+                :disabled="editorData.hasException !== '1'"
+              />
             </div>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">异常原因</label>
-              <textarea class="form-textarea" rows="2" v-model="editorData.exceptionReason" :disabled="editorData.hasException !== '1'"></textarea>
+              <textarea
+                v-model="editorData.exceptionReason"
+                class="form-textarea"
+                rows="2"
+                :disabled="editorData.hasException !== '1'"
+              ></textarea>
             </div>
             <div class="form-group">
               <label class="form-label">处理方案</label>
-              <textarea class="form-textarea" rows="2" v-model="editorData.exceptionSolution" :disabled="editorData.hasException !== '1'"></textarea>
+              <textarea
+                v-model="editorData.exceptionSolution"
+                class="form-textarea"
+                rows="2"
+                :disabled="editorData.hasException !== '1'"
+              ></textarea>
             </div>
           </div>
 
-          <div class="form-section-title"><Icon name="list" :size="14" /> 签章确认</div>
+          <div class="form-section-title">
+            <Icon name="list" :size="14" />
+            签章确认
+          </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">审核人</label>
-              <input class="form-input" v-model="editorData.reviewer">
+              <input v-model="editorData.reviewer" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">财务确认人</label>
-              <input class="form-input" v-model="editorData.financePerson">
+              <input v-model="editorData.financePerson" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">制表人</label>
-              <input class="form-input" v-model="editorData.creator">
+              <input v-model="editorData.creator" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">送货人签字</label>
-              <input class="form-input" v-model="editorData.deliverySigner">
+              <input v-model="editorData.deliverySigner" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">收货单位签章</label>
-              <input class="form-input" v-model="editorData.receiverSeal">
+              <input v-model="editorData.receiverSeal" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">签章日期</label>
-              <input class="form-input" type="date" v-model="editorData.signDate">
+              <input v-model="editorData.signDate" class="form-input" type="date" />
             </div>
           </div>
 
-          <div class="form-section-title"><Icon name="checkCircle" :size="14" /> 备注</div>
+          <div class="form-section-title">
+            <Icon name="checkCircle" :size="14" />
+            备注
+          </div>
           <div class="form-group">
-            <textarea class="form-textarea" rows="2" v-model="editorData.remarks" placeholder="其他补充说明..."></textarea>
+            <textarea
+              v-model="editorData.remarks"
+              class="form-textarea"
+              rows="2"
+              placeholder="其他补充说明..."
+            ></textarea>
           </div>
         </div>
         <div v-if="editorErrors.length > 0" class="form-errors">
-          <div v-for="(err, idx) in editorErrors" :key="idx" class="form-error"><Icon name="warning" :size="14" /> {{ err }}</div>
+          <div v-for="(err, idx) in editorErrors" :key="idx" class="form-error">
+            <Icon name="warning" :size="14" />
+            {{ err }}
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="closeEditor">取消</button>
@@ -691,38 +1252,63 @@
 
     <!-- 删除确认弹窗 -->
     <div v-if="deleteConfirmVisible" class="modal-overlay" style="z-index: var(--z-toast)" @click.self="cancelDelete">
-      <div class="modal-dialog" style="max-width:400px">
+      <div class="modal-dialog" style="max-width: 400px">
         <div class="modal-header"><span class="modal-title">确认删除</span></div>
-        <div class="modal-body" style="text-align:center">
+        <div class="modal-body" style="text-align: center">
           <div class="confirm-icon-circle danger"><Icon name="delete" :size="24" /></div>
-          <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary)">确认删除该送货单？此操作不可恢复。</p>
+          <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">
+            确认删除该送货单？此操作不可恢复。
+          </p>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="cancelDelete">取消</button>
-          <button class="btn btn-primary" style="background:var(--color-danger)" @click="confirmDelete">确认删除</button>
+          <button class="btn btn-primary" style="background: var(--color-danger)" @click="confirmDelete">
+            确认删除
+          </button>
         </div>
       </div>
     </div>
 
     <div v-if="showDetail" class="modal-overlay" @click.self="closeDetail">
-      <div class="modal-panel" style="max-width:900px;max-height:90vh;overflow-y:auto">
+      <div class="modal-panel" style="max-width: 900px; max-height: 90vh; overflow-y: auto">
         <div class="modal-header">
           <h3>送货单详情</h3>
-          <div style="display:flex;gap:var(--space-2)">
-            <button class="btn btn-primary btn-sm" @click="handlePrint(detailData.id)"><Icon name="print" :size="14" /> 打印</button>
+          <div style="display: flex; gap: var(--space-2)">
+            <button class="btn btn-primary btn-sm" @click="handlePrint(detailData.id)">
+              <Icon name="print" :size="14" />
+              打印
+            </button>
             <button class="btn btn-ghost btn-sm" @click="closeDetail"><Icon name="close" :size="14" /></button>
           </div>
         </div>
         <div class="modal-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4)"
+          >
             <div class="panel-card">
-              <div class="panel-card-header"><Icon name="list" :size="14" /> 基本信息</div>
-              <div class="panel-card-body" style="font-size:var(--font-size-sm)">
-                <div><strong>单据编号：</strong>{{ detailData.deliveryNo }}</div>
-                <div><strong>发货日期：</strong>{{ detailData.date || '-' }}</div>
-                <div><strong>关联采购单号：</strong>{{ detailData.orderId || '-' }}</div>
-                <div><strong>紧急程度：</strong>{{ deliveryStore.urgencyLabels[detailData.urgency] || '-' }}</div>
-                <div><strong>订单状态：</strong>
+              <div class="panel-card-header">
+                <Icon name="list" :size="14" />
+                基本信息
+              </div>
+              <div class="panel-card-body" style="font-size: var(--font-size-sm)">
+                <div>
+                  <strong>单据编号：</strong>
+                  {{ detailData.deliveryNo }}
+                </div>
+                <div>
+                  <strong>发货日期：</strong>
+                  {{ detailData.date || '-' }}
+                </div>
+                <div>
+                  <strong>关联采购单号：</strong>
+                  {{ detailData.orderId || '-' }}
+                </div>
+                <div>
+                  <strong>紧急程度：</strong>
+                  {{ deliveryStore.urgencyLabels[detailData.urgency] || '-' }}
+                </div>
+                <div>
+                  <strong>订单状态：</strong>
                   <span class="status-badge" :class="deliveryStore.statusBadgeMap[detailData.status] || 'neutral'">
                     {{ deliveryStore.statusLabels[detailData.status] || detailData.status }}
                   </span>
@@ -730,40 +1316,104 @@
               </div>
             </div>
             <div class="panel-card">
-              <div class="panel-card-header"><Icon name="users" :size="14" /> 购货单位</div>
-              <div class="panel-card-body" style="font-size:var(--font-size-sm)">
-                <div><strong>单位名称：</strong>{{ detailData.customerName || '-' }}</div>
-                <div><strong>地址：</strong>{{ detailData.address || '-' }}</div>
-                <div><strong>联系人：</strong>{{ detailData.contact || '-' }}</div>
-                <div><strong>联系电话：</strong>{{ detailData.phone || '-' }}</div>
+              <div class="panel-card-header">
+                <Icon name="users" :size="14" />
+                购货单位
+              </div>
+              <div class="panel-card-body" style="font-size: var(--font-size-sm)">
+                <div>
+                  <strong>单位名称：</strong>
+                  {{ detailData.customerName || '-' }}
+                </div>
+                <div>
+                  <strong>地址：</strong>
+                  {{ detailData.address || '-' }}
+                </div>
+                <div>
+                  <strong>联系人：</strong>
+                  {{ detailData.contact || '-' }}
+                </div>
+                <div>
+                  <strong>联系电话：</strong>
+                  {{ detailData.phone || '-' }}
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header"><Icon name="download" :size="14" /> 送货计划</div>
-            <div class="panel-card-body" style="font-size:var(--font-size-sm)">
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)">
-                <div><strong>预计送货日期：</strong>{{ detailData.expectedDate || '-' }}</div>
-                <div><strong>预计送达日期：</strong>{{ detailData.expectedArrivalDate || '-' }}</div>
-                <div><strong>运输方式：</strong>{{ deliveryStore.transportLabels[detailData.transportMethod] || '-' }}</div>
-                <div><strong>承运单位：</strong>{{ detailData.carrier || '-' }}</div>
-                <div><strong>送货人员：</strong>{{ detailData.driver || '-' }}</div>
-                <div><strong>送货电话：</strong>{{ detailData.driverPhone || '-' }}</div>
-                <div><strong>车辆牌号：</strong>{{ detailData.plateNo || '-' }}</div>
-                <div><strong>司机电话：</strong>{{ detailData.driverMobile || '-' }}</div>
-                <div><strong>物流单号：</strong>{{ detailData.trackingNo || '-' }}</div>
+          <div class="panel-card" style="margin-bottom: var(--space-4)">
+            <div class="panel-card-header">
+              <Icon name="download" :size="14" />
+              送货计划
+            </div>
+            <div class="panel-card-body" style="font-size: var(--font-size-sm)">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2)">
+                <div>
+                  <strong>预计送货日期：</strong>
+                  {{ detailData.expectedDate || '-' }}
+                </div>
+                <div>
+                  <strong>预计送达日期：</strong>
+                  {{ detailData.expectedArrivalDate || '-' }}
+                </div>
+                <div>
+                  <strong>运输方式：</strong>
+                  {{ deliveryStore.transportLabels[detailData.transportMethod] || '-' }}
+                </div>
+                <div>
+                  <strong>承运单位：</strong>
+                  {{ detailData.carrier || '-' }}
+                </div>
+                <div>
+                  <strong>送货人员：</strong>
+                  {{ detailData.driver || '-' }}
+                </div>
+                <div>
+                  <strong>送货电话：</strong>
+                  {{ detailData.driverPhone || '-' }}
+                </div>
+                <div>
+                  <strong>车辆牌号：</strong>
+                  {{ detailData.plateNo || '-' }}
+                </div>
+                <div>
+                  <strong>司机电话：</strong>
+                  {{ detailData.driverMobile || '-' }}
+                </div>
+                <div>
+                  <strong>物流单号：</strong>
+                  {{ detailData.trackingNo || '-' }}
+                </div>
               </div>
             </div>
           </div>
 
-          <div v-if="detailData.items && detailData.items.length > 0" class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header"><Icon name="package" :size="14" /> 产品明细</div>
+          <div
+            v-if="detailData.items && detailData.items.length > 0"
+            class="panel-card"
+            style="margin-bottom: var(--space-4)"
+          >
+            <div class="panel-card-header">
+              <Icon name="package" :size="14" />
+              产品明细
+            </div>
             <div class="panel-card-body no-padding">
               <div class="table-container">
-                <table class="data-table" style="font-size:var(--font-size-xs)">
+                <table class="data-table" style="font-size: var(--font-size-xs)">
                   <thead>
-                    <tr><th>序号</th><th>产品名称</th><th>料号</th><th>存货编号</th><th>规格</th><th>单位</th><th>数量</th><th>单价</th><th>金额</th><th>税率</th><th>税额</th></tr>
+                    <tr>
+                      <th>序号</th>
+                      <th>产品名称</th>
+                      <th>料号</th>
+                      <th>存货编号</th>
+                      <th>规格</th>
+                      <th>单位</th>
+                      <th>数量</th>
+                      <th>单价</th>
+                      <th>金额</th>
+                      <th>税率</th>
+                      <th>税额</th>
+                    </tr>
                   </thead>
                   <tbody>
                     <tr v-for="(it, i) in detailData.items" :key="i">
@@ -782,56 +1432,126 @@
                   </tbody>
                 </table>
               </div>
-              <div style="padding:var(--space-3);text-align:right;font-size:var(--font-size-sm)">
-                <strong>金额合计：</strong>¥{{ formatMoney(detailData.totalAmount || 0) }} ·
-                <strong>税额合计：</strong>¥{{ formatMoney(detailData.totalTax || 0) }} ·
-                <strong style="color:var(--color-danger)">价税合计：</strong>¥{{ formatMoney(detailData.grandTotal || 0) }}
+              <div style="padding: var(--space-3); text-align: right; font-size: var(--font-size-sm)">
+                <strong>金额合计：</strong>
+                ¥{{ formatMoney(detailData.totalAmount || 0) }} ·
+                <strong>税额合计：</strong>
+                ¥{{ formatMoney(detailData.totalTax || 0) }} ·
+                <strong style="color: var(--color-danger)">价税合计：</strong>
+                ¥{{ formatMoney(detailData.grandTotal || 0) }}
               </div>
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-bottom:var(--space-4)">
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-bottom: var(--space-4)"
+          >
             <div class="panel-card">
-              <div class="panel-card-header"><Icon name="check" :size="14" /> 收货确认</div>
-              <div class="panel-card-body" style="font-size:var(--font-size-sm)">
-                <div><strong>实际送达日期：</strong>{{ detailData.actualDate || '-' }}</div>
-                <div><strong>验收情况：</strong>{{ deliveryStore.acceptanceLabels[detailData.acceptanceResult] || '未验收' }}</div>
-                <div><strong>验收说明：</strong>{{ detailData.acceptNote || '-' }}</div>
-                <div><strong>验收人员：</strong>{{ detailData.acceptPerson || '-' }}</div>
-                <div><strong>验收日期：</strong>{{ detailData.acceptDate || '-' }}</div>
+              <div class="panel-card-header">
+                <Icon name="check" :size="14" />
+                收货确认
+              </div>
+              <div class="panel-card-body" style="font-size: var(--font-size-sm)">
+                <div>
+                  <strong>实际送达日期：</strong>
+                  {{ detailData.actualDate || '-' }}
+                </div>
+                <div>
+                  <strong>验收情况：</strong>
+                  {{ deliveryStore.acceptanceLabels[detailData.acceptanceResult] || '未验收' }}
+                </div>
+                <div>
+                  <strong>验收说明：</strong>
+                  {{ detailData.acceptNote || '-' }}
+                </div>
+                <div>
+                  <strong>验收人员：</strong>
+                  {{ detailData.acceptPerson || '-' }}
+                </div>
+                <div>
+                  <strong>验收日期：</strong>
+                  {{ detailData.acceptDate || '-' }}
+                </div>
               </div>
             </div>
             <div class="panel-card">
-              <div class="panel-card-header"><Icon v-if="detailData.hasException === '1'" name="warning" :size="14" style="color:var(--color-danger)" /><Icon v-else name="checkCircle" :size="14" style="color:var(--color-success)" /> 异常处理</div>
-              <div class="panel-card-body" style="font-size:var(--font-size-sm)">
+              <div class="panel-card-header">
+                <Icon
+                  v-if="detailData.hasException === '1'"
+                  name="warning"
+                  :size="14"
+                  style="color: var(--color-danger)"
+                />
+                <Icon v-else name="checkCircle" :size="14" style="color: var(--color-success)" />
+                异常处理
+              </div>
+              <div class="panel-card-body" style="font-size: var(--font-size-sm)">
                 <template v-if="detailData.hasException === '1'">
-                  <div><strong>异常类型：</strong><span style="color:var(--color-danger)">{{ deliveryStore.exceptionTypeLabels[detailData.exceptionType] || '-' }}</span></div>
-                  <div><strong>异常原因：</strong>{{ detailData.exceptionReason || '-' }}</div>
-                  <div><strong>处理方案：</strong>{{ detailData.exceptionSolution || '-' }}</div>
-                  <div><strong>责任人：</strong>{{ detailData.exceptionResponsible || '-' }}</div>
+                  <div>
+                    <strong>异常类型：</strong>
+                    <span style="color: var(--color-danger)">
+                      {{ deliveryStore.exceptionTypeLabels[detailData.exceptionType] || '-' }}
+                    </span>
+                  </div>
+                  <div>
+                    <strong>异常原因：</strong>
+                    {{ detailData.exceptionReason || '-' }}
+                  </div>
+                  <div>
+                    <strong>处理方案：</strong>
+                    {{ detailData.exceptionSolution || '-' }}
+                  </div>
+                  <div>
+                    <strong>责任人：</strong>
+                    {{ detailData.exceptionResponsible || '-' }}
+                  </div>
                 </template>
-                <div v-else style="color:var(--color-success)">无异常</div>
+                <div v-else style="color: var(--color-success)">无异常</div>
               </div>
             </div>
           </div>
 
-          <div class="panel-card" style="margin-bottom:var(--space-4)">
-            <div class="panel-card-header"><Icon name="list" :size="14" /> 签章确认</div>
-            <div class="panel-card-body" style="font-size:var(--font-size-sm)">
-              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-2)">
-                <div><strong>审核人：</strong>{{ detailData.reviewer || '-' }}</div>
-                <div><strong>财务确认人：</strong>{{ detailData.financePerson || '-' }}</div>
-                <div><strong>制表人：</strong>{{ detailData.creator || '-' }}</div>
-                <div><strong>送货人签字：</strong>{{ detailData.deliverySigner || '-' }}</div>
-                <div><strong>收货单位签章：</strong>{{ detailData.receiverSeal || '-' }}</div>
-                <div><strong>签章日期：</strong>{{ detailData.signDate || '-' }}</div>
+          <div class="panel-card" style="margin-bottom: var(--space-4)">
+            <div class="panel-card-header">
+              <Icon name="list" :size="14" />
+              签章确认
+            </div>
+            <div class="panel-card-body" style="font-size: var(--font-size-sm)">
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2)">
+                <div>
+                  <strong>审核人：</strong>
+                  {{ detailData.reviewer || '-' }}
+                </div>
+                <div>
+                  <strong>财务确认人：</strong>
+                  {{ detailData.financePerson || '-' }}
+                </div>
+                <div>
+                  <strong>制表人：</strong>
+                  {{ detailData.creator || '-' }}
+                </div>
+                <div>
+                  <strong>送货人签字：</strong>
+                  {{ detailData.deliverySigner || '-' }}
+                </div>
+                <div>
+                  <strong>收货单位签章：</strong>
+                  {{ detailData.receiverSeal || '-' }}
+                </div>
+                <div>
+                  <strong>签章日期：</strong>
+                  {{ detailData.signDate || '-' }}
+                </div>
               </div>
             </div>
           </div>
 
           <div v-if="detailData.remarks" class="panel-card">
-            <div class="panel-card-header"><Icon name="checkCircle" :size="14" /> 备注</div>
-            <div class="panel-card-body" style="font-size:var(--font-size-sm)">{{ detailData.remarks }}</div>
+            <div class="panel-card-header">
+              <Icon name="checkCircle" :size="14" />
+              备注
+            </div>
+            <div class="panel-card-body" style="font-size: var(--font-size-sm)">{{ detailData.remarks }}</div>
           </div>
         </div>
       </div>
@@ -844,7 +1564,7 @@ import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useDeliveryStore } from '@/stores/delivery'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { usePermission } from '@/utils/permissionGuard'
-import { formatMoney, escapeHtml } from '@/utils/format'
+import { formatMoney, escapeHtml, toLocalDateStr } from '@/utils/format'
 import DataSelect from '@/components/DataSelect.vue'
 
 const deliveryStore = useDeliveryStore()
@@ -870,7 +1590,7 @@ const columnDefs = [
   { key: 'status', label: '状态' },
   { key: 'actions', label: '操作', hideable: false }
 ]
-const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const columnVisible = ref(Object.fromEntries(columnDefs.filter((c) => c.hideable !== false).map((c) => [c.key, true])))
 const showColumnConfig = ref(false)
 const colDropdownStyle = ref({})
 function toggleColumnConfig(event) {
@@ -915,6 +1635,88 @@ const filters = reactive({
   dateFrom: '',
   dateTo: ''
 })
+
+const quickFilter = ref('')
+
+function computeWeekTrend(statusFilter) {
+  const now = new Date()
+  const thisWeek = deliveryStore.deliveries.filter((d) => {
+    const dt = new Date(d.date)
+    const diff = (now - dt) / 86400000
+    return diff >= 0 && diff < 7 && (!statusFilter || d.status === statusFilter)
+  }).length
+  const lastWeek = deliveryStore.deliveries.filter((d) => {
+    const dt = new Date(d.date)
+    const diff = (now - dt) / 86400000
+    return diff >= 7 && diff < 14 && (!statusFilter || d.status === statusFilter)
+  }).length
+  if (lastWeek === 0) return { value: 0, direction: 'up' }
+  const pct = Math.round(((thisWeek - lastWeek) / lastWeek) * 100)
+  return { value: Math.abs(pct), direction: pct >= 0 ? 'up' : 'down' }
+}
+
+const deliveryTrend = computed(() => computeWeekTrend(null))
+const pendingTrend = computed(() => computeWeekTrend('pending'))
+const shippedTrend = computed(() => computeWeekTrend('shipped'))
+const transitTrend = computed(() => computeWeekTrend('transit'))
+const receivedTrend = computed(() => computeWeekTrend('received'))
+const exceptionTrend = computed(() => computeWeekTrend('exception'))
+
+const activeFilterTags = computed(() => {
+  const tags = []
+  if (filters.search) tags.push({ key: 'search', label: `搜索: ${filters.search}` })
+  if (filters.status)
+    tags.push({ key: 'status', label: `状态: ${deliveryStore.statusLabels[filters.status] || filters.status}` })
+  if (filters.urgency)
+    tags.push({ key: 'urgency', label: `紧急: ${deliveryStore.urgencyLabels[filters.urgency] || filters.urgency}` })
+  if (filters.transport)
+    tags.push({
+      key: 'transport',
+      label: `运输: ${deliveryStore.transportLabels[filters.transport] || filters.transport}`
+    })
+  if (filters.customerName) tags.push({ key: 'customerName', label: `客户: ${filters.customerName}` })
+  if (filters.dateFrom) tags.push({ key: 'dateFrom', label: `起始: ${filters.dateFrom}` })
+  if (filters.dateTo) tags.push({ key: 'dateTo', label: `截止: ${filters.dateTo}` })
+  return tags
+})
+
+function removeFilterTag(key) {
+  if (key === 'search') filters.search = ''
+  else if (key === 'status') filters.status = ''
+  else if (key === 'urgency') filters.urgency = ''
+  else if (key === 'transport') filters.transport = ''
+  else if (key === 'customerName') filters.customerName = ''
+  else if (key === 'dateFrom') filters.dateFrom = ''
+  else if (key === 'dateTo') filters.dateTo = ''
+}
+
+function setQuickFilter(period) {
+  if (quickFilter.value === period) {
+    quickFilter.value = ''
+    filters.dateFrom = ''
+    filters.dateTo = ''
+    return
+  }
+  quickFilter.value = period
+  const now = new Date()
+  const today = toLocalDateStr(now)
+  filters.dateTo = today
+  if (period === 'today') {
+    filters.dateFrom = today
+  } else if (period === 'week') {
+    const weekStart = new Date(now)
+    weekStart.setDate(now.getDate() - now.getDay() + 1)
+    filters.dateFrom = toLocalDateStr(weekStart)
+  } else if (period === 'month') {
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    filters.dateFrom = toLocalDateStr(monthStart)
+  }
+}
+
+function filterByStatus(status) {
+  filters.status = status
+  currentPage.value = 1
+}
 
 const editorData = reactive({
   deliveryNo: '',
@@ -961,13 +1763,16 @@ const customerOptions = computed(() => customerStore.customers || [])
 const filteredDeliveries = computed(() => {
   let list = [...deliveryStore.deliveries]
   const s = filters.search.toLowerCase()
-  if (s) list = list.filter(d => (d.deliveryNo || '').toLowerCase().includes(s) || (d.customerName || '').toLowerCase().includes(s))
-  if (filters.status) list = list.filter(d => d.status === filters.status)
-  if (filters.urgency) list = list.filter(d => d.urgency === filters.urgency)
-  if (filters.transport) list = list.filter(d => d.transportMethod === filters.transport)
-  if (filters.customerName) list = list.filter(d => d.customerName === filters.customerName)
-  if (filters.dateFrom) list = list.filter(d => d.date >= filters.dateFrom)
-  if (filters.dateTo) list = list.filter(d => d.date <= filters.dateTo)
+  if (s)
+    list = list.filter(
+      (d) => (d.deliveryNo || '').toLowerCase().includes(s) || (d.customerName || '').toLowerCase().includes(s)
+    )
+  if (filters.status) list = list.filter((d) => d.status === filters.status)
+  if (filters.urgency) list = list.filter((d) => d.urgency === filters.urgency)
+  if (filters.transport) list = list.filter((d) => d.transportMethod === filters.transport)
+  if (filters.customerName) list = list.filter((d) => d.customerName === filters.customerName)
+  if (filters.dateFrom) list = list.filter((d) => d.date >= filters.dateFrom)
+  if (filters.dateTo) list = list.filter((d) => d.date <= filters.dateTo)
   if (sortField.value) {
     list = [...list].sort((a, b) => {
       let va = a[sortField.value] || ''
@@ -1031,11 +1836,13 @@ const transportStats = computed(() => {
   }
   const entries = Object.entries(map).sort((a, b) => b[1] - a[1])
   const max = entries.length > 0 ? entries[0][1] : 1
+  const total = deliveryStore.deliveries.length || 1
   return entries.map(([type, count]) => ({
     type,
     label: deliveryStore.transportLabels[type] || type,
     count,
     percent: Math.round((count / max) * 100),
+    percentTotal: Math.round((count / total) * 100),
     color: TRANSPORT_COLORS[type] || '#64748b'
   }))
 })
@@ -1048,7 +1855,7 @@ const recent7Days = computed(() => {
     const d = new Date(now)
     d.setDate(d.getDate() - i)
     const ds = d.toISOString().split('T')[0]
-    const count = deliveryStore.deliveries.filter(d => d.date === ds).length
+    const count = deliveryStore.deliveries.filter((d) => d.date === ds).length
     days.push({
       date: ds,
       dayLabel: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()],
@@ -1056,8 +1863,10 @@ const recent7Days = computed(() => {
       percent: 0
     })
   }
-  const max = Math.max(...days.map(d => d.count), 1)
-  days.forEach(d => { d.percent = Math.round((d.count / max) * 100) })
+  const max = Math.max(...days.map((d) => d.count), 1)
+  days.forEach((d) => {
+    d.percent = Math.round((d.count / max) * 100)
+  })
   return days
 })
 
@@ -1068,7 +1877,12 @@ const deliveryAlerts = computed(() => {
   for (const d of deliveryStore.deliveries) {
     if (d.status === 'exception') {
       alerts.push({ ...d, alertType: 'exception', alertLabel: '异常' })
-    } else if (d.expectedArrivalDate && d.expectedArrivalDate < now && d.status !== 'received' && d.status !== 'accepted') {
+    } else if (
+      d.expectedArrivalDate &&
+      d.expectedArrivalDate < now &&
+      d.status !== 'received' &&
+      d.status !== 'accepted'
+    ) {
       alerts.push({ ...d, alertType: 'overdue', alertLabel: '逾期' })
     }
   }
@@ -1102,7 +1916,7 @@ const calcTotalTax = computed(() => editorItems.value.reduce((s, it) => s + (par
 const calcGrandTotal = computed(() => calcTotalAmount.value + calcTotalTax.value)
 
 function kanbanItems(status) {
-  return filteredDeliveries.value.filter(d => d.status === status)
+  return filteredDeliveries.value.filter((d) => d.status === status)
 }
 
 function isOverdue(d) {
@@ -1119,12 +1933,13 @@ function resetFilters() {
   filters.customerName = ''
   filters.dateFrom = ''
   filters.dateTo = ''
+  quickFilter.value = ''
   currentPage.value = 1
 }
 
 function toggleSelectAll() {
   if (selectAll.value) {
-    selectedIds.value = pagedDeliveries.value.map(d => d.id)
+    selectedIds.value = pagedDeliveries.value.map((d) => d.id)
   } else {
     selectedIds.value = []
   }
@@ -1153,8 +1968,10 @@ function openEditor(data) {
   editorErrors.value = []
   editingId.value = data ? data.id : null
   if (data) {
-    Object.keys(editorData).forEach(k => { editorData[k] = data[k] || (k === 'hasException' ? '0' : '') })
-    editorItems.value = Array.isArray(data.items) ? data.items.map(it => ({ ...it })) : []
+    Object.keys(editorData).forEach((k) => {
+      editorData[k] = data[k] || (k === 'hasException' ? '0' : '')
+    })
+    editorItems.value = Array.isArray(data.items) ? data.items.map((it) => ({ ...it })) : []
   } else {
     editorData.deliveryNo = deliveryStore.generateDeliveryNo()
     editorData.date = new Date().toISOString().split('T')[0]
@@ -1191,7 +2008,20 @@ function openEditor(data) {
     editorData.receiverSeal = ''
     editorData.signDate = ''
     editorData.remarks = ''
-    editorItems.value = [{ productName: '', partNo: '', inventoryCode: '', spec: '', unit: 'kg', quantity: 0, unitPrice: 0, amount: 0, taxRate: 13, taxAmount: 0 }]
+    editorItems.value = [
+      {
+        productName: '',
+        partNo: '',
+        inventoryCode: '',
+        spec: '',
+        unit: 'kg',
+        quantity: 0,
+        unitPrice: 0,
+        amount: 0,
+        taxRate: 13,
+        taxAmount: 0
+      }
+    ]
   }
   showEditor.value = true
 }
@@ -1211,7 +2041,18 @@ function onCustomerChange({ value, data }) {
 }
 
 function addItemRow() {
-  editorItems.value.push({ productName: '', partNo: '', inventoryCode: '', spec: '', unit: 'kg', quantity: 0, unitPrice: 0, amount: 0, taxRate: 13, taxAmount: 0 })
+  editorItems.value.push({
+    productName: '',
+    partNo: '',
+    inventoryCode: '',
+    spec: '',
+    unit: 'kg',
+    quantity: 0,
+    unitPrice: 0,
+    amount: 0,
+    taxRate: 13,
+    taxAmount: 0
+  })
 }
 
 function removeItemRow(idx) {
@@ -1229,7 +2070,7 @@ function saveDelivery() {
   editorErrors.value = []
   if (!editorData.customerName) editorErrors.value.push('购货单位名称为必填项')
   if (!editorData.date) editorErrors.value.push('发货日期为必填项')
-  const validItems = editorItems.value.filter(it => it.productName && it.quantity > 0)
+  const validItems = editorItems.value.filter((it) => it.productName && it.quantity > 0)
   if (validItems.length === 0) editorErrors.value.push('至少需要一条有效的产品明细（名称非空且数量大于0）')
   if (editorData.date && editorData.expectedArrivalDate && editorData.expectedArrivalDate < editorData.date) {
     editorErrors.value.push('预计送达日期不能早于发货日期')
@@ -1247,7 +2088,10 @@ function saveDelivery() {
     unitPrice: parseFloat(it.unitPrice) || 0,
     amount: Math.round((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0) * 100) / 100,
     taxRate: parseFloat(it.taxRate) || 13,
-    taxAmount: Math.round((parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0) * 100 * (parseFloat(it.taxRate) || 13)) / 10000
+    taxAmount:
+      Math.round(
+        (parseFloat(it.quantity) || 0) * (parseFloat(it.unitPrice) || 0) * 100 * (parseFloat(it.taxRate) || 13)
+      ) / 10000
   }))
 
   const totalQty = items.reduce((s, it) => s + it.quantity, 0)
@@ -1328,10 +2172,13 @@ function handlePrint(id) {
   const d = deliveryStore.getById(id)
   if (!d) return
   const items = Array.isArray(d.items) ? d.items : []
-  const itemsHtml = items.map((it, i) =>
-    `<tr><td>${it.seq || i + 1}</td><td>${escapeHtml(it.productName || '')}</td><td>${escapeHtml(it.partNo || '')}</td><td>${escapeHtml(it.spec || '')}</td><td>${escapeHtml(it.unit || '')}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${it.quantity || 0}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.unitPrice || 0)}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.amount || 0)}</td></tr>`
-  ).join('')
-/* eslint-disable no-useless-escape */
+  const itemsHtml = items
+    .map(
+      (it, i) =>
+        `<tr><td>${it.seq || i + 1}</td><td>${escapeHtml(it.productName || '')}</td><td>${escapeHtml(it.partNo || '')}</td><td>${escapeHtml(it.spec || '')}</td><td>${escapeHtml(it.unit || '')}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${it.quantity || 0}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.unitPrice || 0)}</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">${formatMoney(it.amount || 0)}</td></tr>`
+    )
+    .join('')
+  /* eslint-disable no-useless-escape */
   const printHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>送货单 - ${escapeHtml(d.deliveryNo || '')}</title>
 <style>body{font-family:sans-serif;padding:var(--space-5);font-size:12px}table{width:100%;border-collapse:collapse;margin:var(--space-2) 0}th{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left; overflow-wrap: break-word; word-wrap: break-word}td{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left; overflow-wrap: break-word; word-wrap: break-word}th{background:#f5f5f5;font-weight:600}.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--space-5);border-bottom:2px solid #333;padding-bottom:var(--space-2)}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);margin:var(--space-2) 0}.section-title{font-weight:700;margin:var(--space-4) 0 var(--space-2);padding-bottom:var(--space-1);border-bottom:1px solid #ccc}</style></head>
 <body><div class="header"><h2>送货单</h2><div>单据编号：${escapeHtml(d.deliveryNo || '')}</div></div>
@@ -1358,51 +2205,92 @@ ${d.hasException === '1' ? '<div class="section-title">异常处理</div><div cl
 
 function exportCSV() {
   try {
-  const list = filteredDeliveries.value
-  if (list.length === 0) { alert('无数据可导出'); return }
-  const urgencyMap = deliveryStore.urgencyLabels
-  const statusMap = deliveryStore.statusLabels
-  const transportMap = deliveryStore.transportLabels
-  const exTypeMap = deliveryStore.exceptionTypeLabels
-  const acceptMap = deliveryStore.acceptanceLabels
-  let csv = ''
-  csv += '送货单号,发货日期,购货单位,地址,联系人,联系电话,关联采购单号,紧急程度,订单状态,'
-  csv += '预计送货日期,预计送达日期,运输方式,承运单位,送货人员,送货电话,车辆牌号,司机电话,物流单号,'
-  csv += '产品名称,料号,存货编号,规格,单位,送货数量,单价,金额,税率%,税额,'
-  csv += '实际送达日期,验收情况,验收说明,验收人员,验收日期,'
-  csv += '是否有异常,异常类型,异常原因,处理方案,责任人,'
-  csv += '审核人,财务确认人,制表人,送货人签字,收货单位签章,签章日期,备注,'
-  csv += '总金额,总税额,价税合计\n'
-  for (const d of list) {
-    const items = Array.isArray(d.items) && d.items.length > 0 ? d.items : [{}]
-    for (let j = 0; j < items.length; j++) {
-      const it = items[j] || {}
-      const row = [
-        d.deliveryNo || '', d.date || '', d.customerName || '', d.address || '', d.contact || '', d.phone || '',
-        d.orderId || '', urgencyMap[d.urgency] || d.urgency || '', statusMap[d.status] || d.status || '',
-        d.expectedDate || '', d.expectedArrivalDate || '', transportMap[d.transportMethod] || d.transportMethod || '', d.carrier || '',
-        d.driver || '', d.driverPhone || '', d.plateNo || '', d.driverMobile || '', d.trackingNo || '',
-        it.productName || '', it.partNo || '', it.inventoryCode || '', it.spec || '', it.unit || '',
-        it.quantity || 0, it.unitPrice || 0, it.amount || 0, it.taxRate || 13, it.taxAmount || 0,
-        d.actualDate || '', acceptMap[d.acceptanceResult] || d.acceptanceResult || '', d.acceptNote || '',
-        d.acceptPerson || '', d.acceptDate || '',
-        d.hasException === '1' ? '是' : '否', exTypeMap[d.exceptionType] || d.exceptionType || '',
-        d.exceptionReason || '', d.exceptionSolution || '', d.exceptionResponsible || '',
-        d.reviewer || '', d.financePerson || '', d.creator || '',
-        d.deliverySigner || '', d.receiverSeal || '', d.signDate || '', d.remarks || '',
-        j === 0 ? (d.totalAmount || 0) : '', j === 0 ? (d.totalTax || 0) : '', j === 0 ? (d.grandTotal || 0) : ''
-      ]
-      csv += row.map(v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',') + '\n'
+    const list = filteredDeliveries.value
+    if (list.length === 0) {
+      alert('无数据可导出')
+      return
     }
+    const urgencyMap = deliveryStore.urgencyLabels
+    const statusMap = deliveryStore.statusLabels
+    const transportMap = deliveryStore.transportLabels
+    const exTypeMap = deliveryStore.exceptionTypeLabels
+    const acceptMap = deliveryStore.acceptanceLabels
+    let csv = ''
+    csv += '送货单号,发货日期,购货单位,地址,联系人,联系电话,关联采购单号,紧急程度,订单状态,'
+    csv += '预计送货日期,预计送达日期,运输方式,承运单位,送货人员,送货电话,车辆牌号,司机电话,物流单号,'
+    csv += '产品名称,料号,存货编号,规格,单位,送货数量,单价,金额,税率%,税额,'
+    csv += '实际送达日期,验收情况,验收说明,验收人员,验收日期,'
+    csv += '是否有异常,异常类型,异常原因,处理方案,责任人,'
+    csv += '审核人,财务确认人,制表人,送货人签字,收货单位签章,签章日期,备注,'
+    csv += '总金额,总税额,价税合计\n'
+    for (const d of list) {
+      const items = Array.isArray(d.items) && d.items.length > 0 ? d.items : [{}]
+      for (let j = 0; j < items.length; j++) {
+        const it = items[j] || {}
+        const row = [
+          d.deliveryNo || '',
+          d.date || '',
+          d.customerName || '',
+          d.address || '',
+          d.contact || '',
+          d.phone || '',
+          d.orderId || '',
+          urgencyMap[d.urgency] || d.urgency || '',
+          statusMap[d.status] || d.status || '',
+          d.expectedDate || '',
+          d.expectedArrivalDate || '',
+          transportMap[d.transportMethod] || d.transportMethod || '',
+          d.carrier || '',
+          d.driver || '',
+          d.driverPhone || '',
+          d.plateNo || '',
+          d.driverMobile || '',
+          d.trackingNo || '',
+          it.productName || '',
+          it.partNo || '',
+          it.inventoryCode || '',
+          it.spec || '',
+          it.unit || '',
+          it.quantity || 0,
+          it.unitPrice || 0,
+          it.amount || 0,
+          it.taxRate || 13,
+          it.taxAmount || 0,
+          d.actualDate || '',
+          acceptMap[d.acceptanceResult] || d.acceptanceResult || '',
+          d.acceptNote || '',
+          d.acceptPerson || '',
+          d.acceptDate || '',
+          d.hasException === '1' ? '是' : '否',
+          exTypeMap[d.exceptionType] || d.exceptionType || '',
+          d.exceptionReason || '',
+          d.exceptionSolution || '',
+          d.exceptionResponsible || '',
+          d.reviewer || '',
+          d.financePerson || '',
+          d.creator || '',
+          d.deliverySigner || '',
+          d.receiverSeal || '',
+          d.signDate || '',
+          d.remarks || '',
+          j === 0 ? d.totalAmount || 0 : '',
+          j === 0 ? d.totalTax || 0 : '',
+          j === 0 ? d.grandTotal || 0 : ''
+        ]
+        csv += row.map((v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"').join(',') + '\n'
+      }
+    }
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '送货单_' + new Date().toISOString().split('T')[0] + '.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
   }
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = '送货单_' + new Date().toISOString().split('T')[0] + '.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
 }
 
 function onDragStart(e, id) {
@@ -1424,7 +2312,13 @@ function onDropCard(e, newStatus) {
   if (deliveryStore.canTransition(d.status, newStatus)) {
     deliveryStore.changeStatus(dragId.value, newStatus)
   } else {
-    alert('不允许从「' + (deliveryStore.statusLabels[d.status] || d.status) + '」流转到「' + (deliveryStore.statusLabels[newStatus] || newStatus) + '」')
+    alert(
+      '不允许从「' +
+        (deliveryStore.statusLabels[d.status] || d.status) +
+        '」流转到「' +
+        (deliveryStore.statusLabels[newStatus] || newStatus) +
+        '」'
+    )
   }
   dragId.value = null
 }
@@ -1464,7 +2358,7 @@ onUnmounted(() => {
   min-height: 400px;
 }
 .kanban-column.drop-target {
-  background: var(--color-accent-subtle, rgba(59,130,246,0.1));
+  background: var(--color-accent-subtle, rgba(59, 130, 246, 0.1));
 }
 .kanban-column-header {
   padding: var(--space-3) var(--space-4);
@@ -1586,18 +2480,26 @@ onUnmounted(() => {
 }
 .stat-card {
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .stat-card-header {
   display: flex;
@@ -1612,6 +2514,44 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-2);
 }
+.stat-card-trend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-1);
+}
+.stat-card-trend.up {
+  color: var(--color-success);
+}
+.stat-card-trend.down {
+  color: var(--color-danger);
+}
+.stat-card-trend .trend-arrow {
+  font-weight: 700;
+}
+.stat-card-trend .trend-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.stat-card-trend .trend-label {
+  color: var(--color-text-tertiary);
+}
+.stat-card-danger-pulse {
+  animation: dangerCardPulse 2s ease-in-out infinite;
+}
+@keyframes dangerCardPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+  }
+}
+.stat-card {
+  cursor: pointer;
+}
 .stat-dot-halo {
   display: inline-block;
   width: 8px;
@@ -1620,8 +2560,13 @@ onUnmounted(() => {
   animation: alertDotPulse 1.5s ease-in-out infinite;
 }
 @keyframes alertDotPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(245,158,11,0.3); }
-  50% { box-shadow: 0 0 10px rgba(245,158,11,0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  }
 }
 .stat-card-icon {
   width: 36px;
@@ -1658,9 +2603,15 @@ onUnmounted(() => {
   padding: var(--space-3) var(--space-4);
   animation: statCardIn 0.4s ease-out both;
 }
-.overview-card:nth-child(1) { animation-delay: 0ms; }
-.overview-card:nth-child(2) { animation-delay: 80ms; }
-.overview-card:nth-child(3) { animation-delay: 160ms; }
+.overview-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.overview-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+.overview-card:nth-child(3) {
+  animation-delay: 160ms;
+}
 .overview-card-title {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
@@ -1674,9 +2625,27 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-3);
 }
-.overview-ring-svg { flex-shrink: 0; }
-.overview-ring-progress { transition: stroke-dasharray 0.6s ease; }
-.overview-ring-text { display: flex; flex-direction: column; }
+.overview-ring-clickable {
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.overview-ring-clickable:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 4px var(--color-accent-subtle);
+}
+.overview-ring-svg {
+  flex-shrink: 0;
+}
+.overview-ring-progress {
+  transition: stroke-dasharray 0.6s ease;
+}
+.overview-ring-text {
+  display: flex;
+  flex-direction: column;
+}
 .overview-ring-percent {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   font-size: var(--font-size-xl);
@@ -1723,6 +2692,10 @@ onUnmounted(() => {
   text-align: right;
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   color: var(--color-text-secondary);
+}
+.transport-bar-percent {
+  font-size: 10px;
+  color: var(--color-text-tertiary);
 }
 
 /* 近7日趋势柱状图 */
@@ -1786,10 +2759,18 @@ onUnmounted(() => {
   animation: alertSlideIn 0.3s ease-out both;
   font-size: var(--font-size-sm);
 }
-.delivery-alert-item:last-child { border-bottom: none; }
+.delivery-alert-item:last-child {
+  border-bottom: none;
+}
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 .delivery-alert-badge {
   padding: var(--space-1) var(--space-2);
@@ -1829,36 +2810,58 @@ onUnmounted(() => {
   animation: rowSlideIn 0.3s ease-out both;
 }
 @keyframes rowSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ====== 列表项入场动画 ====== */
 .list-item {
   animation: listSlideIn 0.3s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .list-item:hover {
   transform: translateX(2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 @keyframes listSlideIn {
-  from { opacity: 0; transform: translateX(-4px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ====== 卡片项入场动画 ====== */
 .card-item {
   animation: cardFadeIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .card-item:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 @keyframes cardFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ====== 看板卡片入场动画 ====== */
@@ -1895,7 +2898,7 @@ onUnmounted(() => {
   margin: 0 auto var(--space-3);
 }
 .confirm-icon-circle.danger {
-  background: var(--color-danger-subtle, rgba(239,68,68,0.1));
+  background: var(--color-danger-subtle, rgba(239, 68, 68, 0.1));
   color: var(--color-danger);
 }
 
@@ -1919,10 +2922,35 @@ onUnmounted(() => {
     min-height: 200px;
   }
 }
-.column-config-wrapper { position: relative; }
-.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
-.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
-.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+.column-config-wrapper {
+  position: relative;
+}
+.column-config-dropdown {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  z-index: var(--z-popover, 9999);
+  min-width: 160px;
+  max-height: 360px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.column-config-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.column-config-item:hover {
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-sm);
+}
 .pagination-bar {
   display: flex;
   justify-content: space-between;
@@ -1937,7 +2965,7 @@ onUnmounted(() => {
 .form-errors {
   margin-top: var(--space-3);
   padding: var(--space-3);
-  background: var(--color-danger-subtle, rgba(239,68,68,0.1));
+  background: var(--color-danger-subtle, rgba(239, 68, 68, 0.1));
   border-radius: var(--radius-md);
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
@@ -1966,5 +2994,94 @@ onUnmounted(() => {
   opacity: 0.6;
   cursor: not-allowed;
   background: var(--color-bg-tertiary);
+}
+
+/* ===== Quick Filter Tags ===== */
+.quick-filter-tags {
+  display: flex;
+  gap: var(--space-1);
+}
+.quick-filter-tag {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.quick-filter-tag:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.quick-filter-tag.active {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* ===== Filter Tags Bar ===== */
+.filter-tags-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+.filter-tags-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+}
+.filter-tag-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+}
+.filter-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border: none;
+  background: var(--color-border);
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+  font-size: 10px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: background 0.2s;
+}
+.filter-tag-remove:hover {
+  background: var(--color-danger);
+  color: #fff;
+}
+.filter-tag-clear {
+  padding: var(--space-1) var(--space-2);
+  border: none;
+  background: none;
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  font-weight: 500;
+}
+.filter-tag-clear:hover {
+  text-decoration: underline;
 }
 </style>

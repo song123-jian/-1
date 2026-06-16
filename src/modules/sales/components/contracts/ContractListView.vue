@@ -34,12 +34,25 @@
           <strong class="mono">{{ c.contractNo }}</strong>
           <span class="status-badge" :class="'status-' + c.status">{{ statusLabels[c.status] || c.status }}</span>
         </div>
+        <div class="contract-card-stage-bar">
+          <div class="stage-track">
+            <div v-for="(stage, si) in stageList" :key="stage.key" class="stage-dot" :class="{ active: stageIndex(c) >= si, current: stageIndex(c) === si }" :title="stage.label"></div>
+          </div>
+          <div class="stage-labels">
+            <span v-for="(stage, si) in stageList" :key="stage.key" class="stage-label" :class="{ active: stageIndex(c) >= si }">{{ stage.label }}</span>
+          </div>
+        </div>
         <div class="contract-card-body">
           <div class="contract-card-field"><span class="field-icon">👤</span><span>{{ c.partyA }}</span></div>
           <div class="contract-card-amount mono">¥{{ formatNumber(c.totalAmount) }}</div>
           <div class="contract-card-field"><span class="field-icon">💱</span><span>{{ c.settlement }}</span></div>
           <div class="contract-card-field"><span class="field-icon">📅</span><span>{{ c.signDate }}</span></div>
-          <div class="contract-card-field"><span class="field-icon">⏰</span><span :style="endDateStyle(c)">{{ c.endDate || '-' }}</span></div>
+          <div class="contract-card-field"><span class="field-icon">⏰</span><span :style="endDateStyle(c)">{{ c.endDate || '-' }}</span>
+            <span v-if="getExpiryCountdown(c)" class="expiry-countdown" :class="{ urgent: getExpiryCountdown(c).urgent }">{{ getExpiryCountdown(c).text }}</span>
+          </div>
+          <div v-if="c.relatedDocs > 0" class="contract-card-field">
+            <span class="field-icon">📎</span><span class="related-docs-badge">{{ c.relatedDocs }}份关联单据</span>
+          </div>
         </div>
         <div class="contract-card-footer">
           <button class="action-btn" @click="$emit('openPreview', c)"><Icon name="eye" :size="14" /> 预览</button>
@@ -74,6 +87,28 @@ function endDateStyle(c) {
   if (days <= 7) return { color: 'var(--color-danger)', fontWeight: '700' }
   if (days <= 30) return { color: 'var(--color-warning)', fontWeight: '600' }
   return {}
+}
+
+const stageList = [
+  { key: 'draft', label: '草稿' },
+  { key: 'pending_approval', label: '审批' },
+  { key: 'signed', label: '签订' },
+  { key: 'archived', label: '归档' }
+]
+
+function stageIndex(c) {
+  const map = { draft: 0, pending_approval: 1, approved: 2, signed: 2, archived: 3, cancelled: -1 }
+  return map[c.status] ?? 0
+}
+
+function getExpiryCountdown(c) {
+  if (!c.endDate || (c.status !== 'signed' && c.status !== 'approved')) return null
+  const days = Math.floor((new Date(c.endDate) - new Date()) / 86400000)
+  if (days <= 30) {
+    if (days <= 0) return { text: '已过期', urgent: true }
+    return { text: days + '天后到期', urgent: days <= 7 }
+  }
+  return null
 }
 
 function getAvatarText(contractNo) {
@@ -134,4 +169,17 @@ function getAvatarText(contractNo) {
 .list-item-party { color: var(--color-text-secondary); font-size: 13px; }
 .amount-text { font-weight: 600; color: var(--color-accent); }
 .field-icon { font-size: 12px; margin-right: 4px; }
+.contract-card-stage-bar { padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--color-border); }
+.stage-track { display: flex; align-items: center; gap: 0; position: relative; }
+.stage-track::before { content: ''; position: absolute; top: 50%; left: 8px; right: 8px; height: 2px; background: var(--color-border); transform: translateY(-50%); z-index: 0; }
+.stage-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--color-border); flex-shrink: 0; z-index: 1; margin: 0 auto; transition: all 0.3s; }
+.stage-dot.active { background: var(--color-accent); }
+.stage-dot.current { background: var(--color-accent); box-shadow: 0 0 0 3px rgba(99,102,241,0.2); }
+.stage-labels { display: flex; justify-content: space-between; margin-top: var(--space-1); }
+.stage-label { font-size: 10px; color: var(--color-text-tertiary); text-align: center; flex: 1; transition: color 0.3s; }
+.stage-label.active { color: var(--color-accent); font-weight: 600; }
+.expiry-countdown { display: inline-block; margin-left: var(--space-2); padding: 0 var(--space-1); border-radius: var(--radius-sm); font-size: 10px; font-weight: 600; font-family: var(--font-mono); background: var(--color-warning-subtle); color: var(--color-warning); }
+.expiry-countdown.urgent { background: var(--color-danger-subtle); color: var(--color-danger); animation: countdownPulse 1.5s ease-in-out infinite; }
+@keyframes countdownPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.related-docs-badge { display: inline-flex; align-items: center; padding: 0 var(--space-2); border-radius: var(--radius-full); font-size: 11px; font-weight: 600; font-family: var(--font-mono); background: var(--color-accent-subtle); color: var(--color-accent); }
 </style>

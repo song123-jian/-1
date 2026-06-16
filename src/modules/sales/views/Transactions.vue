@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="transaction-page">
     <div class="page-header">
       <div>
@@ -7,7 +7,13 @@
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
-          <button v-for="v in viewOptions" :key="v.key" class="btn btn-outline" :class="{ active: currentView === v.key }" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+          <button v-for="v in primaryViewOptions" :key="v.key" class="btn btn-outline" :class="{ active: currentView === v.key }" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+          <div class="view-more-wrapper">
+            <button class="btn btn-outline" :class="{ active: moreViewOptions.some(v => currentView === v.key) }" @click="showViewMore = !showViewMore">更多 <Icon name="chevronDown" :size="12" /></button>
+            <div v-if="showViewMore" class="view-more-dropdown">
+              <button v-for="v in moreViewOptions" :key="v.key" class="view-more-item" :class="{ active: currentView === v.key }" @click="currentView = v.key; showViewMore = false"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+            </div>
+          </div>
         </div>
         <div class="column-config-wrapper">
           <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
@@ -23,28 +29,39 @@
     </div>
 
     <div class="stats-row stats-grid-5">
-      <div class="stat-card">
+      <div class="stat-card" @click="onStatCardClick('total')">
+        <div class="stat-card-header"><Icon name="layers" :size="14" class="stat-card-icon" /><span class="stat-card-label">交易总数</span></div>
         <div class="stat-card-value" style="font-size:var(--font-size-xl)">{{ allTransactions.length }}</div>
-        <div class="stat-card-label">交易总数</div>
+        <div class="stat-card-trend" :class="statTrends.total.dir">{{ statTrends.total.dir === 'up' ? '↑' : '↓' }} {{ statTrends.total.pct }}%</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" @click="onStatCardClick('amount')">
+        <div class="stat-card-header"><Icon name="dollarSign" :size="14" class="stat-card-icon" /><span class="stat-card-label">交易总额</span></div>
         <div class="stat-card-value" style="color:var(--color-accent);font-size:var(--font-size-xl)">¥{{ formatMoney(totalAmount) }}</div>
-        <div class="stat-card-label">交易总额</div>
+        <div class="stat-card-trend" :class="statTrends.amount.dir">{{ statTrends.amount.dir === 'up' ? '↑' : '↓' }} {{ statTrends.amount.pct }}%</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" @click="onStatCardClick('completed')">
+        <div class="stat-card-header"><Icon name="checkCircle" :size="14" class="stat-card-icon" /><span class="stat-card-label">已完成</span></div>
         <div class="stat-card-value" style="color:var(--color-success);font-size:var(--font-size-xl)">{{ completedCount }}</div>
-        <div class="stat-card-label">已完成</div>
+        <div class="stat-card-trend" :class="statTrends.completed.dir">{{ statTrends.completed.dir === 'up' ? '↑' : '↓' }} {{ statTrends.completed.pct }}%</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" @click="onStatCardClick('pending')">
+        <div class="stat-card-header"><Icon name="clock" :size="14" class="stat-card-icon" /><span class="stat-card-label">进行中</span></div>
         <div class="stat-card-value" style="color:var(--color-warning);font-size:var(--font-size-xl)">{{ pendingCount }}</div>
-        <div class="stat-card-label">进行中</div>
+        <div class="stat-card-trend" :class="statTrends.pending.dir">{{ statTrends.pending.dir === 'up' ? '↑' : '↓' }} {{ statTrends.pending.pct }}%</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card stat-card-overdue" @click="onStatCardClick('overdue')">
+        <div class="stat-card-header"><Icon name="alertTriangle" :size="14" class="stat-card-icon" /><span class="stat-card-label">逾期金额</span></div>
         <div class="stat-card-value" style="color:var(--color-danger);font-size:var(--font-size-xl)">¥{{ formatMoney(overdueAmount) }}</div>
-        <div class="stat-card-label">逾期金额</div>
+        <div class="stat-card-trend" :class="statTrends.overdue.dir">{{ statTrends.overdue.dir === 'up' ? '↑' : '↓' }} {{ statTrends.overdue.pct }}%</div>
       </div>
     </div>
 
+    <div class="quick-filter-bar">
+      <span class="tag-filter-item" :class="{ active: quickFilter === 'today' }" @click="applyQuickFilter('today')">今日</span>
+      <span class="tag-filter-item" :class="{ active: quickFilter === 'week' }" @click="applyQuickFilter('week')">本周</span>
+      <span class="tag-filter-item" :class="{ active: quickFilter === 'month' }" @click="applyQuickFilter('month')">本月</span>
+      <span class="tag-filter-item" :class="{ active: quickFilter === 'quarter' }" @click="applyQuickFilter('quarter')">本季度</span>
+    </div>
     <div class="filter-bar">
       <input type="text" class="form-input" v-model="filters.search" placeholder="搜索编号/客户名称..." style="min-width:180px">
       <select class="form-select" v-model="filters.type">
@@ -65,6 +82,14 @@
       <input type="date" class="form-input" v-model="filters.dateFrom" title="起始日期" style="width:140px">
       <input type="date" class="form-input" v-model="filters.dateTo" title="截止日期" style="width:140px">
       <button class="btn btn-outline" @click="resetFilters">重置</button>
+    </div>
+    <div v-if="hasActiveFilters" class="filter-tags-bar">
+      <span class="filter-tag" v-if="filters.type">{{ typeLabels[filters.type] }} <button @click="filters.type = ''">×</button></span>
+      <span class="filter-tag" v-if="filters.status">{{ statusLabels[filters.status] }} <button @click="filters.status = ''">×</button></span>
+      <span class="filter-tag" v-if="filters.dateFrom">{{ filters.dateFrom }}起 <button @click="filters.dateFrom = ''">×</button></span>
+      <span class="filter-tag" v-if="filters.dateTo">{{ filters.dateTo }}止 <button @click="filters.dateTo = ''">×</button></span>
+      <span class="filter-tag" v-if="filters.search">搜索: {{ filters.search }} <button @click="filters.search = ''">×</button></span>
+      <button class="filter-tag-clear" @click="resetFilters">清除全部</button>
     </div>
 
     <div class="panel-card">
@@ -314,6 +339,8 @@ const dayModalDate = ref('')
 const calendarYear = ref(new Date().getFullYear())
 const calendarMonth = ref(new Date().getMonth() + 1)
 const weekStartDate = ref(getMonday(new Date()))
+const quickFilter = ref('')
+const showViewMore = ref(false)
 
 function getMonday(d) {
   const date = new Date(d)
@@ -332,10 +359,13 @@ const filters = ref({
   dateTo: ''
 })
 
-const viewOptions = [
+const primaryViewOptions = [
   { key: 'table', icon: 'table', label: '表格' },
   { key: 'list', icon: 'list', label: '列表' },
-  { key: 'card', icon: 'archive', label: '卡片' },
+  { key: 'card', icon: 'archive', label: '卡片' }
+]
+
+const moreViewOptions = [
   { key: 'calendar', icon: 'calendar', label: '日历' },
   { key: 'week', icon: 'calendar', label: '周视图' }
 ]
@@ -558,8 +588,92 @@ const canSubmit = computed(() => {
   return true
 })
 
+const hasActiveFilters = computed(() => {
+  return !!(filters.value.type || filters.value.status || filters.value.dateFrom || filters.value.dateTo || filters.value.search)
+})
+
+const statTrends = computed(() => {
+  const now = new Date()
+  const thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const lastMonth = lastMonthDate.getFullYear() + '-' + String(lastMonthDate.getMonth() + 1).padStart(2, '0')
+
+  const thisMonthTxns = allTransactions.value.filter(t => t.date && t.date.startsWith(thisMonth))
+  const lastMonthTxns = allTransactions.value.filter(t => t.date && t.date.startsWith(lastMonth))
+
+  const thisTotal = thisMonthTxns.length
+  const lastTotal = lastMonthTxns.length
+  const thisAmount = thisMonthTxns.reduce((s, t) => s + (t.amount || 0), 0)
+  const lastAmount = lastMonthTxns.reduce((s, t) => s + (t.amount || 0), 0)
+  const thisCompleted = thisMonthTxns.filter(t => t.status === 'completed').length
+  const lastCompleted = lastMonthTxns.filter(t => t.status === 'completed').length
+  const thisPending = thisMonthTxns.filter(t => t.status === 'pending' || t.status === 'in_progress').length
+  const lastPending = lastMonthTxns.filter(t => t.status === 'pending' || t.status === 'in_progress').length
+  const thisOverdue = thisMonthTxns.filter(t => t.status === 'overdue').reduce((s, t) => s + (t.amount || 0), 0)
+  const lastOverdue = lastMonthTxns.filter(t => t.status === 'overdue').reduce((s, t) => s + (t.amount || 0), 0)
+
+  function calcTrend(cur, prev) {
+    if (prev === 0) return { dir: cur > 0 ? 'up' : 'down', pct: cur > 0 ? 100 : 0 }
+    const pct = Math.round(Math.abs(cur - prev) / prev * 100)
+    return { dir: cur >= prev ? 'up' : 'down', pct }
+  }
+
+  return {
+    total: calcTrend(thisTotal, lastTotal),
+    amount: calcTrend(thisAmount, lastAmount),
+    completed: calcTrend(thisCompleted, lastCompleted),
+    pending: calcTrend(thisPending, lastPending),
+    overdue: calcTrend(thisOverdue, lastOverdue)
+  }
+})
+
+function onStatCardClick(type) {
+  if (type === 'overdue') {
+    filters.value.status = 'overdue'
+  } else if (type === 'completed') {
+    filters.value.status = 'completed'
+  } else if (type === 'pending') {
+    filters.value.status = 'in_progress'
+  } else if (type === 'amount' || type === 'total') {
+    filters.value.type = ''
+    filters.value.status = ''
+  }
+  currentPage.value = 1
+}
+
+function applyQuickFilter(period) {
+  if (quickFilter.value === period) {
+    quickFilter.value = ''
+    filters.value.dateFrom = ''
+    filters.value.dateTo = ''
+    return
+  }
+  quickFilter.value = period
+  const now = new Date()
+  const today = now.toISOString().slice(0, 10)
+  let dateFrom = ''
+  let dateTo = today
+
+  if (period === 'today') {
+    dateFrom = today
+  } else if (period === 'week') {
+    const monday = getMonday(now)
+    dateFrom = monday.toISOString().slice(0, 10)
+  } else if (period === 'month') {
+    dateFrom = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-01'
+  } else if (period === 'quarter') {
+    const qMonth = Math.floor(now.getMonth() / 3) * 3
+    dateFrom = now.getFullYear() + '-' + String(qMonth + 1).padStart(2, '0') + '-01'
+  }
+
+  filters.value.dateFrom = dateFrom
+  filters.value.dateTo = dateTo
+  currentPage.value = 1
+}
+
 function resetFilters() {
   filters.value = { search: '', type: '', status: '', dateFrom: '', dateTo: '' }
+  quickFilter.value = ''
   currentPage.value = 1
 }
 
@@ -857,14 +971,19 @@ onUnmounted(() => {
   text-align: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   animation: statCardIn 0.4s ease-out both;
+  cursor: pointer;
 }
-.stat-card:nth-child(1) { animation-delay: 0ms; }
-.stat-card:nth-child(2) { animation-delay: 60ms; }
-.stat-card:nth-child(3) { animation-delay: 120ms; }
-.stat-card:nth-child(4) { animation-delay: 180ms; }
-.stat-card:nth-child(5) { animation-delay: 240ms; }
-@keyframes statCardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+.stat-card-icon {
+  color: var(--color-text-tertiary);
+  flex-shrink: 0;
+}
 .stat-card-value {
   font-size: var(--font-size-xl);
   font-weight: 700;
@@ -874,14 +993,87 @@ onUnmounted(() => {
 .stat-card-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+}
+.stat-card-trend {
+  font-size: var(--font-size-xs);
+  font-family: var(--font-mono);
   margin-top: var(--space-1);
+}
+.stat-card-trend.up {
+  color: var(--color-success);
+}
+.stat-card-trend.down {
+  color: var(--color-danger);
+}
+.stat-card-overdue {
+  animation: statCardIn 0.4s ease-out both, pendingPulse 2s ease-in-out infinite;
+}
+.stat-card:nth-child(1) { animation-delay: 0ms; }
+.stat-card:nth-child(2) { animation-delay: 60ms; }
+.stat-card:nth-child(3) { animation-delay: 120ms; }
+.stat-card:nth-child(4) { animation-delay: 180ms; }
+.stat-card:nth-child(5) { animation-delay: 240ms; }
+@keyframes statCardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+@keyframes pendingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 12px 2px rgba(239, 68, 68, 0.15); }
 }
 .filter-bar {
   display: flex;
   gap: var(--space-2);
   align-items: center;
-  margin-bottom: var(--space-4);
+  margin-bottom: var(--space-2);
   flex-wrap: wrap;
+}
+.quick-filter-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  align-items: center;
+}
+.filter-tags-bar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
+}
+.filter-tag button {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  padding: 0;
+  line-height: 1;
+}
+.filter-tag button:hover {
+  color: var(--color-danger);
+}
+.filter-tag-clear {
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-text-tertiary);
+}
+.filter-tag-clear:hover {
+  border-color: var(--color-danger);
+  color: var(--color-danger);
 }
 .type-badge {
   display: inline-block;
@@ -913,6 +1105,44 @@ onUnmounted(() => {
 .view-toggle .btn.active {
   background: var(--color-accent-subtle);
   color: var(--color-accent);
+}
+.view-more-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.view-more-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-overlay, 1000);
+  min-width: 120px;
+  padding: var(--space-1) 0;
+  margin-top: var(--space-1);
+}
+.view-more-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.view-more-item:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.view-more-item.active {
+  background: var(--color-accent);
+  color: #fff;
 }
 .detail-grid {
   display: grid;

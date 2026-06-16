@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dashboard-page">
     <div v-if="isLoading" class="skeleton-wrapper">
       <div class="skeleton-row-4">
@@ -37,34 +37,39 @@
 
     <!-- 紧凑指标条 -->
     <div class="compact-metrics">
-      <div class="compact-metric">
+      <div class="compact-metric" :title="metricTrends.todayRevenue.tooltip">
         <div class="compact-metric-dot" style="background:var(--color-success)"></div>
         <span class="compact-metric-label">今日营收</span>
         <span class="compact-metric-value">¥{{ formatNumber(todayTransactionAmount) }}</span>
+        <span class="compact-metric-trend" :class="metricTrends.todayRevenue.direction">{{ metricTrends.todayRevenue.arrow }}</span>
       </div>
       <div class="compact-metric-sep"></div>
-      <div class="compact-metric">
+      <div class="compact-metric" :title="metricTrends.monthRevenue.tooltip">
         <div class="compact-metric-dot" style="background:var(--color-accent)"></div>
         <span class="compact-metric-label">本月营收</span>
         <span class="compact-metric-value">¥{{ formatNumber(totalRevenue) }}</span>
+        <span class="compact-metric-trend" :class="metricTrends.monthRevenue.direction">{{ metricTrends.monthRevenue.arrow }}</span>
       </div>
       <div class="compact-metric-sep"></div>
-      <div class="compact-metric">
+      <div class="compact-metric" :title="metricTrends.collectionRate.tooltip">
         <div class="compact-metric-dot" :style="{ background: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }"></div>
         <span class="compact-metric-label">回款率</span>
         <span class="compact-metric-value" :style="{ color: collectionRate >= 60 ? 'var(--color-success)' : 'var(--color-danger)' }">{{ collectionRate }}<span class="compact-metric-unit">%</span></span>
+        <span class="compact-metric-trend" :class="metricTrends.collectionRate.direction">{{ metricTrends.collectionRate.arrow }}</span>
       </div>
       <div class="compact-metric-sep"></div>
-      <div class="compact-metric">
+      <div class="compact-metric" :title="metricTrends.pendingOrders.tooltip">
         <div class="compact-metric-dot" style="background:var(--color-warning)"></div>
         <span class="compact-metric-label">待处理订单</span>
         <span class="compact-metric-value">{{ dataStore.pendingQuotationCount }}</span>
+        <span class="compact-metric-trend" :class="metricTrends.pendingOrders.direction">{{ metricTrends.pendingOrders.arrow }}</span>
       </div>
       <div class="compact-metric-sep"></div>
-      <div class="compact-metric">
+      <div class="compact-metric" :title="metricTrends.stockAlert.tooltip">
         <div class="compact-metric-dot" :style="{ background: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : 'var(--color-info)' }"></div>
         <span class="compact-metric-label">库存预警</span>
         <span class="compact-metric-value" :style="{ color: (inventoryStore.lowStockCount + inventoryStore.exhaustedCount) > 0 ? 'var(--color-danger)' : '' }">{{ inventoryStore.lowStockCount + inventoryStore.exhaustedCount }}<span class="compact-metric-unit">种</span></span>
+        <span class="compact-metric-trend" :class="metricTrends.stockAlert.direction">{{ metricTrends.stockAlert.arrow }}</span>
       </div>
     </div>
 
@@ -109,10 +114,11 @@
     />
 
     <!-- 智能洞察条 -->
-    <div v-for="(insight, idx) in smartInsights" :key="idx" class="alert-priority-bar" :class="insight.level">
+    <div v-for="(insight, idx) in visibleSmartInsights" :key="idx" class="alert-priority-bar" :class="insight.level" @click="handleInsightClick(insight)">
       <span class="alert-priority-icon">{{ insight.icon }}</span>
       <span class="alert-priority-text">{{ insight.text }}</span>
       <span class="alert-priority-detail">{{ insight.detail }}</span>
+      <button class="insight-close-btn" @click.stop="dismissInsight(insight)">×</button>
     </div>
 
     <DashQuickActions
@@ -245,10 +251,10 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="todo in filteredDpTodos" :key="todo.id" :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }">
+                <tr v-for="todo in filteredDpTodos" :key="todo.id" :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo), 'priority-high-border': todo.priority === 'high' }">
                   <td>
                     <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                      <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                      <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
                       <span v-else class="todo-uncheck">[未完成]</span>
                     </button>
                   </td>
@@ -272,10 +278,10 @@
               v-for="todo in filteredDpTodos"
               :key="todo.id"
               class="todo-quick-item"
-              :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo) }"
+              :class="{ completed: todo.status === 'completed', overdue: isOverdue(todo), 'priority-high-border': todo.priority === 'high' }"
             >
               <button class="todo-check" @click="todoStore.toggleTodo(todo.id, todo.auto || false)">
-                <Icon v-if="todo.status === 'completed'" name="check" :size="14" />
+                <Icon v-if="todo.status === 'completed'" name="checkCircle" :size="14" />
                 <span v-else class="todo-uncheck">[未完成]</span>
               </button>
               <div class="todo-info">
@@ -723,6 +729,52 @@ const smartInsights = computed(() => {
     })
   }
   return items.slice(0, 3)
+})
+
+const dismissedInsightTexts = ref(new Set())
+
+const visibleSmartInsights = computed(() => {
+  return smartInsights.value.filter(insight => !dismissedInsightTexts.value.has(insight.text))
+})
+
+function dismissInsight(insight) {
+  dismissedInsightTexts.value.add(insight.text)
+}
+
+function handleInsightClick(insight) {
+  if (insight.level === 'danger' && collectionRate.value < 60) {
+    return
+  }
+  if (insight.level === 'warning' && insight.text.includes('库存')) {
+    return
+  }
+}
+
+const metricTrends = computed(() => {
+  const growth = revenueGrowth.value
+  const todayTrend = growth > 0 ? 'up' : growth < 0 ? 'down' : 'stable'
+  const todayTooltip = `较昨日 ${growth > 0 ? '+' : ''}${growth}%`
+
+  const monthTrend = growth > 0 ? 'up' : growth < 0 ? 'down' : 'stable'
+  const monthTooltip = `较上月 ${growth > 0 ? '+' : ''}${growth}%`
+
+  const rateTrend = collectionRate.value >= 60 ? 'up' : collectionRate.value > 0 ? 'down' : 'stable'
+  const rateTooltip = `目标 60%，当前 ${collectionRate.value}%`
+
+  const pendingTrend = dataStore.pendingQuotationCount > 0 ? 'down' : 'stable'
+  const pendingTooltip = `${dataStore.pendingQuotationCount} 份待处理`
+
+  const alertCount = inventoryStore.lowStockCount + inventoryStore.exhaustedCount
+  const stockTrend = alertCount > 0 ? 'down' : 'stable'
+  const stockTooltip = `低库存 ${inventoryStore.lowStockCount} 种 / 售罄 ${inventoryStore.exhaustedCount} 种`
+
+  return {
+    todayRevenue: { direction: todayTrend, arrow: todayTrend === 'up' ? '↑' : todayTrend === 'down' ? '↓' : '→', tooltip: todayTooltip },
+    monthRevenue: { direction: monthTrend, arrow: monthTrend === 'up' ? '↑' : monthTrend === 'down' ? '↓' : '→', tooltip: monthTooltip },
+    collectionRate: { direction: rateTrend, arrow: rateTrend === 'up' ? '↑' : rateTrend === 'down' ? '↓' : '→', tooltip: rateTooltip },
+    pendingOrders: { direction: pendingTrend, arrow: pendingTrend === 'up' ? '↑' : pendingTrend === 'down' ? '↓' : '→', tooltip: pendingTooltip },
+    stockAlert: { direction: stockTrend, arrow: stockTrend === 'up' ? '↑' : stockTrend === 'down' ? '↓' : '→', tooltip: stockTooltip }
+  }
 })
 
 function isOverdue(todo) {
@@ -1650,5 +1702,84 @@ onUnmounted(() => {
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* ====== 紧凑指标条增强 ====== */
+.compact-metric {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--transition-fast);
+  cursor: default;
+}
+.compact-metric:hover {
+  background: var(--color-surface-hover);
+}
+.compact-metric-trend {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-left: var(--space-1);
+}
+.compact-metric-trend.up {
+  color: var(--color-success);
+}
+.compact-metric-trend.down {
+  color: var(--color-danger);
+}
+.compact-metric-trend.stable {
+  color: var(--color-text-tertiary);
+}
+
+/* ====== 智能洞察条增强 ====== */
+.alert-priority-bar {
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-left-width: 3px;
+  border-left-style: solid;
+}
+.alert-priority-bar.danger {
+  border-left-color: var(--color-danger);
+}
+.alert-priority-bar.warning {
+  border-left-color: var(--color-warning);
+}
+.alert-priority-bar.success {
+  border-left-color: var(--color-success);
+}
+.alert-priority-bar:hover {
+  filter: brightness(0.97);
+  transform: translateX(var(--space-1));
+}
+.insight-close-btn {
+  background: none;
+  border: none;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.5;
+  padding: 0 var(--space-1);
+  margin-left: var(--space-2);
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+.insight-close-btn:hover {
+  opacity: 1;
+}
+
+/* ====== 待办事项增强 ====== */
+.todo-quick-item.priority-high-border {
+  border-left: 3px solid var(--color-danger);
+}
+.todo-table tr.priority-high-border {
+  border-left: 3px solid var(--color-danger);
+}
+.todo-quick-item.overdue,
+.todo-table tr.overdue {
+  animation: overduePulse 2s ease-in-out infinite;
+}
+@keyframes overduePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15); }
 }
 </style>

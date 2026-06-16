@@ -4,28 +4,44 @@
       <div>
         <h2 class="page-header-title">客户管理</h2>
         <p class="page-header-subtitle">全面的客户关系管理，支持多视图、高级筛选、联系人管理</p>
+        <div class="status-flow-chips">
+          <span class="status-chip" :class="{ 'chip-active': tagStatusFilter === 'active' }" @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'">
+            <span class="chip-dot chip-dot-active"></span>活跃 <span class="chip-count">{{ customerStore.activeCount }}</span>
+          </span>
+          <span class="status-chip" :class="{ 'chip-potential': tagStatusFilter === 'potential' }" @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'">
+            <span class="chip-dot chip-dot-potential"></span>潜在 <span class="chip-count">{{ potentialCount }}</span>
+          </span>
+          <span class="status-chip" :class="{ 'chip-dormant': tagStatusFilter === 'dormant' }" @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'">
+            <span class="chip-dot chip-dot-dormant"></span>非活跃 <span class="chip-count">{{ customerStore.dormantCount }}</span>
+          </span>
+        </div>
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
           <button v-for="v in viewModes" :key="v.key" class="view-btn" :class="{ active: currentView === v.key }" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
         </div>
         <button v-if="canCreate" class="btn btn-primary" @click="openAddModal">新增客户</button>
-        <button class="btn btn-outline" @click="handleDownloadTemplate"><Icon name="file" :size="14" /> 模板下载</button>
-        <button class="btn btn-outline" @click="handleBatchAdd"><Icon name="list" :size="14" /> 批量增加</button>
-        <button class="btn btn-outline" @click="handleExport"><Icon name="download" :size="14" /> 导出CSV</button>
-        <button v-if="duplicateGroups.length > 0" class="btn btn-outline btn-warning" @click="showDuplicateModal = true">
-          <Icon name="alert" :size="14" /> 发现 {{ duplicateGroups.length }} 组重复
+        <div class="more-dropdown-wrap">
+          <button class="btn btn-outline" @click="showMoreMenu = !showMoreMenu"><Icon name="more" :size="14" /> 更多</button>
+          <div v-if="showMoreMenu" class="more-dropdown-menu" @click.stop>
+            <button class="more-menu-item" @click="handleDownloadTemplate(); showMoreMenu = false"><Icon name="file" :size="14" /> 模板下载</button>
+            <button class="more-menu-item" @click="handleBatchAdd(); showMoreMenu = false"><Icon name="list" :size="14" /> 批量增加</button>
+            <button class="more-menu-item" @click="handleExport(); showMoreMenu = false"><Icon name="download" :size="14" /> 导出CSV</button>
+            <button v-if="canDelete" class="more-menu-item more-menu-danger" @click="handleBatchDelete(); showMoreMenu = false" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
+          </div>
+        </div>
+        <button v-if="duplicateGroups.length > 0" class="btn btn-duplicate-pulse" @click="showDuplicateModal = true">
+          <Icon name="alert" :size="14" /> 发现 <span class="duplicate-count-badge">{{ duplicateGroups.length }}</span> 组重复
         </button>
-        <button v-if="canDelete" class="btn btn-outline btn-danger" @click="handleBatchDelete" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
       </div>
     </div>
 
     <div class="customer-toolbar">
       <!-- 智能搜索栏 -->
       <div class="smart-search" style="margin-bottom: var(--space-3);">
-        <span class="smart-search-icon"><Icon name="search" :size="14" /></span>
-        <input v-model="smartSearchText" type="text" class="smart-search-input" placeholder="搜索客户：输入名称/编号/手机号，或试试 A级客户" />
-        <span class="smart-search-hint">智能搜索</span>
+        <span class="smart-search-icon" :class="{ 'search-spinning': isSearching }"><Icon name="search" :size="14" /></span>
+        <input v-model="smartSearchText" type="text" class="smart-search-input" placeholder="搜索客户：输入名称/编号/手机号，或试试 A级客户" @input="onSmartSearchInput" @keydown.k.ctrl="smartSearchInputRef?.focus()" />
+        <span class="smart-search-hint">智能搜索 <kbd class="search-kbd">Ctrl+K</kbd></span>
       </div>
 
       <!-- 标签式筛选 -->
@@ -109,30 +125,43 @@
     </div>
 
     <div class="customer-stats-bar">
-      <div class="stats-ring-section">
-        <svg width="48" height="48" viewBox="0 0 48 48" class="stats-ring-svg">
-          <circle cx="24" cy="24" r="18" fill="none" stroke="var(--color-border)" stroke-width="3" />
-          <circle cx="24" cy="24" r="18" fill="none" stroke="var(--color-success)" stroke-width="3" stroke-linecap="round" :stroke-dasharray="activeRingDash" stroke-dashoffset="0" transform="rotate(-90 24 24)" class="stats-ring-progress" />
-        </svg>
-        <div class="stats-ring-text">
-          <span class="stats-ring-percent" style="color:var(--color-success)">{{ activePercent }}%</span>
-          <span class="stats-ring-label">活跃率</span>
+      <div class="stats-compact-row">
+        <div class="stat-compact-item">
+          <Icon name="users" :size="16" class="stat-icon stat-icon-total" />
+          <div class="stat-compact-text">
+            <span class="stat-num">{{ customerStore.customers.length }}</span>
+            <span class="stat-label">总计</span>
+          </div>
+          <span class="stat-trend trend-neutral"><Icon name="chevronUp" :size="10" /></span>
         </div>
-      </div>
-      <div class="stats-items">
-        <div class="stat-item"><span class="stat-dot total"></span><span class="stat-num">{{ customerStore.customers.length }}</span><span class="stat-label">总计</span></div>
-        <div class="stat-item"><span class="stat-dot active"></span><span class="stat-num">{{ customerStore.activeCount }}</span><span class="stat-label">活跃</span></div>
-        <div class="stat-item"><span class="stat-dot dormant"></span><span class="stat-num">{{ customerStore.dormantCount }}</span><span class="stat-label">休眠</span></div>
-      </div>
-      <div class="level-stats">
-        <span v-for="lvl in levelList" :key="lvl" class="level-stat" :class="'ls-' + lvl">
-          <span class="level-dot" :class="'ld-' + lvl"></span>
-          {{ levelLabel(lvl) }} {{ customerStore.levelStats[lvl] }}
-        </span>
+        <div class="stat-compact-item">
+          <Icon name="check-circle" :size="16" class="stat-icon stat-icon-active" />
+          <div class="stat-compact-text">
+            <span class="stat-num">{{ customerStore.activeCount }}</span>
+            <span class="stat-label">活跃</span>
+          </div>
+          <span class="stat-trend trend-up"><Icon name="chevronUp" :size="10" /></span>
+        </div>
+        <div class="stat-compact-item">
+          <Icon name="clock" :size="16" class="stat-icon stat-icon-dormant" />
+          <div class="stat-compact-text">
+            <span class="stat-num">{{ customerStore.dormantCount }}</span>
+            <span class="stat-label">休眠</span>
+          </div>
+          <span class="stat-trend trend-down"><Icon name="chevronDown" :size="10" /></span>
+        </div>
+        <div class="stat-compact-divider"></div>
+        <div class="level-stats">
+          <span v-for="lvl in levelList" :key="lvl" class="level-stat" :class="'ls-' + lvl">
+            <span class="level-dot" :class="'ld-' + lvl"></span>
+            {{ levelLabel(lvl) }} <span style="font-family:var(--font-mono)">{{ customerStore.levelStats[lvl] }}</span>
+          </span>
+        </div>
       </div>
     </div>
 
-    <div v-if="selectedIds.length > 0" class="batch-bar">
+    <div v-if="selectedIds.length > 0" class="batch-bar batch-bar-slide-in">
+      <span class="batch-bar-count-badge">{{ selectedIds.length }}</span>
       <span>已选 {{ selectedIds.length }} 项</span>
       <select class="form-select" style="width:120px;font-size:12px" v-model="batchLevel" @change="handleBatchLevel">
         <option value="">调整等级...</option>
@@ -429,6 +458,9 @@ const { duplicateGroups, markChecked } = useDuplicateDetector(
 )
 
 const showDuplicateModal = ref(false)
+const showMoreMenu = ref(false)
+const isSearching = ref(false)
+let searchTimer = null
 
 const canCreate = !['查看者'].includes(sessionStore.currentRole)
 const canDelete = ['管理员', '总经理'].includes(sessionStore.currentRole)
@@ -469,6 +501,10 @@ const activePercent = computed(() => {
   const total = customerStore.customers.length
   if (total === 0) return 0
   return Math.round((customerStore.activeCount / total) * 100)
+})
+
+const potentialCount = computed(() => {
+  return customerStore.customers.filter(c => c.status === 'potential').length
 })
 
 const RING_CIRC = 2 * Math.PI * 18
@@ -804,6 +840,14 @@ function handleDownloadTemplate() {
   URL.revokeObjectURL(url)
 }
 
+function onSmartSearchInput() {
+  isSearching.value = true
+  clearTimeout(searchTimer)
+  searchTimer = setTimeout(() => {
+    isSearching.value = false
+  }, 600)
+}
+
 onMounted(() => {
   // 处理从客户详情页跳转过来的编辑请求
   const editId = route.query.editId
@@ -815,6 +859,8 @@ onMounted(() => {
     // 清除 URL 中的 editId 参数，避免刷新页面时重复打开
     router.replace({ path: '/customers', query: {} })
   }
+  // 点击外部关闭更多菜单
+  document.addEventListener('click', () => { showMoreMenu.value = false })
 })
 </script>
 
@@ -826,6 +872,150 @@ onMounted(() => {
 .view-btn:last-child { border-right: none; }
 .view-btn:hover { background: var(--color-surface-hover); }
 .view-btn.active { background: var(--color-accent-subtle); color: var(--color-accent); }
+
+/* Status Flow Chips */
+.status-flow-chips {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-primary);
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+.status-chip:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.status-chip.chip-active {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+  border-color: var(--color-success);
+}
+.status-chip.chip-potential {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+.status-chip.chip-dormant {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+.chip-dot-active { background: var(--color-success); }
+.chip-dot-potential { background: var(--color-warning); }
+.chip-dot-dormant { background: var(--color-danger); }
+.chip-count {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  min-width: 14px;
+  text-align: center;
+}
+
+/* More Dropdown */
+.more-dropdown-wrap {
+  position: relative;
+}
+.more-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: var(--space-1);
+  min-width: 160px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  padding: var(--space-1) 0;
+  animation: fade-in 150ms ease;
+}
+.more-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+.more-menu-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+.more-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.more-menu-danger {
+  color: var(--color-danger);
+}
+.more-menu-danger:hover {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+
+/* Duplicate Pulse Button */
+.btn-duplicate-pulse {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid var(--color-warning);
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+  animation: duplicate-pulse 2s ease-in-out infinite;
+  transition: all var(--transition-fast);
+}
+.btn-duplicate-pulse:hover {
+  background: var(--color-warning);
+  color: #fff;
+}
+@keyframes duplicate-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+}
+.duplicate-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--color-warning);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
 .customer-toolbar { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap; align-items: end; }
 .smart-search {
   position: relative;
@@ -855,6 +1045,14 @@ onMounted(() => {
   transform: translateY(-50%);
   color: var(--color-text-tertiary);
   pointer-events: none;
+  transition: transform 0.3s ease;
+}
+.search-spinning {
+  animation: search-spin 1s linear infinite;
+}
+@keyframes search-spin {
+  from { transform: translateY(-50%) rotate(0deg); }
+  to { transform: translateY(-50%) rotate(360deg); }
 }
 .smart-search-hint {
   position: absolute;
@@ -864,6 +1062,23 @@ onMounted(() => {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
   pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.search-kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 4px;
+  height: 16px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  line-height: 1;
 }
 .tag-filters {
   display: flex;
@@ -936,22 +1151,47 @@ onMounted(() => {
 .search-reset-btn { align-self: end; }
 .customer-filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 .filter-select { width: auto; min-width: 100px; }
-.customer-stats-bar { display: flex; gap: var(--space-5); align-items: center; margin-bottom: var(--space-4); padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); flex-wrap: wrap; }
-.stats-ring-section { display: flex; align-items: center; gap: var(--space-3); padding-right: var(--space-4); border-right: 1px solid var(--color-border); }
-.stats-ring-svg { flex-shrink: 0; }
-@keyframes ringDraw { from { stroke-dashoffset: 113.1; } }
-.stats-ring-progress { animation: ringDraw 1s ease-out; transition: stroke-dasharray 0.6s ease; }
-.stats-ring-text { display: flex; flex-direction: column; }
-.stats-ring-percent { font-size: var(--font-size-xl); font-weight: 700; font-family: var(--font-mono); line-height: 1; }
-.stats-ring-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: var(--space-1); }
-.stats-items { display: flex; gap: var(--space-5); flex: 1; }
-.stat-item { display: flex; align-items: center; gap: var(--space-2); font-size: var(--font-size-sm); color: var(--color-text-secondary); }
-.stat-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
-.stat-dot.total { background: var(--color-accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3); }
-.stat-dot.active { background: var(--color-success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.3); }
-.stat-dot.dormant { background: var(--color-text-tertiary); }
+
+/* Stats Bar - Compact Horizontal Layout */
+.customer-stats-bar { display: flex; align-items: center; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.stats-compact-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  width: 100%;
+  flex-wrap: wrap;
+}
+.stat-compact-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.stat-icon {
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  padding: var(--space-1);
+}
+.stat-icon-total { color: var(--color-accent); background: var(--color-accent-subtle); }
+.stat-icon-active { color: var(--color-success); background: var(--color-success-subtle); }
+.stat-icon-dormant { color: var(--color-text-tertiary); background: var(--color-bg-tertiary); }
+.stat-compact-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
 .stat-num { font-weight: 700; font-family: var(--font-mono); font-size: var(--font-size-base); color: var(--color-text-primary); }
 .stat-label { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.stat-trend {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+}
+.stat-compact-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--color-border);
+  flex-shrink: 0;
+}
 .level-stats { display: flex; gap: var(--space-2); }
 .level-stat { font-size: var(--font-size-sm); font-weight: 600; padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); display: inline-flex; align-items: center; gap: var(--space-1); }
 .level-dot { width: 6px; height: 6px; border-radius: var(--radius-full); }
@@ -961,7 +1201,31 @@ onMounted(() => {
 .ls-A { background: var(--color-danger-subtle); color: var(--color-danger); }
 .ls-B { background: var(--color-warning-subtle); color: var(--color-warning); }
 .ls-C { background: var(--color-info-subtle); color: var(--color-accent); }
+
+/* Batch Bar - Slide-in Animation */
 .batch-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-accent-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3); font-size: var(--font-size-sm); color: var(--color-accent); }
+.batch-bar-slide-in {
+  animation: batch-slide-in 0.3s ease-out;
+}
+@keyframes batch-slide-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.batch-bar-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
 .empty-state { text-align: center; padding: var(--space-16) 0; }
 .empty-icon-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); color: var(--color-text-tertiary); }
 .empty-text { font-size: var(--font-size-lg); color: var(--color-text-primary); margin-bottom: var(--space-2); }
@@ -1027,6 +1291,8 @@ onMounted(() => {
 @media (max-width: 768px) {
   .form-grid { grid-template-columns: 1fr; }
   .page-header-actions { flex-direction: column; align-items: flex-start; }
+  .stats-compact-row { flex-direction: column; align-items: flex-start; }
+  .stat-compact-divider { width: 100%; height: 1px; }
 }
 .trend-up { color: var(--color-danger); }
 .trend-down { color: var(--color-success); }

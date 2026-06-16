@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="table-container">
     <div class="table-toolbar">
       <span class="table-toolbar-info">共 {{ transactions.length }} 条记录</span>
@@ -73,14 +73,14 @@
       </colgroup>
       <thead>
         <tr>
-          <th v-if="columnVisible.refNo" class="th-ref">编号</th>
-          <th v-if="columnVisible.type" class="th-type">类型</th>
-          <th v-if="columnVisible.customerName" class="th-customer">客户</th>
-          <th v-if="columnVisible.date" class="th-date">日期</th>
-          <th v-if="columnVisible.amount" class="th-amount">金额</th>
-          <th v-if="columnVisible.status" class="th-status">状态</th>
-          <th v-if="columnVisible.relatedDocs" class="th-related">关联单据</th>
-          <th class="th-actions">操作</th>
+          <th v-if="columnVisible.refNo" class="th-ref"><Icon name="hash" :size="12" class="th-icon" />编号</th>
+          <th v-if="columnVisible.type" class="th-type"><Icon name="tag" :size="12" class="th-icon" />类型</th>
+          <th v-if="columnVisible.customerName" class="th-customer"><Icon name="user" :size="12" class="th-icon" />客户</th>
+          <th v-if="columnVisible.date" class="th-date"><Icon name="calendar" :size="12" class="th-icon" />日期</th>
+          <th v-if="columnVisible.amount" class="th-amount"><Icon name="dollarSign" :size="12" class="th-icon" />金额</th>
+          <th v-if="columnVisible.status" class="th-status"><Icon name="activity" :size="12" class="th-icon" />状态</th>
+          <th v-if="columnVisible.relatedDocs" class="th-related"><Icon name="link" :size="12" class="th-icon" />关联单据</th>
+          <th class="th-actions"><Icon name="settings" :size="12" class="th-icon" />操作</th>
         </tr>
       </thead>
       <tbody>
@@ -115,10 +115,14 @@
           </td>
           <td class="cell-actions">
             <button class="btn btn-sm btn-outline" @click="emit('viewDetail', t)" title="查看详情">查看</button>
-            <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" @click="emit('openForm', t)" title="编辑">编辑</button>
-            <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click="emit('handleDelete', t.id)" title="删除">删除</button>
-            <button v-if="t.relatedPath" class="btn btn-sm btn-outline" @click="emit('navigateToPath', t.relatedPath)" title="跳转关联">跳转</button>
-            <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click="emit('handleDelete', t.id)" title="删除">删除</button>
+            <div class="action-more-wrapper">
+              <button class="btn btn-sm btn-outline" @click="toggleActionMore(t.id)" title="更多操作">···</button>
+              <div v-if="activeActionId === t.id" class="action-more-dropdown">
+                <button v-if="t.type === 'manual'" class="action-more-item" @click="emit('openForm', t); activeActionId = null">编辑</button>
+                <button v-if="t.relatedPath" class="action-more-item" @click="emit('navigateToPath', t.relatedPath); activeActionId = null">跳转关联</button>
+                <button v-if="t.type === 'manual'" class="action-more-item action-more-danger" @click="emit('handleDelete', t.id); activeActionId = null">删除</button>
+              </div>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -182,6 +186,11 @@ watch(() => props.transactions, () => {
 
 const showSpacingPanel = ref(false)
 const txnTableRef = ref(null)
+const activeActionId = ref(null)
+
+function toggleActionMore(id) {
+  activeActionId.value = activeActionId.value === id ? null : id
+}
 
 const spacingColumnDefs = [
   { key: 'ref', label: '编号', optimalWidth: 140, align: 'left' },
@@ -342,6 +351,11 @@ function runSpacingEval() {
   text-transform: none;
   letter-spacing: 0;
 }
+.th-icon {
+  margin-right: var(--space-1);
+  opacity: 0.5;
+  vertical-align: middle;
+}
 .th-ref, .th-customer, .th-related { text-align: left; }
 .th-type, .th-date, .th-status, .th-actions { text-align: center; }
 .th-amount { text-align: right; }
@@ -378,8 +392,48 @@ function runSpacingEval() {
   text-align: center;
   display: flex;
   gap: var(--space-1);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
+  align-items: center;
+}
+.action-more-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.action-more-dropdown {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-popover, 9999);
+  min-width: 100px;
+  padding: var(--space-1) 0;
+}
+.action-more-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+.action-more-item:hover {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.action-more-danger {
+  color: var(--color-danger);
+}
+.action-more-danger:hover {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
 }
 .type-badge {
   display: inline-block;
