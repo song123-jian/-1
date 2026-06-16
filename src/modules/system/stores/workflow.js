@@ -112,6 +112,10 @@ export const useWorkflowStore = defineStore('workflow', () => {
 
     if (res.success) {
       instances.value[idx] = { ...res.instance }
+      /* 审批完成后自动推进业务单据状态 */
+      if (res.instance.status === 'completed') {
+        _advanceBusinessStatus(res.instance.businessType, res.instance.businessId)
+      }
       _persist()
     }
     return res
@@ -270,6 +274,49 @@ export const useWorkflowStore = defineStore('workflow', () => {
     instances.value = []
   }
 
+  /**
+   * 审批通过后自动推进业务单据状态
+   */
+  async function _advanceBusinessStatus(businessType, businessId) {
+    if (!businessType || !businessId) return
+
+    /* 业务类型到新状态的映射 */
+    const statusMap = {
+      quotation: 'approved',
+      contract: 'signed',
+      purchase: 'ordered',
+      inbound: 'inspecting',
+      outbound: 'shipping',
+      payment: 'paid'
+    }
+
+    const newStatus = statusMap[businessType]
+    if (!newStatus) return
+
+    try {
+      /* 通过dataCenter统一更新 */
+      const { useDataCenterStore } = await import('@/stores/dataCenter.js')
+      const dataCenter = useDataCenterStore()
+      await dataCenter.update(businessType, businessId, { status: newStatus }, { skipApproval: true })
+      console.info(`[Workflow] 审批完成，已将 ${businessType} ${businessId} 状态推进为 ${newStatus}`)
+    } catch (e) {
+      console.warn(`[Workflow] 推进业务状态失败:`, e.message)
+    }
+  }
+
+  /**
+   * 检查超时并通知
+   */
+  function checkAndNotifyTimeouts() {
+    const timeoutList = workflowEngine.checkTimeout(instances.value)
+    if (timeoutList.length > 0) {
+      for (const item of timeoutList) {
+        console.warn(`[Workflow] 审批超时: ${item.templateName} - ${item.currentApprover} 已超时 ${item.hoursOverdue} 小时`)
+      }
+    }
+    return timeoutList
+  }
+
   return {
     templates,
     instances,
@@ -285,6 +332,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
     cancelInstance,
     getInstanceNodeStates,
     checkTimeout,
+    checkAndNotifyTimeouts,
     initSeedData,
     resetSeedData
   }

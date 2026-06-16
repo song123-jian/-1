@@ -31,6 +31,7 @@
     </div>
     <ToastNotification ref="toastRef" />
     <ConfirmDialog ref="confirmRef" />
+    <GlobalSearch v-model:visible="showGlobalSearch" />
   </div>
 </template>
 
@@ -50,6 +51,7 @@ import AppSidebar from '@/layouts/AppSidebar.vue'
 import AppTopbar from '@/layouts/AppTopbar.vue'
 import ToastNotification from '@/components/common/ToastNotification.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+import GlobalSearch from '@/components/common/GlobalSearch.vue'
 
 const router = useRouter()
 const themeStore = useThemeStore()
@@ -77,6 +79,17 @@ provide('confirm', {
 /* 侧边栏状态 */
 const sidebarCollapsed = ref(false)
 const mobileMenuOpen = ref(false)
+
+/* 全局搜索状态 */
+const showGlobalSearch = ref(false)
+
+/* 全局搜索快捷键 Ctrl+K */
+function handleGlobalSearchKeydown(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    showGlobalSearch.value = true
+  }
+}
 
 /* 切换侧边栏折叠 */
 function toggleSidebarCollapse() {
@@ -128,6 +141,9 @@ router.afterEach((to) => {
 
 /* 应用启动时恢复会话并初始化 */
 onMounted(async () => {
+  /* 注册全局搜索快捷键 */
+  document.addEventListener('keydown', handleGlobalSearchKeydown)
+
   /* 浏览器兼容性检测 */
   try {
     const ua = navigator.userAgent
@@ -218,6 +234,7 @@ onMounted(async () => {
 
 /* 应用卸载时清理 */
 onUnmounted(() => {
+  document.removeEventListener('keydown', handleGlobalSearchKeydown)
   syncEngine.stopAutoSync()
   autoSave.destroy()
   responsive.destroy()

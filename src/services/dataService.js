@@ -17,6 +17,8 @@ import versionControl from '@/utils/versionControl'
 import { generateId } from '@/utils/uid'
 import { useSessionStore } from '@/stores/session'
 import { usePermissionStore } from '@/stores/permission'
+import { SupabaseClient } from '@/lib/supabase.js'
+import { API } from '@/services/api.js'
 
 /* 操作结果封装 */
 export class DataResult {
@@ -270,6 +272,14 @@ class DataService {
         user: options.user
       })
 
+      /* 自动同步到Supabase */
+      this._syncToSupabase(module, result || data, 'upsert')
+
+      /* 自动启动审批流（如果适用） */
+      if (options.skipApproval !== true) {
+        this._tryStartApproval(module, result || data)
+      }
+
       return DataResult.ok(result || data)
     } catch (e) {
       return DataResult.fail(`新增失败: ${e.message}`)
@@ -344,6 +354,9 @@ class DataService {
         user: options.user
       })
 
+      /* 自动同步到Supabase */
+      this._syncToSupabase(module, { ...oldData, ...updates }, 'upsert')
+
       return DataResult.ok({ ...oldData, ...updates })
     } catch (e) {
       return DataResult.fail(`修改失败: ${e.message}`)
@@ -397,6 +410,9 @@ class DataService {
         data: oldData,
         user: options.user
       })
+
+      /* 自动同步删除到Supabase */
+      this._syncToSupabase(module, { id }, 'delete')
 
       return DataResult.ok({ id })
     } catch (e) {
@@ -770,6 +786,102 @@ class DataService {
       }
     }
     return changes
+  }
+
+  /**
+   * 模块名到工作流类型的映射
+   */
+  _getWorkflowType(module, data) {
+    const map = {
+      quotation: 'quotation',
+      contract: 'contract',
+      purchase: 'purchase'
+    }
+    if (module === 'inventory') {
+      if (data.type === 'inbound') return 'inbound'
+      if (data.type === 'outbound') return 'outbound'
+      return null
+    }
+    return map[module] || null
+  }
+
+  /**
+   * 自动同步到Supabase（异步，不阻塞主流程）
+   */
+  _syncToSupabase(module, data, action) {
+    try {
+      if (!SupabaseClient.isConnected()) return
+      const tableName = API.getTableName(module)
+      if (!tableName) return
+
+      if (action === 'upsert') {
+        API.upsertToServer(tableName, [data]).catch(e => {
+          console.warn(`[DataService] ${module} upsert同步失败:`, e.message)
+        })
+      } else if (action === 'delete') {
+        API.request('DELETE', tableName, null, { id: data.id }).catch(e => {
+          console.warn(`[DataService] ${module} delete同步失败:`, e.message)
+        })
+      }
+    } catch (e) {
+      console.warn(`[DataService] Supabase同步异常:`, e.message)
+    }
+  }
+
+  /**
+   * 尝试启动审批流（如果模块配置了工作流）
+   */
+  _tryStartApproval(module, data) {
+    try {
+      const workflowType = this._getWorkflowType(module, data)
+      if (!workflowType) return
+
+      /* 延迟导入避免循环依赖 */
+      import('@/utils/workflowEngine').then(({ default: workflowEngine }) => {
+        const template = workflowEngine.getTemplate(workflowType)
+        if (!template) return
+
+        const businessNo = data.quotationNo || data.contractNo || data.orderNo || data.id || ''
+        const amount = data.totalAmount || data.amount || data.total || 0
+
+        const instance = workflowEngine.startInstance(workflowType, {
+          businessId: data.id,
+          businessType: workflowType,
+          businessNo,
+          variables: {
+            amount,
+            applicant: this._getCurrentUser(),
+            businessNo,
+            ...data
+          }
+        })
+
+        if (instance) {
+          /* 同步到workflowStore */
+          import('@/modules/system/stores/workflow').then(({ useWorkflowStore }) => {
+            const workflowStore = useWorkflowStore()
+            workflowStore.instances.unshift(instance)
+            workflowStore._persist()
+          }).catch(() => {})
+
+          console.info(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
+        }
+      }).catch(() => {})
+    } catch (e) {
+      console.warn(`[DataService] 启动审批流异常:`, e.message)
+    }
+  }
+
+  /**
+   * 获取当前用户
+   */
+  _getCurrentUser() {
+    try {
+      const session = useSessionStore()
+      return session.roleName || '未知用户'
+    } catch (e) {
+      return '未知用户'
+    }
   }
 }
 

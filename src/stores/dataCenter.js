@@ -16,6 +16,8 @@ import eventBus, { DataEvents, DataModules } from '@/utils/eventBus'
 import dataCache from '@/utils/dataCache'
 import dataService, { DataResult } from '@/services/dataService'
 import versionControl from '@/utils/versionControl'
+import { SupabaseClient } from '@/lib/supabase.js'
+import { API } from '@/services/api.js'
 
 /* 各模块Store的懒加载映射 */
 const STORE_IMPORTS = {
@@ -53,6 +55,12 @@ const DATA_KEY_MAP = {
   purchase: 'orders',
   production: 'orders',
   transfer: 'transfers'
+}
+
+/* 表名到模块名的反向映射 */
+const TABLE_TO_MODULE = {}
+for (const [mod, table] of Object.entries(API.TABLE_MAP || {})) {
+  TABLE_TO_MODULE[table] = mod
 }
 
 /* 下拉选项配置 - 定义每个模块可提供的下拉选项 */
@@ -616,6 +624,23 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     })
 
     _initialized.value = true
+
+    /* 连接Supabase后自动拉取数据并订阅实时变更 */
+    try {
+      const { useSupabaseStore } = await import('@/stores/supabase.js')
+      const sbStore = useSupabaseStore()
+
+      if (sbStore.isConnected) {
+        /* 拉取远端数据并合并 */
+        await _pullAndMerge(sbStore)
+
+        /* 订阅实时变更 */
+        _subscribeRealtimeChanges()
+      }
+    } catch (e) {
+      console.warn('[DataCenter] Supabase初始化异常:', e.message)
+    }
+
     console.info('[DataCenter] 数据管理中心初始化完成')
   }
 
@@ -728,6 +753,67 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     return versionControl.getStats()
   }
 
+  /**
+   * 从Supabase拉取数据并合并到本地Store
+   */
+  async function _pullAndMerge(sbStore) {
+    const remoteData = await sbStore.pullAll()
+    if (!remoteData) return
+
+    for (const [resource, data] of Object.entries(remoteData)) {
+      if (!data || !Array.isArray(data) || data.length === 0) continue
+
+      const module = TABLE_TO_MODULE[resource] || resource
+      const store = _stores.value[module]
+      const dataKey = DATA_KEY_MAP[module]
+      if (!store || !store[dataKey]) continue
+
+      /* 合并策略：服务器数据优先，本地新增保留 */
+      const serverIds = new Set(data.map(d => d.id))
+      const localOnly = store[dataKey].filter(item => !serverIds.has(item.id))
+      store[dataKey] = [...data, ...localOnly]
+
+      console.info(`[DataCenter] 合并 ${resource}: 远端${data.length}条 + 本地独有${localOnly.length}条`)
+    }
+  }
+
+  /**
+   * 订阅Supabase实时变更
+   */
+  function _subscribeRealtimeChanges() {
+    if (!SupabaseClient.isConnected()) return
+
+    SupabaseClient.autoSubscribeTables({
+      onInsert(tableName, record) {
+        const module = TABLE_TO_MODULE[tableName] || tableName
+        const store = _stores.value[module]
+        const dataKey = DATA_KEY_MAP[module]
+        if (store && store[dataKey] && !store[dataKey].find(i => i.id === record.id)) {
+          store[dataKey].push(record)
+        }
+      },
+      onUpdate(tableName, record) {
+        const module = TABLE_TO_MODULE[tableName] || tableName
+        const store = _stores.value[module]
+        const dataKey = DATA_KEY_MAP[module]
+        if (store && store[dataKey]) {
+          const idx = store[dataKey].findIndex(i => i.id === record.id)
+          if (idx !== -1) store[dataKey][idx] = record
+        }
+      },
+      onDelete(tableName, oldRecord) {
+        const module = TABLE_TO_MODULE[tableName] || tableName
+        const store = _stores.value[module]
+        const dataKey = DATA_KEY_MAP[module]
+        if (store && store[dataKey]) {
+          store[dataKey] = store[dataKey].filter(i => i.id !== oldRecord.id)
+        }
+      }
+    })
+
+    console.info('[DataCenter] 已订阅Supabase实时变更')
+  }
+
   return {
     /* 初始化 */
     init,
@@ -782,6 +868,10 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     getCacheStats,
     getEventStats,
     getVersionStats,
+
+    /* Supabase同步 */
+    _pullAndMerge,
+    _subscribeRealtimeChanges,
 
     /* Store引用 */
     _stores

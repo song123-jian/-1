@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="approval-page">
     <div class="page-header">
       <div>
@@ -30,6 +30,86 @@
         <div class="stat-card-icon" style="background:var(--color-info-subtle);color:var(--color-info)"><Icon name="table" :size="14" /></div>
         <div class="stat-card-value">{{ approvalStore.todayCount }}</div>
         <div class="stat-card-label">今日审批数</div>
+      </div>
+    </div>
+
+    <!-- 待审批任务 -->
+    <div class="panel-card" style="margin-bottom:var(--space-4)">
+      <div class="panel-card-header">
+        <span class="panel-card-title"><Icon name="clock" :size="14" /> 待我审批 ({{ workflowStore.pendingTasks.length }})</span>
+        <button class="btn btn-ghost btn-sm" @click="refreshPendingTasks"><Icon name="refresh" :size="14" /> 刷新</button>
+      </div>
+      <div class="panel-card-body no-padding">
+        <div class="table-container" v-if="workflowStore.pendingTasks.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>流程类型</th>
+                <th>业务单号</th>
+                <th>当前节点</th>
+                <th>提交人</th>
+                <th>提交时间</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="task in workflowStore.pendingTasks" :key="task.id">
+                <td><span class="status-badge accent">{{ task.templateName }}</span></td>
+                <td style="font-family:var(--font-mono)">{{ task.businessNo || '-' }}</td>
+                <td>{{ task.currentApprover }}</td>
+                <td>{{ task.variables?.applicant || '-' }}</td>
+                <td style="font-size:var(--font-size-xs)">{{ formatTime(task.startTime) }}</td>
+                <td>
+                  <div style="display:flex;gap:var(--space-1)">
+                    <button class="btn btn-primary btn-sm" @click="handleApproveTask(task, 'approved')">通过</button>
+                    <button class="btn btn-ghost btn-sm" @click="handleApproveTask(task, 'rejected')">驳回</button>
+                    <button class="btn btn-ghost btn-sm" @click="handleDelegateTask(task)">转交</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else style="text-align:center;padding:var(--space-6);color:var(--color-text-tertiary)">
+          <Icon name="checkCircle" :size="24" />
+          <div style="margin-top:var(--space-2)">暂无待审批任务</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 已审批任务 -->
+    <div class="panel-card" style="margin-bottom:var(--space-4)">
+      <div class="panel-card-header">
+        <span class="panel-card-title"><Icon name="checkCircle" :size="14" /> 已审批 ({{ workflowStore.completedTasks.length }})</span>
+      </div>
+      <div class="panel-card-body no-padding">
+        <div class="table-container" v-if="workflowStore.completedTasks.length > 0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>流程类型</th>
+                <th>业务单号</th>
+                <th>审批结果</th>
+                <th>审批时间</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="task in workflowStore.completedTasks.slice(0, 10)" :key="task.id">
+                <td>{{ task.templateName }}</td>
+                <td style="font-family:var(--font-mono)">{{ task.businessNo || '-' }}</td>
+                <td>
+                  <span class="status-badge" :class="task.status === 'completed' ? 'success' : task.status === 'rejected' ? 'danger' : 'neutral'">
+                    {{ task.status === 'completed' ? '已通过' : task.status === 'rejected' ? '已驳回' : task.status }}
+                  </span>
+                </td>
+                <td style="font-size:var(--font-size-xs)">{{ formatTime(task.endTime) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-else style="text-align:center;padding:var(--space-4);color:var(--color-text-tertiary);font-size:var(--font-size-sm)">
+          暂无已审批记录
+        </div>
       </div>
     </div>
 
@@ -292,9 +372,11 @@
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useApprovalStore } from '@/modules/system/stores/approval'
+import { useWorkflowStore } from '@/modules/system/stores/workflow'
 import { useSessionStore } from '@/stores/session'
 
 const approvalStore = useApprovalStore()
+const workflowStore = useWorkflowStore()
 const sessionStore = useSessionStore()
 
 const canApprove = ['管理员', '总经理'].includes(sessionStore.currentRole)
@@ -501,6 +583,34 @@ function confirmPassword() {
 
 function refreshFlowChart() {
   nextTick(() => renderFlowCanvas())
+}
+
+// 审批任务处理
+function handleApproveTask(task, result) {
+  const comment = result === 'approved' ? '同意' : '拒绝'
+  const res = workflowStore.approveTask(task.id, result, comment)
+  if (res.success) {
+    alert(res.message)
+  } else {
+    alert(res.message || '操作失败')
+  }
+}
+
+function handleDelegateTask(task) {
+  const to = prompt('请输入转交人（如：总经理、财务经理、销售主管）:')
+  if (!to) return
+  const reason = prompt('请输入转交原因:')
+  const res = workflowStore.delegateTask(task.id, to, reason || '转交审批')
+  if (res.success) {
+    alert('已转交给 ' + to)
+  } else {
+    alert(res.message || '转交失败')
+  }
+}
+
+function refreshPendingTasks() {
+  // Force re-computation by accessing the store
+  workflowStore.checkTimeout()
 }
 
 onMounted(() => {
