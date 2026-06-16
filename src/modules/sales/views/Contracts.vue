@@ -3,29 +3,46 @@
     <div class="page-header">
       <div>
         <h2 class="page-header-title">合同管理</h2>
-        <p class="page-header-subtitle">合同全生命周期管理：创建<Icon name="chevronRight" :size="14" />审批<Icon name="chevronRight" :size="14" />签订<Icon name="chevronRight" :size="14" />归档</p>
+        <div class="page-header-subtitle status-flow-bar">
+          <button v-for="(label, key) in statusLabels" :key="key" class="status-flow-chip" :class="{ active: filterStatus === key }" @click="filterStatus = filterStatus === key ? '' : key">{{ label }}</button>
+        </div>
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
-          <button v-for="v in viewModes" :key="v.key" class="view-btn" :class="{ active: currentView === v.key }" :title="v.icon + ' ' + v.label" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+          <button v-for="v in viewModes.filter(vm => !vm.inMore)" :key="v.key" class="view-btn" :class="{ active: currentView === v.key }" :title="v.label" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /></button>
+          <div class="view-more-wrapper">
+            <button class="view-btn" :class="{ active: viewModes.filter(vm => vm.inMore).some(vm => currentView === vm.key) }" title="更多视图" @click="showViewMore = !showViewMore"><Icon name="chevronDown" :size="14" /></button>
+            <div v-if="showViewMore" class="view-more-dropdown">
+              <button v-for="v in viewModes.filter(vm => vm.inMore)" :key="v.key" class="view-more-item" :class="{ active: currentView === v.key }" @click="currentView = v.key; showViewMore = false">{{ v.label }}</button>
+            </div>
+          </div>
         </div>
         <div class="column-config-wrapper">
-          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <button class="btn btn-outline btn-icon" @click="toggleColumnConfig" title="列配置"><Icon name="setting" :size="14" /></button>
           <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
             <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
               <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
             </label>
           </div>
         </div>
-        <button class="btn btn-outline" @click="showAnalytics = !showAnalytics">{{ showAnalytics ? '列表' : '分析' }}</button>
-        <button class="btn btn-outline" @click="handleExport">导出</button>
-        <button v-if="canDelete" class="btn btn-outline" @click="handleBatchDelete" :disabled="selectedIds.length === 0">批量删除</button>
-        <button class="btn btn-outline" @click="openTemplateManager">模板管理</button>
-        <button v-if="canCreate" class="btn btn-primary" @click="openWizard">新建合同</button>
+        <button class="btn btn-outline btn-icon" @click="showAnalytics = !showAnalytics" :title="showAnalytics ? '列表' : '分析'"><Icon :name="showAnalytics ? 'list' : 'chart'" :size="14" /></button>
+        <div class="more-actions-wrapper">
+          <button class="btn btn-outline btn-icon" @click="showMoreActions = !showMoreActions" title="更多操作"><Icon name="more" :size="14" /></button>
+          <div v-if="showMoreActions" class="more-actions-dropdown">
+            <button class="more-actions-item" @click="handleExport; showMoreActions = false"><Icon name="download" :size="14" /> 导出</button>
+            <button v-if="canDelete" class="more-actions-item" @click="handleBatchDelete; showMoreActions = false" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
+            <button class="more-actions-item" @click="openTemplateManager; showMoreActions = false"><Icon name="file" :size="14" /> 模板管理</button>
+          </div>
+        </div>
+        <button v-if="canCreate" class="btn btn-primary btn-lg" @click="openWizard">新建合同</button>
       </div>
     </div>
 
     <div class="contract-toolbar">
+      <div class="contract-search">
+        <span class="search-icon"><Icon name="search" :size="14" /></span>
+        <input v-model="searchText" type="text" class="search-input" placeholder="搜索合同编号/客户名称/合同类型..." />
+      </div>
       <select v-model="filterStatus" class="form-select filter-select">
         <option value="">全部状态</option>
         <option value="draft">草稿</option>
@@ -35,14 +52,6 @@
         <option value="archived">已归档</option>
         <option value="cancelled">已作废</option>
       </select>
-      <select v-model="filterSettlement" class="form-select filter-select">
-        <option value="">全部结算方式</option>
-        <option value="款到发货">款到发货</option>
-        <option value="月结30天">月结30天</option>
-        <option value="月结60天">月结60天</option>
-        <option value="月结90天">月结90天</option>
-        <option value="货到付款">货到付款</option>
-      </select>
       <select v-model="filterType" class="form-select filter-select">
         <option value="">全部类型</option>
         <option value="购销合同">购销合同</option>
@@ -51,11 +60,18 @@
         <option value="框架协议">框架协议</option>
         <option value="技术协议">技术协议</option>
       </select>
+      <button class="btn btn-outline btn-sm" @click="showAdvFilter = !showAdvFilter">{{ showAdvFilter ? '收起' : '高级筛选' }} <Icon :name="showAdvFilter ? 'chevronUp' : 'chevronDown'" :size="12" /></button>
+    </div>
+    <div v-if="showAdvFilter" class="contract-toolbar-adv">
+      <select v-model="filterSettlement" class="form-select filter-select">
+        <option value="">全部结算方式</option>
+        <option value="款到发货">款到发货</option>
+        <option value="月结30天">月结30天</option>
+        <option value="月结60天">月结60天</option>
+        <option value="月结90天">月结90天</option>
+        <option value="货到付款">货到付款</option>
+      </select>
       <DataSelect module="customer" variant="active" v-model="filterCustomerId" value-field="id" label-field="name" placeholder="全部客户" clearable style="min-width:160px" />
-      <div class="contract-search">
-        <span class="search-icon"><Icon name="search" :size="14" /></span>
-        <input v-model="searchText" type="text" class="search-input" placeholder="搜索合同编号/客户名称/合同类型..." />
-      </div>
       <div class="filter-date-group">
         <input v-model="filterDateFrom" type="date" class="form-input filter-date" title="签订日期起" />
         <span class="filter-date-sep">~</span>
@@ -65,31 +81,37 @@
       <input v-model.number="filterAmountMax" type="number" class="form-input filter-amount" placeholder="金额≤(万)" />
       <button class="btn btn-outline filter-reset-btn" @click="resetFilters">重置</button>
     </div>
+    <div v-if="hasActiveFilters" class="filter-tags-bar">
+      <span class="filter-tag" v-if="filterStatus">{{ statusLabels[filterStatus] }} <button @click="filterStatus = ''">×</button></span>
+      <span class="filter-tag" v-if="filterType">{{ filterType }} <button @click="filterType = ''">×</button></span>
+      <span class="filter-tag" v-if="filterSettlement">{{ filterSettlement }} <button @click="filterSettlement = ''">×</button></span>
+      <span class="filter-tag" v-if="filterCustomerId">客户筛选 <button @click="filterCustomerId = ''">×</button></span>
+      <span class="filter-tag" v-if="filterDateFrom">{{ filterDateFrom }}起 <button @click="filterDateFrom = ''">×</button></span>
+      <span class="filter-tag" v-if="filterDateTo">{{ filterDateTo }}止 <button @click="filterDateTo = ''">×</button></span>
+      <span class="filter-tag" v-if="filterAmountMin">≥{{ filterAmountMin }}万 <button @click="filterAmountMin = ''">×</button></span>
+      <span class="filter-tag" v-if="filterAmountMax">≤{{ filterAmountMax }}万 <button @click="filterAmountMax = ''">×</button></span>
+      <button class="filter-tag-clear" @click="resetFilters">清除全部</button>
+    </div>
 
     <div class="contract-stats-bar">
-      <div class="stats-ring-section">
-        <svg width="48" height="48" viewBox="0 0 48 48" class="stats-ring-svg">
-          <circle cx="24" cy="24" r="18" fill="none" stroke="var(--color-border)" stroke-width="3" />
-          <circle cx="24" cy="24" r="18" fill="none" :stroke="signRateColor" stroke-width="3" stroke-linecap="round" :stroke-dasharray="signRateDash" stroke-dashoffset="0" transform="rotate(-90 24 24)" class="stats-ring-progress" />
-        </svg>
-        <div class="stats-ring-text">
-          <span class="stats-ring-percent" :style="{ color: signRateColor }">{{ signRate }}%</span>
-          <span class="stats-ring-label">签订率</span>
+      <div class="kpi-card-sm" @click="filterStatus = ''">
+        <div class="kpi-ring-sm">
+          <svg width="40" height="40" viewBox="0 0 40 40">
+            <circle cx="20" cy="20" r="15" fill="none" stroke="var(--color-border)" stroke-width="3" />
+            <circle cx="20" cy="20" r="15" fill="none" :stroke="signRateColor" stroke-width="3" stroke-linecap="round" :stroke-dasharray="signRateDashSmall" stroke-dashoffset="0" transform="rotate(-90 20 20)" class="stats-ring-progress" />
+          </svg>
+          <span class="kpi-ring-val" :style="{ color: signRateColor }">{{ signRate }}%</span>
         </div>
+        <div class="kpi-info"><span class="kpi-label">签订率</span></div>
       </div>
-      <div class="stats-items">
-        <div class="stat-item"><span class="stat-dot total"></span><span class="stat-num">{{ contractStore.contracts.length }}</span><span class="stat-label">总计</span></div>
-        <div class="stat-item"><span class="stat-dot draft"></span><span class="stat-num">{{ contractStore.draftCount }}</span><span class="stat-label">草稿</span></div>
-        <div class="stat-item"><span class="stat-dot pending"></span><span class="stat-num">{{ contractStore.pendingApprovalCount }}</span><span class="stat-label">待审批</span></div>
-        <div class="stat-item"><span class="stat-dot approved"></span><span class="stat-num">{{ contractStore.approvedCount }}</span><span class="stat-label">已审批</span></div>
-        <div class="stat-item"><span class="stat-dot signed"></span><span class="stat-num">{{ contractStore.signedCount }}</span><span class="stat-label">已签订</span></div>
+      <div class="kpi-card-sm" @click="filterStatus = ''">
+        <div class="kpi-info"><span class="kpi-val mono">¥{{ formatNumber(contractStore.totalAmount) }}</span><span class="kpi-label">合同总额</span></div>
       </div>
-      <div class="stats-money-items">
-        <div class="stat-money-item"><span class="stat-money-val">¥{{ formatNumber(contractStore.totalAmount) }}</span><span class="stat-money-label">总额</span></div>
-        <div class="stat-money-item"><span class="stat-money-val">¥{{ formatNumber(contractStore.signedAmount) }}</span><span class="stat-money-label">已签订</span></div>
+      <div class="kpi-card-sm" @click="filterStatus = 'signed'">
+        <div class="kpi-info"><span class="kpi-val mono text-success">¥{{ formatNumber(contractStore.signedAmount) }}</span><span class="kpi-label">已签订金额</span></div>
       </div>
-      <div v-if="contractStore.expiringCount > 0" class="stat-item stat-expiring">
-        <span class="stat-dot expiring"></span><span class="stat-num">{{ contractStore.expiringCount }}</span><span class="stat-label">即将到期</span>
+      <div class="kpi-card-sm" v-if="contractStore.expiringCount > 0" @click="filterStatus = 'signed'">
+        <div class="kpi-info"><span class="kpi-val mono text-warning">{{ contractStore.expiringCount }}</span><span class="kpi-label">即将到期</span></div>
       </div>
     </div>
 
@@ -154,14 +176,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="pagedContracts.length === 0"><td colspan="13" class="empty-state"><div class="empty-state-icon"><Icon name="file" :size="24" /></div>暂无合同数据</td></tr>
-                <tr v-for="(c, index) in pagedContracts" :key="c.id">
+                <tr v-if="pagedContracts.length === 0"><td colspan="13" class="empty-state"><div class="empty-state-icon"><Icon name="file" :size="24" /></div><div>暂无合同数据</div><button v-if="canCreate" class="btn btn-primary btn-sm" style="margin-top:var(--space-3)" @click="openWizard">创建第一份合同</button></td></tr>
+                <tr v-for="(c, index) in pagedContracts" :key="c.id" class="data-row" @click="openPreview(c)">
                   <td><div class="checkbox" :class="{ checked: selectedIds.includes(c.id) }" @click="toggleSelect(c.id)">[√]</div></td>
                   <td style="width:50px;text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (currentPage - 1) * pageSize + index + 1 }}</td>
                   <td v-if="columnVisible.contractNo" class="mono"><strong style="color:var(--color-accent)">{{ c.contractNo }}</strong></td>
                   <td v-if="columnVisible.signDate" style="text-align:center">{{ c.signDate || '-' }}</td>
                   <td v-if="columnVisible.partyA">{{ c.partyA }}</td>
-                  <td v-if="columnVisible.partyB">{{ c.partyB || '苏州冠久新材料科技有限公司' }}</td>
+                  <td v-if="columnVisible.partyB">{{ c.partyB || COMPANY_DEFAULTS.name }}</td>
                   <td v-if="columnVisible.paymentDate" style="text-align:center">{{ getPaymentDate(c) }}</td>
                   <td v-if="columnVisible.unitPrice" class="mono" style="text-align:right">{{ getFirstUnitPrice(c) }}</td>
                   <td v-if="columnVisible.totalAmount" class="mono" style="text-align:right">¥{{ formatNumber(c.totalAmount) }}</td>
@@ -174,20 +196,30 @@
                   <td class="cell-actions">
                     <button class="action-btn action-btn-text" @click="openPreview(c)">预览</button>
                     <button class="action-btn action-btn-text" @click="openWizard(c.id)">编辑</button>
-                    <button v-if="c.status === 'draft'" class="action-btn action-btn-text" @click="handleSubmitApproval(c)" style="color:var(--color-purple)">提交审批</button>
-                    <button v-if="c.status === 'pending_approval' && canApprove" class="action-btn action-btn-text" @click="handleApprove(c)" style="color:var(--color-success)">通过</button>
-                    <button v-if="c.status === 'pending_approval'" class="action-btn action-btn-text" @click="handleReject(c)" style="color:var(--color-danger)">驳回</button>
-                    <button v-if="c.status === 'approved' && canSign" class="action-btn action-btn-text" @click="handleSign(c)" style="color:var(--color-success)">签订</button>
-                    <button v-if="c.status === 'signed'" class="action-btn action-btn-text" @click="handleArchive(c)" style="color:var(--color-info)">归档</button>
-                    <button v-if="c.status === 'approved' || c.status === 'signed'" class="action-btn action-btn-text" @click="handleCancel(c)" style="color:var(--color-danger)">作废</button>
-                    <button class="action-btn action-btn-text" @click="handleDuplicate(c)">复制</button>
-                    <button v-if="canDelete" class="action-btn action-btn-text" style="color:var(--color-danger)" @click="handleDelete(c)">删除</button>
+                    <div class="action-more-wrapper">
+                      <button class="action-btn action-btn-text" @click="toggleRowActions(c.id)">⋮</button>
+                      <div v-if="activeRowActions === c.id" class="action-more-dropdown">
+                        <button v-if="c.status === 'draft'" class="action-more-item" @click="handleSubmitApproval(c); activeRowActions = null">提交审批</button>
+                        <button v-if="c.status === 'pending_approval' && canApprove" class="action-more-item" @click="handleApprove(c); activeRowActions = null">通过</button>
+                        <button v-if="c.status === 'pending_approval'" class="action-more-item danger" @click="handleReject(c); activeRowActions = null">驳回</button>
+                        <button v-if="c.status === 'approved' && canSign" class="action-more-item" @click="handleSign(c); activeRowActions = null">签订</button>
+                        <button v-if="c.status === 'signed'" class="action-more-item" @click="handleArchive(c); activeRowActions = null">归档</button>
+                        <button v-if="c.status === 'approved' || c.status === 'signed'" class="action-more-item danger" @click="handleCancel(c); activeRowActions = null">作废</button>
+                        <button class="action-more-item" @click="handleDuplicate(c); activeRowActions = null">复制</button>
+                        <button v-if="canDelete" class="action-more-item danger" @click="handleDelete(c); activeRowActions = null">删除</button>
+                      </div>
+                    </div>
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
           <div v-if="totalPages > 1" class="pagination-bar">
+            <select v-model.number="pageSize" class="form-select" style="height:28px;font-size:12px;width:auto;padding:0 var(--space-2)">
+              <option :value="15">15条/页</option>
+              <option :value="30">30条/页</option>
+              <option :value="50">50条/页</option>
+            </select>
             <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
             <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
             <button v-for="p in visiblePages" :key="p" class="pagination-btn" :class="{ active: p === currentPage }" @click="currentPage = p">{{ p }}</button>
@@ -227,6 +259,8 @@
         @nextMonth="nextMonth"
         @prevWeek="prevWeek"
         @nextWeek="nextWeek"
+        @todayMonth="calendarMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')"
+        @todayWeek="weekViewDate = new Date()"
       />
 
       <div v-if="currentView === 'funnel'" class="sales-funnel">
@@ -300,6 +334,7 @@ import { useCollectionStore } from '@/modules/finance/stores/collection'
 import { useDeliveryStore } from '@/stores/delivery'
 import { usePermission } from '@/utils/permissionGuard'
 import { formatNumber, toLocalDateStr } from '@/utils/format'
+import { COMPANY_DEFAULTS } from '../config/companyDefaults'
 
 import ContractFormModal from '@/modules/sales/components/contracts/ContractFormModal.vue'
 import ContractPreview from '@/modules/sales/components/contracts/ContractPreview.vue'
@@ -328,7 +363,7 @@ const statusColors = {
   signed: '#22c55e', archived: '#06b6d4', cancelled: '#ef4444'
 }
 
-const RING_CIRC = 2 * Math.PI * 18
+const RING_CIRC = 2 * Math.PI * 15
 const signRate = computed(() => {
   const total = contractStore.contracts.length
   if (total === 0) return 0
@@ -340,7 +375,7 @@ const signRateColor = computed(() => {
   if (r >= 30) return 'var(--color-warning)'
   return 'var(--color-danger)'
 })
-const signRateDash = computed(() => {
+const signRateDashSmall = computed(() => {
   const p = signRate.value / 100
   return `${p * RING_CIRC} ${RING_CIRC}`
 })
@@ -350,12 +385,15 @@ const viewModes = [
   { key: 'list', icon: 'list', label: '列表' },
   { key: 'card', icon: 'card', label: '卡片' },
   { key: 'calendar', icon: 'calendar', label: '日历' },
-  { key: 'week', icon: 'calendar', label: '周视图' },
-  { key: 'funnel', icon: 'filter', label: '漏斗' }
+  { key: 'week', icon: 'calendar', label: '周视图', inMore: true },
+  { key: 'funnel', icon: 'filter', label: '漏斗', inMore: true }
 ]
 
 const currentView = ref('table')
 const showAnalytics = ref(false)
+const showViewMore = ref(false)
+const showMoreActions = ref(false)
+const showAdvFilter = ref(false)
 const searchText = ref('')
 const filterStatus = ref('')
 const filterSettlement = ref('')
@@ -367,7 +405,7 @@ const filterAmountMin = ref('')
 const filterAmountMax = ref('')
 const selectedIds = ref([])
 const currentPage = ref(1)
-const pageSize = 15
+const pageSize = ref(15)
 
 const columnDefs = [
   { key: 'check', label: '', hideable: false },
@@ -415,10 +453,10 @@ const filteredContracts = computed(() => {
   return list
 })
 
-const totalPages = computed(() => Math.max(1, Math.ceil(filteredContracts.value.length / pageSize)))
+const totalPages = computed(() => Math.max(1, Math.ceil(filteredContracts.value.length / pageSize.value)))
 const pagedContracts = computed(() => {
-  const start = (currentPage.value - 1) * pageSize
-  return filteredContracts.value.slice(start, start + pageSize)
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredContracts.value.slice(start, start + pageSize.value)
 })
 const visiblePages = computed(() => {
   const total = totalPages.value
@@ -583,8 +621,8 @@ function getDefaultWizardData() {
     contractNo: '',
     partyA: '',
     partyAId: '',
-    partyB: '苏州冠久新材料科技有限公司',
-    signPlace: '苏州・高新区',
+    partyB: COMPANY_DEFAULTS.name,
+    signPlace: COMPANY_DEFAULTS.signPlace,
     signDate: todayStr(),
     endDate: '',
     settlement: '款到发货',
@@ -592,7 +630,7 @@ function getDefaultWizardData() {
     totalAmount: 0,
     terms: contractStore.getDefaultTerms(),
     partyAInfo: { address: '', representative: '', contact: '', date: todayStr(), seal: '' },
-    partyBInfo: { companyName: '苏州冠久新材料科技有限公司', address: '苏州高新区滨河路3337号', representative: '宋建', contact: '15589233039', date: todayStr(), seal: 'preset' },
+    partyBInfo: { companyName: COMPANY_DEFAULTS.name, address: COMPANY_DEFAULTS.address, representative: COMPANY_DEFAULTS.representative, contact: COMPANY_DEFAULTS.contact, date: todayStr(), seal: 'preset' },
     status: 'draft',
     sourceQuoteId: '',
     notes: ''
@@ -823,7 +861,7 @@ function handleExport() {
     const headers = ['合同编号', '合同类型', '甲方', '乙方', '签订日期', '到期日', '金额', '结算方式', '状态', '签订地点']
     const statusMap = { draft: '草稿', pending_approval: '待审批', approved: '已审批', signed: '已签订', archived: '已归档', cancelled: '已作废' }
     const rows = contractStore.contracts.map(c => [
-      c.contractNo, c.contractType, c.partyA, c.partyB || '苏州冠久新材料科技有限公司',
+      c.contractNo, c.contractType, c.partyA, c.partyB || COMPANY_DEFAULTS.name,
       c.signDate, c.endDate, c.totalAmount, c.settlement, statusMap[c.status] || c.status, c.signPlace
     ])
     const csvContent = [headers, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
@@ -890,7 +928,7 @@ function parseContractTemplateFile(file) {
         contractType: '购销合同',
         settlement: '款到发货',
         terms: contractStore.getDefaultTerms(),
-        partyBInfo: { companyName: '苏州冠久新材料科技有限公司', address: '苏州高新区滨河路3337号', representative: '宋建', contact: '15589233039' }
+        partyBInfo: { companyName: COMPANY_DEFAULTS.name, address: COMPANY_DEFAULTS.address, representative: COMPANY_DEFAULTS.representative, contact: COMPANY_DEFAULTS.contact }
       })
       alert('模板"' + name + '"已通过AI识别创建，请编辑确认详细信息')
     }
@@ -939,6 +977,13 @@ function saveCurrentAsTemplate() {
 
 watch([searchText, filterStatus, filterSettlement, filterType, filterCustomerId, filterDateFrom, filterDateTo, filterAmountMin, filterAmountMax], () => { currentPage.value = 1 })
 
+const activeRowActions = ref(null)
+function toggleRowActions(id) {
+  activeRowActions.value = activeRowActions.value === id ? null : id
+}
+
+const hasActiveFilters = computed(() => filterStatus.value || filterType.value || filterSettlement.value || filterCustomerId.value || filterDateFrom.value || filterDateTo.value || filterAmountMin.value || filterAmountMax.value)
+
 function resetFilters() {
   searchText.value = ''
   filterStatus.value = ''
@@ -954,6 +999,15 @@ function resetFilters() {
 function handleClickOutside(e) {
   if (showColumnConfig.value && !e.target.closest('.column-config-wrapper')) {
     showColumnConfig.value = false
+  }
+  if (activeRowActions.value && !e.target.closest('.action-more-wrapper')) {
+    activeRowActions.value = null
+  }
+  if (showMoreActions.value && !e.target.closest('.more-actions-wrapper')) {
+    showMoreActions.value = false
+  }
+  if (showViewMore.value && !e.target.closest('.view-more-wrapper')) {
+    showViewMore.value = false
   }
 }
 
@@ -991,33 +1045,11 @@ onUnmounted(() => {
 .filter-amount { height: 34px; width: 100px; padding: var(--space-2) var(--space-3); font-size: 12px; border-radius: var(--radius-md); }
 .filter-reset-btn { height: 34px; white-space: nowrap; }
 
-.contract-stats-bar { display: flex; gap: var(--space-5); padding: var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); margin-bottom: var(--space-4); font-size: 13px; flex-wrap: wrap; align-items: center; }
-.stats-ring-section { display: flex; align-items: center; gap: var(--space-3); padding-right: var(--space-4); border-right: 1px solid var(--color-border); }
-.stats-ring-svg { flex-shrink: 0; }
+.contract-stats-bar { display: flex; gap: var(--space-3); margin-bottom: var(--space-4); flex-wrap: wrap; }
 @keyframes ringDraw { from { stroke-dashoffset: 113.1; } }
 .stats-ring-progress { animation: ringDraw 1s ease-out; transition: stroke-dasharray 0.6s ease; }
-.stats-ring-text { display: flex; flex-direction: column; }
-.stats-ring-percent { font-size: var(--font-size-xl); font-weight: 700; font-family: var(--font-mono); line-height: 1; }
-.stats-ring-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: var(--space-1); }
-.stats-items { display: flex; gap: var(--space-4); flex: 1; flex-wrap: wrap; }
-.stat-item { display: flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); }
-.stat-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
-.stat-dot.total { background: var(--color-accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3); }
-.stat-dot.draft { background: var(--color-text-tertiary); }
-.stat-dot.pending { background: var(--color-warning); box-shadow: 0 0 6px rgba(245, 158, 11, 0.3); animation: pendingPulse 2s ease-in-out infinite; }
-.stat-dot.approved { background: var(--color-accent); box-shadow: 0 0 6px rgba(59, 130, 246, 0.3); }
-.stat-dot.signed { background: var(--color-success); box-shadow: 0 0 6px rgba(34, 197, 94, 0.3); }
-.stat-dot.expiring { background: var(--color-warning); animation: expiringPulse 1.5s ease-in-out infinite; }
 @keyframes pendingPulse { 0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); } }
 @keyframes expiringPulse { 0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); } 50% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.7); } }
-.stat-num { font-weight: 700; font-family: var(--font-mono); font-size: var(--font-size-base); color: var(--color-text-primary); }
-.stat-label { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
-.stat-expiring { color: var(--color-warning); }
-.stat-expiring .stat-num { color: var(--color-warning); }
-.stats-money-items { display: flex; gap: var(--space-4); padding-left: var(--space-4); border-left: 1px solid var(--color-border); }
-.stat-money-item { display: flex; flex-direction: column; gap: var(--space-1); }
-.stat-money-val { font-weight: 700; font-family: var(--font-mono); font-size: var(--font-size-base); color: var(--color-text-primary); }
-.stat-money-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
 
 .batch-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-accent-subtle, #eff6ff); border: 1px solid var(--color-accent); border-radius: var(--radius-md); margin-bottom: var(--space-4); font-size: 13px; }
 
@@ -1122,4 +1154,50 @@ onUnmounted(() => {
 .column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
 .column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
 .column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+
+.status-flow-bar { display: flex; gap: var(--space-2); margin-top: var(--space-2); flex-wrap: wrap; }
+.status-flow-chip { padding: var(--space-1) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-full); font-size: var(--font-size-xs); background: transparent; color: var(--color-text-secondary); cursor: pointer; transition: all 0.15s; }
+.status-flow-chip:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.status-flow-chip.active { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
+
+.btn-icon { padding: var(--space-2); min-width: 34px; text-align: center; }
+.btn-lg { font-size: 15px; padding: var(--space-2) var(--space-5); font-weight: 600; }
+
+.view-more-wrapper { position: relative; display: inline-flex; }
+.view-more-dropdown { position: absolute; top: 100%; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1); z-index: var(--z-dropdown); min-width: 100px; box-shadow: var(--shadow-lg); }
+.view-more-item { display: block; width: 100%; padding: var(--space-2) var(--space-3); border: none; background: transparent; text-align: left; font-size: var(--font-size-sm); cursor: pointer; border-radius: var(--radius-sm); color: var(--color-text-primary); }
+.view-more-item:hover { background: var(--color-bg-secondary); }
+.view-more-item.active { color: var(--color-accent); font-weight: 600; }
+
+.more-actions-wrapper { position: relative; display: inline-flex; }
+.more-actions-dropdown { position: absolute; top: 100%; right: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1); z-index: var(--z-dropdown); min-width: 140px; box-shadow: var(--shadow-lg); }
+.more-actions-item { display: flex; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2) var(--space-3); border: none; background: transparent; text-align: left; font-size: var(--font-size-sm); cursor: pointer; border-radius: var(--radius-sm); color: var(--color-text-primary); }
+.more-actions-item:hover { background: var(--color-bg-secondary); }
+.more-actions-item.danger { color: var(--color-danger); }
+.more-actions-item:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.kpi-card-sm { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; transition: all 0.2s; min-width: 160px; }
+.kpi-card-sm:hover { border-color: var(--color-accent); box-shadow: var(--shadow-sm); }
+.kpi-ring-sm { position: relative; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kpi-ring-val { position: absolute; font-size: 10px; font-weight: 700; font-family: var(--font-mono); }
+.kpi-info { display: flex; flex-direction: column; gap: 2px; }
+.kpi-val { font-size: var(--font-size-lg); font-weight: 700; color: var(--color-text-primary); }
+.kpi-label { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+
+.contract-toolbar-adv { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; align-items: center; padding: var(--space-3); background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+
+.filter-tags-bar { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); flex-wrap: wrap; align-items: center; }
+.filter-tag { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--color-accent-subtle); color: var(--color-accent); border-radius: var(--radius-full); font-size: var(--font-size-xs); }
+.filter-tag button { border: none; background: transparent; color: var(--color-accent); cursor: pointer; font-size: 12px; padding: 0; line-height: 1; }
+.filter-tag-clear { border: none; background: transparent; color: var(--color-text-tertiary); cursor: pointer; font-size: var(--font-size-xs); text-decoration: underline; }
+
+.action-more-wrapper { position: relative; display: inline-flex; }
+.action-more-dropdown { position: absolute; right: 0; top: 100%; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-1); z-index: var(--z-dropdown); min-width: 100px; box-shadow: var(--shadow-lg); }
+.action-more-item { display: block; width: 100%; padding: var(--space-2) var(--space-3); border: none; background: transparent; text-align: left; font-size: var(--font-size-sm); cursor: pointer; border-radius: var(--radius-sm); color: var(--color-text-primary); white-space: nowrap; }
+.action-more-item:hover { background: var(--color-bg-secondary); }
+.action-more-item.danger { color: var(--color-danger); }
+
+.data-row { cursor: pointer; }
+.data-row:hover { background: var(--color-bg-secondary); }
+.data-row:hover td:first-child { box-shadow: inset 4px 0 0 var(--color-accent); }
 </style>

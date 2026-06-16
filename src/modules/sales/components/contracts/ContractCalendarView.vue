@@ -4,6 +4,7 @@
       <div class="panel-card-body">
         <div class="calendar-nav">
           <button class="btn btn-ghost btn-sm" @click="$emit('prevMonth')"><Icon name="chevronLeft" :size="14" /> 上月</button>
+          <button class="btn btn-ghost btn-sm" @click="$emit('todayMonth')">今天</button>
           <span class="calendar-nav-title">{{ calendarMonth }}</span>
           <button class="btn btn-ghost btn-sm" @click="$emit('nextMonth')">下月 <Icon name="chevronRight" :size="14" /></button>
         </div>
@@ -12,9 +13,10 @@
           <div v-for="(day, idx) in calendarDays" :key="idx" class="calendar-cell" :class="{ 'other-month': !day.isCurrentMonth, 'is-today': day.isToday }">
             <div class="calendar-date">{{ day.day }}</div>
             <div class="calendar-events">
-              <div v-for="c in day.contracts.slice(0, 3)" :key="c.id" class="calendar-event" :class="'cal-status-' + c.status" @click="$emit('openPreview', c)" :title="c.contractNo + ' ' + (statusLabels[c.status]||'')">
+              <div v-for="c in day.contracts.slice(0, 3)" :key="c.id" class="calendar-event" :class="'cal-status-' + c.status" @click="$emit('openPreview', c)" :title="c.contractNo + ' ' + (statusLabels[c.status]||'') + ' ¥' + (c.totalAmount||0)">
                 <span class="cal-dot" :style="{ background: statusColors[c.status] }"></span>
                 <span class="cal-text">{{ c.contractNo }}</span>
+                <span class="cal-amount">¥{{ formatNumber(c.totalAmount) }}</span>
               </div>
               <div v-if="day.contracts.length > 3" class="calendar-more">+{{ day.contracts.length - 3 }}项</div>
             </div>
@@ -27,6 +29,7 @@
       <div class="panel-card-body">
         <div class="calendar-nav">
           <button class="btn btn-ghost btn-sm" @click="$emit('prevWeek')"><Icon name="chevronLeft" :size="14" /> 上一周</button>
+          <button class="btn btn-ghost btn-sm" @click="$emit('todayWeek')">今天</button>
           <span class="calendar-nav-title">{{ weekDays[0]?.date }} ~ {{ weekDays[6]?.date }}</span>
           <button class="btn btn-ghost btn-sm" @click="$emit('nextWeek')">下一周 <Icon name="chevronRight" :size="14" /></button>
         </div>
@@ -38,14 +41,13 @@
             </div>
             <div class="week-column-body">
               <div v-if="day.contracts.length === 0" class="week-empty">无合同</div>
-              <div v-for="c in day.contracts" :key="c.id" class="week-event" :class="'cal-status-' + c.status" @click="$emit('openPreview', c)">
-                <div class="week-event-header">
+              <div v-for="c in day.contracts" :key="c.id" class="week-event" :class="'cal-status-' + c.status" @click="$emit('openPreview', c)" :title="c.partyA + ' · ' + (statusLabels[c.status]||'')">
+                <div class="week-event-row">
                   <span class="cal-dot" :style="{ background: statusColors[c.status] }"></span>
                   <strong>{{ c.contractNo }}</strong>
+                  <span class="week-event-party">{{ c.partyA }}</span>
+                  <span class="mono week-event-amount">¥{{ formatNumber(c.totalAmount) }}</span>
                 </div>
-                <div class="week-event-detail">{{ c.partyA }}</div>
-                <div class="week-event-detail mono">¥{{ formatNumber(c.totalAmount) }}</div>
-                <span class="status-badge" :class="'status-' + c.status" style="font-size:10px">{{ statusLabels[c.status] }}</span>
               </div>
             </div>
           </div>
@@ -66,7 +68,7 @@ defineProps({
   statusColors: { type: Object, default: () => ({}) }
 })
 
-defineEmits(['openPreview', 'prevMonth', 'nextMonth', 'prevWeek', 'nextWeek'])
+defineEmits(['openPreview', 'prevMonth', 'nextMonth', 'prevWeek', 'nextWeek', 'todayMonth', 'todayWeek'])
 </script>
 
 <style scoped>
@@ -79,10 +81,9 @@ defineEmits(['openPreview', 'prevMonth', 'nextMonth', 'prevWeek', 'nextWeek'])
 .calendar-cell { background: var(--color-surface); min-height: 90px; padding: var(--space-1); transition: background 0.2s; }
 .calendar-cell:hover { background: var(--color-surface-hover); }
 .calendar-cell.other-month { opacity: 0.4; }
-.calendar-cell.is-today { background: var(--color-accent-subtle); }
+.calendar-cell.is-today { background: var(--color-accent-subtle); border: 2px solid var(--color-accent); }
 .calendar-date { font-size: 12px; font-weight: 600; color: var(--color-text-primary); padding: var(--space-1) var(--space-1); }
-.calendar-cell.is-today .calendar-date { color: var(--color-accent); font-weight: 700; animation: todayPulse 2s ease-in-out infinite; }
-@keyframes todayPulse { 0%, 100% { text-shadow: 0 0 0 transparent; } 50% { text-shadow: 0 0 6px var(--color-accent); } }
+.calendar-cell.is-today .calendar-date { color: var(--color-accent); font-weight: 700; background: var(--color-accent); color: #fff; border-radius: var(--radius-full); width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; }
 .calendar-events { margin-top: var(--space-1); }
 .calendar-event { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-1); font-size: 11px; cursor: pointer; border-radius: 3px; transition: transform 0.15s, background 0.15s; color: var(--color-text-primary); }
 .calendar-event:hover { background: var(--color-bg-tertiary); transform: scale(1.02); }
@@ -120,4 +121,8 @@ defineEmits(['openPreview', 'prevMonth', 'nextMonth', 'prevWeek', 'nextWeek'])
 .btn-ghost { border-color: transparent; background: transparent; }
 .btn-ghost:hover { background: var(--color-bg-secondary); }
 .btn-sm { padding: var(--space-1) var(--space-2); font-size: 12px; }
+.week-event-row { display: flex; align-items: center; gap: var(--space-1); font-size: 12px; }
+.week-event-party { color: var(--color-text-secondary); font-size: 11px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.week-event-amount { font-size: 11px; color: var(--color-accent); flex-shrink: 0; }
+.cal-amount { font-size: 10px; color: var(--color-text-tertiary); margin-left: auto; flex-shrink: 0; }
 </style>

@@ -5,21 +5,17 @@
         <div v-if="contracts.length === 0" class="empty-state"><div class="empty-state-icon"><Icon name="file" :size="14" /></div>暂无合同数据</div>
         <div v-for="(c, idx) in contracts" :key="c.id" class="list-item" :style="{ animationDelay: idx * 50 + 'ms' }" @click="$emit('openPreview', c)">
           <div class="list-item-check" @click.stop><div class="checkbox" :class="{ checked: selectedIds.includes(c.id) }" @click="$emit('toggleSelect', c.id)">[√]</div></div>
-          <div class="list-item-avatar" :style="{ background: statusColors[c.status] || '#94a3b8' }">{{ (c.contractNo || '?').slice(-3) }}</div>
+          <div class="list-item-avatar" :style="{ background: statusColors[c.status] || '#94a3b8' }">{{ getAvatarText(c.contractNo) }}</div>
           <div class="list-item-main">
             <div class="list-item-row1">
               <strong class="list-item-name">{{ c.contractNo }}</strong>
+              <span class="list-item-party">{{ c.partyA }}</span>
               <span class="status-badge" :class="'status-' + c.status">{{ statusLabels[c.status] || c.status }}</span>
-              <span class="mono">¥{{ formatNumber(c.totalAmount) }}</span>
             </div>
             <div class="list-item-row2">
-              <span>{{ c.partyA }}</span>
+              <span class="mono amount-text">¥{{ formatNumber(c.totalAmount) }}</span>
               <span>{{ c.signDate }}</span>
               <span v-if="c.endDate">到期 {{ c.endDate }}</span>
-            </div>
-            <div class="list-item-row3">
-              <span>{{ c.settlement }}</span>
-              <span>{{ c.contractType }}</span>
             </div>
           </div>
           <div class="list-item-actions" @click.stop>
@@ -33,17 +29,17 @@
 
     <div v-if="currentView === 'card'" class="card-grid">
       <div v-if="contracts.length === 0" class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon"><Icon name="file" :size="14" /></div>暂无合同数据</div>
-      <div v-for="(c, idx) in contracts" :key="c.id" class="contract-card" :class="'card-status-' + c.status" :style="{ animationDelay: idx * 60 + 'ms' }">
+      <div v-for="(c, idx) in contracts" :key="c.id" class="contract-card" :class="'card-status-' + c.status" :style="{ animationDelay: idx * 60 + 'ms', borderLeftColor: statusColors[c.status] || 'var(--color-border)' }">
         <div class="contract-card-header">
           <strong class="mono">{{ c.contractNo }}</strong>
           <span class="status-badge" :class="'status-' + c.status">{{ statusLabels[c.status] || c.status }}</span>
         </div>
         <div class="contract-card-body">
-          <div class="contract-card-field"><span class="field-label">甲方</span><span>{{ c.partyA }}</span></div>
-          <div class="contract-card-field"><span class="field-label">金额</span><span class="mono">¥{{ formatNumber(c.totalAmount) }}</span></div>
-          <div class="contract-card-field"><span class="field-label">结算方式</span><span>{{ c.settlement }}</span></div>
-          <div class="contract-card-field"><span class="field-label">签订日期</span><span>{{ c.signDate }}</span></div>
-          <div class="contract-card-field"><span class="field-label">到期日</span><span :style="endDateStyle(c)">{{ c.endDate || '-' }}</span></div>
+          <div class="contract-card-field"><span class="field-icon">👤</span><span>{{ c.partyA }}</span></div>
+          <div class="contract-card-amount mono">¥{{ formatNumber(c.totalAmount) }}</div>
+          <div class="contract-card-field"><span class="field-icon">💱</span><span>{{ c.settlement }}</span></div>
+          <div class="contract-card-field"><span class="field-icon">📅</span><span>{{ c.signDate }}</span></div>
+          <div class="contract-card-field"><span class="field-icon">⏰</span><span :style="endDateStyle(c)">{{ c.endDate || '-' }}</span></div>
         </div>
         <div class="contract-card-footer">
           <button class="action-btn" @click="$emit('openPreview', c)"><Icon name="eye" :size="14" /> 预览</button>
@@ -79,6 +75,12 @@ function endDateStyle(c) {
   if (days <= 30) return { color: 'var(--color-warning)', fontWeight: '600' }
   return {}
 }
+
+function getAvatarText(contractNo) {
+  if (!contractNo) return '?'
+  const letters = contractNo.match(/[A-Za-z]/g)
+  return letters && letters.length >= 2 ? letters.slice(0, 2).join('').toUpperCase() : contractNo.slice(0, 2).toUpperCase()
+}
 </script>
 
 <style scoped>
@@ -98,26 +100,38 @@ function endDateStyle(c) {
 .list-item-row2 { display: flex; gap: var(--space-3); font-size: 12px; color: var(--color-text-secondary); margin-bottom: var(--space-1); }
 .list-item-row3 { display: flex; gap: var(--space-3); font-size: 12px; }
 .list-item-actions { display: flex; gap: var(--space-1); flex-shrink: 0; }
-.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-4); }
-.contract-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; transition: all 0.25s ease; animation: cardFadeIn 0.4s ease-out both; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-3); }
+.contract-card { background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; transition: all 0.25s ease; animation: cardFadeIn 0.4s ease-out both; }
 @keyframes cardFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .contract-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
 .contract-card-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--color-border); }
 .contract-card-body { padding: var(--space-3) var(--space-4); }
 .contract-card-field { display: flex; justify-content: space-between; padding: var(--space-1) 0; font-size: 13px; }
 .field-label { color: var(--color-text-secondary); }
-.contract-card-footer { display: flex; gap: var(--space-1); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-bg-secondary); flex-wrap: wrap; }
+.contract-card-footer { display: flex; gap: var(--space-1); padding: var(--space-2) var(--space-4); border-top: 1px solid var(--color-border); background: var(--color-bg-secondary); flex-wrap: wrap; opacity: 0; max-height: 0; overflow: hidden; transition: all 0.2s ease; }
+.contract-card:hover .contract-card-footer { opacity: 1; max-height: 60px; padding: var(--space-2) var(--space-4); }
 .mono { font-family: var(--font-mono); }
-.status-badge { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: 10px; font-size: 11px; font-weight: 600; }
-.status-draft { background: rgba(100,116,139,0.2); color: #94a3b8; }
-.status-pending_approval { background: rgba(245,158,11,0.2); color: #fbbf24; }
-.status-approved { background: rgba(59,130,246,0.2); color: #60a5fa; }
-.status-signed { background: rgba(34,197,94,0.2); color: #4ade80; }
-.status-archived { background: rgba(6,182,212,0.2); color: #22d3ee; }
-.status-cancelled { background: rgba(239,68,68,0.2); color: #f87171; }
+.status-badge { display: inline-flex; align-items: center; gap: 3px; padding: var(--space-1) var(--space-2); border-radius: 10px; font-size: 11px; font-weight: 600; }
+.status-badge::before { font-size: 10px; }
+.status-draft { background: var(--status-draft-subtle); color: var(--status-draft); }
+.status-draft::before { content: '✎'; }
+.status-pending_approval { background: var(--status-pending-subtle); color: var(--status-pending); }
+.status-pending_approval::before { content: '⏳'; }
+.status-approved { background: var(--status-approved-subtle); color: var(--status-approved); }
+.status-approved::before { content: '●'; }
+.status-signed { background: var(--status-signed-subtle); color: var(--status-signed); }
+.status-signed::before { content: '✓'; }
+.status-archived { background: var(--status-archived-subtle); color: var(--status-archived); }
+.status-archived::before { content: '✓'; }
+.status-cancelled { background: var(--status-cancelled-subtle); color: var(--status-cancelled); }
+.status-cancelled::before { content: '✕'; }
 .checkbox { width: 16px; height: 16px; border: 1.5px solid var(--color-border); border-radius: 3px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 10px; color: transparent; transition: all 0.15s; user-select: none; }
 .checkbox.checked { background: var(--color-accent); border-color: var(--color-accent); color: #fff; }
 .action-btn { padding: var(--space-1) var(--space-2); font-size: 12px; border: none; background: transparent; cursor: pointer; border-radius: 4px; transition: background 0.15s; }
 .action-btn:hover { background: var(--color-bg-tertiary); }
 .action-btn.danger { color: var(--color-danger); }
+.contract-card-amount { font-size: 18px; font-weight: 700; color: var(--color-accent); padding: var(--space-2) var(--space-4); }
+.list-item-party { color: var(--color-text-secondary); font-size: 13px; }
+.amount-text { font-weight: 600; color: var(--color-accent); }
+.field-icon { font-size: 12px; margin-right: 4px; }
 </style>

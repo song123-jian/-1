@@ -6,20 +6,20 @@
         <button class="modal-close" @click="$emit('close')"><Icon name="close" :size="14" /></button>
       </div>
       <div class="preview-tabs">
-        <button class="preview-tab" :class="{ active: previewTab === 'content' }" @click="$emit('updatePreviewTab', 'content')"><Icon name="file" :size="14" /> 合同内容</button>
-        <button class="preview-tab" :class="{ active: previewTab === 'attachment' }" @click="$emit('updatePreviewTab', 'attachment')"><Icon name="file" :size="14" /> 附件</button>
-        <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="$emit('updatePreviewTab', 'history')"><Icon name="file" :size="14" /> 变更记录</button>
+        <button class="preview-tab" :class="{ active: previewTab === 'content' }" @click="$emit('updatePreviewTab', 'content')"><Icon name="file-text" :size="14" /> 合同内容</button>
+        <button class="preview-tab" :class="{ active: previewTab === 'attachment' }" @click="$emit('updatePreviewTab', 'attachment')"><Icon name="paperclip" :size="14" /> 附件</button>
+        <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="$emit('updatePreviewTab', 'history')"><Icon name="clock" :size="14" /> 变更记录</button>
         <button class="preview-tab" :class="{ active: previewTab === 'related' }" @click="$emit('updatePreviewTab', 'related')"><Icon name="link" :size="14" /> 关联单据</button>
         <button class="btn btn-ghost btn-sm" style="margin-left:auto" @click="exportPDF"><Icon name="print" :size="14" /> 打印/导出</button>
       </div>
       <div class="preview-body">
         <div v-if="previewTab === 'content'" class="contract-preview-content">
-          <div class="contract-doc-title">{{ (contract?.contractType || '购销合同').split('').join(' ') }}</div>
+          <div class="contract-doc-title">{{ contract?.contractType || '购销合同' }}</div>
           <div class="contract-doc-subtitle">合同编号：{{ contract?.contractNo }}</div>
           <hr style="border:none;border-top:2px solid #1a1a1a;margin:12px 0" />
           <div class="contract-info-grid">
             <div class="contract-info-row"><span class="contract-info-label">{{ contract?.contractType === '采购合同' ? '甲方（买方）：' : '甲方（需方）：' }}</span><span class="contract-info-value">{{ contract?.partyA }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">{{ contract?.contractType === '采购合同' ? '乙方（卖方）：' : '乙方（供方）：' }}</span><span class="contract-info-value">{{ contract?.partyB || '苏州冠久新材料科技有限公司' }}</span></div>
+            <div class="contract-info-row"><span class="contract-info-label">{{ contract?.contractType === '采购合同' ? '乙方（卖方）：' : '乙方（供方）：' }}</span><span class="contract-info-value">{{ contract?.partyB || COMPANY_DEFAULTS.name }}</span></div>
             <div class="contract-info-row"><span class="contract-info-label">签订地点：</span><span class="contract-info-value">{{ contract?.signPlace }}</span></div>
             <div class="contract-info-row"><span class="contract-info-label">签订日期：</span><span class="contract-info-value">{{ contract?.signDate }}</span></div>
             <div class="contract-info-row"><span class="contract-info-label">有效期至：</span><span class="contract-info-value">{{ contract?.endDate || '未设定' }}</span></div>
@@ -54,25 +54,26 @@
           <div v-if="contract && (contract.status === 'signed' || contract.status === 'archived')" class="contract-exec-progress">
             <div class="contract-section-title">执行进度</div>
             <div style="margin:10px 0;padding:12px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:4px;color:var(--color-text-primary)">
-              <div style="margin:6px 0;font-size:10.5pt"><strong><Icon name="dollar" :size="14" /> 回款进度：</strong>¥{{ formatNumber(previewReceivedAmount) }} / ¥{{ formatNumber(previewTotalAmount) }} ({{ previewReceivedRatio }}%)</div>
-              <div style="background:var(--color-bg-tertiary);height:12px;border-radius:6px;overflow:hidden;margin:4px 0"><div style="background:#22c55e;height:100%;border-radius:6px;transition:width 0.3s" :style="{ width: previewReceivedRatio + '%' }"></div></div>
+              <div style="margin:6px 0;font-size:10.5pt;display:flex;justify-content:space-between;align-items:center"><strong><Icon name="dollar" :size="14" /> 回款进度</strong><span>¥{{ formatNumber(previewReceivedAmount) }} / ¥{{ formatNumber(previewTotalAmount) }} ({{ previewReceivedRatio }}%)</span></div>
+              <div style="background:var(--color-bg-tertiary);height:16px;border-radius:8px;overflow:hidden;margin:4px 0;position:relative"><div style="background:#22c55e;height:100%;border-radius:8px;transition:width 0.3s" :style="{ width: previewReceivedRatio + '%' }"></div><span v-if="Number(previewReceivedRatio) > 10" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:#fff;font-weight:600">{{ previewReceivedRatio }}%</span></div>
             </div>
           </div>
           <div class="contract-signature">
             <div class="contract-signature-block">
               <div style="font-weight:bold;margin-bottom:8px">{{ contract?.contractType === '采购合同' ? '甲方（买方）' : '甲方（需方）' }}：{{ contract?.partyA }}</div>
-              <div>住所：<span class="contract-signature-line"></span></div>
-              <div>签约代表：<span class="contract-signature-line"></span></div>
-              <div>联系方式：<span class="contract-signature-line"></span></div>
-              <div>日期：<span class="contract-signature-line"></span></div>
-              <div v-if="contract?.partyAInfo?.seal" style="text-align:center;margin-top:10px"><img :src="contract.partyAInfo.seal" style="width:100px;height:100px;border-radius:50%;object-fit:cover;opacity:0.7" /></div>
+              <div>住所：{{ contract?.partyAInfo?.address || '' }}<span v-if="!contract?.partyAInfo?.address" class="contract-signature-line"></span></div>
+              <div>签约代表：{{ contract?.partyAInfo?.representative || '' }}<span v-if="!contract?.partyAInfo?.representative" class="contract-signature-line"></span></div>
+              <div>联系方式：{{ contract?.partyAInfo?.contact || '' }}<span v-if="!contract?.partyAInfo?.contact" class="contract-signature-line"></span></div>
+              <div>日期：{{ contract?.partyAInfo?.date || '' }}<span v-if="!contract?.partyAInfo?.date" class="contract-signature-line"></span></div>
+              <div v-if="contract?.partyAInfo?.seal" style="text-align:center;margin-top:10px"><img :src="contract.partyAInfo.seal" style="width:100px;height:100px;border-radius:50%;object-fit:cover;opacity:0.7;transform:rotate(-15deg)" /></div>
+              <div v-else-if="contract?.partyAInfo?.representative" class="contract-seal-area e-sign">（电子签约）<br />代表人：{{ contract.partyAInfo.representative }}</div>
               <div v-else class="contract-seal-area">甲方<br />签章区</div>
             </div>
             <div class="contract-signature-block">
-              <div style="font-weight:bold;margin-bottom:8px">{{ contract?.contractType === '采购合同' ? '乙方（卖方）' : '乙方（供方）' }}：苏州冠久新材料科技有限公司</div>
-              <div>住所：苏州高新区滨河路3337号</div>
-              <div>签约代表：宋建</div>
-              <div>联系方式：15589233039</div>
+              <div style="font-weight:bold;margin-bottom:8px">{{ contract?.contractType === '采购合同' ? '乙方（卖方）' : '乙方（供方）' }}：{{ COMPANY_DEFAULTS.name }}</div>
+              <div>住所：{{ COMPANY_DEFAULTS.address }}</div>
+              <div>签约代表：{{ COMPANY_DEFAULTS.representative }}</div>
+              <div>联系方式：{{ COMPANY_DEFAULTS.contact }}</div>
               <div>日期：{{ contract?.partyBInfo?.date || '-' }}</div>
               <div class="contract-seal-area has-seal">苏州冠久<br />新材料科技<br />有限公司</div>
             </div>
@@ -125,6 +126,7 @@ import { useCollectionStore } from '@/modules/finance/stores/collection'
 import { useDeliveryStore } from '@/stores/delivery'
 import ContractRelatedDocs from './ContractRelatedDocs.vue'
 import { formatNumber } from '@/utils/format'
+import { COMPANY_DEFAULTS } from '../../config/companyDefaults'
 
 const contractStore = useContractStore()
 const quotationStore = useQuotationStore()
@@ -284,30 +286,7 @@ function removeAttachment(attId) {
 }
 
 function exportPDF() {
-  const printWin = window.open('', '_blank')
-  if (!printWin) { alert('请允许弹出窗口以打印合同'); return }
-  const content = document.querySelector('.contract-preview-content')
-  if (!content) return
-  printWin.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>购销合同</title>')
-  printWin.document.write('<style>body{font-family:"SimSun","Microsoft YaHei","Songti SC",serif;font-size:12pt;line-height:1.8;color:#000;margin:0;padding:20mm;}')
-  printWin.document.write('table{width:100%;border-collapse:collapse;margin:var(--space-2) 0;font-size:10pt;}th{background:#f0f0f0;border:1px solid #333;padding:var(--space-2) var(--space-2);text-align:center;font-weight:bold;}td{border:1px solid #333;padding:var(--space-2);text-align:center; overflow-wrap: break-word; word-wrap: break-word}')
-  printWin.document.write('ol{padding-left:var(--space-5);margin:var(--space-2) 0;}li{margin-bottom:var(--space-2);line-height:1.7;}')
-  printWin.document.write('.contract-doc-title{text-align:center;font-size:20pt;font-weight:bold;letter-spacing:6px;margin-bottom:var(--space-1);}')
-  printWin.document.write('.contract-doc-subtitle{text-align:center;font-size:11pt;color:#555;margin-bottom:var(--space-4);}')
-  printWin.document.write('.contract-section-title{font-size:12pt;font-weight:bold;margin:var(--space-4) 0 var(--space-2) 0;border-bottom:1px solid #333;padding-bottom:var(--space-1);}')
-  printWin.document.write('.contract-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-1) var(--space-10);margin:var(--space-3) 0;font-size:10.5pt;}')
-  printWin.document.write('.contract-info-row{display:flex;gap:var(--space-1);}.contract-info-label{color:#555;white-space:nowrap;min-width:80px;}.contract-info-value{color:#1a1a1a;}')
-  printWin.document.write('.contract-amount-summary{margin:var(--space-4) 0;padding:var(--space-3);background:#f9f9f9;border:1px solid #ddd;border-radius:4px;}')
-  printWin.document.write('.contract-amount-row{display:flex;justify-content:space-between;margin:var(--space-1) 0;font-size:10.5pt;}')
-  printWin.document.write('.contract-signature{margin-top:var(--space-8);display:grid;grid-template-columns:1fr 1fr;gap:var(--space-10);font-size:10.5pt;}')
-  printWin.document.write('.contract-signature-block{line-height:2.2;}.contract-signature-line{display:inline-block;width:140px;border-bottom:1px solid #333;margin-left:var(--space-1);}')
-  printWin.document.write('.contract-seal-area{width:120px;height:120px;border:2px dashed #ccc;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:var(--space-2) auto;color:#999;font-size:9pt;text-align:center;}')
-  printWin.document.write('img{max-width:100px;max-height:100px;border-radius:50%;object-fit:cover;opacity:0.7;}')
-  printWin.document.write('@media print{body{padding:0;margin:0;}}</style></head><body>')
-  printWin.document.write(content.innerHTML)
-  printWin.document.write('</body></html>')
-  printWin.document.close()
-  setTimeout(() => printWin.print(), 500)
+  window.print()
 }
 </script>
 
@@ -327,7 +306,7 @@ function exportPDF() {
 .preview-tab:hover { color: var(--color-text-primary); }
 .preview-body { padding: var(--space-5); min-height: 300px; }
 
-.contract-preview-content { background: #fff; border-radius: 4px; padding: 25mm 20mm 20mm; color: #000; font-family: 'SimSun','Microsoft YaHei','Songti SC',serif; font-size: 12pt; line-height: 1.8; border: 1px solid var(--color-border); }
+.contract-preview-content { background: #fff; border-radius: 4px; padding: 25mm 20mm 20mm; color: #000; font-family: 'SimSun','Microsoft YaHei','Songti SC',serif; font-size: 12pt; line-height: 1.8; border: 1px solid var(--color-border); box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.08); position: relative; }
 .contract-doc-title { text-align: center; font-size: 20pt; font-weight: bold; letter-spacing: 6px; margin-bottom: var(--space-1); color: #1a1a1a; }
 .contract-doc-subtitle { text-align: center; font-size: 11pt; color: #555; margin-bottom: var(--space-4); }
 .contract-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1) var(--space-10); margin: var(--space-3) 0; font-size: 10.5pt; }
@@ -346,6 +325,7 @@ function exportPDF() {
 .contract-signature-line { display: inline-block; width: 140px; border-bottom: 1px solid #333; margin-left: var(--space-1); }
 .contract-seal-area { width: 120px; height: 120px; border: 2px dashed var(--color-border-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: var(--space-2) auto; color: var(--color-text-tertiary); font-size: 9pt; text-align: center; }
 .contract-seal-area.has-seal { border-color: #c00; color: #c00; font-weight: bold; font-size: 10pt; }
+.contract-seal-area.e-sign { border-color: var(--color-accent); color: var(--color-accent); font-size: 9pt; }
 
 .attachment-upload { margin-bottom: var(--space-3); }
 .attachment-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: var(--space-2); font-size: 13px; }
