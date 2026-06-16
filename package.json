@@ -20,6 +20,7 @@
     "css-vars-ponyfill": "^2.4.9",
     "decimal.js": "^10.4.3",
     "dompurify": "^3.4.7",
+    "echarts": "^6.1.0",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",

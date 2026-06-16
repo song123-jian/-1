@@ -196,7 +196,7 @@ const routes = [
   {
     path: '/data-screen',
     name: 'DataScreen',
-    component: () => import('@/modules/report/views/DataScreen.vue'),
+    component: () => import('@/views/DataScreen/index.vue'),
     meta: { title: '数据大屏', icon: 'database' }
   },
   {
