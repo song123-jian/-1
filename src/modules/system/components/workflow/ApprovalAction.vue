@@ -7,12 +7,7 @@
         审批操作
       </div>
       <div class="action-form">
-        <textarea
-          v-model="comment"
-          class="action-textarea"
-          placeholder="请输入审批意见..."
-          rows="3"
-        ></textarea>
+        <textarea v-model="comment" class="action-textarea" placeholder="请输入审批意见..." rows="3"></textarea>
         <div class="action-buttons">
           <button class="btn btn-approve" @click="handleApprove('approved')">
             <Icon name="check" :size="14" />
@@ -145,6 +140,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'ApprovalAction' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 import { useWorkflowStore } from '@/modules/system/stores/workflow'
@@ -276,7 +274,9 @@ function handleAddApprover() {
   font-size: var(--font-size-sm);
   resize: vertical;
   outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   font-family: inherit;
 }
 
@@ -365,8 +365,14 @@ function handleAddApprover() {
 }
 
 @keyframes timelineSlideIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .timeline-item {
@@ -402,7 +408,7 @@ function handleAddApprover() {
   background: var(--color-bg-primary);
   flex-shrink: 0;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .dot-approved {
@@ -472,12 +478,31 @@ function handleAddApprover() {
   font-weight: 500;
 }
 
-.action-approved { background: #dcfce7; color: #16a34a; }
-.action-rejected { background: #fef2f2; color: #dc2626; }
-.action-submit { background: #dbeafe; color: #2563eb; }
-.action-complete { background: #dcfce7; color: #16a34a; }
-.action-delegate, .action-addApprover { background: #fef3c7; color: #d97706; }
-.action-cancel { background: var(--color-bg-secondary); color: var(--color-text-tertiary); }
+.action-approved {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.action-rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.action-submit {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.action-complete {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.action-delegate,
+.action-addApprover {
+  background: #fef3c7;
+  color: #d97706;
+}
+.action-cancel {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+}
 
 .timeline-node {
   font-size: var(--font-size-xs);
@@ -495,9 +520,15 @@ function handleAddApprover() {
   border-left: 3px solid var(--color-border);
 }
 
-.timeline-approved .timeline-comment { border-left-color: #22c55e; }
-.timeline-rejected .timeline-comment { border-left-color: #ef4444; }
-.timeline-submit .timeline-comment { border-left-color: var(--color-accent); }
+.timeline-approved .timeline-comment {
+  border-left-color: #22c55e;
+}
+.timeline-rejected .timeline-comment {
+  border-left-color: #ef4444;
+}
+.timeline-submit .timeline-comment {
+  border-left-color: var(--color-accent);
+}
 
 .timeline-time {
   font-size: 10px;
@@ -524,7 +555,7 @@ function handleAddApprover() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   animation: fadeIn 0.2s ease;
 }
 
@@ -633,13 +664,23 @@ function handleAddApprover() {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 768px) {

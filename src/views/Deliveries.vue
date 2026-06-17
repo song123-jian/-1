@@ -1026,7 +1026,7 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(it, idx) in editorItems" :key="idx">
+                <tr v-for="(it, idx) in editorItems" :key="it.id || idx">
                   <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">{{ idx + 1 }}</td>
                   <td><input v-model="it.productName" class="form-input" style="min-width: 100px" /></td>
                   <td><input v-model="it.partNo" class="form-input" style="min-width: 80px" /></td>
@@ -1559,6 +1559,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Deliveries' }
+</script>
 <script setup>
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useDeliveryStore } from '@/stores/delivery'

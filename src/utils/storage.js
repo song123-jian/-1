@@ -8,25 +8,46 @@ class StorageManager {
   /* ========== 基础方法 ========== */
 
   getItem(key) {
-    try { return localStorage.getItem(this._prefix + key) } catch { return null }
+    try {
+      return localStorage.getItem(this._prefix + key)
+    } catch {
+      return null
+    }
   }
 
   setItem(key, value) {
-    try { localStorage.setItem(this._prefix + key, value) } catch (e) { console.error('存储失败:', key, e) }
+    try {
+      localStorage.setItem(this._prefix + key, value)
+    } catch (e) {
+      console.error('存储失败:', key, e)
+    }
   }
 
   removeItem(key) {
-    try { localStorage.removeItem(this._prefix + key) } catch { /* ignore */ }
+    try {
+      localStorage.removeItem(this._prefix + key)
+    } catch {
+      /* ignore */
+    }
   }
 
   /* ========== JSON 方法 ========== */
 
   getJSON(key) {
-    try { const r = localStorage.getItem(this._prefix + key); return r ? JSON.parse(r) : null } catch { return null }
+    try {
+      const r = localStorage.getItem(this._prefix + key)
+      return r ? JSON.parse(r) : null
+    } catch {
+      return null
+    }
   }
 
   setJSON(key, data) {
-    try { localStorage.setItem(this._prefix + key, JSON.stringify(data)) } catch (e) { console.error('存储失败:', key, e) }
+    try {
+      localStorage.setItem(this._prefix + key, JSON.stringify(data))
+    } catch (e) {
+      console.error('存储失败:', key, e)
+    }
   }
 
   /* ========== TTL 方法 ========== */
@@ -35,7 +56,9 @@ class StorageManager {
     const item = { value, expiry: Date.now() + ttlMs }
     try {
       localStorage.setItem(this._prefix + key, JSON.stringify(item))
-    } catch (e) { console.error('存储失败:', key, e) }
+    } catch (e) {
+      console.error('存储失败:', key, e)
+    }
   }
 
   getWithTTL(key) {
@@ -48,7 +71,9 @@ class StorageManager {
         return null
       }
       return item.value
-    } catch { return null }
+    } catch {
+      return null
+    }
   }
 
   /* ========== 命名空间方法 ========== */

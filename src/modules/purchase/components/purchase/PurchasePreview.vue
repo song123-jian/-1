@@ -1,16 +1,19 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="modal-overlay" @click.self="$emit('close')">
+    <div v-if="visible" class="modal-overlay" @click.self="emit('close')">
       <div class="modal-dialog modal-xl preview-modal">
         <div class="modal-header">
           <h3 class="modal-title">采购单预览</h3>
           <div class="modal-header-actions">
-            <button class="btn btn-sm btn-ghost" @click="handlePrint"><Icon name="print" :size="14" /> 打印</button>
-            <button class="modal-close" @click="$emit('close')"><Icon name="close" :size="16" /></button>
+            <button class="btn btn-sm btn-ghost" @click="handlePrint">
+              <Icon name="print" :size="14" />
+              打印
+            </button>
+            <button class="modal-close" @click="emit('close')"><Icon name="close" :size="16" /></button>
           </div>
         </div>
-        <div class="modal-body" ref="printRef">
-          <div class="print-page" v-if="order">
+        <div ref="printRef" class="modal-body">
+          <div v-if="order" class="print-page">
             <!-- 打印头部 -->
             <div class="print-header">
               <div class="print-company">冠久ERP - 采购单</div>
@@ -56,7 +59,7 @@
             </div>
 
             <!-- 标题 -->
-            <div class="print-title" v-if="order.title">{{ order.title }}</div>
+            <div v-if="order.title" class="print-title">{{ order.title }}</div>
 
             <!-- 明细表 -->
             <div class="print-section">
@@ -75,7 +78,7 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(item, idx) in (order.items || [])" :key="idx">
+                  <tr v-for="(item, idx) in order.items || []" :key="idx">
                     <td>{{ idx + 1 }}</td>
                     <td>{{ item.materialCode }}</td>
                     <td>{{ item.materialName }}</td>
@@ -89,8 +92,8 @@
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td colspan="7" style="text-align: right; font-weight: 600;">合计</td>
-                    <td class="cell-mono" style="font-weight: 700;">{{ formatNum(order.totalAmount) }}</td>
+                    <td colspan="7" style="text-align: right; font-weight: 600">合计</td>
+                    <td class="cell-mono" style="font-weight: 700">{{ formatNum(order.totalAmount) }}</td>
                     <td></td>
                   </tr>
                 </tfoot>
@@ -98,7 +101,7 @@
             </div>
 
             <!-- 备注 -->
-            <div class="print-section" v-if="order.notes">
+            <div v-if="order.notes" class="print-section">
               <div class="print-info-label">备注:</div>
               <div class="print-notes">{{ order.notes }}</div>
             </div>
@@ -121,16 +124,20 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
+          <button class="btn btn-ghost" @click="emit('close')">关闭</button>
         </div>
       </div>
     </div>
   </Teleport>
 </template>
 
+<script>
+export default { name: 'PurchasePreview' }
+</script>
 <script setup>
 import { ref } from 'vue'
 import { STATUS_LABELS } from '@/modules/purchase/stores/purchase'
+import { escapeHtml } from '@/utils/format'
 
 defineProps({
   order: { type: Object, default: null },
@@ -152,7 +159,13 @@ function formatNum(val) {
 function handlePrint() {
   if (printRef.value) {
     const printContent = printRef.value.innerHTML
-    const printWindow = window.open('', '_blank')printWindow.document.write(`<html><head><title>采购单打印</title><style>            body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; color: #1a1a1a; padding: var(--space-5); }
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(`
+<html>
+<head>
+<title>采购单打印</title>
+<style>
+            body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; color: #1a1a1a; padding: var(--space-5); }
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: var(--space-2); margin-bottom: var(--space-5); }
             .print-company { font-size: 20px; font-weight: 700; }
             .print-order-no { font-size: 14px; color: #666; }
@@ -248,21 +261,33 @@ function handlePrint() {
   border-collapse: collapse;
   margin: var(--space-4) 0;
 }
-.print-table th{border: 1px solid #ddd;
+.print-table th {
+  border: 1px solid #ddd;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
   text-align: left;
-  color: #1a1a1a; overflow-wrap: break-word; word-wrap: break-word}
-.print-table td {border: 1px solid #ddd;
+  color: #1a1a1a;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.print-table td {
+  border: 1px solid #ddd;
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
   text-align: left;
-  color: #1a1a1a; overflow-wrap: break-word; word-wrap: break-word}
+  color: #1a1a1a;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 .print-table th {
   background: #f5f5f5;
   font-weight: 600;
 }
-.print-table tfoot td {border-top: 2px solid #333; overflow-wrap: break-word; word-wrap: break-word}
+.print-table tfoot td {
+  border-top: 2px solid #333;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 .print-section {
   margin-bottom: var(--space-4);
 }

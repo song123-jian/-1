@@ -18,45 +18,105 @@ import { useDataCenterStore } from '@/stores/dataCenter'
 const MODULE_FIELDS = {
   customer: {
     required: ['name'],
-    optional: ['customerNo', 'shortName', 'contactName', 'phone', 'email', 'region', 'level', 'creditLimit', 'balance', 'address', 'department', 'position', 'decisionAuthority', 'coreConcerns'],
+    optional: [
+      'customerNo',
+      'shortName',
+      'contactName',
+      'phone',
+      'email',
+      'region',
+      'level',
+      'creditLimit',
+      'balance',
+      'address',
+      'department',
+      'position',
+      'decisionAuthority',
+      'coreConcerns'
+    ],
     labels: {
-      name: '客户名称', customerNo: '客户编号', shortName: '简称', contactName: '联系人',
-      phone: '电话', email: '邮箱', region: '区域', level: '等级',
-      creditLimit: '信用额度', balance: '余额', address: '地址', department: '部门',
-      position: '职位', decisionAuthority: '决策权', coreConcerns: '核心关注'
+      name: '客户名称',
+      customerNo: '客户编号',
+      shortName: '简称',
+      contactName: '联系人',
+      phone: '电话',
+      email: '邮箱',
+      region: '区域',
+      level: '等级',
+      creditLimit: '信用额度',
+      balance: '余额',
+      address: '地址',
+      department: '部门',
+      position: '职位',
+      decisionAuthority: '决策权',
+      coreConcerns: '核心关注'
     }
   },
   supplier: {
     required: ['name'],
     optional: ['supplierCode', 'shortName', 'contact', 'phone', 'email', 'rating', 'status'],
     labels: {
-      name: '供应商名称', supplierCode: '供应商编码', shortName: '简称', contact: '联系人',
-      phone: '电话', email: '邮箱', rating: '评级', status: '状态'
+      name: '供应商名称',
+      supplierCode: '供应商编码',
+      shortName: '简称',
+      contact: '联系人',
+      phone: '电话',
+      email: '邮箱',
+      rating: '评级',
+      status: '状态'
     }
   },
   inventory: {
     required: ['code', 'name'],
-    optional: ['category', 'quantity', 'safetyStock', 'maxStock', 'warehouse', 'location', 'unitCost', 'grade', 'color', 'brand'],
+    optional: [
+      'category',
+      'quantity',
+      'safetyStock',
+      'maxStock',
+      'warehouse',
+      'location',
+      'unitCost',
+      'grade',
+      'color',
+      'brand'
+    ],
     labels: {
-      code: '编号', name: '物料名称', category: '分类', quantity: '数量',
-      safetyStock: '安全库存', maxStock: '最大库存', warehouse: '仓库', location: '库位',
-      unitCost: '单价', grade: '规格', color: '颜色', brand: '品牌'
+      code: '编号',
+      name: '物料名称',
+      category: '分类',
+      quantity: '数量',
+      safetyStock: '安全库存',
+      maxStock: '最大库存',
+      warehouse: '仓库',
+      location: '库位',
+      unitCost: '单价',
+      grade: '规格',
+      color: '颜色',
+      brand: '品牌'
     }
   },
   quotation: {
     required: ['quoteNo', 'customerName'],
     optional: ['total', 'status', 'profitMargin', 'validUntil'],
     labels: {
-      quoteNo: '报价编号', customerName: '客户名称', total: '总金额',
-      status: '状态', profitMargin: '利润率', validUntil: '有效期至'
+      quoteNo: '报价编号',
+      customerName: '客户名称',
+      total: '总金额',
+      status: '状态',
+      profitMargin: '利润率',
+      validUntil: '有效期至'
     }
   },
   contract: {
     required: ['contractNo', 'customerName'],
     optional: ['amount', 'status', 'signDate', 'deliveryDate'],
     labels: {
-      contractNo: '合同编号', customerName: '客户名称', amount: '合同金额',
-      status: '状态', signDate: '签订日期', deliveryDate: '交货日期'
+      contractNo: '合同编号',
+      customerName: '客户名称',
+      amount: '合同金额',
+      status: '状态',
+      signDate: '签订日期',
+      deliveryDate: '交货日期'
     }
   }
 }
@@ -69,7 +129,7 @@ class DataTransfer {
    * @returns {string} JSON字符串
    */
   exportJSON(modules, options = {}) {
-    console.log('[DataTransfer] 开始导出JSON, 模块:', modules)
+    console.debug('[DataTransfer] 开始导出JSON, 模块:', modules)
     try {
       const moduleList = Array.isArray(modules) ? modules : [modules]
       const result = {
@@ -79,7 +139,7 @@ class DataTransfer {
       }
 
       for (const module of moduleList) {
-        console.log(`[DataTransfer] 获取模块数据: ${module}`)
+        console.debug(`[DataTransfer] 获取模块数据: ${module}`)
         const data = this._getModuleData(module, options)
         if (data) {
           result.modules[module] = {
@@ -87,16 +147,14 @@ class DataTransfer {
             fields: options.fields || null,
             data
           }
-          console.log(`[DataTransfer] 模块 ${module} 导出 ${data.length} 条数据`)
+          console.debug(`[DataTransfer] 模块 ${module} 导出 ${data.length} 条数据`)
         } else {
-          console.log(`[DataTransfer] 模块 ${module} 无数据`)
+          console.debug(`[DataTransfer] 模块 ${module} 无数据`)
         }
       }
 
-      const json = options.pretty !== false
-        ? JSON.stringify(result, null, 2)
-        : JSON.stringify(result)
-      console.log(`[DataTransfer] JSON导出完成, 大小: ${json.length} 字符`)
+      const json = options.pretty !== false ? JSON.stringify(result, null, 2) : JSON.stringify(result)
+      console.debug(`[DataTransfer] JSON导出完成, 大小: ${json.length} 字符`)
       return json
     } catch (e) {
       console.error('[DataTransfer] 导出JSON失败:', e)
@@ -117,22 +175,21 @@ class DataTransfer {
       if (!data || data.length === 0) return ''
 
       const fieldDef = MODULE_FIELDS[module]
-      const fields = options.fields || (fieldDef ? [...fieldDef.required, ...(fieldDef.optional || [])] : Object.keys(data[0]))
+      const fields =
+        options.fields || (fieldDef ? [...fieldDef.required, ...(fieldDef.optional || [])] : Object.keys(data[0]))
       const labels = fieldDef?.labels || {}
 
       /* 表头 */
-      const headers = fields.map(f => labels[f] || f)
+      const headers = fields.map((f) => labels[f] || f)
       const lines = [headers.join(',')]
 
       /* 数据行 */
       for (const item of data) {
-        const row = fields.map(f => {
+        const row = fields.map((f) => {
           const val = item[f]
           if (val === null || val === undefined) return ''
           const str = String(val)
-          return str.includes(',') || str.includes('"') || str.includes('\n')
-            ? `"${str.replace(/"/g, '""')}"`
-            : str
+          return str.includes(',') || str.includes('"') || str.includes('\n') ? `"${str.replace(/"/g, '""')}"` : str
         })
         lines.push(row.join(','))
       }
@@ -152,32 +209,34 @@ class DataTransfer {
    * @returns {Object} 导入结果 { success, results: [{module, imported, skipped, errors}] }
    */
   async importJSON(content, options = {}) {
-    console.log('[DataTransfer] 开始导入JSON')
+    console.debug('[DataTransfer] 开始导入JSON')
     try {
       const parsed = JSON.parse(content)
       const modules = parsed.modules || { [parsed.module || 'unknown']: parsed }
-      console.log(`[DataTransfer] JSON解析成功, 包含模块: ${Object.keys(modules).join(', ')}`)
+      console.debug(`[DataTransfer] JSON解析成功, 包含模块: ${Object.keys(modules).join(', ')}`)
       const results = []
 
       for (const [module, moduleData] of Object.entries(modules)) {
         const data = moduleData.data || moduleData
         if (!Array.isArray(data)) {
-          console.log(`[DataTransfer] 模块 ${module} 数据格式无效, 跳过`)
+          console.debug(`[DataTransfer] 模块 ${module} 数据格式无效, 跳过`)
           continue
         }
-        console.log(`[DataTransfer] 导入模块 ${module}, 数据量: ${data.length}`)
+        console.debug(`[DataTransfer] 导入模块 ${module}, 数据量: ${data.length}`)
 
         const result = await this._importModuleData(module, data, options)
         results.push({ module, ...result })
-        console.log(`[DataTransfer] 模块 ${module} 导入结果: 成功${result.imported}, 跳过${result.skipped}, 错误${result.errors.length}`)
+        console.debug(
+          `[DataTransfer] 模块 ${module} 导入结果: 成功${result.imported}, 跳过${result.skipped}, 错误${result.errors.length}`
+        )
       }
 
       eventBus.emit('data:imported', { results })
       const totalImported = results.reduce((s, r) => s + r.imported, 0)
-      console.log(`[DataTransfer] 导入完成, 总计导入: ${totalImported}`)
+      console.debug(`[DataTransfer] 导入完成, 总计导入: ${totalImported}`)
 
       return {
-        success: results.every(r => r.imported > 0 || r.skipped === 0),
+        success: results.every((r) => r.imported > 0 || r.skipped === 0),
         results
       }
     } catch (e) {
@@ -208,7 +267,7 @@ class DataTransfer {
         for (const [en, cn] of Object.entries(fieldDef.labels)) {
           reverseLabels[cn] = en
         }
-        data.forEach(item => {
+        data.forEach((item) => {
           const mapped = {}
           for (const [key, value] of Object.entries(item)) {
             mapped[reverseLabels[key] || key] = value
@@ -236,10 +295,10 @@ class DataTransfer {
 
     const fields = [...fieldDef.required, ...(fieldDef.optional || [])]
     const labels = fieldDef.labels || {}
-    const headers = fields.map(f => labels[f] || f)
+    const headers = fields.map((f) => labels[f] || f)
 
     /* 添加示例行 */
-    const exampleRow = fields.map(f => {
+    const exampleRow = fields.map((f) => {
       if (f.includes('No') || f.includes('Code')) return '示例编号'
       if (f.includes('name') || f.includes('Name')) return '示例名称'
       if (f.includes('phone')) return '13800138000'
@@ -272,7 +331,7 @@ class DataTransfer {
           for (const [en, cn] of Object.entries(fieldDef.labels)) {
             reverseLabels[cn] = en
           }
-          data.forEach(item => {
+          data.forEach((item) => {
             const mapped = {}
             for (const [key, value] of Object.entries(item)) {
               mapped[reverseLabels[key] || key] = value
@@ -282,9 +341,7 @@ class DataTransfer {
         }
       } else {
         const parsed = JSON.parse(content)
-        data = parsed.data || parsed.modules
-          ? Object.values(parsed.modules).flatMap(m => m.data || [])
-          : parsed
+        data = parsed.data || parsed.modules ? Object.values(parsed.modules).flatMap((m) => m.data || []) : parsed
       }
 
       if (!Array.isArray(data) || data.length === 0) {
@@ -340,7 +397,7 @@ class DataTransfer {
    * 获取模块数据
    */
   _getModuleData(module, options = {}) {
-    console.log(`[DataTransfer] _getModuleData 开始: module=${module}`)
+    console.debug(`[DataTransfer] _getModuleData 开始: module=${module}`)
     try {
       const dataKeyMap = {
         customer: 'customers',
@@ -355,19 +412,21 @@ class DataTransfer {
 
       const dataCenter = useDataCenterStore()
       const dataRef = dataCenter[dataKeyMap[module] || module]
-      console.log(`[DataTransfer] dataCenter.${dataKeyMap[module] || module} = ${dataRef ? '存在' : 'undefined'}, 类型: ${Array.isArray(dataRef) ? 'array(' + dataRef.length + ')' : typeof dataRef}`)
+      console.debug(
+        `[DataTransfer] dataCenter.${dataKeyMap[module] || module} = ${dataRef ? '存在' : 'undefined'}, 类型: ${Array.isArray(dataRef) ? 'array(' + dataRef.length + ')' : typeof dataRef}`
+      )
 
       if (dataRef && Array.isArray(dataRef)) {
         let data = [...dataRef]
 
         if (options.filters) {
           for (const filter of options.filters) {
-            data = data.filter(d => d[filter.field] === filter.value)
+            data = data.filter((d) => d[filter.field] === filter.value)
           }
         }
 
         if (options.fields) {
-          data = data.map(item => {
+          data = data.map((item) => {
             const filtered = {}
             for (const field of options.fields) {
               filtered[field] = item[field]
@@ -376,11 +435,11 @@ class DataTransfer {
           })
         }
 
-        console.log(`[DataTransfer] _getModuleData 完成: module=${module}, 返回 ${data.length} 条`)
+        console.debug(`[DataTransfer] _getModuleData 完成: module=${module}, 返回 ${data.length} 条`)
         return data
       }
 
-      console.log(`[DataTransfer] _getModuleData 完成: module=${module}, 无数据`)
+      console.debug(`[DataTransfer] _getModuleData 完成: module=${module}, 无数据`)
       return []
     } catch (e) {
       console.warn('[DataTransfer] 获取模块数据失败:', module, e)
@@ -407,7 +466,7 @@ class DataTransfer {
           if (options.validate !== false) {
             const fieldDef = MODULE_FIELDS[module]
             if (fieldDef) {
-              const missing = fieldDef.required.filter(f => !item[f] && item[f] !== 0)
+              const missing = fieldDef.required.filter((f) => !item[f] && item[f] !== 0)
               if (missing.length > 0) {
                 skipped++
                 errors.push(`第${i + 1}行: 缺少必填字段 ${missing.join(',')}`)
@@ -440,7 +499,7 @@ class DataTransfer {
 
         /* 每100条让出主线程 */
         if (i % 100 === 0) {
-          await new Promise(r => setTimeout(r, 0))
+          await new Promise((r) => setTimeout(r, 0))
         }
       }
     } catch (e) {
@@ -520,7 +579,7 @@ class DataTransfer {
    * 获取所有支持导入导出的模块
    */
   getSupportedModules() {
-    return Object.keys(MODULE_FIELDS).map(module => ({
+    return Object.keys(MODULE_FIELDS).map((module) => ({
       key: module,
       ...MODULE_FIELDS[module]
     }))

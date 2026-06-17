@@ -527,9 +527,7 @@ export const useQuotationStore = defineStore('quotation', () => {
         senderEmail: 'wang@gj-newmat.com',
         date: '2024-12-20',
         expiryDate: '2025-01-20',
-        items: JSON.stringify([
-          { seq: 1, grade: '不锈钢板304', standard: '2B面', qty: 800, price: 152, remark: '' }
-        ]),
+        items: JSON.stringify([{ seq: 1, grade: '不锈钢板304', standard: '2B面', qty: 800, price: 152, remark: '' }]),
         subtotal: 121600,
         taxRate: 13,
         total: 137408,
@@ -600,9 +598,7 @@ export const useQuotationStore = defineStore('quotation', () => {
         senderEmail: 'zhang@gj-newmat.com',
         date: '2024-12-25',
         expiryDate: '2025-01-25',
-        items: JSON.stringify([
-          { seq: 1, grade: '轴承钢GCr15', standard: 'Φ60', qty: 500, price: 335, remark: '' }
-        ]),
+        items: JSON.stringify([{ seq: 1, grade: '轴承钢GCr15', standard: 'Φ60', qty: 500, price: 335, remark: '' }]),
         subtotal: 167500,
         taxRate: 13,
         total: 189275,

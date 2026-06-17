@@ -4,8 +4,12 @@ import { ref, computed } from 'vue'
  * 计算两个字符串的相似度（Levenshtein距离归一化）
  */
 function similarity(s1, s2) {
-  s1 = String(s1 || '').toLowerCase().trim()
-  s2 = String(s2 || '').toLowerCase().trim()
+  s1 = String(s1 || '')
+    .toLowerCase()
+    .trim()
+  s2 = String(s2 || '')
+    .toLowerCase()
+    .trim()
   if (s1 === s2) return 1
   if (!s1 || !s2) return 0
 
@@ -16,9 +20,10 @@ function similarity(s1, s2) {
 
   for (let i = 1; i <= s2.length; i++) {
     for (let j = 1; j <= s1.length; j++) {
-      matrix[i][j] = s2[i - 1] === s1[j - 1]
-        ? matrix[i - 1][j - 1]
-        : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+      matrix[i][j] =
+        s2[i - 1] === s1[j - 1]
+          ? matrix[i - 1][j - 1]
+          : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
     }
   }
 
@@ -55,7 +60,7 @@ export function useDuplicateDetector(data, options = {}) {
             item,
             duplicateOf: s.item,
             score: avgScore,
-            fields: fields.filter(f => similarity(item[f], s.item[f]) >= threshold)
+            fields: fields.filter((f) => similarity(item[f], s.item[f]) >= threshold)
           })
         }
       }

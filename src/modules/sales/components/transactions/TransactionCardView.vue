@@ -1,36 +1,86 @@
 <template>
   <div class="card-view">
-    <div v-for="(t, idx) in transactions" :key="t.id" class="txn-card" :class="'card-type-' + t.type" :style="{ animationDelay: idx * 60 + 'ms' }" @click="emit('viewDetail', t)">
+    <div
+      v-for="(t, idx) in transactions"
+      :key="t.id"
+      class="txn-card"
+      :class="'card-type-' + t.type"
+      :style="{ animationDelay: idx * 60 + 'ms' }"
+      @click="emit('viewDetail', t)"
+    >
       <div class="card-header">
         <span class="card-title">{{ t.refNo }}</span>
         <span class="type-badge" :class="'type-' + t.type">{{ typeLabels[t.type] }}</span>
       </div>
       <div class="card-body">
-        <div class="card-field"><span class="card-label">客户</span><span>{{ t.customerName }}</span></div>
-        <div class="card-field"><span class="card-label">金额</span><span class="cell-mono">¥{{ formatMoney(t.amount) }}</span></div>
-        <div class="card-field"><span class="card-label">日期</span><span>{{ t.date }}</span></div>
-        <div class="card-field"><span class="card-label">状态</span><span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">{{ statusLabels[t.status] || t.status }}</span></div>
-        <div class="card-field" v-if="t.relatedDocs && t.relatedDocs.length > 0">
+        <div class="card-field">
+          <span class="card-label">客户</span>
+          <span>{{ t.customerName }}</span>
+        </div>
+        <div class="card-field">
+          <span class="card-label">金额</span>
+          <span class="cell-mono">¥{{ formatMoney(t.amount) }}</span>
+        </div>
+        <div class="card-field">
+          <span class="card-label">日期</span>
+          <span>{{ t.date }}</span>
+        </div>
+        <div class="card-field">
+          <span class="card-label">状态</span>
+          <span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">
+            {{ statusLabels[t.status] || t.status }}
+          </span>
+        </div>
+        <div v-if="t.relatedDocs && t.relatedDocs.length > 0" class="card-field">
           <span class="card-label">关联</span>
           <span class="card-related-refs">
-            <span v-for="rd in t.relatedDocs" :key="rd.refNo" class="related-ref" @click.stop="emit('navigateToPath', rd.path)">{{ rd.refNo }}</span>
+            <span
+              v-for="rd in t.relatedDocs"
+              :key="rd.refNo"
+              class="related-ref"
+              @click.stop="emit('navigateToPath', rd.path)"
+            >
+              {{ rd.refNo }}
+            </span>
           </span>
         </div>
       </div>
       <div class="card-actions">
         <button class="btn btn-sm btn-outline" @click.stop="emit('viewDetail', t)">详情</button>
-        <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" @click.stop="emit('openForm', t)">编辑</button>
-        <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click.stop="emit('handleDelete', t.id)">删除</button>
-        <button v-if="t.relatedPath" class="btn btn-sm btn-outline" @click.stop="emit('navigateToPath', t.relatedPath)">跳转</button>
-        <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" style="color:var(--color-danger)" @click.stop="emit('handleDelete', t.id)">删除</button>
+        <button v-if="t.type === 'manual'" class="btn btn-sm btn-outline" @click.stop="emit('openForm', t)">
+          编辑
+        </button>
+        <button
+          v-if="t.type === 'manual'"
+          class="btn btn-sm btn-outline"
+          style="color: var(--color-danger)"
+          @click.stop="emit('handleDelete', t.id)"
+        >
+          删除
+        </button>
+        <button v-if="t.relatedPath" class="btn btn-sm btn-outline" @click.stop="emit('navigateToPath', t.relatedPath)">
+          跳转
+        </button>
+        <button
+          v-if="t.type === 'manual'"
+          class="btn btn-sm btn-outline"
+          style="color: var(--color-danger)"
+          @click.stop="emit('handleDelete', t.id)"
+        >
+          删除
+        </button>
       </div>
     </div>
     <div v-if="transactions.length === 0" class="empty-state">
-      <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>暂无交易记录
+      <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>
+      暂无交易记录
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'TransactionCardView' }
+</script>
 <script setup>
 import { formatMoney } from '@/utils/format'
 defineProps({
@@ -59,7 +109,16 @@ const emit = defineEmits(['viewDetail', 'openForm', 'handleDelete', 'navigateToP
   transition: all 0.25s ease;
   animation: cardFadeIn 0.4s ease-out both;
 }
-@keyframes cardFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .txn-card:hover {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-sm);
@@ -104,11 +163,21 @@ const emit = defineEmits(['viewDetail', 'openForm', 'handleDelete', 'navigateToP
   padding-top: var(--space-2);
   border-top: 1px solid var(--color-border);
 }
-.card-type-quotation { border-left: 3px solid var(--color-info); }
-.card-type-contract { border-left: 3px solid var(--color-accent); }
-.card-type-collection { border-left: 3px solid var(--color-success); }
-.card-type-delivery { border-left: 3px solid var(--color-warning); }
-.card-type-manual { border-left: 3px solid var(--color-purple); }
+.card-type-quotation {
+  border-left: 3px solid var(--color-info);
+}
+.card-type-contract {
+  border-left: 3px solid var(--color-accent);
+}
+.card-type-collection {
+  border-left: 3px solid var(--color-success);
+}
+.card-type-delivery {
+  border-left: 3px solid var(--color-warning);
+}
+.card-type-manual {
+  border-left: 3px solid var(--color-purple);
+}
 .type-badge {
   display: inline-block;
   padding: var(--space-1) var(--space-2);
@@ -116,11 +185,26 @@ const emit = defineEmits(['viewDetail', 'openForm', 'handleDelete', 'navigateToP
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.type-quotation { background: var(--color-info-subtle); color: var(--color-info); }
-.type-contract { background: var(--color-accent-subtle); color: var(--color-accent); }
-.type-collection { background: var(--color-success-subtle); color: var(--color-success); }
-.type-delivery { background: var(--color-warning-subtle); color: var(--color-warning); }
-.type-manual { background: var(--color-purple-subtle); color: var(--color-purple); }
+.type-quotation {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
+.type-contract {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.type-collection {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.type-delivery {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.type-manual {
+  background: var(--color-purple-subtle);
+  color: var(--color-purple);
+}
 .related-ref {
   color: var(--color-accent);
   cursor: pointer;
@@ -138,8 +222,15 @@ const emit = defineEmits(['viewDetail', 'openForm', 'handleDelete', 'navigateToP
   color: var(--color-text-tertiary);
 }
 .empty-state-icon {
-  width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary);
-  display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-2);
-  color: var(--color-text-tertiary); font-size: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: 24px;
 }
 </style>

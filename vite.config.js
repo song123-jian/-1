@@ -28,6 +28,16 @@ export default defineConfig({
     devSourcemap: true
   },
   build: {
-    cssTarget: 'chrome60'
+    cssTarget: 'chrome60',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'chart': ['echarts/core'],
+          'xlsx': ['xlsx'],
+          'pdf': ['jspdf', 'jspdf-autotable'],
+          'html2canvas': ['html2canvas']
+        }
+      }
+    }
   }
 })

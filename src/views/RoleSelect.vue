@@ -42,31 +42,25 @@
           <span class="online-label">当前在线</span>
           <span class="online-count">{{ sessionStore.onlineMembers.length }}人</span>
         </div>
-        <div class="online-members" v-if="sessionStore.onlineMembers.length">
+        <div v-if="sessionStore.onlineMembers.length" class="online-members">
           <span v-for="m in sessionStore.onlineMembers" :key="m" class="online-member">
             <span class="member-dot"></span>
             {{ m }}
           </span>
         </div>
-        <div class="online-empty" v-else>暂无其他成员在线</div>
+        <div v-else class="online-empty">暂无其他成员在线</div>
       </div>
 
       <!-- 记住身份复选框 -->
       <label class="remember-check">
-        <input type="checkbox" v-model="rememberRole" />
+        <input v-model="rememberRole" type="checkbox" />
         <span class="checkmark"></span>
         <span class="remember-label">记住我的身份</span>
         <span class="remember-hint">下次自动进入，无需重新选择</span>
       </label>
 
       <!-- 进入按钮 -->
-      <button
-        class="enter-btn btn-ripple"
-        :disabled="!selectedRole"
-        @click="handleEnter"
-      >
-        进入系统
-      </button>
+      <button class="enter-btn btn-ripple" :disabled="!selectedRole" @click="handleEnter">进入系统</button>
 
       <!-- 底部 -->
       <footer class="role-footer">
@@ -76,6 +70,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'RoleSelect' }
+</script>
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -103,7 +100,7 @@ function isLastUsedRole(roleName) {
 function handleEnter() {
   if (!selectedRole.value) return
   sessionStore.selectRole(selectedRole.value, rememberRole.value)
-  router.push('/dashboard')
+  router.push('/dashboard').catch(() => {})
 }
 
 /* Canvas粒子背景 */
@@ -114,8 +111,8 @@ function initParticles() {
   const canvas = particleCanvas.value
   if (!canvas) return
   const ctx = canvas.getContext('2d')
-  let width = canvas.width = window.innerWidth
-  let height = canvas.height = window.innerHeight
+  let width = (canvas.width = window.innerWidth)
+  let height = (canvas.height = window.innerHeight)
 
   const particles = []
   const count = 60
@@ -132,7 +129,7 @@ function initParticles() {
 
   function draw() {
     ctx.clearRect(0, 0, width, height)
-    particles.forEach(p => {
+    particles.forEach((p) => {
       p.x += p.vx
       p.y += p.vy
       if (p.x < 0) p.x = width
@@ -192,6 +189,7 @@ onUnmounted(() => {
     cancelAnimationFrame(animationId)
     animationId = null
   }
+  window.removeEventListener('resize', handleResize)
 })
 </script>
 
@@ -235,15 +233,21 @@ onUnmounted(() => {
 }
 
 @keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 /* 内容容器 */
 .role-select-container {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   width: 100%;
   max-width: 720px;
   padding: var(--space-8, 2rem) var(--space-6, 1.5rem);
@@ -264,7 +268,9 @@ onUnmounted(() => {
   margin: 0 auto var(--space-4, 1rem);
   background: linear-gradient(135deg, var(--color-accent, #3b82f6), var(--color-purple, #8b5cf6), #ec4899);
   background-size: 200% 200%;
-  animation: gradientShift 4s ease infinite, fadeInScale 600ms ease;
+  animation:
+    gradientShift 4s ease infinite,
+    fadeInScale 600ms ease;
   border-radius: var(--radius-xl, 16px);
   display: flex;
   align-items: center;
@@ -343,13 +349,17 @@ onUnmounted(() => {
   border-color: var(--color-accent, #3b82f6);
   background: var(--color-surface-hover, var(--color-bg-tertiary));
   transform: translateY(-4px);
-  box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1)), 0 0 16px rgba(59, 130, 246, 0.1);
+  box-shadow:
+    var(--shadow-md, 0 4px 12px rgba(0, 0, 0, 0.1)),
+    0 0 16px rgba(59, 130, 246, 0.1);
 }
 
 .role-card.selected {
   border-color: var(--color-accent, #3b82f6);
-  background: var(--color-accent-subtle, rgba(79,70,229,0.1));
-  box-shadow: 0 0 0 1px var(--color-accent, #3b82f6), 0 0 20px rgba(59, 130, 246, 0.15);
+  background: var(--color-accent-subtle, rgba(79, 70, 229, 0.1));
+  box-shadow:
+    0 0 0 1px var(--color-accent, #3b82f6),
+    0 0 20px rgba(59, 130, 246, 0.15);
   transform: translateY(-2px);
 }
 
@@ -378,7 +388,7 @@ onUnmounted(() => {
   right: 6px;
   font-size: 10px;
   padding: 1px 6px;
-  background: var(--color-accent, #4F46E5);
+  background: var(--color-accent, #4f46e5);
   color: #fff;
   border-radius: var(--radius-full, 9999px);
   font-weight: 500;
@@ -405,13 +415,18 @@ onUnmounted(() => {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--color-success, #10B981);
+  background: var(--color-success, #10b981);
   animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .online-label {
@@ -437,17 +452,17 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-1, 0.25rem);
   padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
-  background: var(--color-success-subtle, rgba(16,185,129,0.1));
+  background: var(--color-success-subtle, rgba(16, 185, 129, 0.1));
   border-radius: var(--radius-full, 9999px);
   font-size: var(--font-size-xs, 0.75rem);
-  color: var(--color-success, #10B981);
+  color: var(--color-success, #10b981);
 }
 
 .member-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-success, #10B981);
+  background: var(--color-success, #10b981);
   flex-shrink: 0;
 }
 
@@ -468,15 +483,15 @@ onUnmounted(() => {
   user-select: none;
 }
 
-.remember-check input[type="checkbox"] {
+.remember-check input[type='checkbox'] {
   width: 18px;
   height: 18px;
-  accent-color: var(--color-accent, #4F46E5);
+  accent-color: var(--color-accent, #4f46e5);
   cursor: pointer;
   flex-shrink: 0;
 }
 
-.remember-check input[type="checkbox"]:checked {
+.remember-check input[type='checkbox']:checked {
   animation: fadeInScale 200ms ease;
 }
 
@@ -540,7 +555,10 @@ onUnmounted(() => {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.3);
   transform: translate(-50%, -50%);
-  transition: width 0.4s ease, height 0.4s ease, opacity 0.4s ease;
+  transition:
+    width 0.4s ease,
+    height 0.4s ease,
+    opacity 0.4s ease;
   opacity: 0;
 }
 .btn-ripple:active::after {

@@ -25,9 +25,16 @@ const DEFAULT_CONFIG = {
   autoVersion: true,
   /* 需要版本控制的模块 */
   trackedModules: [
-    'customer', 'quotation', 'contract', 'inventory',
-    'delivery', 'collection', 'statement', 'supplier',
-    'warehouseLocation', 'cost'
+    'customer',
+    'quotation',
+    'contract',
+    'inventory',
+    'delivery',
+    'collection',
+    'statement',
+    'supplier',
+    'warehouseLocation',
+    'cost'
   ]
 }
 
@@ -89,14 +96,14 @@ class VersionControl {
   _computeDiff(oldData, newData) {
     if (!oldData && !newData) return []
     if (!oldData) {
-      return Object.keys(newData).map(key => ({
+      return Object.keys(newData).map((key) => ({
         field: key,
         oldValue: undefined,
         newValue: newData[key]
       }))
     }
     if (!newData) {
-      return Object.keys(oldData).map(key => ({
+      return Object.keys(oldData).map((key) => ({
         field: key,
         oldValue: oldData[key],
         newValue: undefined
@@ -147,7 +154,9 @@ class VersionControl {
 
     /* 计算 diff */
     const changes = meta.changes
-      ? (Array.isArray(meta.changes) ? meta.changes : this._computeDiff(oldData, newData))
+      ? Array.isArray(meta.changes)
+        ? meta.changes
+        : this._computeDiff(oldData, newData)
       : this._computeDiff(oldData, newData)
 
     const version = {
@@ -202,7 +211,7 @@ class VersionControl {
     let versions = [...itemVersions]
 
     if (options.action) {
-      versions = versions.filter(v => v.action === options.action)
+      versions = versions.filter((v) => v.action === options.action)
     }
 
     if (options.limit) {
@@ -222,7 +231,7 @@ class VersionControl {
   getVersion(module, itemId, versionId) {
     const versions = this._versions.get(module)?.get(itemId)
     if (!versions) return null
-    return versions.find(v => v.id === versionId) || null
+    return versions.find((v) => v.id === versionId) || null
   }
 
   /**
@@ -248,7 +257,7 @@ class VersionControl {
     const versions = this._versions.get(module)?.get(itemId)
     if (!versions || versions.length === 0) return null
 
-    const targetIdx = versions.findIndex(v => v.id === targetVersionId)
+    const targetIdx = versions.findIndex((v) => v.id === targetVersionId)
     if (targetIdx === -1) return null
 
     /* 找到目标版本之前（含）最近的包含 newData 的版本作为起点 */
@@ -371,12 +380,8 @@ class VersionControl {
     if (!v1 || !v2) return null
 
     /* 获取两个版本的数据用于对比 */
-    const data1 = v1.newData !== undefined
-      ? v1.newData
-      : this._reconstructData(module, itemId, versionId1)
-    const data2 = v2.newData !== undefined
-      ? v2.newData
-      : this._reconstructData(module, itemId, versionId2)
+    const data1 = v1.newData !== undefined ? v1.newData : this._reconstructData(module, itemId, versionId1)
+    const data2 = v2.newData !== undefined ? v2.newData : this._reconstructData(module, itemId, versionId2)
 
     return {
       version1: v1,
@@ -499,14 +504,14 @@ class VersionControl {
           v.changes = this._computeDiff(v.oldData, v.newData)
         } else if (v.oldData === null && v.newData) {
           /* create 操作 */
-          v.changes = Object.keys(v.newData).map(key => ({
+          v.changes = Object.keys(v.newData).map((key) => ({
             field: key,
             oldValue: undefined,
             newValue: v.newData[key]
           }))
         } else if (v.oldData && v.newData === null) {
           /* delete 操作 */
-          v.changes = Object.keys(v.oldData).map(key => ({
+          v.changes = Object.keys(v.oldData).map((key) => ({
             field: key,
             oldValue: v.oldData[key],
             newValue: undefined

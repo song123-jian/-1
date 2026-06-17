@@ -979,6 +979,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Collections' }
+</script>
 <script setup>
 import { ref, computed, reactive, onMounted, onUnmounted } from 'vue'
 import { useCollectionStore } from '@/modules/finance/stores/collection'

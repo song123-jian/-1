@@ -8,10 +8,16 @@
         </div>
         <div class="wizard-body">
           <!-- 基本信息 -->
-          <div class="form-section-title"><Icon name="info" :size="14" /> 基本信息</div>
+          <div class="form-section-title">
+            <Icon name="info" :size="14" />
+            基本信息
+          </div>
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">关联BOM <span class="required">*</span></label>
+              <label class="form-label">
+                关联BOM
+                <span class="required">*</span>
+              </label>
               <select v-model="form.bomId" class="form-select" @change="handleBomChange">
                 <option value="">请选择BOM</option>
                 <option v-for="bom in activeBomList" :key="bom.id" :value="bom.id">
@@ -27,8 +33,18 @@
           </div>
           <div class="form-row form-row-3">
             <div class="form-group">
-              <label class="form-label">生产数量 <span class="required">*</span></label>
-              <input v-model.number="form.quantity" type="number" class="form-input" min="1" placeholder="请输入数量" @input="recalcMaterials" />
+              <label class="form-label">
+                生产数量
+                <span class="required">*</span>
+              </label>
+              <input
+                v-model.number="form.quantity"
+                type="number"
+                class="form-input"
+                min="1"
+                placeholder="请输入数量"
+                @input="recalcMaterials"
+              />
               <span v-if="errors.quantity" class="form-error">{{ errors.quantity }}</span>
             </div>
             <div class="form-group">
@@ -53,12 +69,18 @@
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">计划开始日期 <span class="required">*</span></label>
+              <label class="form-label">
+                计划开始日期
+                <span class="required">*</span>
+              </label>
               <input v-model="form.plannedStartDate" type="date" class="form-input" />
               <span v-if="errors.plannedStartDate" class="form-error">{{ errors.plannedStartDate }}</span>
             </div>
             <div class="form-group">
-              <label class="form-label">计划结束日期 <span class="required">*</span></label>
+              <label class="form-label">
+                计划结束日期
+                <span class="required">*</span>
+              </label>
               <input v-model="form.plannedEndDate" type="date" class="form-input" />
               <span v-if="errors.plannedEndDate" class="form-error">{{ errors.plannedEndDate }}</span>
             </div>
@@ -85,8 +107,13 @@
           </div>
 
           <!-- 物料需求清单 -->
-          <div v-if="form.materialRequisitions.length > 0" class="form-section-title" style="margin-top:var(--space-4)">
-            <Icon name="package" :size="14" /> 物料需求清单（自动从BOM生成）
+          <div
+            v-if="form.materialRequisitions.length > 0"
+            class="form-section-title"
+            style="margin-top: var(--space-4)"
+          >
+            <Icon name="package" :size="14" />
+            物料需求清单（自动从BOM生成）
           </div>
           <div v-if="form.materialRequisitions.length > 0" class="material-table-wrap">
             <table class="inv-table inv-table-sm">
@@ -102,7 +129,9 @@
                 <tr v-for="mat in form.materialRequisitions" :key="mat.materialCode">
                   <td class="cell-mono">{{ mat.materialCode }}</td>
                   <td>{{ mat.materialName }}</td>
-                  <td class="cell-mono" style="color:var(--color-accent);font-weight:600">{{ mat.requiredQty.toFixed(2) }}</td>
+                  <td class="cell-mono" style="color: var(--color-accent); font-weight: 600">
+                    {{ mat.requiredQty.toFixed(2) }}
+                  </td>
                   <td>{{ mat.unit }}</td>
                 </tr>
               </tbody>
@@ -118,6 +147,9 @@
   </Teleport>
 </template>
 
+<script>
+export default { name: 'ProductionOrder' }
+</script>
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useBomStore } from '@/modules/production/stores/bom'
@@ -161,36 +193,46 @@ const errors = reactive({
 })
 
 /* 监听order变化，编辑时填充表单 */
-watch(() => props.visible, (val) => {
-  if (val && props.order) {
-    Object.assign(form, {
-      bomId: props.order.bomId || '',
-      bomName: props.order.bomName || '',
-      productName: props.order.productName || '',
-      quantity: props.order.quantity || 1,
-      unit: props.order.unit || '台',
-      priority: props.order.priority || 'normal',
-      plannedStartDate: props.order.plannedStartDate || '',
-      plannedEndDate: props.order.plannedEndDate || '',
-      workshop: props.order.workshop || '',
-      operator: props.order.operator || '',
-      notes: props.order.notes || '',
-      materialRequisitions: props.order.materialRequisitions ? [...props.order.materialRequisitions] : []
-    })
-  } else if (val && !props.order) {
-    Object.assign(form, {
-      bomId: '', bomName: '', productName: '',
-      quantity: 1, unit: '台', priority: 'normal',
-      plannedStartDate: '', plannedEndDate: '',
-      workshop: '', operator: '', notes: '',
-      materialRequisitions: []
-    })
+watch(
+  () => props.visible,
+  (val) => {
+    if (val && props.order) {
+      Object.assign(form, {
+        bomId: props.order.bomId || '',
+        bomName: props.order.bomName || '',
+        productName: props.order.productName || '',
+        quantity: props.order.quantity || 1,
+        unit: props.order.unit || '台',
+        priority: props.order.priority || 'normal',
+        plannedStartDate: props.order.plannedStartDate || '',
+        plannedEndDate: props.order.plannedEndDate || '',
+        workshop: props.order.workshop || '',
+        operator: props.order.operator || '',
+        notes: props.order.notes || '',
+        materialRequisitions: props.order.materialRequisitions ? [...props.order.materialRequisitions] : []
+      })
+    } else if (val && !props.order) {
+      Object.assign(form, {
+        bomId: '',
+        bomName: '',
+        productName: '',
+        quantity: 1,
+        unit: '台',
+        priority: 'normal',
+        plannedStartDate: '',
+        plannedEndDate: '',
+        workshop: '',
+        operator: '',
+        notes: '',
+        materialRequisitions: []
+      })
+    }
+    clearErrors()
   }
-  clearErrors()
-})
+)
 
 function clearErrors() {
-  Object.keys(errors).forEach(k => errors[k] = '')
+  Object.keys(errors).forEach((k) => (errors[k] = ''))
 }
 
 function handleBomChange() {
@@ -214,11 +256,14 @@ function recalcMaterials() {
   const bom = bomStore.getBomById(form.bomId)
   if (!bom) return
 
-  form.materialRequisitions = bom.components.map(comp => ({
+  form.materialRequisitions = bom.components.map((comp) => ({
     id: generateId('mr'),
     materialCode: comp.materialCode,
     materialName: comp.materialName,
-    requiredQty: (parseFloat(comp.quantity) || 0) * (parseFloat(form.quantity) || 0) * (1 + (parseFloat(comp.scrapRate) || 0) / 100),
+    requiredQty:
+      (parseFloat(comp.quantity) || 0) *
+      (parseFloat(form.quantity) || 0) *
+      (1 + (parseFloat(comp.scrapRate) || 0) / 100),
     issuedQty: 0,
     unit: comp.unit
   }))
@@ -227,10 +272,22 @@ function recalcMaterials() {
 function validate() {
   clearErrors()
   let valid = true
-  if (!form.bomId) { errors.bomId = '请选择关联BOM'; valid = false }
-  if (!form.quantity || form.quantity <= 0) { errors.quantity = '生产数量必须大于0'; valid = false }
-  if (!form.plannedStartDate) { errors.plannedStartDate = '请选择计划开始日期'; valid = false }
-  if (!form.plannedEndDate) { errors.plannedEndDate = '请选择计划结束日期'; valid = false }
+  if (!form.bomId) {
+    errors.bomId = '请选择关联BOM'
+    valid = false
+  }
+  if (!form.quantity || form.quantity <= 0) {
+    errors.quantity = '生产数量必须大于0'
+    valid = false
+  }
+  if (!form.plannedStartDate) {
+    errors.plannedStartDate = '请选择计划开始日期'
+    valid = false
+  }
+  if (!form.plannedEndDate) {
+    errors.plannedEndDate = '请选择计划结束日期'
+    valid = false
+  }
   if (form.plannedStartDate && form.plannedEndDate && form.plannedStartDate > form.plannedEndDate) {
     errors.plannedEndDate = '结束日期不能早于开始日期'
     valid = false
@@ -262,7 +319,7 @@ function handleClose() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -328,8 +385,12 @@ function handleClose() {
   margin-bottom: var(--space-3);
 }
 
-.form-row-2 > .form-group { flex: 1; }
-.form-row-3 > .form-group { flex: 1; }
+.form-row-2 > .form-group {
+  flex: 1;
+}
+.form-row-3 > .form-group {
+  flex: 1;
+}
 
 .form-group {
   display: flex;
@@ -347,7 +408,9 @@ function handleClose() {
   color: var(--color-danger);
 }
 
-.form-input, .form-select, .form-textarea {
+.form-input,
+.form-select,
+.form-textarea {
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -357,7 +420,9 @@ function handleClose() {
   font-family: var(--font-family);
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px var(--color-accent-subtle);
@@ -403,14 +468,26 @@ function handleClose() {
   background: var(--color-surface-elevated);
 }
 
-.inv-table td {padding: var(--space-2) var(--space-3);
+.inv-table td {
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
-  color: var(--color-text-secondary); overflow-wrap: break-word; word-wrap: break-word}
+  color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
-.inv-table-sm th{padding: var(--space-1) var(--space-2);
-  font-size: var(--font-size-xs); overflow-wrap: break-word; word-wrap: break-word}
-.inv-table-sm td {padding: var(--space-1) var(--space-2);
-  font-size: var(--font-size-xs); overflow-wrap: break-word; word-wrap: break-word}
+.inv-table-sm th {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.inv-table-sm td {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 .cell-mono {
   font-family: var(--font-mono);
@@ -418,7 +495,8 @@ function handleClose() {
 }
 
 @media (max-width: 768px) {
-  .form-row-2, .form-row-3 {
+  .form-row-2,
+  .form-row-3 {
     flex-direction: column;
     gap: 0;
   }

@@ -7,14 +7,15 @@
           <button class="modal-close" @click="handleCancel"><Icon name="close" :size="16" /></button>
         </div>
         <div class="modal-body">
-          <SmartRecognizePanel v-if="!isEdit"
-            v-model:showSmartRec="showSmartRec"
-            v-model:smartRecInput="smartRecInput"
-            :smartRecResult="smartRecResult"
+          <SmartRecognizePanel
+            v-if="!isEdit"
+            v-model:show-smart-rec="showSmartRec"
+            v-model:smart-rec-input="smartRecInput"
+            :smart-rec-result="smartRecResult"
             :placeholder="smartRecPlaceholder"
-            @runSmartRecognize="runSmartRecognize"
-            @applySmartRecognize="onApplySmartRecognize"
-            @handleSmartFileUpload="handleSmartFileUpload"
+            @run-smart-recognize="runSmartRecognize"
+            @apply-smart-recognize="onApplySmartRecognize"
+            @handle-smart-file-upload="handleSmartFileUpload"
           />
           <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
             <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
@@ -34,15 +35,29 @@
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">供应商 <span class="required">*</span></label>
-              <DataSelect module="supplier" variant="active" v-model="form.supplierId"
-                value-field="id" label-field="name" placeholder="选择供应商"
-                @change="onSupplierChange" />
+              <label class="form-label">
+                供应商
+                <span class="required">*</span>
+              </label>
+              <DataSelect
+                v-model="form.supplierId"
+                module="supplier"
+                variant="active"
+                value-field="id"
+                label-field="name"
+                placeholder="选择供应商"
+                @change="onSupplierChange"
+              />
               <span v-if="fieldErrors.supplierId" class="form-error">{{ fieldErrors.supplierId }}</span>
             </div>
             <div class="form-group">
               <label class="form-label">供应商名称</label>
-              <input v-model="form.supplierName" type="text" class="form-input" placeholder="选择供应商后自动填充，可手动修改" />
+              <input
+                v-model="form.supplierName"
+                type="text"
+                class="form-input"
+                placeholder="选择供应商后自动填充，可手动修改"
+              />
             </div>
             <div class="form-group">
               <label class="form-label">类型</label>
@@ -64,35 +79,48 @@
           </div>
 
           <!-- 采购明细 -->
-          <div class="section-title" style="margin-top: var(--space-5);">
+          <div class="section-title" style="margin-top: var(--space-5)">
             采购明细
-            <button class="btn btn-sm btn-primary" style="margin-left: var(--space-2);" @click="addItem">
-              <Icon name="add" :size="12" /> 添加行
+            <button class="btn btn-sm btn-primary" style="margin-left: var(--space-2)" @click="addItem">
+              <Icon name="add" :size="12" />
+              添加行
             </button>
-            <span v-if="fieldErrors.items" class="form-error" style="margin-left: var(--space-2);">{{ fieldErrors.items }}</span>
+            <span v-if="fieldErrors.items" class="form-error" style="margin-left: var(--space-2)">
+              {{ fieldErrors.items }}
+            </span>
           </div>
           <div class="table-container">
             <table class="data-table items-table">
               <thead>
                 <tr>
-                  <th style="width: 120px;">编号</th>
-                  <th style="width: 120px;">物料名称</th>
-                  <th style="width: 100px;">规格</th>
-                  <th style="width: 60px;">单位</th>
-                  <th style="width: 80px;">数量</th>
-                  <th style="width: 100px;">单价</th>
-                  <th style="width: 100px;">金额</th>
-                  <th style="width: 100px;">仓库</th>
-                  <th style="width: 50px;">操作</th>
+                  <th style="width: 120px">编号</th>
+                  <th style="width: 120px">物料名称</th>
+                  <th style="width: 100px">规格</th>
+                  <th style="width: 60px">单位</th>
+                  <th style="width: 80px">数量</th>
+                  <th style="width: 100px">单价</th>
+                  <th style="width: 100px">金额</th>
+                  <th style="width: 100px">仓库</th>
+                  <th style="width: 50px">操作</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, idx) in form.items" :key="item.id || idx">
                   <td>
-                    <input v-model="item.materialCode" type="text" class="form-input form-input-sm" placeholder="编码" />
+                    <input
+                      v-model="item.materialCode"
+                      type="text"
+                      class="form-input form-input-sm"
+                      placeholder="编码"
+                    />
                   </td>
                   <td>
-                    <input v-model="item.materialName" type="text" class="form-input form-input-sm" placeholder="名称" />
+                    <input
+                      v-model="item.materialName"
+                      type="text"
+                      class="form-input form-input-sm"
+                      placeholder="名称"
+                    />
                   </td>
                   <td>
                     <input v-model="item.spec" type="text" class="form-input form-input-sm" placeholder="规格" />
@@ -101,11 +129,26 @@
                     <input v-model="item.unit" type="text" class="form-input form-input-sm" placeholder="单位" />
                   </td>
                   <td>
-                    <input v-model.number="item.quantity" type="number" class="form-input form-input-sm" min="0" placeholder="0" @input="calcItemAmount(idx)" />
+                    <input
+                      v-model.number="item.quantity"
+                      type="number"
+                      class="form-input form-input-sm"
+                      min="0"
+                      placeholder="0"
+                      @input="calcItemAmount(idx)"
+                    />
                     <span v-if="itemErrors[idx]?.quantity" class="form-error">{{ itemErrors[idx].quantity }}</span>
                   </td>
                   <td>
-                    <input v-model.number="item.unitPrice" type="number" class="form-input form-input-sm" min="0" step="0.01" placeholder="0.00" @input="calcItemAmount(idx)" />
+                    <input
+                      v-model.number="item.unitPrice"
+                      type="number"
+                      class="form-input form-input-sm"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      @input="calcItemAmount(idx)"
+                    />
                     <span v-if="itemErrors[idx]?.unitPrice" class="form-error">{{ itemErrors[idx].unitPrice }}</span>
                   </td>
                   <td class="cell-mono">{{ formatNum(item.amount) }}</td>
@@ -118,7 +161,9 @@
                     </select>
                   </td>
                   <td>
-                    <button class="action-btn danger" @click="removeItem(idx)" title="删除行"><Icon name="delete" :size="14" /></button>
+                    <button class="action-btn danger" title="删除行" @click="removeItem(idx)">
+                      <Icon name="delete" :size="14" />
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -141,6 +186,9 @@
   </Teleport>
 </template>
 
+<script>
+export default { name: 'PurchaseFormModal' }
+</script>
 <script setup>
 import { reactive, computed, watch } from 'vue'
 import { usePurchaseStore } from '@/modules/purchase/stores/purchase'
@@ -178,9 +226,7 @@ const formValidator = useFormValidator(form, {
     { key: 'supplierName', label: '供应商名称' },
     { key: 'expectedDate', label: '预计到货日' }
   ],
-  dateCheck: [
-    { startField: 'expectedDate', endField: 'expectedDate', message: '日期格式不正确' }
-  ]
+  dateCheck: [{ startField: 'expectedDate', endField: 'expectedDate', message: '日期格式不正确' }]
 })
 const warnings = computed(() => formValidator.warnings?.value || [])
 const errors = computed(() => formValidator.errors?.value || [])
@@ -189,22 +235,35 @@ const hasWarnings = computed(() => formValidator.hasWarnings?.value || false)
 const clearWarnings = () => formValidator.clearWarnings?.()
 
 const draftData = reactive({})
-watch([form], ([f]) => {
-  if (!isEdit.value) {
-    Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
-  }
-}, { deep: true })
+watch(
+  [form],
+  ([f]) => {
+    if (!isEdit.value) {
+      Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
+    }
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('purchase-form', draftData, {
   debounce: 1500,
   onRestore: (draft) => {
     if (draft.data.items) {
-      form.items = draft.data.items.map(item => ({ ...item }))
+      form.items = draft.data.items.map((item) => ({ ...item }))
     }
   }
 })
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useSmartRecognize(form)
 
 const fieldErrors = reactive({
   supplierId: '',
@@ -212,43 +271,46 @@ const fieldErrors = reactive({
 })
 const itemErrors = reactive({})
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    resetErrors()
-    if (props.order?.id) {
-      Object.assign(form, {
-        orderNo: props.order.orderNo || '',
-        title: props.order.title || '',
-        supplierId: props.order.supplierId || '',
-        supplierName: props.order.supplierName || '',
-        type: props.order.type || 'purchase',
-        expectedDate: props.order.expectedDate || '',
-        notes: props.order.notes || '',
-        items: (props.order.items || []).map(item => ({ ...item }))
-      })
-    } else {
-      Object.assign(form, {
-        orderNo: '',
-        title: '',
-        supplierId: '',
-        supplierName: '',
-        type: 'purchase',
-        expectedDate: '',
-        notes: '',
-        items: []
-      })
-      resetSmartRec()
-      if (hasDraft()) {
-        restoreDraft()
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      resetErrors()
+      if (props.order?.id) {
+        Object.assign(form, {
+          orderNo: props.order.orderNo || '',
+          title: props.order.title || '',
+          supplierId: props.order.supplierId || '',
+          supplierName: props.order.supplierName || '',
+          type: props.order.type || 'purchase',
+          expectedDate: props.order.expectedDate || '',
+          notes: props.order.notes || '',
+          items: (props.order.items || []).map((item) => ({ ...item }))
+        })
+      } else {
+        Object.assign(form, {
+          orderNo: '',
+          title: '',
+          supplierId: '',
+          supplierName: '',
+          type: 'purchase',
+          expectedDate: '',
+          notes: '',
+          items: []
+        })
+        resetSmartRec()
+        if (hasDraft()) {
+          restoreDraft()
+        }
       }
     }
   }
-})
+)
 
 function resetErrors() {
   fieldErrors.supplierId = ''
   fieldErrors.items = ''
-  Object.keys(itemErrors).forEach(k => delete itemErrors[k])
+  Object.keys(itemErrors).forEach((k) => delete itemErrors[k])
 }
 
 function addItem() {
@@ -277,12 +339,10 @@ function calcItemAmount(idx) {
   }
 }
 
-const totalAmount = computed(() =>
-  form.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0)
-)
+const totalAmount = computed(() => form.items.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0))
 
 function onSupplierChange(event) {
-  const supplier = supplierStore.suppliers.find(s => s.id === event?.value)
+  const supplier = supplierStore.suppliers.find((s) => s.id === event?.value)
   if (supplier) {
     if (!form.supplierName) form.supplierName = supplier.shortName || supplier.name || ''
     if (supplier.contactName && !form.contactName) form.contactName = supplier.contactName
@@ -328,7 +388,7 @@ function handleSave() {
   const data = {
     ...form,
     totalAmount: totalAmount.value,
-    items: form.items.map(item => ({
+    items: form.items.map((item) => ({
       ...item,
       warehouseName: item.warehouseId === 'main' ? '主仓库' : item.warehouseId + '区'
     }))
@@ -350,7 +410,7 @@ function onApplySmartRecognize() {
   applySmartRecognize()
   // 填入表格明细行
   if (smartRecResult.value && smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
-    smartRecResult.value.tableRows.forEach(row => {
+    smartRecResult.value.tableRows.forEach((row) => {
       form.items.push({
         id: generateId('pi'),
         materialCode: row.materialCode || '',
@@ -359,7 +419,7 @@ function onApplySmartRecognize() {
         unit: row.unit || 'kg',
         quantity: row.quantity || 0,
         unitPrice: row.unitPrice || 0,
-        amount: (row.quantity && row.unitPrice) ? row.quantity * row.unitPrice : (row.amount || 0),
+        amount: row.quantity && row.unitPrice ? row.quantity * row.unitPrice : row.amount || 0,
         warehouseId: 'main',
         warehouseName: '主仓库'
       })
@@ -374,9 +434,29 @@ function formatNum(val) {
 </script>
 
 <style scoped>
-.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
-.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
-.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
+.form-validation-panel {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.val-error {
+  color: var(--color-danger);
+  background: var(--color-danger-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.val-warning {
+  color: var(--color-warning);
+  background: var(--color-warning-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
 .modal-xl {
   max-width: 960px;
 }
@@ -403,7 +483,11 @@ function formatNum(val) {
   opacity: 0.6;
   cursor: not-allowed;
 }
-.items-table td {padding: var(--space-1); overflow-wrap: break-word; word-wrap: break-word}
+.items-table td {
+  padding: var(--space-1);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 .items-table .form-input,
 .items-table .form-select {
   width: 100%;

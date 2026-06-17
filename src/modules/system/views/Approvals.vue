@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="approval-page">
     <div class="page-header">
       <div>
@@ -563,6 +563,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Approvals' }
+</script>
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useApprovalStore } from '@/modules/system/stores/approval'

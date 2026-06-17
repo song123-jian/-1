@@ -247,7 +247,7 @@ class DataCache {
       ...this._stats,
       size: this._cache.size,
       maxSize: this._maxSize,
-      hitRate: total > 0 ? (this._stats.hits / total * 100).toFixed(1) + '%' : '0%'
+      hitRate: total > 0 ? ((this._stats.hits / total) * 100).toFixed(1) + '%' : '0%'
     }
   }
 

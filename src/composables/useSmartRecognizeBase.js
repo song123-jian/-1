@@ -25,7 +25,7 @@ export function useSmartRecognizeBase(form, parseFn, placeholder = '粘贴文本
     if (!smartRecResult.value) return
     // 填入表头字段
     if (smartRecResult.value.items && smartRecResult.value.items.length > 0) {
-      smartRecResult.value.items.forEach(item => {
+      smartRecResult.value.items.forEach((item) => {
         if (item.value && Object.hasOwn(form, item.key)) {
           form[item.key] = item.value
         }
@@ -84,7 +84,7 @@ export function makeItem(key, label, value, confidence) {
 export function parseTableText(text, columnDefs) {
   if (!text || !columnDefs || columnDefs.length === 0) return []
 
-  const lines = text.split(/\r?\n/).filter(line => line.trim())
+  const lines = text.split(/\r?\n/).filter((line) => line.trim())
   if (lines.length === 0) return []
 
   // 检测分隔符：Tab > 逗号 > 竖线 > 多空格
@@ -109,7 +109,7 @@ export function parseTableText(text, columnDefs) {
     } else {
       cells = line.split(separator)
     }
-    cells = cells.map(c => c.trim())
+    cells = cells.map((c) => c.trim())
 
     // 跳过表头行（如果第一行看起来像表头）
     if (i === 0 && cells.length >= 2) {

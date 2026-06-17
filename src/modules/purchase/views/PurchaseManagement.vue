@@ -21,8 +21,8 @@
       <div
         class="flow-board-node"
         :class="{ active: filterStatus === 'pending' }"
-        @click="filterStatus = filterStatus === 'pending' ? '' : 'pending'"
         :title="'待审批: ' + purchaseStore.pendingCount + ' 单，金额 ' + formatAmount(pendingAmount)"
+        @click="filterStatus = filterStatus === 'pending' ? '' : 'pending'"
       >
         <span class="flow-board-dot pending"></span>
         <div>
@@ -41,8 +41,8 @@
             filterStatus === 'receiving' ||
             filterStatus === 'inspecting'
         }"
-        @click="toggleInProgressFilter"
         :title="'进行中: ' + purchaseStore.inProgressCount + ' 单，金额 ' + formatAmount(inProgressAmount)"
+        @click="toggleInProgressFilter"
       >
         <span class="flow-board-dot progress"></span>
         <div>
@@ -55,8 +55,8 @@
       <div
         class="flow-board-node"
         :class="{ active: filterStatus === 'completed' }"
-        @click="filterStatus = filterStatus === 'completed' ? '' : 'completed'"
         :title="'已完成: ' + completedCount + ' 单，金额 ' + formatAmount(completedAmount)"
+        @click="filterStatus = filterStatus === 'completed' ? '' : 'completed'"
       >
         <span class="flow-board-dot completed"></span>
         <div>
@@ -140,8 +140,8 @@
           <div
             class="overview-card overview-ring-card"
             style="cursor: pointer"
-            @click="filterStatus = filterStatus === 'completed' ? '' : 'completed'"
             title="点击筛选已完成订单"
+            @click="filterStatus = filterStatus === 'completed' ? '' : 'completed'"
           >
             <div class="overview-card-title">采购完成率</div>
             <div class="overview-ring-body">
@@ -293,8 +293,8 @@
         <button
           class="view-toggle-btn"
           :class="{ active: viewMode === 'table' }"
-          @click="viewMode = 'table'"
           title="表格视图"
+          @click="viewMode = 'table'"
         >
           <Icon name="chart" :size="14" />
           <span>表格</span>
@@ -302,8 +302,8 @@
         <button
           class="view-toggle-btn"
           :class="{ active: viewMode === 'list' }"
-          @click="viewMode = 'list'"
           title="列表视图"
+          @click="viewMode = 'list'"
         >
           <Icon name="list" :size="14" />
           <span>列表</span>
@@ -311,8 +311,8 @@
         <button
           class="view-toggle-btn"
           :class="{ active: viewMode === 'card' }"
-          @click="viewMode = 'card'"
           title="卡片视图"
+          @click="viewMode = 'card'"
         >
           <Icon name="card" :size="14" />
           <span>卡片</span>
@@ -327,7 +327,7 @@
         <span class="panel-card-count">共 {{ filteredOrders.length }} 条</span>
       </div>
       <div class="table-container">
-        <table class="data-table" v-if="paginatedOrders.length > 0">
+        <table v-if="paginatedOrders.length > 0" class="data-table">
           <thead>
             <tr>
               <th style="width: 50px; text-align: center">序号</th>
@@ -367,57 +367,57 @@
               <td>{{ order.expectedDate || '-' }}</td>
               <td>
                 <div class="action-cell">
-                  <button class="action-btn" @click="openPreview(order)" title="预览">
+                  <button class="action-btn" title="预览" @click="openPreview(order)">
                     <Icon name="eye" :size="14" />
                   </button>
-                  <button v-if="order.status === 'draft'" class="action-btn" @click="openEditModal(order)" title="编辑">
+                  <button v-if="order.status === 'draft'" class="action-btn" title="编辑" @click="openEditModal(order)">
                     <Icon name="edit" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'draft'"
                     class="action-btn"
-                    @click="handleSubmit(order.id)"
                     title="提交审批"
+                    @click="handleSubmit(order.id)"
                   >
                     <Icon name="send" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'pending'"
                     class="action-btn"
-                    @click="openApproveModal(order)"
                     title="审批"
+                    @click="openApproveModal(order)"
                   >
                     <Icon name="checkCircle" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'approved'"
                     class="action-btn"
-                    @click="handleOrder(order.id)"
                     title="下单"
+                    @click="handleOrder(order.id)"
                   >
                     <Icon name="truck" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'ordered'"
                     class="action-btn"
-                    @click="handleReceive(order.id)"
                     title="收货"
+                    @click="handleReceive(order.id)"
                   >
                     <Icon name="download" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'receiving'"
                     class="action-btn"
-                    @click="handleInspect(order.id)"
                     title="质检"
+                    @click="handleInspect(order.id)"
                   >
                     <Icon name="shield" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'inspecting'"
                     class="action-btn"
-                    @click="handleComplete(order.id)"
                     title="完成入库"
+                    @click="handleComplete(order.id)"
                   >
                     <Icon name="check" :size="14" />
                   </button>
@@ -427,24 +427,24 @@
                       order.type !== 'return'
                     "
                     class="action-btn"
-                    @click="handleReturn(order)"
                     title="退货"
+                    @click="handleReturn(order)"
                   >
                     <Icon name="refresh" :size="14" />
                   </button>
                   <button
                     v-if="['draft', 'pending', 'approved'].includes(order.status)"
                     class="action-btn danger"
-                    @click="handleCancel(order.id)"
                     title="取消"
+                    @click="handleCancel(order.id)"
                   >
                     <Icon name="close" :size="14" />
                   </button>
                   <button
                     v-if="order.status === 'draft'"
                     class="action-btn danger"
-                    @click="handleDelete(order)"
                     title="删除"
+                    @click="handleDelete(order)"
                   >
                     <Icon name="delete" :size="14" />
                   </button>
@@ -459,7 +459,7 @@
         </div>
       </div>
       <!-- 分页 -->
-      <div class="pagination" v-if="totalPages > 1">
+      <div v-if="totalPages > 1" class="pagination">
         <button class="btn btn-sm btn-ghost" :disabled="currentPage <= 1" @click="currentPage--">
           <Icon name="chevronLeft" :size="12" />
           上一页
@@ -575,7 +575,7 @@
         <span class="panel-card-title">采购明细</span>
       </div>
       <div class="table-container">
-        <table class="data-table" v-if="allItemDetails.length > 0">
+        <table v-if="allItemDetails.length > 0" class="data-table">
           <thead>
             <tr>
               <th>采购单号</th>
@@ -617,7 +617,7 @@
         <span class="panel-card-count">共 {{ purchaseStore.returnOrders.length }} 条</span>
       </div>
       <div class="table-container">
-        <table class="data-table" v-if="purchaseStore.returnOrders.length > 0">
+        <table v-if="purchaseStore.returnOrders.length > 0" class="data-table">
           <thead>
             <tr>
               <th>退货单号</th>
@@ -751,6 +751,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'PurchaseManagement' }
+</script>
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { usePurchaseStore, STATUS_LABELS, STATUS_COLORS } from '@/modules/purchase/stores/purchase'

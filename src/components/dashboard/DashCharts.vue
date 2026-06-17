@@ -2,8 +2,11 @@
   <div class="content-grid content-grid-2">
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="trendUp" :size="14" /> 销售/回款趋势（近12月）</span>
-        <select class="form-select" style="width:auto;min-width:100px" v-model="chartMode">
+        <span class="panel-card-title">
+          <Icon name="trendUp" :size="14" />
+          销售/回款趋势（近12月）
+        </span>
+        <select v-model="chartMode" class="form-select" style="width: auto; min-width: 100px">
           <option value="monthly">按月</option>
           <option value="quarterly">按季</option>
           <option value="yearly">按年</option>
@@ -18,7 +21,10 @@
 
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="table" :size="14" /> 库存分布</span>
+        <span class="panel-card-title">
+          <Icon name="table" :size="14" />
+          库存分布
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="chart-container">
@@ -31,7 +37,10 @@
   <div class="content-grid content-grid-2">
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="dollar" :size="14" /> 回款趋势（近6月）</span>
+        <span class="panel-card-title">
+          <Icon name="dollar" :size="14" />
+          回款趋势（近6月）
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="chart-container">
@@ -42,7 +51,10 @@
 
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="trophy" :size="14" /> 客户贡献 TOP5</span>
+        <span class="panel-card-title">
+          <Icon name="trophy" :size="14" />
+          客户贡献 TOP5
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="top-customers">
@@ -72,6 +84,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'DashCharts' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { useContractStore } from '@/modules/sales/stores/contract'
@@ -101,11 +116,11 @@ function formatNumber(num) {
 
 const topCustomers = computed(() => {
   const sorted = [...customerStore.customers]
-    .filter(c => c.status === 'active')
+    .filter((c) => c.status === 'active')
     .sort((a, b) => b.balance - a.balance)
     .slice(0, 5)
   const maxBalance = sorted.length > 0 ? sorted[0].balance : 1
-  return sorted.map(c => ({
+  return sorted.map((c) => ({
     ...c,
     percentage: Math.round((c.balance / maxBalance) * 100)
   }))
@@ -155,7 +170,9 @@ function initSalesChart() {
 
   const ma = contractStore.monthlyAmounts
   const monthlyMap = {}
-  ma.forEach(m => { monthlyMap[m.month] = m.amount })
+  ma.forEach((m) => {
+    monthlyMap[m.month] = m.amount
+  })
 
   let labels, salesData, collectionData
 
@@ -181,16 +198,20 @@ function initSalesChart() {
     })
     labels = quarters
   } else if (chartMode.value === 'yearly') {
-    const yearSet = new Set(ma.map(m => m.month.slice(0, 4)))
+    const yearSet = new Set(ma.map((m) => m.month.slice(0, 4)))
     const years = [...yearSet].sort()
-    salesData = years.map(y => {
+    salesData = years.map((y) => {
       let sum = 0
-      ma.forEach(m => { if (m.month.startsWith(y)) sum += m.amount })
+      ma.forEach((m) => {
+        if (m.month.startsWith(y)) sum += m.amount
+      })
       return Math.round(sum / 10000)
     })
-    collectionData = years.map(y => {
+    collectionData = years.map((y) => {
       let sum = 0
-      ma.forEach(m => { if (m.month.startsWith(y)) sum += m.amount * 0.85 })
+      ma.forEach((m) => {
+        if (m.month.startsWith(y)) sum += m.amount * 0.85
+      })
       return Math.round(sum / 10000)
     })
     labels = years
@@ -204,7 +225,7 @@ function initSalesChart() {
     })
     collectionData = labels.map((_, i) => {
       const key = `${year}-${String(i + 1).padStart(2, '0')}`
-      return Math.round((monthlyMap[key] || 0) * 0.85 / 10000)
+      return Math.round(((monthlyMap[key] || 0) * 0.85) / 10000)
     })
   }
 
@@ -264,7 +285,7 @@ function initInventoryChart() {
   if (inventoryChart) inventoryChart.destroy()
 
   const categories = {}
-  inventoryStore.enrichedInventory.forEach(item => {
+  inventoryStore.enrichedInventory.forEach((item) => {
     if (!categories[item.category]) categories[item.category] = 0
     categories[item.category] += item.stock
   })
@@ -292,14 +313,16 @@ function initInventoryChart() {
     type: 'doughnut',
     data: {
       labels,
-      datasets: [{
-        data,
-        backgroundColor: colors.slice(0, labels.length),
-        hoverBackgroundColor: hoverColors.slice(0, labels.length),
-        borderWidth: 0,
-        hoverOffset: 12,
-        spacing: 2
-      }]
+      datasets: [
+        {
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          hoverBackgroundColor: hoverColors.slice(0, labels.length),
+          borderWidth: 0,
+          hoverOffset: 12,
+          spacing: 2
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -333,8 +356,16 @@ function initCollectionTrendChart() {
     labels.push(`${d.getMonth() + 1}月`)
     let sum = 0
     collectionStore.collections
-      .filter(c => c.status !== 'voided' && (c.status === 'confirmed' || c.status === 'completed') && c.date && c.date.startsWith(key))
-      .forEach(c => { sum += parseFloat(c.amount) || 0 })
+      .filter(
+        (c) =>
+          c.status !== 'voided' &&
+          (c.status === 'confirmed' || c.status === 'completed') &&
+          c.date &&
+          c.date.startsWith(key)
+      )
+      .forEach((c) => {
+        sum += parseFloat(c.amount) || 0
+      })
     data.push(Math.round(sum / 10000))
   }
 
@@ -347,20 +378,22 @@ function initCollectionTrendChart() {
     type: 'line',
     data: {
       labels: labels,
-      datasets: [{
-        label: '回款额(万)',
-        data,
-        borderColor: 'rgba(34, 197, 94, 1)',
-        backgroundColor: gradient,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: 'rgba(34, 197, 94, 1)',
-        pointHoverBorderColor: '#fff',
-        pointHoverBorderWidth: 2,
-        borderWidth: 2.5
-      }]
+      datasets: [
+        {
+          label: '回款额(万)',
+          data,
+          borderColor: 'rgba(34, 197, 94, 1)',
+          backgroundColor: gradient,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointHoverBackgroundColor: 'rgba(34, 197, 94, 1)',
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2,
+          borderWidth: 2.5
+        }
+      ]
     },
     options: {
       responsive: true,
@@ -397,9 +430,21 @@ watch(chartMode, () => {
 })
 
 onBeforeUnmount(() => {
-  try { if (salesChart) salesChart.destroy() } catch (e) { /* ignore */ }
-  try { if (inventoryChart) inventoryChart.destroy() } catch (e) { /* ignore */ }
-  try { if (collectionTrendChart) collectionTrendChart.destroy() } catch (e) { /* ignore */ }
+  try {
+    if (salesChart) salesChart.destroy()
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    if (inventoryChart) inventoryChart.destroy()
+  } catch (e) {
+    /* ignore */
+  }
+  try {
+    if (collectionTrendChart) collectionTrendChart.destroy()
+  } catch (e) {
+    /* ignore */
+  }
   salesChart = null
   inventoryChart = null
   collectionTrendChart = null
@@ -416,8 +461,14 @@ defineExpose({ refreshCharts })
 }
 
 @keyframes topSlideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .top-customer-item {
@@ -507,9 +558,15 @@ defineExpose({ refreshCharts })
 }
 
 @keyframes barShine {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .top-amount {

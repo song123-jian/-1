@@ -38,12 +38,6 @@ const routes = [
     redirect: '/dashboard'
   },
   {
-    path: '/role-select',
-    name: 'RoleSelect',
-    component: () => import('@/views/RoleSelect.vue'),
-    meta: { title: '角色选择', icon: 'users' }
-  },
-  {
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/Dashboard.vue'),
@@ -292,13 +286,10 @@ const router = createRouter({
 router.beforeEach((to, from) => {
   document.title = `${to.meta.title || '冠久ERP'} - 冠久ERP`
 
-  /* 角色选择页始终可访问 */
-  if (to.name === 'RoleSelect') return true
-
-  /* 检查会话：未选择角色则跳转到角色选择页 */
+  /* 自动以管理员身份登录（已移除身份选择） */
   const sessionStore = useSessionStore()
   if (!sessionStore.isLoggedIn) {
-    return { name: 'RoleSelect' }
+    sessionStore.selectRole('管理员', true)
   }
 
   /* 更新活跃时间 */

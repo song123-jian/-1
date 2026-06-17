@@ -11,7 +11,15 @@
         <!-- Personal Access Token 方式 -->
         <div class="auth-method">
           <h4>方式一：Personal Access Token</h4>
-          <p class="method-desc">在 GitHub Settings <Icon name="chevronRight" :size="14" /> Developer settings <Icon name="chevronRight" :size="14" /> Personal access tokens 创建，需要勾选 <code>gist</code> 权限</p>
+          <p class="method-desc">
+            在 GitHub Settings
+            <Icon name="chevronRight" :size="14" />
+            Developer settings
+            <Icon name="chevronRight" :size="14" />
+            Personal access tokens 创建，需要勾选
+            <code>gist</code>
+            权限
+          </p>
           <div class="input-group">
             <input
               v-model="patInput"
@@ -20,7 +28,7 @@
               placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
               @keydown.enter="handlePATAuth"
             />
-            <button class="btn btn-primary" @click="handlePATAuth" :disabled="!patInput || authLoading">
+            <button class="btn btn-primary" :disabled="!patInput || authLoading" @click="handlePATAuth">
               {{ authLoading ? '验证中...' : '连接' }}
             </button>
           </div>
@@ -31,27 +39,25 @@
           <h4>方式二：OAuth 设备流</h4>
           <p class="method-desc">需要先创建 GitHub OAuth App，填入 Client ID</p>
           <div class="input-group">
-            <input
-              v-model="clientIdInput"
-              type="text"
-              class="form-input"
-              placeholder="GitHub OAuth App Client ID"
-            />
-            <button class="btn btn-outline" @click="handleOAuthStart" :disabled="!clientIdInput || authLoading">
+            <input v-model="clientIdInput" type="text" class="form-input" placeholder="GitHub OAuth App Client ID" />
+            <button class="btn btn-outline" :disabled="!clientIdInput || authLoading" @click="handleOAuthStart">
               获取验证码
             </button>
           </div>
 
           <!-- 设备码显示 -->
           <div v-if="deviceCodeInfo" class="device-code-section">
-            <p>请在浏览器中打开：<a :href="deviceCodeInfo.verificationUri" target="_blank">{{ deviceCodeInfo.verificationUri }}</a></p>
+            <p>
+              请在浏览器中打开：
+              <a :href="deviceCodeInfo.verificationUri" target="_blank">{{ deviceCodeInfo.verificationUri }}</a>
+            </p>
             <div class="device-code-display">
               <span class="code-label">输入验证码：</span>
               <span class="code-value">{{ deviceCodeInfo.userCode }}</span>
               <button class="btn btn-ghost btn-sm" @click="copyDeviceCode">复制</button>
             </div>
             <p class="code-hint">验证后点击下方按钮完成连接</p>
-            <button class="btn btn-primary" @click="handleOAuthConfirm" :disabled="authLoading">
+            <button class="btn btn-primary" :disabled="authLoading" @click="handleOAuthConfirm">
               {{ authLoading ? '等待验证...' : '已完成验证' }}
             </button>
           </div>
@@ -84,7 +90,7 @@
       <div class="sync-config">
         <div class="config-item">
           <label class="config-label">
-            <input type="checkbox" v-model="config.autoUpload" @change="handleConfigChange" />
+            <input v-model="config.autoUpload" type="checkbox" @change="handleConfigChange" />
             自动上传到 GitHub
           </label>
           <span class="config-hint">开启后定期自动备份数据到 GitHub Gist</span>
@@ -92,7 +98,7 @@
 
         <div v-if="config.autoUpload" class="config-item sub-item">
           <label class="config-label">上传间隔</label>
-          <select v-model="config.autoUploadInterval" @change="handleConfigChange" class="form-select">
+          <select v-model="config.autoUploadInterval" class="form-select" @change="handleConfigChange">
             <option :value="60000">1 分钟</option>
             <option :value="300000">5 分钟</option>
             <option :value="600000">10 分钟</option>
@@ -103,7 +109,7 @@
 
         <div class="config-item">
           <label class="config-label">
-            <input type="checkbox" v-model="config.confirmBeforeUpload" @change="handleConfigChange" />
+            <input v-model="config.confirmBeforeUpload" type="checkbox" @change="handleConfigChange" />
             每次上传前确认
           </label>
           <span class="config-hint">开启后，自动和手动上传都会先询问确认</span>
@@ -111,21 +117,21 @@
 
         <div class="config-item">
           <label class="config-label">
-            <input type="checkbox" v-model="config.uploadViewState" @change="handleConfigChange" />
+            <input v-model="config.uploadViewState" type="checkbox" @change="handleConfigChange" />
             上传视图状态（筛选、排序等）
           </label>
         </div>
 
         <div class="config-item">
           <label class="config-label">
-            <input type="checkbox" v-model="config.uploadLayoutState" @change="handleConfigChange" />
+            <input v-model="config.uploadLayoutState" type="checkbox" @change="handleConfigChange" />
             上传布局状态（侧边栏、面板等）
           </label>
         </div>
 
         <div class="config-item">
           <label class="config-label">
-            <input type="checkbox" v-model="config.encrypt" @change="handleConfigChange" />
+            <input v-model="config.encrypt" type="checkbox" @change="handleConfigChange" />
             加密上传
           </label>
           <span class="config-hint">开启后数据将加密后上传，防止明文存储</span>
@@ -133,13 +139,18 @@
 
         <div v-if="config.encrypt" class="config-item sub-item">
           <label class="config-label">加密密钥</label>
-          <input v-model="config.encryptionKey" type="password" class="form-input"
-                 placeholder="输入加密密钥" @change="handleConfigChange" />
+          <input
+            v-model="config.encryptionKey"
+            type="password"
+            class="form-input"
+            placeholder="输入加密密钥"
+            @change="handleConfigChange"
+          />
         </div>
 
         <div class="config-item">
           <label class="config-label">Gist 可见性</label>
-          <select v-model="config.gistPublic" @change="handleConfigChange" class="form-select">
+          <select v-model="config.gistPublic" class="form-select" @change="handleConfigChange">
             <option :value="false">私密（仅自己可见）</option>
             <option :value="true">公开</option>
           </select>
@@ -148,15 +159,13 @@
 
       <!-- 手动操作 -->
       <div class="sync-actions">
-        <button class="btn btn-primary" @click="handleUpload" :disabled="uploading">
+        <button class="btn btn-primary" :disabled="uploading" @click="handleUpload">
           {{ uploading ? '上传中...' : '立即上传备份' }}
         </button>
-        <button class="btn btn-outline" @click="handleDownload" :disabled="downloading">
+        <button class="btn btn-outline" :disabled="downloading" @click="handleDownload">
           {{ downloading ? '下载中...' : '从 GitHub 恢复' }}
         </button>
-        <button class="btn btn-ghost" @click="handleViewHistory">
-          查看历史版本
-        </button>
+        <button class="btn btn-ghost" @click="handleViewHistory">查看历史版本</button>
       </div>
 
       <!-- 上传结果 -->
@@ -185,7 +194,7 @@
         <span>总上传: {{ stats.totalUploads }} 次</span>
         <span>总下载: {{ stats.totalDownloads }} 次</span>
         <span v-if="stats.lastUploadTime">上次上传: {{ formatTime(stats.lastUploadTime) }}</span>
-        <span :class="{ 'active': stats.autoUploadEnabled }">
+        <span :class="{ active: stats.autoUploadEnabled }">
           {{ stats.autoUploadEnabled ? '自动上传已开启' : '自动上传已关闭' }}
         </span>
       </div>
@@ -193,16 +202,16 @@
 
     <!-- 上传确认弹窗 -->
     <div v-if="showUploadConfirm" class="modal-overlay" @click.self="showUploadConfirm = false">
-      <div class="modal-content" style="max-width:400px">
+      <div class="modal-content" style="max-width: 400px">
         <div class="modal-header">
           <h3>确认上传同步</h3>
           <button class="btn btn-sm btn-outline" @click="showUploadConfirm = false">关闭</button>
         </div>
         <div class="modal-body">
           <p>{{ uploadConfirmMessage }}</p>
-          <div v-if="uploadConfirmType === 'auto'" class="config-item" style="margin-top:var(--space-2)">
+          <div v-if="uploadConfirmType === 'auto'" class="config-item" style="margin-top: var(--space-2)">
             <label class="config-label">
-              <input type="checkbox" v-model="skipAutoConfirmThisSession" />
+              <input v-model="skipAutoConfirmThisSession" type="checkbox" />
               本次会话不再询问自动上传
             </label>
           </div>
@@ -216,6 +225,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'GitHubSyncPanel' }
+</script>
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import githubSync from '@/utils/githubSync'
@@ -403,9 +415,14 @@ async function handleDownload() {
 
 /* 查看历史 */
 async function handleViewHistory() {
-  showHistory.value = !showHistory.value
-  if (showHistory.value) {
-    historyList.value = await githubSync.getHistory()
+  try {
+    showHistory.value = !showHistory.value
+    if (showHistory.value) {
+      historyList.value = await githubSync.getHistory()
+    }
+  } catch (e) {
+    console.error('[GitHubSync] 获取历史失败:', e)
+    errorMessage.value = '获取历史失败: ' + (e.message || '未知错误')
   }
 }
 
@@ -580,8 +597,14 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
 }
-.user-name { font-weight: 600; font-size: var(--font-size-sm); }
-.user-login { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
+.user-name {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+.user-login {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
 
 .gist-info {
   font-size: var(--font-size-xs);
@@ -662,8 +685,12 @@ onUnmounted(() => {
 .history-item:hover {
   background: var(--color-bg-secondary);
 }
-.history-time { flex: 1; }
-.history-user { color: var(--color-text-tertiary); }
+.history-time {
+  flex: 1;
+}
+.history-user {
+  color: var(--color-text-tertiary);
+}
 
 .sync-stats {
   display: flex;
@@ -688,18 +715,43 @@ onUnmounted(() => {
   border: 1px solid transparent;
   transition: all 0.2s;
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-.btn-outline { background: transparent; border-color: var(--color-border); color: var(--color-text-secondary); }
-.btn-ghost { background: transparent; border: none; color: var(--color-text-tertiary); }
-.btn-ghost:hover { color: var(--color-text-primary); background: var(--color-bg-secondary); }
-.btn-sm { padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); }
-.form-input, .form-select {
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+}
+.btn-ghost:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-secondary);
+}
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+.form-input,
+.form-select {
   padding: var(--space-2) var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   outline: none;
 }
-.form-input:focus, .form-select:focus { border-color: var(--color-accent); }
+.form-input:focus,
+.form-select:focus {
+  border-color: var(--color-accent);
+}
 </style>

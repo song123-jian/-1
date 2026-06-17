@@ -25,7 +25,10 @@ export function useSmartRecognize(form) {
 
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
-      if (match) { pushItem(makeItem('custContact', '联系人姓名', match[1], 75)); break }
+      if (match) {
+        pushItem(makeItem('custContact', '联系人姓名', match[1], 75))
+        break
+      }
     }
 
     const phoneMatch = text.match(CommonPatterns.phone)
@@ -60,5 +63,9 @@ export function useSmartRecognize(form) {
     return result
   }
 
-  return useSmartRecognizeBase(form, parseQuotationInfo, '粘贴报价信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...')
+  return useSmartRecognizeBase(
+    form,
+    parseQuotationInfo,
+    '粘贴报价信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+  )
 }

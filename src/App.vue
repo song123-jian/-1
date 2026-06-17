@@ -35,6 +35,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'App' }
+</script>
 <script setup>
 import { onMounted, onUnmounted, watch, ref, computed, provide } from 'vue'
 import { useRouter } from 'vue-router'
@@ -120,7 +123,7 @@ function startConnectionMonitor() {
       console.warn('[App] 检测到连接断开，尝试自动重连...')
       const connected = await sbStore.autoConnect()
       if (connected) {
-        console.info('[App] 自动重连成功')
+        console.debug('[App] 自动重连成功')
         /* 显示 Toast 通知 */
         if (toastRef.value) {
           toastRef.value.show('云端同步已恢复', 'success')
@@ -267,13 +270,13 @@ onMounted(async () => {
     const sbStore = useSupabaseStore()
     const connected = await sbStore.autoConnect()
     if (connected) {
-      console.info('[App] Supabase 自动连接成功')
+      console.debug('[App] Supabase 自动连接成功')
       /* 连接成功后启动自动同步 */
       const { useSyncEngine } = await import('@/utils/syncEngine.js')
       const syncEngine = useSyncEngine()
       syncEngine.initAutoSync()
     } else {
-      console.info('[App] Supabase 无保存的配置，跳过自动连接')
+      console.debug('[App] Supabase 无保存的配置，跳过自动连接')
     }
   } catch (e) {
     console.warn('[App] Supabase 自动连接异常:', e.message)
@@ -333,7 +336,7 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.4);
-  z-index: 998;
+  z-index: var(--z-overlay);
   transition: opacity 300ms;
 }
 

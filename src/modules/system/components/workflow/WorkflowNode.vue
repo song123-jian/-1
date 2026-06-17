@@ -9,10 +9,7 @@
       <!-- 节点 -->
       <div
         class="workflow-node"
-        :class="[
-          `node-${node.type}`,
-          `node-status-${node.status || 'pending'}`
-        ]"
+        :class="[`node-${node.type}`, `node-status-${node.status || 'pending'}`]"
         :title="getNodeTooltip(node)"
       >
         <div class="node-icon">
@@ -28,15 +25,24 @@
 
       <!-- 连接线 -->
       <div v-if="index < nodes.length - 1" class="workflow-connector">
-        <div class="connector-line" :class="{ completed: isConnectorCompleted(index), active: isConnectorActive(index) }">
-          <div class="connector-flow" v-if="isConnectorActive(index)"></div>
-          <div class="connector-arrow" :class="{ completed: isConnectorCompleted(index), active: isConnectorActive(index) }"></div>
+        <div
+          class="connector-line"
+          :class="{ completed: isConnectorCompleted(index), active: isConnectorActive(index) }"
+        >
+          <div v-if="isConnectorActive(index)" class="connector-flow"></div>
+          <div
+            class="connector-arrow"
+            :class="{ completed: isConnectorCompleted(index), active: isConnectorActive(index) }"
+          ></div>
         </div>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'WorkflowNode' }
+</script>
 <script setup>
 import { NodeType } from '@/utils/workflowEngine'
 
@@ -49,11 +55,16 @@ const props = defineProps({
 
 function getNodeIcon(node) {
   switch (node.type) {
-    case NodeType.START: return 'play'
-    case NodeType.APPROVE: return 'checkCircle'
-    case NodeType.CONDITION: return 'filter'
-    case NodeType.END: return 'flag'
-    default: return 'circle'
+    case NodeType.START:
+      return 'play'
+    case NodeType.APPROVE:
+      return 'checkCircle'
+    case NodeType.CONDITION:
+      return 'filter'
+    case NodeType.END:
+      return 'flag'
+    default:
+      return 'circle'
   }
 }
 
@@ -96,8 +107,14 @@ function isConnectorActive(index) {
 
 /* 节点入场动画 */
 @keyframes nodeAppear {
-  from { opacity: 0; transform: translateY(12px) scale(0.9); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .workflow-node-wrapper {
@@ -186,14 +203,28 @@ function isConnectorActive(index) {
 }
 
 @keyframes pulseRing {
-  0% { transform: scale(0.9); opacity: 0.6; }
-  50% { transform: scale(1.15); opacity: 0; }
-  100% { transform: scale(0.9); opacity: 0.6; }
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
 }
 
 @keyframes activePulse {
-  0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
-  50% { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.08); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.08);
+  }
 }
 
 .node-status-completed .node-icon {
@@ -251,8 +282,12 @@ function isConnectorActive(index) {
 
 /* 连接线流动动画 */
 @keyframes flowMove {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .connector-flow {

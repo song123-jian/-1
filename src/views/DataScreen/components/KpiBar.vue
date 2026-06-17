@@ -9,7 +9,14 @@
           <div class="kpi-bar__title">{{ card.title }}</div>
         </div>
         <div class="kpi-bar__value">
-          <FlipNumber :value="card.value" :format="card.format" :color="'#fff'" font-size="28px" :prefix="card.format === 'currency' ? '¥' : ''" :suffix="card.format === 'percent' ? '%' : ''" />
+          <FlipNumber
+            :value="card.value"
+            :format="card.format"
+            :color="'#fff'"
+            font-size="28px"
+            :prefix="card.format === 'currency' ? '¥' : ''"
+            :suffix="card.format === 'percent' ? '%' : ''"
+          />
         </div>
         <div class="kpi-bar__change" :class="card.change >= 0 ? 'up' : 'down'">
           <Icon :name="card.change >= 0 ? 'chevronUp' : 'chevronDown'" :size="12" />
@@ -21,6 +28,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'KpiBar' }
+</script>
 <script setup>
 import TechBorder from './TechBorder.vue'
 import FlipNumber from './FlipNumber.vue'
@@ -56,7 +66,7 @@ defineProps({
 }
 .kpi-bar__title {
   font-size: 13px;
-  color: rgba(255,255,255,0.6);
+  color: rgba(255, 255, 255, 0.6);
   font-weight: 500;
 }
 .kpi-bar__value {
@@ -69,14 +79,25 @@ defineProps({
   font-size: 12px;
   font-weight: 500;
 }
-.kpi-bar__change.up { color: #52c41a; }
-.kpi-bar__change.down { color: #ff4d4f; }
-.kpi-bar__change-label { color: rgba(255,255,255,0.35); margin-left: 4px; }
+.kpi-bar__change.up {
+  color: #52c41a;
+}
+.kpi-bar__change.down {
+  color: #ff4d4f;
+}
+.kpi-bar__change-label {
+  color: rgba(255, 255, 255, 0.35);
+  margin-left: 4px;
+}
 
 @media (max-width: 1200px) {
-  .kpi-bar { grid-template-columns: repeat(2, 1fr); }
+  .kpi-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 768px) {
-  .kpi-bar { grid-template-columns: 1fr; }
+  .kpi-bar {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

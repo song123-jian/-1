@@ -32,7 +32,7 @@ export function useSmartRecognize(form) {
     // 提取付款方式
     const methodMatch = text.match(/(?:银行转账|现金|支票|承兑|汇票)/)
     if (methodMatch) {
-      const methodMap = { '银行转账': 'bank', '现金': 'cash', '支票': 'check', '承兑': 'check', '汇票': 'check' }
+      const methodMap = { 银行转账: 'bank', 现金: 'cash', 支票: 'check', 承兑: 'check', 汇票: 'check' }
       pushItem(makeItem('method', '付款方式', methodMap[methodMatch[0]] || 'other', 80))
     }
 
@@ -58,5 +58,9 @@ export function useSmartRecognize(form) {
     return { items, identifiedCount, lowConfCount }
   }
 
-  return useSmartRecognizeBase(form, parsePaymentInfo, '粘贴付款信息文本（银行回单、付款通知等），AI将自动识别并提取关键字段...')
+  return useSmartRecognizeBase(
+    form,
+    parsePaymentInfo,
+    '粘贴付款信息文本（银行回单、付款通知等），AI将自动识别并提取关键字段...'
+  )
 }

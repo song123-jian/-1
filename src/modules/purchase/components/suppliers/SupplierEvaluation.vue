@@ -39,16 +39,22 @@
       <div class="radar-container">
         <svg viewBox="0 0 200 200" class="radar-svg">
           <!-- 背景网格 -->
-          <polygon v-for="level in 4" :key="'bg' + level"
+          <polygon
+            v-for="level in 4"
+            :key="'bg' + level"
             :points="getPolygonPoints(level * 25)"
             fill="none"
             stroke="var(--color-border)"
             stroke-width="0.5"
           />
           <!-- 轴线 -->
-          <line v-for="(_, idx) in dimensions" :key="'axis' + idx"
-            x1="100" y1="100"
-            :x2="getAxisEnd(idx).x" :y2="getAxisEnd(idx).y"
+          <line
+            v-for="(_, idx) in dimensions"
+            :key="'axis' + idx"
+            x1="100"
+            y1="100"
+            :x2="getAxisEnd(idx).x"
+            :y2="getAxisEnd(idx).y"
             stroke="var(--color-border)"
             stroke-width="0.5"
           />
@@ -60,22 +66,28 @@
             stroke-width="1.5"
           />
           <!-- 数据点 -->
-          <circle v-for="(pt, idx) in getDataPointCoords()" :key="'pt' + idx"
-            :cx="pt.x" :cy="pt.y" r="3"
+          <circle
+            v-for="(pt, idx) in getDataPointCoords()"
+            :key="'pt' + idx"
+            :cx="pt.x"
+            :cy="pt.y"
+            r="3"
             fill="var(--color-accent)"
           />
         </svg>
         <div class="radar-labels">
-          <span v-for="(dim, idx) in dimensions" :key="'label' + idx"
-            class="radar-label"
-            :style="getLabelStyle(idx)"
-          >{{ dim.label }}</span>
+          <span v-for="(dim, idx) in dimensions" :key="'label' + idx" class="radar-label" :style="getLabelStyle(idx)">
+            {{ dim.label }}
+          </span>
         </div>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'SupplierEvaluation' }
+</script>
 <script setup>
 import { reactive, computed } from 'vue'
 
@@ -101,10 +113,7 @@ const dimensions = computed(() => [
 
 /* 加权平均: 交货30% 质量35% 价格20% 服务15% */
 const compositeScore = computed(() => {
-  return scores.deliveryScore * 0.3 +
-    scores.qualityScore * 0.35 +
-    scores.priceScore * 0.2 +
-    scores.serviceScore * 0.15
+  return scores.deliveryScore * 0.3 + scores.qualityScore * 0.35 + scores.priceScore * 0.2 + scores.serviceScore * 0.15
 })
 
 const computedRating = computed(() => {
@@ -127,7 +136,7 @@ const RADIUS = 70
 const ANGLES = [-90, 0, 90, 180] // 上右下左
 
 function getAxisEnd(idx) {
-  const angle = ANGLES[idx] * Math.PI / 180
+  const angle = (ANGLES[idx] * Math.PI) / 180
   return {
     x: CENTER + RADIUS * Math.cos(angle),
     y: CENTER + RADIUS * Math.sin(angle)
@@ -136,8 +145,8 @@ function getAxisEnd(idx) {
 
 function getPolygonPoints(percent) {
   return ANGLES.map((angle, idx) => {
-    const rad = angle * Math.PI / 180
-    const r = RADIUS * percent / 100
+    const rad = (angle * Math.PI) / 180
+    const r = (RADIUS * percent) / 100
     return `${CENTER + r * Math.cos(rad)},${CENTER + r * Math.sin(rad)}`
   }).join(' ')
 }
@@ -145,8 +154,8 @@ function getPolygonPoints(percent) {
 function getDataPoints() {
   const values = [scores.deliveryScore, scores.qualityScore, scores.priceScore, scores.serviceScore]
   return ANGLES.map((angle, idx) => {
-    const rad = angle * Math.PI / 180
-    const r = RADIUS * values[idx] / 100
+    const rad = (angle * Math.PI) / 180
+    const r = (RADIUS * values[idx]) / 100
     return `${CENTER + r * Math.cos(rad)},${CENTER + r * Math.sin(rad)}`
   }).join(' ')
 }
@@ -154,14 +163,14 @@ function getDataPoints() {
 function getDataPointCoords() {
   const values = [scores.deliveryScore, scores.qualityScore, scores.priceScore, scores.serviceScore]
   return ANGLES.map((angle, idx) => {
-    const rad = angle * Math.PI / 180
-    const r = RADIUS * values[idx] / 100
+    const rad = (angle * Math.PI) / 180
+    const r = (RADIUS * values[idx]) / 100
     return { x: CENTER + r * Math.cos(rad), y: CENTER + r * Math.sin(rad) }
   })
 }
 
 function getLabelStyle(idx) {
-  const angle = ANGLES[idx] * Math.PI / 180
+  const angle = (ANGLES[idx] * Math.PI) / 180
   const r = RADIUS + 20
   const x = CENTER + r * Math.cos(angle)
   const y = CENTER + r * Math.sin(angle)
@@ -246,7 +255,7 @@ function getLabelStyle(idx) {
   appearance: none;
   background: transparent;
   cursor: pointer;
-  z-index: 1;
+  z-index: var(--z-base);
   margin: 0;
 }
 .eval-slider::-webkit-slider-thumb {

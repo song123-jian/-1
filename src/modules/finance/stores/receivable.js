@@ -170,7 +170,8 @@ export const useReceivableStore = defineStore('receivable', () => {
     if (!receipt) return { success: false, error: '收款记录不存在' }
     /* 回退已收金额（使用 Math.round 避免浮点精度问题） */
     receivable.receivedAmount = Math.round(((receivable.receivedAmount || 0) - (receipt.amount || 0)) * 100) / 100
-    receivable.remainingAmount = Math.round(((parseFloat(receivable.amount) || 0) - receivable.receivedAmount) * 100) / 100
+    receivable.remainingAmount =
+      Math.round(((parseFloat(receivable.amount) || 0) - receivable.receivedAmount) * 100) / 100
     /* 移除收款记录 */
     receivable.receipts = (receivable.receipts || []).filter((rc) => rc.id !== receiptId)
     /* 从全局 receipts 中也移除 */

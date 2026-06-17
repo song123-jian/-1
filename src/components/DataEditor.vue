@@ -1,5 +1,5 @@
 <template>
-  <div class="data-editor" v-if="visible">
+  <div v-if="visible" class="data-editor">
     <!-- 遮罩层 -->
     <div class="data-editor-overlay" @click="handleOverlayClick"></div>
 
@@ -9,7 +9,11 @@
       <div class="data-editor-header">
         <h3 class="data-editor-title">{{ title || (isEdit ? '编辑' : '新增') + moduleName }}</h3>
         <div class="data-editor-header-actions">
-          <button v-if="isEdit && showHistory" class="btn btn-ghost btn-sm" @click="showVersionHistory = !showVersionHistory">
+          <button
+            v-if="isEdit && showHistory"
+            class="btn btn-ghost btn-sm"
+            @click="showVersionHistory = !showVersionHistory"
+          >
             历史版本
           </button>
           <button class="btn btn-ghost btn-sm" @click="handleClose"><Icon name="close" :size="14" /></button>
@@ -20,8 +24,13 @@
       <div v-if="showVersionHistory" class="data-editor-sidebar">
         <div class="sidebar-header">版本历史</div>
         <div class="sidebar-body">
-          <div v-for="ver in versionHistory" :key="ver.id" class="version-item"
-               :class="{ 'is-current': ver.version === currentVersion }" @click="handleRestoreVersion(ver)">
+          <div
+            v-for="ver in versionHistory"
+            :key="ver.id"
+            class="version-item"
+            :class="{ 'is-current': ver.version === currentVersion }"
+            @click="handleRestoreVersion(ver)"
+          >
             <div class="version-header">
               <span class="version-number">v{{ ver.version }}</span>
               <span class="version-action">{{ actionLabels[ver.action] || ver.action }}</span>
@@ -53,18 +62,23 @@
 
         <form class="data-editor-form" @submit.prevent="handleSubmit">
           <!-- 动态字段渲染 -->
-          <div v-for="field in visibleFields" :key="field.key" class="form-field"
-               :class="{ 'is-required': field.required, 'has-error': fieldErrors[field.key] }">
+          <div
+            v-for="field in visibleFields"
+            :key="field.key"
+            class="form-field"
+            :class="{ 'is-required': field.required, 'has-error': fieldErrors[field.key] }"
+          >
             <label class="form-field-label">
               {{ field.label }}
               <span v-if="field.required" class="required-mark">*</span>
             </label>
 
             <!-- 下拉选择字段 -->
-            <DataSelect v-if="field.type === 'select'"
+            <DataSelect
+              v-if="field.type === 'select'"
+              v-model="formData[field.key]"
               :module="field.source"
               :variant="field.variant || 'default'"
-              v-model="formData[field.key]"
               :value-field="field.valueField || 'id'"
               :label-field="field.labelField || 'name'"
               :placeholder="field.placeholder || '请选择...'"
@@ -72,32 +86,37 @@
               :filters="field.filters"
               :module-name="field.label"
               :allow-create="field.allowCreate"
-              @change="handleFieldChange(field.key, $event)" />
+              @change="handleFieldChange(field.key, $event)"
+            />
 
             <!-- 多选下拉 -->
-            <DataSelect v-else-if="field.type === 'multiselect'"
+            <DataSelect
+              v-else-if="field.type === 'multiselect'"
+              v-model="formData[field.key]"
               :module="field.source"
               :variant="field.variant || 'default'"
-              v-model="formData[field.key]"
               :value-field="field.valueField || 'id'"
               :label-field="field.labelField || 'name'"
               :placeholder="field.placeholder || '请选择...'"
               :disabled="field.disabled || readonly"
               multiple
-              @change="handleFieldChange(field.key, $event)" />
+              @change="handleFieldChange(field.key, $event)"
+            />
 
             <!-- 文本域 -->
-            <textarea v-else-if="field.type === 'textarea'"
+            <textarea
+              v-else-if="field.type === 'textarea'"
               v-model="formData[field.key]"
               class="form-textarea"
               :placeholder="field.placeholder || ''"
               :rows="field.rows || 3"
               :disabled="field.disabled || readonly"
-              @input="handleFieldChange(field.key, formData[field.key])">
-            </textarea>
+              @input="handleFieldChange(field.key, formData[field.key])"
+            ></textarea>
 
             <!-- 数字输入 -->
-            <input v-else-if="field.type === 'number'"
+            <input
+              v-else-if="field.type === 'number'"
               v-model.number="formData[field.key]"
               type="number"
               class="form-input"
@@ -106,36 +125,43 @@
               :max="field.max"
               :step="field.step || 'any'"
               :disabled="field.disabled || readonly"
-              @input="handleFieldChange(field.key, formData[field.key])" />
+              @input="handleFieldChange(field.key, formData[field.key])"
+            />
 
             <!-- 日期输入 -->
-            <input v-else-if="field.type === 'date'"
+            <input
+              v-else-if="field.type === 'date'"
               v-model="formData[field.key]"
               type="date"
               class="form-input"
               :disabled="field.disabled || readonly"
-              @change="handleFieldChange(field.key, formData[field.key])" />
+              @change="handleFieldChange(field.key, formData[field.key])"
+            />
 
             <!-- 枚举选择 -->
-            <select v-else-if="field.type === 'enum'"
+            <select
+              v-else-if="field.type === 'enum'"
               v-model="formData[field.key]"
               class="form-select"
               :disabled="field.disabled || readonly"
-              @change="handleFieldChange(field.key, formData[field.key])">
+              @change="handleFieldChange(field.key, formData[field.key])"
+            >
               <option v-for="opt in field.options" :key="opt.value" :value="opt.value">
                 {{ opt.label }}
               </option>
             </select>
 
             <!-- 默认文本输入 -->
-            <input v-else
+            <input
+              v-else
               v-model="formData[field.key]"
               type="text"
               class="form-input"
               :placeholder="field.placeholder || ''"
               :disabled="field.disabled || readonly"
               :maxlength="field.maxLength"
-              @input="handleFieldChange(field.key, formData[field.key])" />
+              @input="handleFieldChange(field.key, formData[field.key])"
+            />
 
             <!-- 字段错误提示 -->
             <div v-if="fieldErrors[field.key]" class="field-error">{{ fieldErrors[field.key] }}</div>
@@ -146,16 +172,14 @@
       <!-- 底部操作栏 -->
       <div class="data-editor-footer">
         <div class="footer-left">
-          <span v-if="isEdit && formData.updatedAt" class="last-updated">
-            最后更新: {{ formData.updatedAt }}
-          </span>
+          <span v-if="isEdit && formData.updatedAt" class="last-updated">最后更新: {{ formData.updatedAt }}</span>
         </div>
         <div class="footer-right">
-          <button class="btn btn-ghost" @click="handleClose" :disabled="submitting">取消</button>
-          <button v-if="isEdit && !readonly" class="btn btn-outline" @click="handleReset" :disabled="submitting">
+          <button class="btn btn-ghost" :disabled="submitting" @click="handleClose">取消</button>
+          <button v-if="isEdit && !readonly" class="btn btn-outline" :disabled="submitting" @click="handleReset">
             重置
           </button>
-          <button v-if="!readonly" class="btn btn-primary" @click="handleSubmit" :disabled="submitting">
+          <button v-if="!readonly" class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
             {{ submitting ? '保存中...' : '保存' }}
           </button>
         </div>
@@ -212,7 +236,7 @@ export default {
 
     /* 可见字段 */
     const visibleFields = computed(() => {
-      return props.fields.filter(f => f.visible !== false)
+      return props.fields.filter((f) => f.visible !== false)
     })
 
     /* 操作标签 */
@@ -268,7 +292,7 @@ export default {
       }
 
       /* 触发字段联动 */
-      const field = props.fields.find(f => f.key === fieldKey)
+      const field = props.fields.find((f) => f.key === fieldKey)
       if (field?.onChange) {
         field.onChange(value, formData.value, (updates) => {
           Object.assign(formData.value, updates)
@@ -378,18 +402,35 @@ export default {
     }
 
     /* 监听visible变化加载数据 */
-    watch(() => props.visible, (val) => {
-      if (val) {
-        loadData()
-      }
-    }, { immediate: true })
+    watch(
+      () => props.visible,
+      (val) => {
+        if (val) {
+          loadData()
+        }
+      },
+      { immediate: true }
+    )
 
     return {
-      formData, loading, submitting, error, fieldErrors,
-      isEdit, visibleFields, showVersionHistory, versionHistory, currentVersion,
+      formData,
+      loading,
+      submitting,
+      error,
+      fieldErrors,
+      isEdit,
+      visibleFields,
+      showVersionHistory,
+      versionHistory,
+      currentVersion,
       actionLabels,
-      handleFieldChange, handleSubmit, handleReset, handleClose,
-      handleOverlayClick, handleRestoreVersion, formatTime
+      handleFieldChange,
+      handleSubmit,
+      handleReset,
+      handleClose,
+      handleOverlayClick,
+      handleRestoreVersion,
+      formatTime
     }
   }
 }
@@ -398,15 +439,21 @@ export default {
 <style scoped>
 .data-editor {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  z-index: 2000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .data-editor-overlay {
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(0, 0, 0, 0.4);
 }
 .data-editor-panel {
@@ -416,7 +463,7 @@ export default {
   max-height: 85vh;
   background: var(--color-bg, #fff);
   border-radius: var(--radius-lg, 12px);
-  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0,0,0,0.1));
+  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -460,7 +507,9 @@ export default {
   border-bottom: 1px solid var(--color-border, #e5e7eb);
   background: var(--color-bg-secondary, #f9fafb);
 }
-.sidebar-body { padding: var(--space-2); }
+.sidebar-body {
+  padding: var(--space-2);
+}
 .version-item {
   padding: var(--space-2);
   border-radius: 6px;
@@ -468,17 +517,60 @@ export default {
   margin-bottom: var(--space-1);
   border: 1px solid transparent;
 }
-.version-item:hover { background: var(--color-bg-secondary, #f9fafb); }
-.version-item.is-current { border-color: var(--color-primary, #3b82f6); background: var(--color-primary-light, #eff6ff); }
-.version-header { display: flex; justify-content: space-between; align-items: center; }
-.version-number { font-weight: 600; font-size: 12px; }
-.version-action { font-size: 11px; color: var(--color-text-muted, #6b7280); }
-.version-meta { font-size: 11px; color: var(--color-text-muted, #9ca3af); margin-top: var(--space-1); display: flex; gap: var(--space-2); }
-.version-label { font-size: 11px; color: var(--color-primary, #3b82f6); margin-top: var(--space-1); }
-.version-changes { margin-top: var(--space-1); display: flex; flex-wrap: wrap; gap: var(--space-1); }
-.change-tag { font-size: 10px; padding: var(--space-1) var(--space-1); background: var(--color-bg-secondary, #f3f4f6); border-radius: 2px; }
-.change-more { font-size: 10px; color: var(--color-text-muted, #9ca3af); }
-.empty-versions { text-align: center; color: var(--color-text-muted, #9ca3af); padding: var(--space-5); font-size: 13px; }
+.version-item:hover {
+  background: var(--color-bg-secondary, #f9fafb);
+}
+.version-item.is-current {
+  border-color: var(--color-primary, #3b82f6);
+  background: var(--color-primary-light, #eff6ff);
+}
+.version-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.version-number {
+  font-weight: 600;
+  font-size: 12px;
+}
+.version-action {
+  font-size: 11px;
+  color: var(--color-text-muted, #6b7280);
+}
+.version-meta {
+  font-size: 11px;
+  color: var(--color-text-muted, #9ca3af);
+  margin-top: var(--space-1);
+  display: flex;
+  gap: var(--space-2);
+}
+.version-label {
+  font-size: 11px;
+  color: var(--color-primary, #3b82f6);
+  margin-top: var(--space-1);
+}
+.version-changes {
+  margin-top: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.change-tag {
+  font-size: 10px;
+  padding: var(--space-1) var(--space-1);
+  background: var(--color-bg-secondary, #f3f4f6);
+  border-radius: 2px;
+}
+.change-more {
+  font-size: 10px;
+  color: var(--color-text-muted, #9ca3af);
+}
+.empty-versions {
+  text-align: center;
+  color: var(--color-text-muted, #9ca3af);
+  padding: var(--space-5);
+  font-size: 13px;
+}
 
 .data-editor-form {
   flex: 1;
@@ -488,15 +580,26 @@ export default {
   gap: var(--space-4);
   align-content: start;
 }
-.form-field { display: flex; flex-direction: column; gap: var(--space-1); }
-.form-field.is-full-width { grid-column: 1 / -1; }
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.form-field.is-full-width {
+  grid-column: 1 / -1;
+}
 .form-field-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text, #374151);
 }
-.required-mark { color: var(--color-danger, #ef4444); margin-left: var(--space-1); }
-.form-input, .form-select, .form-textarea {
+.required-mark {
+  color: var(--color-danger, #ef4444);
+  margin-left: var(--space-1);
+}
+.form-input,
+.form-select,
+.form-textarea {
   padding: var(--space-2) var(--space-2);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: 6px;
@@ -506,14 +609,21 @@ export default {
   width: 100%;
   box-sizing: border-box;
 }
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   border-color: var(--color-primary, #3b82f6);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
 }
 .has-error .form-input,
 .has-error .form-select,
-.has-error .form-textarea { border-color: var(--color-danger, #ef4444); }
-.field-error { font-size: 12px; color: var(--color-danger, #ef4444); }
+.has-error .form-textarea {
+  border-color: var(--color-danger, #ef4444);
+}
+.field-error {
+  font-size: 12px;
+  color: var(--color-danger, #ef4444);
+}
 .data-editor-loading,
 .data-editor-error {
   padding: var(--space-10);
@@ -534,8 +644,14 @@ export default {
   padding: var(--space-3) var(--space-5);
   border-top: 1px solid var(--color-border, #e5e7eb);
 }
-.footer-left { font-size: 12px; color: var(--color-text-muted, #9ca3af); }
-.footer-right { display: flex; gap: var(--space-2); }
+.footer-left {
+  font-size: 12px;
+  color: var(--color-text-muted, #9ca3af);
+}
+.footer-right {
+  display: flex;
+  gap: var(--space-2);
+}
 
 /* 通用按钮样式 */
 .btn {
@@ -546,12 +662,38 @@ export default {
   border: 1px solid transparent;
   transition: all 0.2s;
 }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.btn-primary { background: var(--color-primary, #3b82f6); color: #fff; border-color: var(--color-primary, #3b82f6); }
-.btn-primary:hover:not(:disabled) { background: var(--color-primary-dark, #2563eb); }
-.btn-outline { background: transparent; border-color: var(--color-border, #d1d5db); color: var(--color-text, #374151); }
-.btn-outline:hover:not(:disabled) { border-color: var(--color-primary, #3b82f6); color: var(--color-primary, #3b82f6); }
-.btn-ghost { background: transparent; border: none; color: var(--color-text-muted, #6b7280); }
-.btn-ghost:hover:not(:disabled) { color: var(--color-text, #374151); background: var(--color-bg-secondary, #f3f4f6); }
-.btn-sm { padding: var(--space-1) var(--space-2); font-size: 12px; }
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-primary {
+  background: var(--color-primary, #3b82f6);
+  color: #fff;
+  border-color: var(--color-primary, #3b82f6);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark, #2563eb);
+}
+.btn-outline {
+  background: transparent;
+  border-color: var(--color-border, #d1d5db);
+  color: var(--color-text, #374151);
+}
+.btn-outline:hover:not(:disabled) {
+  border-color: var(--color-primary, #3b82f6);
+  color: var(--color-primary, #3b82f6);
+}
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted, #6b7280);
+}
+.btn-ghost:hover:not(:disabled) {
+  color: var(--color-text, #374151);
+  background: var(--color-bg-secondary, #f3f4f6);
+}
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+}
 </style>

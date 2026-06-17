@@ -292,7 +292,7 @@ function cleanupTombstones() {
     }
   }
   if (cleaned > 0) {
-    console.info(`[SyncEngine] 墓碑清理: 移除 ${cleaned} 条过期记录`)
+    console.debug(`[SyncEngine] 墓碑清理: 移除 ${cleaned} 条过期记录`)
   }
 }
 
@@ -351,7 +351,7 @@ function initAutoSync() {
     // 3. 监听本地 Store 变更，自动推送
     watchStoreChanges()
 
-    console.info('[SyncEngine] 自动同步已初始化')
+    console.debug('[SyncEngine] 自动同步已初始化')
     return true
   } catch (e) {
     console.error('[SyncEngine] 初始化自动同步失败:', e)
@@ -408,7 +408,7 @@ async function incrementalPullAll() {
     syncStats.value.totalErrors += errorCount
     syncStats.value.lastSyncTime = new Date().toISOString()
 
-    console.info(`[SyncEngine] 增量拉取完成: 同步 ${syncedCount} 条, 错误 ${errorCount} 个`)
+    console.debug(`[SyncEngine] 增量拉取完成: 同步 ${syncedCount} 条, 错误 ${errorCount} 个`)
   } catch (e) {
     console.error('[SyncEngine] 增量拉取异常:', e)
     syncStats.value.totalErrors++
@@ -479,7 +479,7 @@ async function incrementalPushAll() {
     syncStats.value.totalErrors += errorCount
     syncStats.value.lastSyncTime = new Date().toISOString()
 
-    console.info(`[SyncEngine] 增量推送完成: 同步 ${syncedCount} 条, 错误 ${errorCount} 个`)
+    console.debug(`[SyncEngine] 增量推送完成: 同步 ${syncedCount} 条, 错误 ${errorCount} 个`)
   } catch (e) {
     console.error('[SyncEngine] 增量推送异常:', e)
     syncStats.value.totalErrors++
@@ -553,7 +553,7 @@ function handleRemoteInsert(tableName, record) {
     // 触发持久化
     persistStore(storeName, store, dataKey)
 
-    console.info(`[SyncEngine] 远端新增: ${tableName}/${record.id}`)
+    console.debug(`[SyncEngine] 远端新增: ${tableName}/${record.id}`)
   } catch (e) {
     console.error(`[SyncEngine] 处理远端 INSERT 失败 (${tableName}):`, e)
   }
@@ -589,7 +589,7 @@ function handleRemoteUpdate(tableName, record) {
 
       if (localTime > remoteTime) {
         // 本地版本更新，保留本地数据，加入推送队列确保远端同步
-        console.info(
+        console.debug(
           `[SyncEngine] 本地更新，保留本地版本: ${tableName}/${record.id} (本地 ${localItem.updatedAt} > 远端 ${record.updatedAt})`
         )
         queuePendingPush(tableName)
@@ -606,7 +606,7 @@ function handleRemoteUpdate(tableName, record) {
     // 触发持久化
     persistStore(storeName, store, dataKey)
 
-    console.info(`[SyncEngine] 远端更新: ${tableName}/${record.id}`)
+    console.debug(`[SyncEngine] 远端更新: ${tableName}/${record.id}`)
   } catch (e) {
     console.error(`[SyncEngine] 处理远端 UPDATE 失败 (${tableName}):`, e)
   }
@@ -640,7 +640,7 @@ function handleRemoteDelete(tableName, record) {
       // 触发持久化
       persistStore(storeName, store, dataKey)
 
-      console.info(`[SyncEngine] 远端删除: ${tableName}/${record.id}`)
+      console.debug(`[SyncEngine] 远端删除: ${tableName}/${record.id}`)
     }
   } catch (e) {
     console.error(`[SyncEngine] 处理远端 DELETE 失败 (${tableName}):`, e)
@@ -675,7 +675,7 @@ function mergeRemoteItems(storeName, dataKey, remoteItems) {
       filteredRemote = remoteItems.filter((item) => !tombstone.has(item.id))
       const filtered = remoteItems.length - filteredRemote.length
       if (filtered > 0) {
-        console.info(`[SyncEngine] 墓碑过滤: ${tableName} 跳过 ${filtered} 条已删除数据`)
+        console.debug(`[SyncEngine] 墓碑过滤: ${tableName} 跳过 ${filtered} 条已删除数据`)
       }
     }
 
@@ -704,7 +704,7 @@ function mergeRemoteItems(storeName, dataKey, remoteItems) {
       persistStore(storeName, store, dataKey)
     }
 
-    console.info(`[SyncEngine] 合并完成: ${storeName}.${dataKey}, 远端 ${remoteItems.length} 条`)
+    console.debug(`[SyncEngine] 合并完成: ${storeName}.${dataKey}, 远端 ${remoteItems.length} 条`)
   } catch (e) {
     console.error(`[SyncEngine] 合并远端数据失败 (${storeName}.${dataKey}):`, e)
   }
@@ -828,7 +828,7 @@ function watchStoreChanges() {
     unsubscribers.forEach((fn) => fn())
   })
 
-  console.info('[SyncEngine] Store 变更监听已启动（eventBus模式）')
+  console.debug('[SyncEngine] Store 变更监听已启动（eventBus模式）')
 }
 
 /**
@@ -914,7 +914,7 @@ function stopAutoSync() {
   pendingPush.value = []
   savePendingPush()
 
-  console.info('[SyncEngine] 自动同步已停止')
+  console.debug('[SyncEngine] 自动同步已停止')
 }
 
 /**
@@ -987,7 +987,7 @@ async function forceFullSync() {
 
     syncStats.value.lastSyncTime = now
 
-    console.info('[SyncEngine] 全量同步完成')
+    console.debug('[SyncEngine] 全量同步完成')
   } catch (e) {
     console.error('[SyncEngine] 全量同步异常:', e)
     syncStats.value.totalErrors++

@@ -221,7 +221,7 @@ export const useSystemStore = defineStore('system', () => {
   }
 
   function saveThemeSettings(settings) {
-    localStorage.setItem('gj_erp_themeSettings', JSON.stringify(settings))
+    localStorage.setItem('gj_erp_systemThemeSettings', JSON.stringify(settings))
   }
 
   function addOperationRecord(record) {

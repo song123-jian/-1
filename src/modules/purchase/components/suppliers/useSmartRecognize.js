@@ -23,7 +23,10 @@ export function useSmartRecognize(form) {
     // 提取联系人
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
-      if (match) { pushItem(makeItem('contact', '联系人', match[1], 75)); break }
+      if (match) {
+        pushItem(makeItem('contact', '联系人', match[1], 75))
+        break
+      }
     }
 
     // 提取电话
@@ -57,5 +60,9 @@ export function useSmartRecognize(form) {
     return { items, identifiedCount, lowConfCount }
   }
 
-  return useSmartRecognizeBase(form, parseSupplierInfo, '粘贴供应商信息文本（名片、邮件等），AI将自动识别并提取关键字段...')
+  return useSmartRecognizeBase(
+    form,
+    parseSupplierInfo,
+    '粘贴供应商信息文本（名片、邮件等），AI将自动识别并提取关键字段...'
+  )
 }

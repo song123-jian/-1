@@ -135,7 +135,7 @@ export const lightCleanTheme = {
 export const themeMap = {
   'dark-tech': darkTechTheme,
   'gold-biz': goldBizTheme,
-  'cyberpunk': cyberpunkTheme,
+  cyberpunk: cyberpunkTheme,
   'light-clean': lightCleanTheme
 }
 

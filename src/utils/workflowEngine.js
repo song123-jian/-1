@@ -16,10 +16,10 @@ export const NodeType = {
 
 /* 流转模式 */
 export const FlowMode = {
-  SERIAL: 'serial',       // 串行
-  PARALLEL: 'parallel',   // 并行
+  SERIAL: 'serial', // 串行
+  PARALLEL: 'parallel', // 并行
   COUNTERSIGN: 'countersign', // 会签（全部通过）
-  ORSIGN: 'orsign'        // 或签（任一通过）
+  ORSIGN: 'orsign' // 或签（任一通过）
 }
 
 /* 实例状态 */
@@ -49,7 +49,12 @@ export const WORKFLOW_TEMPLATES = {
       { id: 'n1', type: NodeType.START, name: '提交申请', approver: '申请人' },
       { id: 'n2', type: NodeType.APPROVE, name: '部门主管审批', approver: '销售主管', mode: FlowMode.SERIAL },
       { id: 'n3', type: NodeType.APPROVE, name: '采购经理审批', approver: '采购主管', mode: FlowMode.SERIAL },
-      { id: 'n4', type: NodeType.CONDITION, name: '金额判断', condition: { field: 'amount', operator: '>', value: 50000 } },
+      {
+        id: 'n4',
+        type: NodeType.CONDITION,
+        name: '金额判断',
+        condition: { field: 'amount', operator: '>', value: 50000 }
+      },
       { id: 'n5', type: NodeType.APPROVE, name: '总经理审批', approver: '总经理', mode: FlowMode.SERIAL },
       { id: 'n6', type: NodeType.END, name: '完成' }
     ],
@@ -86,7 +91,12 @@ export const WORKFLOW_TEMPLATES = {
       { id: 'n1', type: NodeType.START, name: '提交申请', approver: '申请人' },
       { id: 'n2', type: NodeType.APPROVE, name: '法务审批', approver: '管理员', mode: FlowMode.SERIAL },
       { id: 'n3', type: NodeType.APPROVE, name: '财务审批', approver: '财务', mode: FlowMode.SERIAL },
-      { id: 'n4', type: NodeType.CONDITION, name: '金额判断', condition: { field: 'amount', operator: '>', value: 100000 } },
+      {
+        id: 'n4',
+        type: NodeType.CONDITION,
+        name: '金额判断',
+        condition: { field: 'amount', operator: '>', value: 100000 }
+      },
       { id: 'n5', type: NodeType.APPROVE, name: '总经理审批', approver: '总经理', mode: FlowMode.SERIAL },
       { id: 'n6', type: NodeType.END, name: '完成' }
     ],
@@ -139,7 +149,12 @@ export const WORKFLOW_TEMPLATES = {
     nodes: [
       { id: 'n1', type: NodeType.START, name: '提交申请', approver: '申请人' },
       { id: 'n2', type: NodeType.APPROVE, name: '财务审批', approver: '财务', mode: FlowMode.SERIAL },
-      { id: 'n3', type: NodeType.CONDITION, name: '金额判断', condition: { field: 'amount', operator: '>', value: 30000 } },
+      {
+        id: 'n3',
+        type: NodeType.CONDITION,
+        name: '金额判断',
+        condition: { field: 'amount', operator: '>', value: 30000 }
+      },
       { id: 'n4', type: NodeType.APPROVE, name: '总经理审批', approver: '总经理', mode: FlowMode.SERIAL },
       { id: 'n5', type: NodeType.END, name: '完成' }
     ],
@@ -158,7 +173,7 @@ class WorkflowEngine {
     this._templates = new Map()
     this._instances = new Map()
     /* 注册预定义模板 */
-    Object.values(WORKFLOW_TEMPLATES).forEach(t => {
+    Object.values(WORKFLOW_TEMPLATES).forEach((t) => {
       this._templates.set(t.id, t)
     })
     /* 从 localStorage 加载已持久化的实例 */
@@ -173,7 +188,7 @@ class WorkflowEngine {
       const raw = localStorage.getItem(INSTANCES_STORAGE_KEY)
       if (raw) {
         const arr = JSON.parse(raw)
-        arr.forEach(inst => this._instances.set(inst.id, inst))
+        arr.forEach((inst) => this._instances.set(inst.id, inst))
       }
     } catch (e) {
       console.error('[WorkflowEngine] 加载持久化实例失败:', e)
@@ -232,17 +247,17 @@ class WorkflowEngine {
     }
 
     /* 找到起始节点的下一个节点（第一个审批节点） */
-    const startNode = template.nodes.find(n => n.type === NodeType.START)
+    const startNode = template.nodes.find((n) => n.type === NodeType.START)
     if (!startNode) {
       console.error(`[WorkflowEngine] 模板缺少起始节点: ${templateId}`)
       return { success: false, error: `工作流模板 "${templateId}" 缺少起始节点` }
     }
 
-    const nextEdges = template.edges.filter(e => e.from === startNode.id)
+    const nextEdges = template.edges.filter((e) => e.from === startNode.id)
     let currentNode = null
     /* 跳过条件节点，找到第一个审批节点 */
     for (const edge of nextEdges) {
-      const targetNode = template.nodes.find(n => n.id === edge.to)
+      const targetNode = template.nodes.find((n) => n.id === edge.to)
       if (targetNode) {
         currentNode = this._resolveNextNode(template, targetNode, variables)
         break
@@ -263,14 +278,16 @@ class WorkflowEngine {
       startTime: new Date().toISOString(),
       currentNodeArrivalTime: new Date().toISOString(),
       endTime: null,
-      history: [{
-        node: startNode.name,
-        nodeId: startNode.id,
-        approver: variables.applicant || '申请人',
-        action: 'submit',
-        comment: '提交申请',
-        time: new Date().toISOString()
-      }],
+      history: [
+        {
+          node: startNode.name,
+          nodeId: startNode.id,
+          approver: variables.applicant || '申请人',
+          action: 'submit',
+          comment: '提交申请',
+          time: new Date().toISOString()
+        }
+      ],
       addedApprovers: [],
       timeoutHours: variables.timeoutHours || 48
     }
@@ -316,7 +333,7 @@ class WorkflowEngine {
       return { success: false, message: '工作流模板不存在' }
     }
 
-    const currentNode = template.nodes.find(n => n.id === instance.currentNode)
+    const currentNode = template.nodes.find((n) => n.id === instance.currentNode)
     if (!currentNode) {
       return { success: false, message: '当前节点不存在' }
     }
@@ -497,7 +514,7 @@ class WorkflowEngine {
   getInstances(templateId) {
     const all = Array.from(this._instances.values())
     if (templateId) {
-      return all.filter(inst => inst.templateId === templateId)
+      return all.filter((inst) => inst.templateId === templateId)
     }
     return all
   }
@@ -520,11 +537,11 @@ class WorkflowEngine {
    * 获取待办任务
    */
   getPendingTasks(instances, approver) {
-    return instances.filter(inst => {
+    return instances.filter((inst) => {
       if (inst.status !== InstanceStatus.RUNNING) return false
       /* 当前审批人匹配，或被加签人匹配 */
       if (inst.currentApprover === approver) return true
-      if (inst.addedApprovers && inst.addedApprovers.some(a => a.approver === approver)) return true
+      if (inst.addedApprovers && inst.addedApprovers.some((a) => a.approver === approver)) return true
       return false
     })
   }
@@ -533,8 +550,8 @@ class WorkflowEngine {
    * 获取已办任务
    */
   getCompletedTasks(instances, approver) {
-    return instances.filter(inst => {
-      return inst.history.some(h => h.approver === approver && (h.action === 'approved' || h.action === 'rejected'))
+    return instances.filter((inst) => {
+      return inst.history.some((h) => h.approver === approver && (h.action === 'approved' || h.action === 'rejected'))
     })
   }
 
@@ -545,7 +562,7 @@ class WorkflowEngine {
     const now = new Date()
     const timeoutList = []
 
-    instances.forEach(inst => {
+    instances.forEach((inst) => {
       if (inst.status !== InstanceStatus.RUNNING) return
       const referenceTime = new Date(inst.currentNodeArrivalTime || inst.startTime)
       const hoursDiff = (now - referenceTime) / (1000 * 60 * 60)
@@ -569,17 +586,17 @@ class WorkflowEngine {
   _resolveNextNode(template, node, variables) {
     if (node.type === NodeType.CONDITION) {
       const conditionMet = this._evaluateCondition(node.condition, variables)
-      const matchingEdge = template.edges.find(e => e.from === node.id && e.condition === conditionMet)
+      const matchingEdge = template.edges.find((e) => e.from === node.id && e.condition === conditionMet)
       if (matchingEdge) {
-        const targetNode = template.nodes.find(n => n.id === matchingEdge.to)
+        const targetNode = template.nodes.find((n) => n.id === matchingEdge.to)
         if (targetNode) {
           return this._resolveNextNode(template, targetNode, variables)
         }
       }
       /* 条件不匹配时走 false 分支 */
-      const falseEdge = template.edges.find(e => e.from === node.id && e.condition === false)
+      const falseEdge = template.edges.find((e) => e.from === node.id && e.condition === false)
       if (falseEdge) {
-        const targetNode = template.nodes.find(n => n.id === falseEdge.to)
+        const targetNode = template.nodes.find((n) => n.id === falseEdge.to)
         if (targetNode) {
           return this._resolveNextNode(template, targetNode, variables)
         }
@@ -593,18 +610,18 @@ class WorkflowEngine {
    * 查找下一个节点
    */
   _findNextNode(template, currentNode, variables) {
-    const edges = template.edges.filter(e => e.from === currentNode.id)
+    const edges = template.edges.filter((e) => e.from === currentNode.id)
     if (edges.length === 0) return null
 
     for (const edge of edges) {
       /* 如果有条件，评估条件 */
       if (edge.condition !== undefined) {
         /* 检查当前节点是否为条件节点的上游 */
-        const targetNode = template.nodes.find(n => n.id === edge.to)
+        const targetNode = template.nodes.find((n) => n.id === edge.to)
         if (!targetNode) continue
 
         /* 如果目标是条件节点，评估条件 */
-        const prevNode = template.nodes.find(n => n.id === edge.from)
+        const prevNode = template.nodes.find((n) => n.id === edge.from)
         if (prevNode && prevNode.type === NodeType.CONDITION) {
           const conditionMet = this._evaluateCondition(prevNode.condition, variables)
           if (edge.condition === conditionMet) {
@@ -612,7 +629,7 @@ class WorkflowEngine {
           }
         }
       } else {
-        const targetNode = template.nodes.find(n => n.id === edge.to)
+        const targetNode = template.nodes.find((n) => n.id === edge.to)
         if (targetNode) {
           return this._resolveNextNode(template, targetNode, variables)
         }
@@ -631,13 +648,20 @@ class WorkflowEngine {
     if (fieldValue === undefined || fieldValue === null) return false
 
     switch (operator) {
-      case '>': return Number(fieldValue) > Number(value)
-      case '>=': return Number(fieldValue) >= Number(value)
-      case '<': return Number(fieldValue) < Number(value)
-      case '<=': return Number(fieldValue) <= Number(value)
-      case '==': return fieldValue == value
-      case '!=': return fieldValue != value
-      default: return true
+      case '>':
+        return Number(fieldValue) > Number(value)
+      case '>=':
+        return Number(fieldValue) >= Number(value)
+      case '<':
+        return Number(fieldValue) < Number(value)
+      case '<=':
+        return Number(fieldValue) <= Number(value)
+      case '==':
+        return fieldValue == value
+      case '!=':
+        return fieldValue != value
+      default:
+        return true
     }
   }
 
@@ -648,10 +672,10 @@ class WorkflowEngine {
     const template = this._templates.get(instance.templateId)
     if (!template) return []
 
-    const completedNodeIds = instance.history.map(h => h.nodeId)
-    const rejected = instance.history.find(h => h.action === 'rejected')
+    const completedNodeIds = instance.history.map((h) => h.nodeId)
+    const rejected = instance.history.find((h) => h.action === 'rejected')
 
-    return template.nodes.map(node => {
+    return template.nodes.map((node) => {
       let status = 'pending'
       if (node.type === NodeType.START || completedNodeIds.includes(node.id)) {
         status = 'completed'
@@ -664,9 +688,9 @@ class WorkflowEngine {
       }
       /* 条件节点跟随上游状态 */
       if (node.type === NodeType.CONDITION) {
-        const prevEdge = template.edges.find(e => e.to === node.id)
+        const prevEdge = template.edges.find((e) => e.to === node.id)
         if (prevEdge) {
-          const prevNode = template.nodes.find(n => n.id === prevEdge.from)
+          const prevNode = template.nodes.find((n) => n.id === prevEdge.from)
           if (prevNode && completedNodeIds.includes(prevNode.id)) {
             status = 'completed'
           }

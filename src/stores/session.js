@@ -165,13 +165,17 @@ export const useSessionStore = defineStore('session', () => {
       isSoloMode.value = true
       try {
         localStorage.setItem(REMEMBERED_ROLE_KEY, role)
-      } catch (e) { /* 忽略 */ }
+      } catch (e) {
+        /* 忽略 */
+      }
     } else {
       rememberedRole.value = null
       isSoloMode.value = false
       try {
         localStorage.removeItem(REMEMBERED_ROLE_KEY)
-      } catch (e) { /* 忽略 */ }
+      } catch (e) {
+        /* 忽略 */
+      }
     }
 
     /* 持久化到 localStorage */
@@ -232,7 +236,9 @@ export const useSessionStore = defineStore('session', () => {
       rememberedRole.value = newRole
       try {
         localStorage.setItem(REMEMBERED_ROLE_KEY, newRole)
-      } catch (e) { /* 忽略 */ }
+      } catch (e) {
+        /* 忽略 */
+      }
     }
 
     /* 持久化 */
@@ -245,7 +251,9 @@ export const useSessionStore = defineStore('session', () => {
     }
     try {
       localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData))
-    } catch (e) { /* 忽略 */ }
+    } catch (e) {
+      /* 忽略 */
+    }
 
     return true
   }
@@ -272,13 +280,17 @@ export const useSessionStore = defineStore('session', () => {
       isSoloMode.value = true
       try {
         localStorage.setItem(REMEMBERED_ROLE_KEY, currentRole.value)
-      } catch (e) { /* 忽略 */ }
+      } catch (e) {
+        /* 忽略 */
+      }
     } else {
       rememberedRole.value = null
       isSoloMode.value = false
       try {
         localStorage.removeItem(REMEMBERED_ROLE_KEY)
-      } catch (e) { /* 忽略 */ }
+      } catch (e) {
+        /* 忽略 */
+      }
     }
   }
 

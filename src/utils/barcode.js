@@ -12,13 +12,7 @@
 export function generateBarcode(text, options = {}) {
   if (!text) return ''
 
-  const {
-    width = 2,
-    height = 60,
-    fontSize = 12,
-    color = '#000000',
-    background = '#ffffff'
-  } = options
+  const { width = 2, height = 60, fontSize = 12, color = '#000000', background = '#ffffff' } = options
 
   /* 简化的Code 128编码 - 使用交替的黑白条表示 */
   const chars = text.split('')
@@ -26,8 +20,8 @@ export function generateBarcode(text, options = {}) {
   let totalWidth = 0
 
   /* 起始符 */
-  bars.push({ w: 2, c: 1 })  // 黑
-  bars.push({ w: 1, c: 0 })  // 白
+  bars.push({ w: 2, c: 1 }) // 黑
+  bars.push({ w: 1, c: 0 }) // 白
   totalWidth += 3
 
   /* 数据编码 - 每个字符生成固定模式 */
@@ -82,12 +76,7 @@ export function generateBarcode(text, options = {}) {
  * @returns {string} data URL
  */
 export function generateQRCode(text, options = {}) {
-  const {
-    size = 200,
-    margin = 10,
-    color = '#000000',
-    background = '#ffffff'
-  } = options
+  const { size = 200, margin = 10, color = '#000000', background = '#ffffff' } = options
 
   if (!text) return ''
 
@@ -117,12 +106,7 @@ export function generateQRCode(text, options = {}) {
       /* 跳过定位图案区域 */
       if (isFinderArea(row, col, moduleCount)) continue
       if (dataModules[row] && dataModules[row][col]) {
-        ctx.fillRect(
-          margin + col * moduleSize,
-          margin + row * moduleSize,
-          moduleSize,
-          moduleSize
-        )
+        ctx.fillRect(margin + col * moduleSize, margin + row * moduleSize, moduleSize, moduleSize)
       }
     }
   }
@@ -162,7 +146,7 @@ function generateDataModules(text, moduleCount) {
       /* 使用确定性伪随机决定是否填充 */
       const seed = hash + row * moduleCount + col
       const val = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453
-      modules[row][col] = (val - Math.floor(val)) > 0.5
+      modules[row][col] = val - Math.floor(val) > 0.5
     }
   }
   return modules
@@ -219,7 +203,7 @@ export function generateLabels(items, options = {}) {
 
   const cfg = sizeMap[labelSize] || sizeMap.medium
 
-  const labels = items.map(item => {
+  const labels = items.map((item) => {
     const barcodeSvg = generateBarcode(item.code, {
       width: 1.5,
       height: cfg.barcodeHeight,

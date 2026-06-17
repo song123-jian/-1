@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="dashboard-page">
     <div v-if="isLoading" class="skeleton-wrapper">
       <div class="skeleton-row-4">
@@ -38,15 +38,7 @@
           <Icon name="refresh" :size="14" />
           刷新
         </button>
-        <button
-          v-if="showSeedButton"
-          class="btn btn-ghost"
-          style="color:var(--color-warning)"
-          @click="handleSeedData"
-        >
-          <Icon name="database" :size="14" />
-          灌入演示数据
-        </button>
+
       </div>
 
       <!-- 紧凑指标条 -->
@@ -159,7 +151,7 @@
 
       <DashCharts ref="chartsRef" />
 
-      <DashAlerts :alerts="alerts" :recent-activities="recentActivities" @navigate="$router.push($event)" />
+      <DashAlerts :alerts="alerts" :recent-activities="recentActivities" @navigate="$router.push($event).catch(() => {})" />
 
       <!-- 智能洞察条 -->
       <div
@@ -179,7 +171,7 @@
         :ai-summary="aiSummary"
         :ai-insights="aiInsights"
         :is-refreshing-insights="isRefreshingInsights"
-        @navigate="$router.push($event)"
+        @navigate="$router.push($event).catch(() => {})"
         @refresh-insights="refreshInsights"
       />
 
@@ -574,6 +566,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Dashboard' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDataStore } from '@/stores/data'
@@ -584,7 +579,6 @@ import { useContractStore } from '@/modules/sales/stores/contract'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { useCollectionStore } from '@/modules/finance/stores/collection'
 import { useDataCenterStore } from '@/stores/dataCenter'
-import { seedAllStores } from '@/utils/seedData'
 import { formatNumber } from '@/utils/format'
 import DashStatsCards from '@/components/dashboard/DashStatsCards.vue'
 import DashWeekView from '@/components/dashboard/DashWeekView.vue'
@@ -995,19 +989,6 @@ function refreshData() {
   // 触发store数据重新计算（computed属性会自动响应）
   // 强制刷新insights
   refreshInsights()
-}
-
-/* 是否显示灌入演示数据按钮（数据为空时显示） */
-const showSeedButton = computed(() => {
-  return customerStore.customers.length === 0 && quotationStore.quotations.length === 0
-})
-
-/* 灌入演示数据 */
-function handleSeedData() {
-  if (!confirm('确定要灌入演示数据吗？这将生成约300条虚假数据用于测试。')) return
-  const result = seedAllStores(dataCenter)
-  alert(`演示数据灌入完成！\n客户: ${result.customers}\n报价单: ${result.quotations}\n合同: ${result.contracts}\n交易: ${result.transactions}\n采购: ${result.purchases}\n库存: ${result.inventory}\n回款: ${result.collections}\n送货: ${result.deliveries}\n待办: ${result.todos}`)
-  refreshData()
 }
 
 const isRefreshingInsights = ref(false)

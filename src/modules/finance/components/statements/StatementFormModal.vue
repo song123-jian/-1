@@ -29,14 +29,15 @@
           </div>
         </div>
 
-        <SmartRecognizePanel v-if="!editingId"
-          v-model:showSmartRec="showSmartRec"
-          v-model:smartRecInput="smartRecInput"
-          :smartRecResult="smartRecResult"
+        <SmartRecognizePanel
+          v-if="!editingId"
+          v-model:show-smart-rec="showSmartRec"
+          v-model:smart-rec-input="smartRecInput"
+          :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
-          @runSmartRecognize="runSmartRecognize"
-          @applySmartRecognize="onApplySmartRecognize"
-          @handleSmartFileUpload="handleSmartFileUpload"
+          @run-smart-recognize="runSmartRecognize"
+          @apply-smart-recognize="onApplySmartRecognize"
+          @handle-smart-file-upload="handleSmartFileUpload"
         />
         <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
           <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
@@ -48,29 +49,29 @@
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">对账单号</label>
-              <input type="text" class="form-input" v-model="editorData.statementNo" readonly>
+              <input v-model="editorData.statementNo" type="text" class="form-input" readonly />
             </div>
             <div class="form-group">
               <label class="form-label">账单期间</label>
-              <input type="month" class="form-input" v-model="editorData.period" @change="onPeriodChange">
+              <input v-model="editorData.period" type="month" class="form-input" @change="onPeriodChange" />
             </div>
             <div class="form-group">
               <label class="form-label">对账日期</label>
-              <input type="date" class="form-input" v-model="editorData.reconDate">
+              <input v-model="editorData.reconDate" type="date" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-3">
             <div class="form-group">
               <label class="form-label">联系方式</label>
-              <input type="text" class="form-input" v-model="editorData.contactPhone" placeholder="联系电话">
+              <input v-model="editorData.contactPhone" type="text" class="form-input" placeholder="联系电话" />
             </div>
             <div class="form-group">
               <label class="form-label">制单人</label>
-              <input type="text" class="form-input" v-model="editorData.preparer" placeholder="制单人">
+              <input v-model="editorData.preparer" type="text" class="form-input" placeholder="制单人" />
             </div>
             <div class="form-group">
               <label class="form-label">审核人</label>
-              <select class="form-select" v-model="editorData.reviewer">
+              <select v-model="editorData.reviewer" class="form-select">
                 <option value="">请选择</option>
                 <option value="admin">管理员</option>
                 <option value="finance">财务主管</option>
@@ -84,14 +85,16 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">采购方</label>
-              <select class="form-select" v-model="editorData.buyerId" @change="onBuyerChange">
+              <select v-model="editorData.buyerId" class="form-select" @change="onBuyerChange">
                 <option value="">请选择采购方</option>
-                <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">{{ c.name || c.fullName || c.companyName }}</option>
+                <option v-for="c in customerStore.customers" :key="c.id" :value="c.id">
+                  {{ c.name || c.fullName || c.companyName }}
+                </option>
               </select>
             </div>
             <div class="form-group">
               <label class="form-label">供应商</label>
-              <select class="form-select" v-model="editorData.sellerId" @change="onSellerChange">
+              <select v-model="editorData.sellerId" class="form-select" @change="onSellerChange">
                 <option value="">请选择供应商</option>
                 <option v-for="s in dataStore.suppliers" :key="s.id" :value="s.id">{{ s.name || s.shortName }}</option>
               </select>
@@ -100,45 +103,47 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">采购方地址</label>
-              <input type="text" class="form-input" v-model="editorData.buyerAddress">
+              <input v-model="editorData.buyerAddress" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">供应商地址</label>
-              <input type="text" class="form-input" v-model="editorData.sellerAddress">
+              <input v-model="editorData.sellerAddress" type="text" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">采购方联系人</label>
-              <input type="text" class="form-input" v-model="editorData.buyerContact">
+              <input v-model="editorData.buyerContact" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">供应商联系人</label>
-              <input type="text" class="form-input" v-model="editorData.sellerContact">
+              <input v-model="editorData.sellerContact" type="text" class="form-input" />
             </div>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">采购方电话</label>
-              <input type="text" class="form-input" v-model="editorData.buyerPhone">
+              <input v-model="editorData.buyerPhone" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">供应商电话</label>
-              <input type="text" class="form-input" v-model="editorData.sellerPhone">
+              <input v-model="editorData.sellerPhone" type="text" class="form-input" />
             </div>
           </div>
         </div>
 
         <!-- 步骤3：交易明细 -->
         <div v-if="editorStep === 3" class="wizard-content">
-          <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-3)">
+          <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3)">
             <button class="btn btn-sm btn-outline" @click="addItemRow">添加一行</button>
             <button class="btn btn-sm btn-outline" @click="autoFetchTransactions">自动拉取交易</button>
-            <button class="btn btn-sm btn-outline" @click="clearItems" style="color:var(--color-danger)">清空</button>
-            <span style="margin-left:auto;font-size:var(--font-size-sm);color:var(--color-text-secondary)">共 {{ editorItems.length }} 条</span>
+            <button class="btn btn-sm btn-outline" style="color: var(--color-danger)" @click="clearItems">清空</button>
+            <span style="margin-left: auto; font-size: var(--font-size-sm); color: var(--color-text-secondary)">
+              共 {{ editorItems.length }} 条
+            </span>
           </div>
-          <div class="table-container" style="max-height:300px;overflow-y:auto">
-            <table class="data-table" style="font-size:var(--font-size-xs)">
+          <div class="table-container" style="max-height: 300px; overflow-y: auto">
+            <table class="data-table" style="font-size: var(--font-size-xs)">
               <thead>
                 <tr>
                   <th>#</th>
@@ -156,16 +161,28 @@
               </thead>
               <tbody>
                 <tr v-if="editorItems.length === 0">
-                  <td colspan="11" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-3)">暂无明细，请点击"添加一行"</td>
+                  <td
+                    colspan="11"
+                    style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-3)"
+                  >
+                    暂无明细，请点击"添加一行"
+                  </td>
                 </tr>
                 <tr v-for="(item, idx) in editorItems" :key="idx">
-                  <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ idx + 1 }}</td>
-                  <td><input type="date" class="form-input form-input-xs" v-model="item.date"></td>
-                  <td><input class="form-input form-input-xs" v-model="item.name" placeholder="名称"></td>
-                  <td><input class="form-input form-input-xs" style="width:80px" v-model="item.code" placeholder="料号"></td>
-                  <td><input class="form-input form-input-xs" v-model="item.spec" placeholder="规格"></td>
+                  <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">{{ idx + 1 }}</td>
+                  <td><input v-model="item.date" type="date" class="form-input form-input-xs" /></td>
+                  <td><input v-model="item.name" class="form-input form-input-xs" placeholder="名称" /></td>
                   <td>
-                    <select class="form-select form-input-xs" style="width:65px" v-model="item.unit">
+                    <input
+                      v-model="item.code"
+                      class="form-input form-input-xs"
+                      style="width: 80px"
+                      placeholder="料号"
+                    />
+                  </td>
+                  <td><input v-model="item.spec" class="form-input form-input-xs" placeholder="规格" /></td>
+                  <td>
+                    <select v-model="item.unit" class="form-select form-input-xs" style="width: 65px">
                       <option value="个">个</option>
                       <option value="件">件</option>
                       <option value="kg">kg</option>
@@ -175,39 +192,88 @@
                       <option value="套">套</option>
                     </select>
                   </td>
-                  <td><input type="number" class="form-input form-input-xs" style="width:70px;text-align:right" v-model.number="item.qty" step="0.01" min="0" @input="calcItemAmount(idx)"></td>
-                  <td><input type="number" class="form-input form-input-xs" style="width:80px;text-align:right" v-model.number="item.price" step="0.01" min="0" @input="calcItemAmount(idx)"></td>
-                  <td style="text-align:right;font-weight:600;overflow-wrap:break-word;word-wrap:break-word">¥{{ formatMoney(item.amount) }}</td>
-                  <td><input class="form-input form-input-xs" style="width:60px" v-model="item.remark" placeholder="备注"></td>
-                  <td><button class="btn btn-sm btn-outline" style="color:var(--color-danger);padding:0 4px" @click="removeItemRow(idx)">删除</button></td>
+                  <td>
+                    <input
+                      v-model.number="item.qty"
+                      type="number"
+                      class="form-input form-input-xs"
+                      style="width: 70px; text-align: right"
+                      step="0.01"
+                      min="0"
+                      @input="calcItemAmount(idx)"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      v-model.number="item.price"
+                      type="number"
+                      class="form-input form-input-xs"
+                      style="width: 80px; text-align: right"
+                      step="0.01"
+                      min="0"
+                      @input="calcItemAmount(idx)"
+                    />
+                  </td>
+                  <td style="text-align: right; font-weight: 600; overflow-wrap: break-word; word-wrap: break-word">
+                    ¥{{ formatMoney(item.amount) }}
+                  </td>
+                  <td>
+                    <input
+                      v-model="item.remark"
+                      class="form-input form-input-xs"
+                      style="width: 60px"
+                      placeholder="备注"
+                    />
+                  </td>
+                  <td>
+                    <button
+                      class="btn btn-sm btn-outline"
+                      style="color: var(--color-danger); padding: 0 4px"
+                      @click="removeItemRow(idx)"
+                    >
+                      删除
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div class="editor-section" style="margin-top:var(--space-4)">
+          <div class="editor-section" style="margin-top: var(--space-4)">
             <h4 class="editor-section-title">金额合计</h4>
             <div class="form-row form-row-3">
               <div class="form-group">
                 <label class="form-label">税率(%)</label>
-                <input type="number" class="form-input" v-model.number="editorData.taxRate" @input="calcAmounts">
+                <input v-model.number="editorData.taxRate" type="number" class="form-input" @input="calcAmounts" />
               </div>
               <div class="form-group">
                 <label class="form-label">小计</label>
-                <input type="text" class="form-input" :value="'¥' + formatMoney(calcSubtotal)" readonly>
+                <input type="text" class="form-input" :value="'¥' + formatMoney(calcSubtotal)" readonly />
               </div>
               <div class="form-group">
                 <label class="form-label">税额</label>
-                <input type="text" class="form-input" :value="'¥' + formatMoney(calcTaxAmount)" readonly>
+                <input type="text" class="form-input" :value="'¥' + formatMoney(calcTaxAmount)" readonly />
               </div>
             </div>
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">合计</label>
-                <input type="text" class="form-input" :value="'¥' + formatMoney(calcTotalAmount)" readonly style="color:var(--color-danger);font-weight:700">
+                <input
+                  type="text"
+                  class="form-input"
+                  :value="'¥' + formatMoney(calcTotalAmount)"
+                  readonly
+                  style="color: var(--color-danger); font-weight: 700"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">大写金额</label>
-                <input type="text" class="form-input" :value="calcTotalChinese" readonly style="color:var(--color-danger)">
+                <input
+                  type="text"
+                  class="form-input"
+                  :value="calcTotalChinese"
+                  readonly
+                  style="color: var(--color-danger)"
+                />
               </div>
             </div>
           </div>
@@ -218,7 +284,7 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">付款方式</label>
-              <select class="form-select" v-model="editorData.paymentMethod">
+              <select v-model="editorData.paymentMethod" class="form-select">
                 <option value="">请选择</option>
                 <option value="银行转账">银行转账</option>
                 <option value="承兑汇票">承兑汇票</option>
@@ -228,7 +294,7 @@
             </div>
             <div class="form-group">
               <label class="form-label">付款期限</label>
-              <select class="form-select" v-model="editorData.paymentTerm">
+              <select v-model="editorData.paymentTerm" class="form-select">
                 <option value="">请选择</option>
                 <option value="月结30天">月结30天</option>
                 <option value="月结60天">月结60天</option>
@@ -241,30 +307,33 @@
           <div class="form-row form-row-2">
             <div class="form-group">
               <label class="form-label">开户银行</label>
-              <input type="text" class="form-input" v-model="editorData.bankName">
+              <input v-model="editorData.bankName" type="text" class="form-input" />
             </div>
             <div class="form-group">
               <label class="form-label">银行账号</label>
-              <input type="text" class="form-input" v-model="editorData.bankAccount">
+              <input v-model="editorData.bankAccount" type="text" class="form-input" />
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">账户名称</label>
-            <input type="text" class="form-input" v-model="editorData.bankHolder">
+            <input v-model="editorData.bankHolder" type="text" class="form-input" />
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-outline" @click="prevStep" v-if="editorStep > 1">上一步</button>
+        <button v-if="editorStep > 1" class="btn btn-outline" @click="prevStep">上一步</button>
         <button class="btn btn-outline" @click="handleClose">取消</button>
-        <button class="btn btn-primary" @click="nextStep" v-if="editorStep < 4">下一步</button>
-        <button class="btn btn-outline" @click="saveDraft" v-if="editorStep === 4">保存草稿</button>
-        <button class="btn btn-primary" @click="submitStatement" v-if="editorStep === 4">提交审核</button>
+        <button v-if="editorStep < 4" class="btn btn-primary" @click="nextStep">下一步</button>
+        <button v-if="editorStep === 4" class="btn btn-outline" @click="saveDraft">保存草稿</button>
+        <button v-if="editorStep === 4" class="btn btn-primary" @click="submitStatement">提交审核</button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'StatementFormModal' }
+</script>
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useStatementStore } from '@/modules/finance/stores/statement'
@@ -321,22 +390,24 @@ const { warnings, errors, hasErrors, hasWarnings, validate, clearWarnings } = us
     { key: 'period', label: '账单期间' },
     { key: 'buyerName', label: '采购方' }
   ],
-  dateCheck: [
-    { startField: 'reconDate', endField: 'dueDate', message: '到期日不能早于对账日期' }
-  ]
+  dateCheck: [{ startField: 'reconDate', endField: 'dueDate', message: '到期日不能早于对账日期' }]
 })
 
 const draftData = reactive({})
-watch([editorData, editorItems], ([ed, items]) => {
-  if (editingId.value) return
-  Object.assign(draftData, { ...ed, items: items ? [...items] : [] })
-}, { deep: true })
+watch(
+  [editorData, editorItems],
+  ([ed, items]) => {
+    if (editingId.value) return
+    Object.assign(draftData, { ...ed, items: items ? [...items] : [] })
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('statement-form', draftData, {
   debounce: 1500,
   onRestore: (draft) => {
     if (draft.data.items) {
-      editorItems.value = draft.data.items.map(item => ({ ...item }))
+      editorItems.value = draft.data.items.map((item) => ({ ...item }))
     }
   }
 })
@@ -355,7 +426,7 @@ function onApplySmartRecognize() {
   applySmartRecognize()
   // 填入表格明细行
   if (smartRecResult.value && smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
-    smartRecResult.value.tableRows.forEach(row => {
+    smartRecResult.value.tableRows.forEach((row) => {
       editorItems.value.push({
         date: row.date || '',
         name: row.name || '',
@@ -364,7 +435,7 @@ function onApplySmartRecognize() {
         unit: row.unit || 'kg',
         qty: row.qty || 0,
         price: row.price || 0,
-        amount: (row.qty && row.price) ? row.qty * row.price : 0,
+        amount: row.qty && row.price ? row.qty * row.price : 0,
         remark: row.remark || '',
         sourceTransactionId: ''
       })
@@ -376,10 +447,11 @@ function onApplySmartRecognize() {
 function initForm() {
   if (props.editingStatement && props.editingStatement.id) {
     editingId.value = props.editingStatement.id
-    Object.keys(editorData).forEach(k => {
-      editorData[k] = props.editingStatement[k] !== undefined ? props.editingStatement[k] : (typeof editorData[k] === 'number' ? 0 : '')
+    Object.keys(editorData).forEach((k) => {
+      editorData[k] =
+        props.editingStatement[k] !== undefined ? props.editingStatement[k] : typeof editorData[k] === 'number' ? 0 : ''
     })
-    editorItems.value = (props.editingStatement.items || []).map(i => ({ ...i }))
+    editorItems.value = (props.editingStatement.items || []).map((i) => ({ ...i }))
   } else {
     editingId.value = null
     const now = new Date()
@@ -425,7 +497,7 @@ const calcSubtotal = computed(() => {
 })
 
 const calcTaxAmount = computed(() => {
-  return calcSubtotal.value * (editorData.taxRate || 0) / 100
+  return (calcSubtotal.value * (editorData.taxRate || 0)) / 100
 })
 
 const calcTotalAmount = computed(() => {
@@ -465,7 +537,7 @@ function onPeriodChange() {
 }
 
 function onBuyerChange() {
-  const c = customerStore.customers.find(c => c.id === editorData.buyerId)
+  const c = customerStore.customers.find((c) => c.id === editorData.buyerId)
   if (c) {
     editorData.buyerName = c.name || c.fullName || c.companyName
     editorData.buyerAddress = c.address || ''
@@ -476,7 +548,7 @@ function onBuyerChange() {
 }
 
 function onSellerChange() {
-  const s = dataStore.suppliers.find(s => s.id === editorData.sellerId)
+  const s = dataStore.suppliers.find((s) => s.id === editorData.sellerId)
   if (s) {
     editorData.sellerName = s.name || s.shortName
     editorData.sellerAddress = s.address || ''
@@ -535,8 +607,14 @@ function calcAmounts() {
 }
 
 function autoFetchTransactions() {
-  if (!editorData.buyerId) { alert('请先选择采购方'); return }
-  if (!editorData.period) { alert('请先选择账单期间'); return }
+  if (!editorData.buyerId) {
+    alert('请先选择采购方')
+    return
+  }
+  if (!editorData.period) {
+    alert('请先选择账单期间')
+    return
+  }
   const transactions = dataStore.transactions || []
   const parts = editorData.period.split('-')
   const yr = parseInt(parts[0])
@@ -544,15 +622,19 @@ function autoFetchTransactions() {
   const lastDay = new Date(yr, mo, 0).getDate()
   const periodStart = editorData.period + '-01'
   const periodEnd = editorData.period + '-' + String(lastDay).padStart(2, '0')
-  const matched = transactions.filter(t =>
-    t.customerId === editorData.buyerId &&
-    t.type !== 'collection' &&
-    t.date >= periodStart &&
-    t.date <= periodEnd &&
-    (!t.reconciliationStatus || t.reconciliationStatus === '')
+  const matched = transactions.filter(
+    (t) =>
+      t.customerId === editorData.buyerId &&
+      t.type !== 'collection' &&
+      t.date >= periodStart &&
+      t.date <= periodEnd &&
+      (!t.reconciliationStatus || t.reconciliationStatus === '')
   )
-  if (matched.length === 0) { alert('该期间无未对账交易记录'); return }
-  const existingIds = new Set(editorItems.value.filter(i => i.sourceTransactionId).map(i => i.sourceTransactionId))
+  if (matched.length === 0) {
+    alert('该期间无未对账交易记录')
+    return
+  }
+  const existingIds = new Set(editorItems.value.filter((i) => i.sourceTransactionId).map((i) => i.sourceTransactionId))
   let added = 0
   for (const t of matched) {
     if (!existingIds.has(t.id)) {
@@ -642,9 +724,29 @@ function submitStatement() {
 </script>
 
 <style scoped>
-.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
-.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
-.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
+.form-validation-panel {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.val-error {
+  color: var(--color-danger);
+  background: var(--color-danger-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.val-warning {
+  color: var(--color-warning);
+  background: var(--color-warning-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -722,8 +824,14 @@ function submitStatement() {
   animation: fadeIn 0.2s ease;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .editor-section {
   margin-bottom: var(--space-4);
@@ -741,7 +849,11 @@ function submitStatement() {
   color: var(--color-accent);
 }
 @media (max-width: 640px) {
-  .form-row { grid-template-columns: 1fr; }
-  .form-row-3 { grid-template-columns: 1fr; }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

@@ -1,89 +1,286 @@
 <template>
-  <div v-if="showPreview" class="modal-overlay" @click.self="$emit('close')">
+  <div v-if="showPreview" class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog modal-lg preview-dialog">
       <div class="modal-header">
         <h3>合同预览 - {{ contract?.contractNo }}</h3>
-        <button class="modal-close" @click="$emit('close')"><Icon name="close" :size="14" /></button>
+        <button class="modal-close" @click="emit('close')"><Icon name="close" :size="14" /></button>
       </div>
       <div class="preview-tabs">
-        <button class="preview-tab" :class="{ active: previewTab === 'content' }" @click="$emit('updatePreviewTab', 'content')"><Icon name="file-text" :size="14" /> 合同内容</button>
-        <button class="preview-tab" :class="{ active: previewTab === 'attachment' }" @click="$emit('updatePreviewTab', 'attachment')"><Icon name="paperclip" :size="14" /> 附件</button>
-        <button class="preview-tab" :class="{ active: previewTab === 'history' }" @click="$emit('updatePreviewTab', 'history')"><Icon name="clock" :size="14" /> 变更记录</button>
-        <button class="preview-tab" :class="{ active: previewTab === 'related' }" @click="$emit('updatePreviewTab', 'related')"><Icon name="link" :size="14" /> 关联单据</button>
-        <button class="btn btn-ghost btn-sm" style="margin-left:auto" @click="exportPDF"><Icon name="print" :size="14" /> 打印/导出</button>
+        <button
+          class="preview-tab"
+          :class="{ active: previewTab === 'content' }"
+          @click="emit('updatePreviewTab', 'content')"
+        >
+          <Icon name="file-text" :size="14" />
+          合同内容
+        </button>
+        <button
+          class="preview-tab"
+          :class="{ active: previewTab === 'attachment' }"
+          @click="emit('updatePreviewTab', 'attachment')"
+        >
+          <Icon name="paperclip" :size="14" />
+          附件
+        </button>
+        <button
+          class="preview-tab"
+          :class="{ active: previewTab === 'history' }"
+          @click="emit('updatePreviewTab', 'history')"
+        >
+          <Icon name="clock" :size="14" />
+          变更记录
+        </button>
+        <button
+          class="preview-tab"
+          :class="{ active: previewTab === 'related' }"
+          @click="emit('updatePreviewTab', 'related')"
+        >
+          <Icon name="link" :size="14" />
+          关联单据
+        </button>
+        <button class="btn btn-ghost btn-sm" style="margin-left: auto" @click="exportPDF">
+          <Icon name="print" :size="14" />
+          打印/导出
+        </button>
       </div>
       <div class="preview-body">
         <div v-if="previewTab === 'content'" class="contract-preview-content">
           <div class="contract-doc-title">{{ contract?.contractType || '购销合同' }}</div>
           <div class="contract-doc-subtitle">合同编号：{{ contract?.contractNo }}</div>
-          <hr style="border:none;border-top:2px solid #1a1a1a;margin:12px 0" />
+          <hr style="border: none; border-top: 2px solid #1a1a1a; margin: 12px 0" />
           <div class="contract-info-grid">
-            <div class="contract-info-row"><span class="contract-info-label">{{ contract?.contractType === '采购合同' ? '甲方（买方）：' : '甲方（需方）：' }}</span><span class="contract-info-value">{{ contract?.partyA }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">{{ contract?.contractType === '采购合同' ? '乙方（卖方）：' : '乙方（供方）：' }}</span><span class="contract-info-value">{{ contract?.partyB || COMPANY_DEFAULTS.name }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">签订地点：</span><span class="contract-info-value">{{ contract?.signPlace }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">签订日期：</span><span class="contract-info-value">{{ contract?.signDate }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">有效期至：</span><span class="contract-info-value">{{ contract?.endDate || '未设定' }}</span></div>
-            <div class="contract-info-row"><span class="contract-info-label">结算方式：</span><span class="contract-info-value">{{ contract?.settlement || '款到发货' }}</span></div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">
+                {{ contract?.contractType === '采购合同' ? '甲方（买方）：' : '甲方（需方）：' }}
+              </span>
+              <span class="contract-info-value">{{ contract?.partyA }}</span>
+            </div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">
+                {{ contract?.contractType === '采购合同' ? '乙方（卖方）：' : '乙方（供方）：' }}
+              </span>
+              <span class="contract-info-value">{{ contract?.partyB || COMPANY_DEFAULTS.name }}</span>
+            </div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">签订地点：</span>
+              <span class="contract-info-value">{{ contract?.signPlace }}</span>
+            </div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">签订日期：</span>
+              <span class="contract-info-value">{{ contract?.signDate }}</span>
+            </div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">有效期至：</span>
+              <span class="contract-info-value">{{ contract?.endDate || '未设定' }}</span>
+            </div>
+            <div class="contract-info-row">
+              <span class="contract-info-label">结算方式：</span>
+              <span class="contract-info-value">{{ contract?.settlement || '款到发货' }}</span>
+            </div>
           </div>
           <div class="contract-section-title">产品明细</div>
           <table class="contract-table">
-            <thead><tr><th>序号</th><th>产品名称</th><th>规格型号</th><th>数量(KG)</th><th>含税单价(元/KG)</th><th>金额(元)</th><th>交货地点</th><th>备注</th></tr></thead>
+            <thead>
+              <tr>
+                <th>序号</th>
+                <th>产品名称</th>
+                <th>规格型号</th>
+                <th>数量(KG)</th>
+                <th>含税单价(元/KG)</th>
+                <th>金额(元)</th>
+                <th>交货地点</th>
+                <th>备注</th>
+              </tr>
+            </thead>
             <tbody>
-              <tr v-for="(p, i) in (contract?.products || [])" :key="i">
+              <tr v-for="(p, i) in contract?.products || []" :key="i">
                 <td>{{ i + 1 }}</td>
-                <td style="text-align:left;overflow-wrap:break-word;word-wrap:break-word">{{ p.productName }}</td>
-                <td style="text-align:left;overflow-wrap:break-word;word-wrap:break-word">{{ p.spec }}</td>
+                <td style="text-align: left; overflow-wrap: break-word; word-wrap: break-word">{{ p.productName }}</td>
+                <td style="text-align: left; overflow-wrap: break-word; word-wrap: break-word">{{ p.spec }}</td>
                 <td>{{ p.quantity ? p.quantity.toFixed(2) : '' }}</td>
-                <td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">{{ p.unitPrice ? p.unitPrice.toFixed(2) : '' }}</td>
-                <td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">{{ (p.amount || p.quantity * p.unitPrice || 0).toFixed(2) }}</td>
-                <td style="text-align:left;overflow-wrap:break-word;word-wrap:break-word">{{ p.deliveryPlace }}</td>
-                <td style="text-align:left;overflow-wrap:break-word;word-wrap:break-word">{{ p.remark }}</td>
+                <td style="text-align: right; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ p.unitPrice ? p.unitPrice.toFixed(2) : '' }}
+                </td>
+                <td style="text-align: right; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ (p.amount || p.quantity * p.unitPrice || 0).toFixed(2) }}
+                </td>
+                <td style="text-align: left; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ p.deliveryPlace }}
+                </td>
+                <td style="text-align: left; overflow-wrap: break-word; word-wrap: break-word">{{ p.remark }}</td>
               </tr>
             </tbody>
-            <tfoot><tr><td colspan="5" style="text-align:right">合计</td><td style="text-align:right;overflow-wrap:break-word;word-wrap:break-word">{{ previewTotalAmount.toFixed(2) }}</td><td colspan="2"></td></tr></tfoot>
+            <tfoot>
+              <tr>
+                <td colspan="5" style="text-align: right">合计</td>
+                <td style="text-align: right; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ previewTotalAmount.toFixed(2) }}
+                </td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
           </table>
           <div class="contract-amount-summary">
-            <div class="contract-amount-row"><span>合同总金额：</span><span>¥{{ formatNumber(previewTotalAmount) }}</span></div>
-            <div class="contract-amount-row"><span>中文大写：</span><span>{{ numberToChinese(previewTotalAmount) }}</span></div>
-            <div class="contract-amount-row"><span>增值税：</span><span>含13%增值税</span></div>
+            <div class="contract-amount-row">
+              <span>合同总金额：</span>
+              <span>¥{{ formatNumber(previewTotalAmount) }}</span>
+            </div>
+            <div class="contract-amount-row">
+              <span>中文大写：</span>
+              <span>{{ numberToChinese(previewTotalAmount) }}</span>
+            </div>
+            <div class="contract-amount-row">
+              <span>增值税：</span>
+              <span>含13%增值税</span>
+            </div>
           </div>
           <div class="contract-section-title">合同条款</div>
-          <div class="contract-terms"><ol>
-            <li v-for="(item, i) in previewTermsList" :key="i"><strong>{{ item.title }}：</strong>{{ item.content }}</li>
-          </ol></div>
-          <div v-if="contract && (contract.status === 'signed' || contract.status === 'archived')" class="contract-exec-progress">
+          <div class="contract-terms">
+            <ol>
+              <li v-for="(item, i) in previewTermsList" :key="i">
+                <strong>{{ item.title }}：</strong>
+                {{ item.content }}
+              </li>
+            </ol>
+          </div>
+          <div
+            v-if="contract && (contract.status === 'signed' || contract.status === 'archived')"
+            class="contract-exec-progress"
+          >
             <div class="contract-section-title">执行进度</div>
-            <div style="margin:10px 0;padding:12px;background:var(--color-bg-secondary);border:1px solid var(--color-border);border-radius:4px;color:var(--color-text-primary)">
-              <div style="margin:6px 0;font-size:10.5pt;display:flex;justify-content:space-between;align-items:center"><strong><Icon name="dollar" :size="14" /> 回款进度</strong><span>¥{{ formatNumber(previewReceivedAmount) }} / ¥{{ formatNumber(previewTotalAmount) }} ({{ previewReceivedRatio }}%)</span></div>
-              <div style="background:var(--color-bg-tertiary);height:16px;border-radius:8px;overflow:hidden;margin:4px 0;position:relative"><div style="background:#22c55e;height:100%;border-radius:8px;transition:width 0.3s" :style="{ width: previewReceivedRatio + '%' }"></div><span v-if="Number(previewReceivedRatio) > 10" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:10px;color:#fff;font-weight:600">{{ previewReceivedRatio }}%</span></div>
+            <div
+              style="
+                margin: 10px 0;
+                padding: 12px;
+                background: var(--color-bg-secondary);
+                border: 1px solid var(--color-border);
+                border-radius: 4px;
+                color: var(--color-text-primary);
+              "
+            >
+              <div
+                style="
+                  margin: 6px 0;
+                  font-size: 10.5pt;
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <strong>
+                  <Icon name="dollar" :size="14" />
+                  回款进度
+                </strong>
+                <span>
+                  ¥{{ formatNumber(previewReceivedAmount) }} / ¥{{ formatNumber(previewTotalAmount) }} ({{
+                    previewReceivedRatio
+                  }}%)
+                </span>
+              </div>
+              <div
+                style="
+                  background: var(--color-bg-tertiary);
+                  height: 16px;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  margin: 4px 0;
+                  position: relative;
+                "
+              >
+                <div
+                  style="background: #22c55e; height: 100%; border-radius: 8px; transition: width 0.3s"
+                  :style="{ width: previewReceivedRatio + '%' }"
+                ></div>
+                <span
+                  v-if="Number(previewReceivedRatio) > 10"
+                  style="
+                    position: absolute;
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 10px;
+                    color: #fff;
+                    font-weight: 600;
+                  "
+                >
+                  {{ previewReceivedRatio }}%
+                </span>
+              </div>
             </div>
           </div>
           <div class="contract-signature">
             <div class="contract-signature-block">
-              <div style="font-weight:bold;margin-bottom:8px">{{ contract?.contractType === '采购合同' ? '甲方（买方）' : '甲方（需方）' }}：{{ contract?.partyA }}</div>
-              <div>住所：{{ contract?.partyAInfo?.address || '' }}<span v-if="!contract?.partyAInfo?.address" class="contract-signature-line"></span></div>
-              <div>签约代表：{{ contract?.partyAInfo?.representative || '' }}<span v-if="!contract?.partyAInfo?.representative" class="contract-signature-line"></span></div>
-              <div>联系方式：{{ contract?.partyAInfo?.contact || '' }}<span v-if="!contract?.partyAInfo?.contact" class="contract-signature-line"></span></div>
-              <div>日期：{{ contract?.partyAInfo?.date || '' }}<span v-if="!contract?.partyAInfo?.date" class="contract-signature-line"></span></div>
-              <div v-if="contract?.partyAInfo?.seal" style="text-align:center;margin-top:10px"><img :src="contract.partyAInfo.seal" style="width:100px;height:100px;border-radius:50%;object-fit:cover;opacity:0.7;transform:rotate(-15deg)" /></div>
-              <div v-else-if="contract?.partyAInfo?.representative" class="contract-seal-area e-sign">（电子签约）<br />代表人：{{ contract.partyAInfo.representative }}</div>
-              <div v-else class="contract-seal-area">甲方<br />签章区</div>
+              <div style="font-weight: bold; margin-bottom: 8px">
+                {{ contract?.contractType === '采购合同' ? '甲方（买方）' : '甲方（需方）' }}：{{ contract?.partyA }}
+              </div>
+              <div>
+                住所：{{ contract?.partyAInfo?.address || '' }}
+                <span v-if="!contract?.partyAInfo?.address" class="contract-signature-line"></span>
+              </div>
+              <div>
+                签约代表：{{ contract?.partyAInfo?.representative || '' }}
+                <span v-if="!contract?.partyAInfo?.representative" class="contract-signature-line"></span>
+              </div>
+              <div>
+                联系方式：{{ contract?.partyAInfo?.contact || '' }}
+                <span v-if="!contract?.partyAInfo?.contact" class="contract-signature-line"></span>
+              </div>
+              <div>
+                日期：{{ contract?.partyAInfo?.date || '' }}
+                <span v-if="!contract?.partyAInfo?.date" class="contract-signature-line"></span>
+              </div>
+              <div v-if="contract?.partyAInfo?.seal" style="text-align: center; margin-top: 10px">
+                <img
+                  :src="contract.partyAInfo.seal"
+                  style="
+                    width: 100px;
+                    height: 100px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    opacity: 0.7;
+                    transform: rotate(-15deg);
+                  "
+                />
+              </div>
+              <div v-else-if="contract?.partyAInfo?.representative" class="contract-seal-area e-sign">
+                （电子签约）
+                <br />
+                代表人：{{ contract.partyAInfo.representative }}
+              </div>
+              <div v-else class="contract-seal-area">
+                甲方
+                <br />
+                签章区
+              </div>
             </div>
             <div class="contract-signature-block">
-              <div style="font-weight:bold;margin-bottom:8px">{{ contract?.contractType === '采购合同' ? '乙方（卖方）' : '乙方（供方）' }}：{{ COMPANY_DEFAULTS.name }}</div>
+              <div style="font-weight: bold; margin-bottom: 8px">
+                {{ contract?.contractType === '采购合同' ? '乙方（卖方）' : '乙方（供方）' }}：{{
+                  COMPANY_DEFAULTS.name
+                }}
+              </div>
               <div>住所：{{ COMPANY_DEFAULTS.address }}</div>
               <div>签约代表：{{ COMPANY_DEFAULTS.representative }}</div>
               <div>联系方式：{{ COMPANY_DEFAULTS.contact }}</div>
               <div>日期：{{ contract?.partyBInfo?.date || '-' }}</div>
-              <div class="contract-seal-area has-seal">苏州冠久<br />新材料科技<br />有限公司</div>
+              <div class="contract-seal-area has-seal">
+                苏州冠久
+                <br />
+                新材料科技
+                <br />
+                有限公司
+              </div>
             </div>
           </div>
         </div>
 
         <div v-if="previewTab === 'attachment'" class="preview-attachments">
           <div class="attachment-upload">
-            <input ref="attInput" type="file" style="display:none" @change="handleAttUpload" />
-            <button class="btn btn-primary btn-sm" @click="attInput?.click()"><Icon name="file" :size="14" /> 上传附件</button>
+            <input ref="attInput" type="file" style="display: none" @change="handleAttUpload" />
+            <button class="btn btn-primary btn-sm" @click="attInput?.click()">
+              <Icon name="file" :size="14" />
+              上传附件
+            </button>
           </div>
           <div v-if="attachments.length === 0" class="empty-hint">暂无附件</div>
           <div v-for="att in attachments" :key="att.id" class="attachment-item">
@@ -91,7 +288,9 @@
             <span class="attachment-name">{{ att.name }}</span>
             <span class="attachment-size">{{ (att.size / 1024).toFixed(1) }}KB</span>
             <span class="attachment-date">{{ att.uploadedAt?.split('T')[0] }}</span>
-            <button class="action-btn danger" @click="removeAttachment(att.id)"><Icon name="close" :size="14" /></button>
+            <button class="action-btn danger" @click="removeAttachment(att.id)">
+              <Icon name="close" :size="14" />
+            </button>
           </div>
         </div>
 
@@ -99,7 +298,10 @@
           <div v-if="history.length === 0" class="empty-hint">暂无变更记录</div>
           <div class="history-timeline">
             <div v-for="ev in history" :key="ev.time + ev.type" class="history-event">
-              <div class="history-dot" :style="{ background: historyTypeColors[ev.type] || 'var(--color-text-secondary)' }"></div>
+              <div
+                class="history-dot"
+                :style="{ background: historyTypeColors[ev.type] || 'var(--color-text-secondary)' }"
+              ></div>
               <div class="history-content">
                 <div class="history-label">{{ ev.label }}</div>
                 <div class="history-meta">{{ formatDateTime(ev.time) }} · {{ ev.user }}</div>
@@ -108,15 +310,15 @@
           </div>
         </div>
 
-        <ContractRelatedDocs
-          v-if="previewTab === 'related'"
-          :relatedDocuments="relatedDocuments"
-        />
+        <ContractRelatedDocs v-if="previewTab === 'related'" :related-documents="relatedDocuments" />
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'ContractPreview' }
+</script>
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { numberToChinese } from '@/utils/numberToChinese.js'
@@ -139,35 +341,47 @@ const props = defineProps({
   previewTab: { type: String, default: 'content' }
 })
 
-defineEmits([
-  'close',
-  'updatePreviewTab'
-])
+defineEmits(['close', 'updatePreviewTab'])
 
 const attInput = ref(null)
 const attachments = ref([])
 const history = ref([])
 
-watch(() => props.contract, (c) => {
-  if (c) {
-    attachments.value = contractStore.getAttachments(c.id)
-    history.value = contractStore.getHistory(c.id)
-  } else {
-    attachments.value = []
-    history.value = []
-  }
-}, { immediate: true })
+watch(
+  () => props.contract,
+  (c) => {
+    if (c) {
+      attachments.value = contractStore.getAttachments(c.id)
+      history.value = contractStore.getHistory(c.id)
+    } else {
+      attachments.value = []
+      history.value = []
+    }
+  },
+  { immediate: true }
+)
 
 const historyTypeColors = {
-  create: 'var(--color-info)', submit: 'var(--color-warning)', approve: 'var(--color-success)',
-  reject: 'var(--color-danger)', sign: 'var(--color-success)', edit: 'var(--color-text-secondary)',
-  pending_approval: 'var(--color-warning)', signed: 'var(--color-success)',
-  archived: 'var(--color-info)', cancelled: 'var(--color-danger)', draft: '#64748b'
+  create: 'var(--color-info)',
+  submit: 'var(--color-warning)',
+  approve: 'var(--color-success)',
+  reject: 'var(--color-danger)',
+  sign: 'var(--color-success)',
+  edit: 'var(--color-text-secondary)',
+  pending_approval: 'var(--color-warning)',
+  signed: 'var(--color-success)',
+  archived: 'var(--color-info)',
+  cancelled: 'var(--color-danger)',
+  draft: '#64748b'
 }
 
 const previewTotalAmount = computed(() => {
   if (!props.contract) return 0
-  return props.contract.products?.reduce((s, p) => s + (p.amount || (p.quantity || 0) * (p.unitPrice || 0)), 0) || props.contract.totalAmount || 0
+  return (
+    props.contract.products?.reduce((s, p) => s + (p.amount || (p.quantity || 0) * (p.unitPrice || 0)), 0) ||
+    props.contract.totalAmount ||
+    0
+  )
 })
 
 const previewTermsList = computed(() => {
@@ -195,29 +409,47 @@ const previewReceivedAmount = computed(() => {
     const collections = raw ? JSON.parse(raw) : []
     const c = props.contract
     return collections
-      .filter(col => col.customerName === c.partyA || col.contractNo === c.contractNo)
+      .filter((col) => col.customerName === c.partyA || col.contractNo === c.contractNo)
       .reduce((s, col) => s + (col.amount || 0), 0)
-  } catch { return 0 }
+  } catch {
+    return 0
+  }
 })
 
 const previewReceivedRatio = computed(() => {
   const total = previewTotalAmount.value
   if (total <= 0) return 0
-  return Math.min(previewReceivedAmount.value / total * 100, 100).toFixed(1)
+  return Math.min((previewReceivedAmount.value / total) * 100, 100).toFixed(1)
 })
 
 const quotationStatusMap = {
-  draft: '草稿', pending: '待审核', sent: '已发送', approved: '已审批',
-  accepted: '已接受', rejected: '已拒绝', cancelled: '已取消'
+  draft: '草稿',
+  pending: '待审核',
+  sent: '已发送',
+  approved: '已审批',
+  accepted: '已接受',
+  rejected: '已拒绝',
+  cancelled: '已取消'
 }
 const deliveryStatusMap = {
-  created: '已创建', pending: '待发货', shipped: '已发货', transit: '运输中',
-  received: '已签收', accepted: '已验收', partial: '部分签收',
-  exception: '异常处理中', returned: '退回', cancelled: '已取消'
+  created: '已创建',
+  pending: '待发货',
+  shipped: '已发货',
+  transit: '运输中',
+  received: '已签收',
+  accepted: '已验收',
+  partial: '部分签收',
+  exception: '异常处理中',
+  returned: '退回',
+  cancelled: '已取消'
 }
 const collectionStatusMap = {
-  pending: '待确认', confirmed: '已确认', partial: '部分回款',
-  completed: '已完成', overdue: '已逾期', cancelled: '已取消'
+  pending: '待确认',
+  confirmed: '已确认',
+  partial: '部分回款',
+  completed: '已完成',
+  overdue: '已逾期',
+  cancelled: '已取消'
 }
 
 const relatedDocuments = computed(() => {
@@ -226,34 +458,50 @@ const relatedDocuments = computed(() => {
   const customerName = c.partyA
   const contractNo = c.contractNo
   const sourceQuoteId = c.sourceQuoteId
-  const quotations = quotationStore.quotations.filter(q =>
-    q.id === sourceQuoteId ||
-    q.customerName === customerName ||
-    (q.quoteNo && c.notes && c.notes.includes(q.quoteNo))
-  ).map(q => ({
-    id: q.id, docNo: q.quoteNo, type: '报价单', typeIcon: 'list',
-    customerName: q.customerName, date: q.date || q.createdAt,
-    amount: q.total || q.totalAmount || 0,
-    status: q.status, statusLabel: quotationStatusMap[q.status] || q.status
-  }))
-  const deliveries = deliveryStore.deliveries.filter(d =>
-    d.customerName === customerName ||
-    (d.contractNo && d.contractNo === contractNo)
-  ).map(d => ({
-    id: d.id, docNo: d.deliveryNo, type: '交付单', typeIcon: 'truck',
-    customerName: d.customerName, date: d.date || d.createdAt,
-    amount: d.totalAmount || 0,
-    status: d.status, statusLabel: deliveryStatusMap[d.status] || d.status
-  }))
-  const collections = collectionStore.collections.filter(col =>
-    col.customerName === customerName ||
-    (col.contractNo && col.contractNo === contractNo)
-  ).map(col => ({
-    id: col.id, docNo: col.collectionNo, type: '回款单', typeIcon: 'dollar',
-    customerName: col.customerName, date: col.date,
-    amount: col.amount || 0,
-    status: col.status, statusLabel: collectionStatusMap[col.status] || col.status
-  }))
+  const quotations = quotationStore.quotations
+    .filter(
+      (q) =>
+        q.id === sourceQuoteId ||
+        q.customerName === customerName ||
+        (q.quoteNo && c.notes && c.notes.includes(q.quoteNo))
+    )
+    .map((q) => ({
+      id: q.id,
+      docNo: q.quoteNo,
+      type: '报价单',
+      typeIcon: 'list',
+      customerName: q.customerName,
+      date: q.date || q.createdAt,
+      amount: q.total || q.totalAmount || 0,
+      status: q.status,
+      statusLabel: quotationStatusMap[q.status] || q.status
+    }))
+  const deliveries = deliveryStore.deliveries
+    .filter((d) => d.customerName === customerName || (d.contractNo && d.contractNo === contractNo))
+    .map((d) => ({
+      id: d.id,
+      docNo: d.deliveryNo,
+      type: '交付单',
+      typeIcon: 'truck',
+      customerName: d.customerName,
+      date: d.date || d.createdAt,
+      amount: d.totalAmount || 0,
+      status: d.status,
+      statusLabel: deliveryStatusMap[d.status] || d.status
+    }))
+  const collections = collectionStore.collections
+    .filter((col) => col.customerName === customerName || (col.contractNo && col.contractNo === contractNo))
+    .map((col) => ({
+      id: col.id,
+      docNo: col.collectionNo,
+      type: '回款单',
+      typeIcon: 'dollar',
+      customerName: col.customerName,
+      date: col.date,
+      amount: col.amount || 0,
+      status: col.status,
+      statusLabel: collectionStatusMap[col.status] || col.status
+    }))
   return { quotations, deliveries, collections }
 })
 
@@ -291,81 +539,390 @@ function exportPDF() {
 </script>
 
 <style scoped>
-.modal-overlay { align-items: flex-start; padding: var(--space-5); overflow-y: auto; }
-.modal-dialog { background: var(--color-surface); border-radius: var(--radius-lg); width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); }
-.modal-lg { max-width: 1200px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); position: sticky; top: 0; background: var(--color-surface); z-index: 1; }
-.modal-header h3 { margin: 0; font-size: 16px; }
-.modal-close { width: 28px; height: 28px; border: none; background: transparent; font-size: 16px; cursor: pointer; border-radius: 4px; color: var(--color-text-secondary); }
-.modal-close:hover { background: var(--color-bg-tertiary); }
+.modal-overlay {
+  align-items: flex-start;
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+.modal-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+.modal-lg {
+  max-width: 1200px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: var(--z-base);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+}
+.modal-close:hover {
+  background: var(--color-bg-tertiary);
+}
 
-.preview-dialog { max-width: 1200px; }
-.preview-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--color-border); padding: 0 var(--space-5); }
-.preview-tab { padding: var(--space-2) var(--space-4); font-size: 13px; border: none; background: transparent; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; transition: all 0.15s; }
-.preview-tab.active { color: var(--color-accent); border-bottom-color: var(--color-accent); font-weight: 600; }
-.preview-tab:hover { color: var(--color-text-primary); }
-.preview-body { padding: var(--space-5); min-height: 300px; }
+.preview-dialog {
+  max-width: 1200px;
+}
+.preview-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding: 0 var(--space-5);
+}
+.preview-tab {
+  padding: var(--space-2) var(--space-4);
+  font-size: 13px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+.preview-tab.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  font-weight: 600;
+}
+.preview-tab:hover {
+  color: var(--color-text-primary);
+}
+.preview-body {
+  padding: var(--space-5);
+  min-height: 300px;
+}
 
-.contract-preview-content { background: #fff; border-radius: 4px; padding: 25mm 20mm 20mm; color: #000; font-family: 'SimSun','Microsoft YaHei','Songti SC',serif; font-size: 12pt; line-height: 1.8; border: 1px solid var(--color-border); box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.08); position: relative; }
-.contract-doc-title { text-align: center; font-size: 20pt; font-weight: bold; letter-spacing: 6px; margin-bottom: var(--space-1); color: #1a1a1a; }
-.contract-doc-subtitle { text-align: center; font-size: 11pt; color: #555; margin-bottom: var(--space-4); }
-.contract-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-1) var(--space-10); margin: var(--space-3) 0; font-size: 10.5pt; }
-.contract-info-row { display: flex; gap: var(--space-1); }
-.contract-info-label { color: #555; white-space: nowrap; min-width: 80px; }
-.contract-info-value { color: #1a1a1a; }
-.contract-section-title { font-size: 12pt; font-weight: bold; margin: var(--space-4) 0 var(--space-2) 0; color: #1a1a1a; border-bottom: 1px solid #333; padding-bottom: var(--space-1); }
-.contract-table { width: 100%; border-collapse: collapse; margin: var(--space-2) 0; font-size: 10pt; }
-.contract-table th { background: #f0f0f0; border: 1px solid #333; padding: var(--space-2) var(--space-2); text-align: center; font-weight: bold; color: #1a1a1a; font-size: 9.5pt; }
-.contract-table td {border: 1px solid #333; padding: var(--space-2); text-align: center; color: #333; font-size: 9.5pt; overflow-wrap: break-word; word-wrap: break-word}
-.contract-table tfoot td {font-weight: bold; background: #f8f8f8; overflow-wrap: break-word; word-wrap: break-word}
-.contract-amount-summary { margin: var(--space-4) 0; padding: var(--space-3); background: #f9f9f9; border: 1px solid #ddd; border-radius: 4px; }
-.contract-amount-row { display: flex; justify-content: space-between; margin: var(--space-1) 0; font-size: 10.5pt; }
-.contract-signature { margin-top: var(--space-8); display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-10); font-size: 10.5pt; }
-.contract-signature-block { line-height: 2.2; }
-.contract-signature-line { display: inline-block; width: 140px; border-bottom: 1px solid #333; margin-left: var(--space-1); }
-.contract-seal-area { width: 120px; height: 120px; border: 2px dashed var(--color-border-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: var(--space-2) auto; color: var(--color-text-tertiary); font-size: 9pt; text-align: center; }
-.contract-seal-area.has-seal { border-color: #c00; color: #c00; font-weight: bold; font-size: 10pt; }
-.contract-seal-area.e-sign { border-color: var(--color-accent); color: var(--color-accent); font-size: 9pt; }
+.contract-preview-content {
+  background: #fff;
+  border-radius: 4px;
+  padding: 25mm 20mm 20mm;
+  color: #000;
+  font-family: 'SimSun', 'Microsoft YaHei', 'Songti SC', serif;
+  font-size: 12pt;
+  line-height: 1.8;
+  border: 1px solid var(--color-border);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+.contract-doc-title {
+  text-align: center;
+  font-size: 20pt;
+  font-weight: bold;
+  letter-spacing: 6px;
+  margin-bottom: var(--space-1);
+  color: #1a1a1a;
+}
+.contract-doc-subtitle {
+  text-align: center;
+  font-size: 11pt;
+  color: #555;
+  margin-bottom: var(--space-4);
+}
+.contract-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1) var(--space-10);
+  margin: var(--space-3) 0;
+  font-size: 10.5pt;
+}
+.contract-info-row {
+  display: flex;
+  gap: var(--space-1);
+}
+.contract-info-label {
+  color: #555;
+  white-space: nowrap;
+  min-width: 80px;
+}
+.contract-info-value {
+  color: #1a1a1a;
+}
+.contract-section-title {
+  font-size: 12pt;
+  font-weight: bold;
+  margin: var(--space-4) 0 var(--space-2) 0;
+  color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  padding-bottom: var(--space-1);
+}
+.contract-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-2) 0;
+  font-size: 10pt;
+}
+.contract-table th {
+  background: #f0f0f0;
+  border: 1px solid #333;
+  padding: var(--space-2) var(--space-2);
+  text-align: center;
+  font-weight: bold;
+  color: #1a1a1a;
+  font-size: 9.5pt;
+}
+.contract-table td {
+  border: 1px solid #333;
+  padding: var(--space-2);
+  text-align: center;
+  color: #333;
+  font-size: 9.5pt;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.contract-table tfoot td {
+  font-weight: bold;
+  background: #f8f8f8;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.contract-amount-summary {
+  margin: var(--space-4) 0;
+  padding: var(--space-3);
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.contract-amount-row {
+  display: flex;
+  justify-content: space-between;
+  margin: var(--space-1) 0;
+  font-size: 10.5pt;
+}
+.contract-signature {
+  margin-top: var(--space-8);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-10);
+  font-size: 10.5pt;
+}
+.contract-signature-block {
+  line-height: 2.2;
+}
+.contract-signature-line {
+  display: inline-block;
+  width: 140px;
+  border-bottom: 1px solid #333;
+  margin-left: var(--space-1);
+}
+.contract-seal-area {
+  width: 120px;
+  height: 120px;
+  border: 2px dashed var(--color-border-light);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: var(--space-2) auto;
+  color: var(--color-text-tertiary);
+  font-size: 9pt;
+  text-align: center;
+}
+.contract-seal-area.has-seal {
+  border-color: #c00;
+  color: #c00;
+  font-weight: bold;
+  font-size: 10pt;
+}
+.contract-seal-area.e-sign {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  font-size: 9pt;
+}
 
-.attachment-upload { margin-bottom: var(--space-3); }
-.attachment-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); margin-bottom: var(--space-2); font-size: 13px; }
-.attachment-icon { font-size: 16px; }
-.attachment-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.attachment-size { color: var(--color-text-tertiary); font-size: 12px; }
-.attachment-date { color: var(--color-text-tertiary); font-size: 12px; }
+.attachment-upload {
+  margin-bottom: var(--space-3);
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+  font-size: 13px;
+}
+.attachment-icon {
+  font-size: 16px;
+}
+.attachment-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.attachment-size {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
+.attachment-date {
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+}
 
-.preview-history { padding: 0; }
-.history-timeline { position: relative; padding-left: var(--space-6); }
-.history-event { display: flex; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-4); position: relative; }
-.history-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: var(--space-1); position: absolute; left: -24px; }
-.history-event::before { content: ''; position: absolute; left: -19px; top: 16px; bottom: -20px; width: 2px; background: var(--color-border); }
-.history-event:last-child::before { display: none; }
-.history-content { flex: 1; }
-.history-label { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
-.history-meta { font-size: 12px; color: var(--color-text-tertiary); margin-top: var(--space-1); }
+.preview-history {
+  padding: 0;
+}
+.history-timeline {
+  position: relative;
+  padding-left: var(--space-6);
+}
+.history-event {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  position: relative;
+}
+.history-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+  position: absolute;
+  left: -24px;
+}
+.history-event::before {
+  content: '';
+  position: absolute;
+  left: -19px;
+  top: 16px;
+  bottom: -20px;
+  width: 2px;
+  background: var(--color-border);
+}
+.history-event:last-child::before {
+  display: none;
+}
+.history-content {
+  flex: 1;
+}
+.history-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.history-meta {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-top: var(--space-1);
+}
 
-.mono { font-family: var(--font-mono); }
-.action-btn { padding: var(--space-1) var(--space-2); font-size: 12px; border: none; background: transparent; cursor: pointer; border-radius: 4px; transition: background 0.15s; }
-.action-btn:hover { background: var(--color-bg-tertiary); }
-.action-btn.danger { color: var(--color-danger); }
-.status-badge { display: inline-block; padding: var(--space-1) var(--space-2); border-radius: 10px; font-size: 11px; font-weight: 600; }
-.status-draft { background: rgba(100,116,139,0.2); color: #94a3b8; }
-.status-pending_approval { background: rgba(245,158,11,0.2); color: #fbbf24; }
-.status-approved { background: rgba(59,130,246,0.2); color: #60a5fa; }
-.status-signed { background: rgba(34,197,94,0.2); color: #4ade80; }
-.status-archived { background: rgba(6,182,212,0.2); color: #22d3ee; }
-.status-cancelled { background: rgba(239,68,68,0.2); color: #f87171; }
+.mono {
+  font-family: var(--font-mono);
+}
+.action-btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.action-btn:hover {
+  background: var(--color-bg-tertiary);
+}
+.action-btn.danger {
+  color: var(--color-danger);
+}
+.status-badge {
+  display: inline-block;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.status-draft {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+}
+.status-pending_approval {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+.status-approved {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+}
+.status-signed {
+  background: rgba(34, 197, 94, 0.2);
+  color: #4ade80;
+}
+.status-archived {
+  background: rgba(6, 182, 212, 0.2);
+  color: #22d3ee;
+}
+.status-cancelled {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
 
-.btn { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: 13px; cursor: pointer; transition: all 0.15s; background: var(--color-surface); color: var(--color-text-primary); }
-.btn:hover { background: var(--color-bg-secondary); }
-.btn-ghost { border-color: transparent; background: transparent; }
-.btn-ghost:hover { background: var(--color-bg-secondary); }
-.btn-sm { padding: var(--space-1) var(--space-2); font-size: 12px; }
+.btn {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+.btn:hover {
+  background: var(--color-bg-secondary);
+}
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+}
+.btn-ghost:hover {
+  background: var(--color-bg-secondary);
+}
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: 12px;
+}
 
-.empty-hint { text-align: center; color: var(--color-text-tertiary); padding: var(--space-5); }
+.empty-hint {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  padding: var(--space-5);
+}
 
 @media (max-width: 768px) {
-  .contract-info-grid { grid-template-columns: 1fr; }
-  .contract-signature { grid-template-columns: 1fr; }
+  .contract-info-grid {
+    grid-template-columns: 1fr;
+  }
+  .contract-signature {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

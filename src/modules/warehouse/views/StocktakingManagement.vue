@@ -2,19 +2,27 @@
   <div class="stocktaking-page">
     <div class="page-header">
       <div>
-        <h2 class="page-header-title"><Icon name="clipboardCheck" :size="14" /> 盘点管理</h2>
+        <h2 class="page-header-title">
+          <Icon name="clipboardCheck" :size="14" />
+          盘点管理
+        </h2>
         <p class="page-header-subtitle">管理库存盘点、差异审核与库存调整</p>
       </div>
       <div class="page-header-actions">
         <button class="btn btn-primary" @click="showFormModal = true">
-          <Icon name="plus" :size="14" /> 新增盘点单
+          <Icon name="plus" :size="14" />
+          新增盘点单
         </button>
       </div>
     </div>
 
     <!-- 流程看板 -->
     <div class="flow-board">
-      <div class="flow-board-node" :class="{ active: stocktakingStatusFilter === 'planned' }" @click="stocktakingStatusFilter = stocktakingStatusFilter === 'planned' ? '' : 'planned'">
+      <div
+        class="flow-board-node"
+        :class="{ active: stocktakingStatusFilter === 'planned' }"
+        @click="stocktakingStatusFilter = stocktakingStatusFilter === 'planned' ? '' : 'planned'"
+      >
         <span class="flow-board-dot pending"></span>
         <div>
           <div class="flow-board-count">{{ store.plannedCount || 0 }}</div>
@@ -22,7 +30,11 @@
         </div>
       </div>
       <span class="flow-board-arrow">→</span>
-      <div class="flow-board-node" :class="{ active: stocktakingStatusFilter === 'executing' }" @click="stocktakingStatusFilter = stocktakingStatusFilter === 'executing' ? '' : 'executing'">
+      <div
+        class="flow-board-node"
+        :class="{ active: stocktakingStatusFilter === 'executing' }"
+        @click="stocktakingStatusFilter = stocktakingStatusFilter === 'executing' ? '' : 'executing'"
+      >
         <span class="flow-board-dot progress"></span>
         <div>
           <div class="flow-board-count">{{ store.executingCount }}</div>
@@ -30,7 +42,11 @@
         </div>
       </div>
       <span class="flow-board-arrow">→</span>
-      <div class="flow-board-node" :class="{ active: stocktakingStatusFilter === 'diff_review' }" @click="stocktakingStatusFilter = stocktakingStatusFilter === 'diff_review' ? '' : 'diff_review'">
+      <div
+        class="flow-board-node"
+        :class="{ active: stocktakingStatusFilter === 'diff_review' }"
+        @click="stocktakingStatusFilter = stocktakingStatusFilter === 'diff_review' ? '' : 'diff_review'"
+      >
         <span class="flow-board-dot pending"></span>
         <div>
           <div class="flow-board-count">{{ store.diffReviewCount }}</div>
@@ -38,7 +54,11 @@
         </div>
       </div>
       <span class="flow-board-arrow">→</span>
-      <div class="flow-board-node" :class="{ active: stocktakingStatusFilter === 'completed' }" @click="stocktakingStatusFilter = stocktakingStatusFilter === 'completed' ? '' : 'completed'">
+      <div
+        class="flow-board-node"
+        :class="{ active: stocktakingStatusFilter === 'completed' }"
+        @click="stocktakingStatusFilter = stocktakingStatusFilter === 'completed' ? '' : 'completed'"
+      >
         <span class="flow-board-dot completed"></span>
         <div>
           <div class="flow-board-count">{{ store.completedCount }}</div>
@@ -50,103 +70,154 @@
     <!-- 折叠统计区 -->
     <div class="collapsible-stats">
       <div class="collapsible-stats-header" @click="showStocktakingStatsExpanded = !showStocktakingStatsExpanded">
-        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 统计与概览</span>
+        <span class="collapsible-stats-title">
+          <Icon name="chart" :size="14" />
+          统计与概览
+        </span>
         <span class="collapsible-stats-toggle" :class="{ expanded: showStocktakingStatsExpanded }">▼</span>
       </div>
       <div v-show="showStocktakingStatsExpanded" class="collapsible-stats-body">
+        <!-- 统计卡片 -->
+        <div class="stats-grid stats-grid-4">
+          <div class="stat-card" style="animation-delay: 0ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">盘点单总数</span>
+              <div class="stat-card-icon" style="background: var(--color-accent-subtle); color: var(--color-accent)">
+                <Icon name="clipboardCheck" :size="14" />
+              </div>
+            </div>
+            <div class="stat-card-value">{{ store.totalOrders }}</div>
+          </div>
+          <div class="stat-card" style="animation-delay: 60ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">盘点中</span>
+              <div class="stat-card-icon" style="background: var(--color-info-subtle); color: var(--color-info)">
+                <Icon name="edit" :size="14" />
+              </div>
+            </div>
+            <div class="stat-card-value">{{ store.executingCount }}</div>
+          </div>
+          <div class="stat-card" style="animation-delay: 120ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">待审核</span>
+              <div class="stat-card-icon" style="background: var(--color-warning-subtle); color: var(--color-warning)">
+                <Icon name="clock" :size="14" />
+              </div>
+            </div>
+            <div class="stat-card-value">
+              <span class="stat-dot-halo" style="background: var(--color-warning)"></span>
+              {{ store.diffReviewCount }}
+            </div>
+          </div>
+          <div class="stat-card" style="animation-delay: 180ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">已完成</span>
+              <div class="stat-card-icon" style="background: var(--color-success-subtle); color: var(--color-success)">
+                <Icon name="checkCircle" :size="14" />
+              </div>
+            </div>
+            <div class="stat-card-value">{{ store.completedCount }}</div>
+          </div>
+        </div>
 
-    <!-- 统计卡片 -->
-    <div class="stats-grid stats-grid-4">
-      <div class="stat-card" style="animation-delay:0ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">盘点单总数</span>
-          <div class="stat-card-icon" style="background: var(--color-accent-subtle); color: var(--color-accent)"><Icon name="clipboardCheck" :size="14" /></div>
-        </div>
-        <div class="stat-card-value">{{ store.totalOrders }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay:60ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">盘点中</span>
-          <div class="stat-card-icon" style="background: var(--color-info-subtle); color: var(--color-info)"><Icon name="edit" :size="14" /></div>
-        </div>
-        <div class="stat-card-value">{{ store.executingCount }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay:120ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">待审核</span>
-          <div class="stat-card-icon" style="background: var(--color-warning-subtle); color: var(--color-warning)"><Icon name="clock" :size="14" /></div>
-        </div>
-        <div class="stat-card-value"><span class="stat-dot-halo" style="background:var(--color-warning)"></span>{{ store.diffReviewCount }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay:180ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">已完成</span>
-          <div class="stat-card-icon" style="background: var(--color-success-subtle); color: var(--color-success)"><Icon name="checkCircle" :size="14" /></div>
-        </div>
-        <div class="stat-card-value">{{ store.completedCount }}</div>
-      </div>
-    </div>
-
-    <!-- 概览面板：盘点完成率 + 差异分布 + 近7日趋势 -->
-    <div class="stocktaking-overview-row">
-      <div class="overview-card overview-ring-card">
-        <div class="overview-card-title">盘点完成率</div>
-        <div class="overview-ring-body">
-          <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
-            <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
-            <circle cx="36" cy="36" r="26" fill="none" :stroke="completionRateColor" stroke-width="5" stroke-linecap="round"
-              :stroke-dasharray="completionRateDash" stroke-dashoffset="0" transform="rotate(-90 36 36)" class="overview-ring-progress" />
-          </svg>
-          <div class="overview-ring-text">
-            <span class="overview-ring-percent" :style="{ color: completionRateColor }">{{ completionRate }}%</span>
-            <span class="overview-ring-sub">已完成/总数</span>
-          </div>
-        </div>
-      </div>
-      <div class="overview-card overview-diff-card">
-        <div class="overview-card-title">盘点差异分布</div>
-        <div class="diff-bars">
-          <div class="diff-bar-item">
-            <span class="diff-bar-label" style="color:var(--color-success)">盘盈</span>
-            <div class="diff-bar-track">
-              <div class="diff-bar-fill" style="background:var(--color-success)" :style="{ width: diffPercent.profit + '%' }"></div>
+        <!-- 概览面板：盘点完成率 + 差异分布 + 近7日趋势 -->
+        <div class="stocktaking-overview-row">
+          <div class="overview-card overview-ring-card">
+            <div class="overview-card-title">盘点完成率</div>
+            <div class="overview-ring-body">
+              <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
+                <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
+                <circle
+                  cx="36"
+                  cy="36"
+                  r="26"
+                  fill="none"
+                  :stroke="completionRateColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  :stroke-dasharray="completionRateDash"
+                  stroke-dashoffset="0"
+                  transform="rotate(-90 36 36)"
+                  class="overview-ring-progress"
+                />
+              </svg>
+              <div class="overview-ring-text">
+                <span class="overview-ring-percent" :style="{ color: completionRateColor }">{{ completionRate }}%</span>
+                <span class="overview-ring-sub">已完成/总数</span>
+              </div>
             </div>
-            <span class="diff-bar-count">{{ diffStats.profitCount }}</span>
           </div>
-          <div class="diff-bar-item">
-            <span class="diff-bar-label" style="color:var(--color-danger)">盘亏</span>
-            <div class="diff-bar-track">
-              <div class="diff-bar-fill" style="background:var(--color-danger)" :style="{ width: diffPercent.loss + '%' }"></div>
+          <div class="overview-card overview-diff-card">
+            <div class="overview-card-title">盘点差异分布</div>
+            <div class="diff-bars">
+              <div class="diff-bar-item">
+                <span class="diff-bar-label" style="color: var(--color-success)">盘盈</span>
+                <div class="diff-bar-track">
+                  <div
+                    class="diff-bar-fill"
+                    style="background: var(--color-success)"
+                    :style="{ width: diffPercent.profit + '%' }"
+                  ></div>
+                </div>
+                <span class="diff-bar-count">{{ diffStats.profitCount }}</span>
+              </div>
+              <div class="diff-bar-item">
+                <span class="diff-bar-label" style="color: var(--color-danger)">盘亏</span>
+                <div class="diff-bar-track">
+                  <div
+                    class="diff-bar-fill"
+                    style="background: var(--color-danger)"
+                    :style="{ width: diffPercent.loss + '%' }"
+                  ></div>
+                </div>
+                <span class="diff-bar-count">{{ diffStats.lossCount }}</span>
+              </div>
+              <div class="diff-bar-item">
+                <span class="diff-bar-label" style="color: var(--color-info)">一致</span>
+                <div class="diff-bar-track">
+                  <div
+                    class="diff-bar-fill"
+                    style="background: var(--color-info)"
+                    :style="{ width: diffPercent.match + '%' }"
+                  ></div>
+                </div>
+                <span class="diff-bar-count">{{ diffStats.matchCount }}</span>
+              </div>
             </div>
-            <span class="diff-bar-count">{{ diffStats.lossCount }}</span>
+            <div class="diff-amount-row">
+              <span class="diff-amount-item">
+                <span class="diff-amount-label">盘盈金额</span>
+                <span class="diff-amount-val" style="color: var(--color-success)">
+                  {{ formatAmount(diffStats.profitAmount) }}
+                </span>
+              </span>
+              <span class="diff-amount-item">
+                <span class="diff-amount-label">盘亏金额</span>
+                <span class="diff-amount-val" style="color: var(--color-danger)">
+                  {{ formatAmount(diffStats.lossAmount) }}
+                </span>
+              </span>
+            </div>
           </div>
-          <div class="diff-bar-item">
-            <span class="diff-bar-label" style="color:var(--color-info)">一致</span>
-            <div class="diff-bar-track">
-              <div class="diff-bar-fill" style="background:var(--color-info)" :style="{ width: diffPercent.match + '%' }"></div>
+          <div class="overview-card overview-trend-card">
+            <div class="overview-card-title">近7日盘点趋势</div>
+            <div class="trend-bars">
+              <div v-for="(d, idx) in recent7Days" :key="idx" class="trend-bar-col">
+                <div class="trend-bar-track-v">
+                  <div
+                    class="trend-bar-fill-v"
+                    :style="{
+                      height: d.percent + '%',
+                      background: d.count > 0 ? 'var(--color-accent)' : 'var(--color-border)'
+                    }"
+                  ></div>
+                </div>
+                <span class="trend-bar-day">{{ d.dayLabel }}</span>
+                <span class="trend-bar-num">{{ d.count }}</span>
+              </div>
             </div>
-            <span class="diff-bar-count">{{ diffStats.matchCount }}</span>
           </div>
         </div>
-        <div class="diff-amount-row">
-          <span class="diff-amount-item"><span class="diff-amount-label">盘盈金额</span><span class="diff-amount-val" style="color:var(--color-success)">{{ formatAmount(diffStats.profitAmount) }}</span></span>
-          <span class="diff-amount-item"><span class="diff-amount-label">盘亏金额</span><span class="diff-amount-val" style="color:var(--color-danger)">{{ formatAmount(diffStats.lossAmount) }}</span></span>
-        </div>
-      </div>
-      <div class="overview-card overview-trend-card">
-        <div class="overview-card-title">近7日盘点趋势</div>
-        <div class="trend-bars">
-          <div v-for="(d, idx) in recent7Days" :key="idx" class="trend-bar-col">
-            <div class="trend-bar-track-v">
-              <div class="trend-bar-fill-v" :style="{ height: d.percent + '%', background: d.count > 0 ? 'var(--color-accent)' : 'var(--color-border)' }"></div>
-            </div>
-            <span class="trend-bar-day">{{ d.dayLabel }}</span>
-            <span class="trend-bar-num">{{ d.count }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
       </div>
     </div>
 
@@ -165,16 +236,26 @@
     <!-- 待处理预警 -->
     <div v-if="pendingAlerts.length > 0" class="panel-card stocktaking-alert-panel">
       <div class="panel-card-header">
-        <span class="panel-card-title" style="color:var(--color-warning)"><span class="alert-dot-pulse"></span> 待处理预警</span>
+        <span class="panel-card-title" style="color: var(--color-warning)">
+          <span class="alert-dot-pulse"></span>
+          待处理预警
+        </span>
       </div>
       <div class="panel-card-body">
-        <div v-for="(a, idx) in pendingAlerts" :key="a.id" class="stocktaking-alert-item" :style="{ animationDelay: idx * 60 + 'ms' }">
+        <div
+          v-for="(a, idx) in pendingAlerts"
+          :key="a.id"
+          class="stocktaking-alert-item"
+          :style="{ animationDelay: idx * 60 + 'ms' }"
+        >
           <span class="stocktaking-alert-badge" :class="'alert-' + a.status">{{ STATUS_LABELS[a.status] }}</span>
           <span class="stocktaking-alert-no">{{ a.orderNo }}</span>
           <span class="stocktaking-alert-type">{{ TYPE_LABELS[a.type] }}</span>
           <span class="stocktaking-alert-warehouse">{{ a.warehouseName }}</span>
           <span class="stocktaking-alert-date">{{ a.plannedDate }}</span>
-          <button class="btn btn-ghost btn-sm" @click="handleAlertAction(a)">{{ a.status === 'executing' ? '录入' : '审批' }}</button>
+          <button class="btn btn-ghost btn-sm" @click="handleAlertAction(a)">
+            {{ a.status === 'executing' ? '录入' : '审批' }}
+          </button>
         </div>
       </div>
     </div>
@@ -186,7 +267,7 @@
       </div>
       <div class="panel-card-body no-padding">
         <StocktakingList
-          :externalStatusFilter="stocktakingStatusFilter"
+          :external-status-filter="stocktakingStatusFilter"
           @start="handleStart"
           @execute="handleExecute"
           @complete="handleComplete"
@@ -197,11 +278,7 @@
     </div>
 
     <!-- 新增盘点单弹窗 -->
-    <StocktakingFormModal
-      v-if="showFormModal"
-      @close="showFormModal = false"
-      @created="handleCreated"
-    />
+    <StocktakingFormModal v-if="showFormModal" @close="showFormModal = false" @created="handleCreated" />
 
     <!-- 盘点执行弹窗 -->
     <StocktakingExecute
@@ -226,7 +303,7 @@
         <div class="modal-header">
           <span class="modal-title">{{ confirmTitle }}</span>
         </div>
-        <div class="modal-body" style="text-align:center">
+        <div class="modal-body" style="text-align: center">
           <div class="confirm-icon-circle"><Icon name="warning" :size="24" /></div>
           <p style="font-size: var(--font-size-sm); color: var(--color-text-secondary)">{{ confirmMessage }}</p>
         </div>
@@ -246,6 +323,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'StocktakingManagement' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useStocktakingStore } from '@/modules/warehouse/stores/stocktaking'
@@ -257,7 +337,13 @@ import StocktakingDiff from '@/modules/warehouse/components/inventory/Stocktakin
 const store = useStocktakingStore()
 
 const TYPE_LABELS = { full: '全盘', partial: '抽盘', cycle: '循环盘点' }
-const STATUS_LABELS = { planned: '计划中', executing: '盘点中', diff_review: '差异审核', completed: '已完成', cancelled: '已取消' }
+const STATUS_LABELS = {
+  planned: '计划中',
+  executing: '盘点中',
+  diff_review: '差异审核',
+  completed: '已完成',
+  cancelled: '已取消'
+}
 
 const showFormModal = ref(false)
 const executingOrder = ref(null)
@@ -274,13 +360,13 @@ const toastMessage = ref('')
 const toastType = ref('toast-success')
 let _toastTimer = null
 
-
-
 function showToast(msg, type = 'toast-success') {
   toastMessage.value = msg
   toastType.value = type
   if (_toastTimer) clearTimeout(_toastTimer)
-  _toastTimer = setTimeout(() => { toastMessage.value = '' }, 3000)
+  _toastTimer = setTimeout(() => {
+    toastMessage.value = ''
+  }, 3000)
 }
 
 function showConfirm(title, message, callback) {
@@ -317,17 +403,20 @@ const completionRateDash = computed(() => {
 
 /* 差异分布 */
 const diffStats = computed(() => {
-  let profitCount = 0, lossCount = 0, matchCount = 0
-  let profitAmount = 0, lossAmount = 0
-  for (const order of (store.stocktakingOrders || [])) {
+  let profitCount = 0,
+    lossCount = 0,
+    matchCount = 0
+  let profitAmount = 0,
+    lossAmount = 0
+  for (const order of store.stocktakingOrders || []) {
     if (order.summary) {
       const diffItems = order.summary.diffItems || 0
       const countedItems = order.summary.countedItems || 0
       /* 差异项中：盘盈项和盘亏项按实际差异数据计算 */
       profitCount += diffItems
       matchCount += Math.max(0, countedItems - diffItems)
-      profitAmount += (order.summary.profitAmount || 0)
-      lossAmount += (order.summary.lossAmount || 0)
+      profitAmount += order.summary.profitAmount || 0
+      lossAmount += order.summary.lossAmount || 0
     }
   }
   /* 盘亏项数量 = 总差异项中盘亏的比例，通过金额比例推算 */
@@ -358,7 +447,9 @@ const recent7Days = computed(() => {
     const d = new Date(now)
     d.setDate(d.getDate() - i)
     const ds = d.toISOString().split('T')[0]
-    const count = (store.stocktakingOrders || []).filter(o => o.plannedDate === ds || (o.createDate && o.createDate.startsWith(ds))).length
+    const count = (store.stocktakingOrders || []).filter(
+      (o) => o.plannedDate === ds || (o.createDate && o.createDate.startsWith(ds))
+    ).length
     days.push({
       date: ds,
       dayLabel: ['日', '一', '二', '三', '四', '五', '六'][d.getDay()],
@@ -366,15 +457,17 @@ const recent7Days = computed(() => {
       percent: 0
     })
   }
-  const max = Math.max(...days.map(d => d.count), 1)
-  days.forEach(d => { d.percent = Math.round((d.count / max) * 100) })
+  const max = Math.max(...days.map((d) => d.count), 1)
+  days.forEach((d) => {
+    d.percent = Math.round((d.count / max) * 100)
+  })
   return days
 })
 
 /* 待处理预警 */
 const pendingAlerts = computed(() => {
   return (store.stocktakingOrders || [])
-    .filter(o => o.status === 'executing' || o.status === 'diff_review')
+    .filter((o) => o.status === 'executing' || o.status === 'diff_review')
     .sort((a, b) => {
       const dateA = a.plannedDate ? new Date(a.plannedDate) : new Date('9999-12-31')
       const dateB = b.plannedDate ? new Date(b.plannedDate) : new Date('9999-12-31')
@@ -464,18 +557,28 @@ onUnmounted(() => {
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
-.stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.stats-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 .stat-card {
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .stat-card-value {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
@@ -493,8 +596,13 @@ onUnmounted(() => {
   animation: alertDotPulse 1.5s ease-in-out infinite;
 }
 @keyframes alertDotPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(245,158,11,0.3); }
-  50% { box-shadow: 0 0 10px rgba(245,158,11,0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  }
 }
 
 /* ====== 概览面板 ====== */
@@ -511,9 +619,15 @@ onUnmounted(() => {
   padding: var(--space-3) var(--space-4);
   animation: statCardIn 0.4s ease-out both;
 }
-.overview-card:nth-child(1) { animation-delay: 0ms; }
-.overview-card:nth-child(2) { animation-delay: 80ms; }
-.overview-card:nth-child(3) { animation-delay: 160ms; }
+.overview-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.overview-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+.overview-card:nth-child(3) {
+  animation-delay: 160ms;
+}
 .overview-card-title {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
@@ -527,9 +641,16 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-3);
 }
-.overview-ring-svg { flex-shrink: 0; }
-.overview-ring-progress { transition: stroke-dasharray 0.6s ease; }
-.overview-ring-text { display: flex; flex-direction: column; }
+.overview-ring-svg {
+  flex-shrink: 0;
+}
+.overview-ring-progress {
+  transition: stroke-dasharray 0.6s ease;
+}
+.overview-ring-text {
+  display: flex;
+  flex-direction: column;
+}
 .overview-ring-percent {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   font-size: var(--font-size-xl);
@@ -555,7 +676,9 @@ onUnmounted(() => {
   gap: var(--space-2);
   font-size: var(--font-size-xs);
 }
-.diff-bar-label { font-weight: 500; }
+.diff-bar-label {
+  font-weight: 500;
+}
 .diff-bar-track {
   height: 6px;
   background: var(--color-bg-tertiary, var(--color-border));
@@ -655,10 +778,18 @@ onUnmounted(() => {
   animation: alertSlideIn 0.3s ease-out both;
   font-size: var(--font-size-sm);
 }
-.stocktaking-alert-item:last-child { border-bottom: none; }
+.stocktaking-alert-item:last-child {
+  border-bottom: none;
+}
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 .stocktaking-alert-badge {
   padding: var(--space-1) var(--space-2);
@@ -698,7 +829,7 @@ onUnmounted(() => {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--color-warning-subtle, rgba(245,158,11,0.1));
+  background: var(--color-warning-subtle, rgba(245, 158, 11, 0.1));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -707,10 +838,16 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1024px) {
-  .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .stocktaking-overview-row { grid-template-columns: 1fr; }
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stocktaking-overview-row {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 640px) {
-  .stats-grid-4 { grid-template-columns: 1fr; }
+  .stats-grid-4 {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

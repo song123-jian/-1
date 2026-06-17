@@ -7,7 +7,8 @@
       </div>
       <div class="page-header-actions">
         <button class="btn btn-primary" @click="openPaymentForm()">
-          <Icon name="add" :size="14" /> 新增付款单
+          <Icon name="add" :size="14" />
+          新增付款单
         </button>
       </div>
     </div>
@@ -20,17 +21,23 @@
       </div>
       <span class="pipeline-arrow">→</span>
       <div class="pipeline-node">
-        <div class="pipeline-node-amount" style="color:var(--color-success)">¥{{ formatMoney(payableStore.totalPaid) }}</div>
+        <div class="pipeline-node-amount" style="color: var(--color-success)">
+          ¥{{ formatMoney(payableStore.totalPaid) }}
+        </div>
         <div class="pipeline-node-label">已付金额</div>
       </div>
       <span class="pipeline-arrow">→</span>
       <div class="pipeline-node">
-        <div class="pipeline-node-amount" style="color:var(--color-warning)">¥{{ formatMoney(payableStore.totalRemaining) }}</div>
+        <div class="pipeline-node-amount" style="color: var(--color-warning)">
+          ¥{{ formatMoney(payableStore.totalRemaining) }}
+        </div>
         <div class="pipeline-node-label">未付金额</div>
       </div>
       <span class="pipeline-arrow">→</span>
       <div class="pipeline-node" :class="{ 'pipeline-node--danger': (payableStore.totalOverdue || 0) > 0 }">
-        <div class="pipeline-node-amount" style="color:var(--color-danger)">¥{{ formatMoney(payableStore.totalOverdue) }}</div>
+        <div class="pipeline-node-amount" style="color: var(--color-danger)">
+          ¥{{ formatMoney(payableStore.totalOverdue) }}
+        </div>
         <div class="pipeline-node-label">逾期金额</div>
       </div>
     </div>
@@ -38,141 +45,194 @@
     <!-- 折叠统计区 -->
     <div class="collapsible-stats">
       <div class="collapsible-stats-header" @click="showPayableStatsExpanded = !showPayableStatsExpanded">
-        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 详细统计与账龄分析</span>
+        <span class="collapsible-stats-title">
+          <Icon name="chart" :size="14" />
+          详细统计与账龄分析
+        </span>
         <span class="collapsible-stats-toggle" :class="{ expanded: showPayableStatsExpanded }">▼</span>
       </div>
       <div v-show="showPayableStatsExpanded" class="collapsible-stats-body">
-    <!-- 统计卡片 -->
-    <div class="stats-row stats-grid-4">
-      <div class="stat-card" style="animation-delay: 0ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">应付总额</span>
-          <Icon name="wallet" :size="16" class="stat-card-icon" style="color: var(--color-accent)" />
+        <!-- 统计卡片 -->
+        <div class="stats-row stats-grid-4">
+          <div class="stat-card" style="animation-delay: 0ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">应付总额</span>
+              <Icon name="wallet" :size="16" class="stat-card-icon" style="color: var(--color-accent)" />
+            </div>
+            <div class="stat-card-value" style="color: var(--color-accent)">
+              ¥{{ formatMoney(payableStore.totalAmount) }}
+            </div>
+          </div>
+          <div class="stat-card" style="animation-delay: 60ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">已付金额</span>
+              <Icon name="checkCircle" :size="16" class="stat-card-icon" style="color: var(--color-success)" />
+            </div>
+            <div class="stat-card-value" style="color: var(--color-success)">
+              ¥{{ formatMoney(payableStore.totalPaid) }}
+            </div>
+          </div>
+          <div class="stat-card" style="animation-delay: 120ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">未付金额</span>
+              <span class="pulse-dot" style="background: var(--color-warning)"></span>
+            </div>
+            <div class="stat-card-value" style="color: var(--color-warning)">
+              ¥{{ formatMoney(payableStore.totalRemaining) }}
+            </div>
+          </div>
+          <div class="stat-card" style="animation-delay: 180ms">
+            <div class="stat-card-header">
+              <span class="stat-card-label">逾期金额</span>
+              <span class="pulse-dot" style="background: var(--color-danger)"></span>
+            </div>
+            <div class="stat-card-value" style="color: var(--color-danger)">
+              ¥{{ formatMoney(payableStore.totalOverdue) }}
+            </div>
+          </div>
         </div>
-        <div class="stat-card-value" style="color: var(--color-accent)">¥{{ formatMoney(payableStore.totalAmount) }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay: 60ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">已付金额</span>
-          <Icon name="checkCircle" :size="16" class="stat-card-icon" style="color: var(--color-success)" />
-        </div>
-        <div class="stat-card-value" style="color: var(--color-success)">¥{{ formatMoney(payableStore.totalPaid) }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay: 120ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">未付金额</span>
-          <span class="pulse-dot" style="background: var(--color-warning)"></span>
-        </div>
-        <div class="stat-card-value" style="color: var(--color-warning)">¥{{ formatMoney(payableStore.totalRemaining) }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay: 180ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">逾期金额</span>
-          <span class="pulse-dot" style="background: var(--color-danger)"></span>
-        </div>
-        <div class="stat-card-value" style="color: var(--color-danger)">¥{{ formatMoney(payableStore.totalOverdue) }}</div>
-      </div>
-    </div>
 
-    <!-- 概览面板 -->
-    <div class="overview-row">
-      <div class="overview-card" style="animation-delay: 0ms">
-        <div class="overview-title">付款完成率</div>
-        <div class="overview-content center">
-          <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
-            <circle class="progress-ring-bg" cx="40" cy="40" r="26" />
-            <circle
-              class="progress-ring-fill"
-              cx="40" cy="40" r="26"
-              :stroke="completionRateColor"
-              :stroke-dasharray="completionCircumference"
-              :stroke-dashoffset="completionOffset"
-            />
-            <text class="progress-ring-text" x="40" y="40" text-anchor="middle" dominant-baseline="central">{{ completionRate }}%</text>
-          </svg>
+        <!-- 概览面板 -->
+        <div class="overview-row">
+          <div class="overview-card" style="animation-delay: 0ms">
+            <div class="overview-title">付款完成率</div>
+            <div class="overview-content center">
+              <svg class="progress-ring" width="80" height="80" viewBox="0 0 80 80">
+                <circle class="progress-ring-bg" cx="40" cy="40" r="26" />
+                <circle
+                  class="progress-ring-fill"
+                  cx="40"
+                  cy="40"
+                  r="26"
+                  :stroke="completionRateColor"
+                  :stroke-dasharray="completionCircumference"
+                  :stroke-dashoffset="completionOffset"
+                />
+                <text class="progress-ring-text" x="40" y="40" text-anchor="middle" dominant-baseline="central">
+                  {{ completionRate }}%
+                </text>
+              </svg>
+            </div>
+          </div>
+          <div class="overview-card" style="animation-delay: 80ms">
+            <div class="overview-title">账龄分布</div>
+            <div class="overview-content">
+              <div class="mini-bar-item">
+                <span class="mini-bar-label">未到期</span>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    :style="{ width: agingPercent('current') + '%', background: 'var(--color-success)' }"
+                  ></div>
+                </div>
+                <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.current || 0) }}</span>
+              </div>
+              <div class="mini-bar-item">
+                <span class="mini-bar-label">1-30天</span>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    :style="{ width: agingPercent('days30') + '%', background: '#84cc16' }"
+                  ></div>
+                </div>
+                <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.days30 || 0) }}</span>
+              </div>
+              <div class="mini-bar-item">
+                <span class="mini-bar-label">31-60天</span>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    :style="{ width: agingPercent('days60') + '%', background: 'var(--color-warning)' }"
+                  ></div>
+                </div>
+                <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.days60 || 0) }}</span>
+              </div>
+              <div class="mini-bar-item">
+                <span class="mini-bar-label">60天+</span>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    :style="{ width: agingPercentOver60 + '%', background: 'var(--color-danger)' }"
+                  ></div>
+                </div>
+                <span class="mini-bar-value cell-mono">
+                  ¥{{ formatMoney((agingData.days90 || 0) + (agingData.days180 || 0) + (agingData.over180 || 0)) }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="overview-card" style="animation-delay: 160ms">
+            <div class="overview-title">供应商应付 TOP5</div>
+            <div class="overview-content">
+              <div v-for="(item, idx) in topSuppliers" :key="item.supplierId" class="mini-bar-item">
+                <span class="mini-bar-label" :title="item.supplierName">
+                  {{ idx + 1 }}. {{ truncate(item.supplierName, 8) }}
+                </span>
+                <div class="mini-bar-track">
+                  <div
+                    class="mini-bar-fill"
+                    :style="{ width: item.percent + '%', background: supplierTopColors[idx] || '#94a3b8' }"
+                  ></div>
+                </div>
+                <span class="mini-bar-value cell-mono">¥{{ formatMoney(item.amount) }}</span>
+              </div>
+              <div v-if="topSuppliers.length === 0" class="overview-empty">暂无数据</div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="overview-card" style="animation-delay: 80ms">
-        <div class="overview-title">账龄分布</div>
-        <div class="overview-content">
-          <div class="mini-bar-item">
-            <span class="mini-bar-label">未到期</span>
-            <div class="mini-bar-track"><div class="mini-bar-fill" :style="{ width: agingPercent('current') + '%', background: 'var(--color-success)' }"></div></div>
-            <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.current || 0) }}</span>
-          </div>
-          <div class="mini-bar-item">
-            <span class="mini-bar-label">1-30天</span>
-            <div class="mini-bar-track"><div class="mini-bar-fill" :style="{ width: agingPercent('days30') + '%', background: '#84cc16' }"></div></div>
-            <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.days30 || 0) }}</span>
-          </div>
-          <div class="mini-bar-item">
-            <span class="mini-bar-label">31-60天</span>
-            <div class="mini-bar-track"><div class="mini-bar-fill" :style="{ width: agingPercent('days60') + '%', background: 'var(--color-warning)' }"></div></div>
-            <span class="mini-bar-value cell-mono">¥{{ formatMoney(agingData.days60 || 0) }}</span>
-          </div>
-          <div class="mini-bar-item">
-            <span class="mini-bar-label">60天+</span>
-            <div class="mini-bar-track"><div class="mini-bar-fill" :style="{ width: agingPercentOver60 + '%', background: 'var(--color-danger)' }"></div></div>
-            <span class="mini-bar-value cell-mono">¥{{ formatMoney((agingData.days90 || 0) + (agingData.days180 || 0) + (agingData.over180 || 0)) }}</span>
-          </div>
-        </div>
-      </div>
-      <div class="overview-card" style="animation-delay: 160ms">
-        <div class="overview-title">供应商应付 TOP5</div>
-        <div class="overview-content">
-          <div v-for="(item, idx) in topSuppliers" :key="item.supplierId" class="mini-bar-item">
-            <span class="mini-bar-label" :title="item.supplierName">{{ idx + 1 }}. {{ truncate(item.supplierName, 8) }}</span>
-            <div class="mini-bar-track"><div class="mini-bar-fill" :style="{ width: item.percent + '%', background: supplierTopColors[idx] || '#94a3b8' }"></div></div>
-            <span class="mini-bar-value cell-mono">¥{{ formatMoney(item.amount) }}</span>
-          </div>
-          <div v-if="topSuppliers.length === 0" class="overview-empty">暂无数据</div>
-        </div>
-      </div>
-    </div>
 
-    <!-- 逾期预警 -->
-    <div v-if="overdueList.length > 0" class="overdue-alert">
-      <div class="overdue-alert-header">
-        <span class="pulse-dot" style="background: var(--color-danger)"></span>
-        <span class="overdue-alert-title">逾期预警</span>
-        <span class="overdue-alert-count">共 {{ overdueList.length }} 笔</span>
-      </div>
-      <div class="overdue-alert-body">
-        <div
-          v-for="(item, idx) in overdueList.slice(0, 5)"
-          :key="item.id"
-          class="overdue-alert-item"
-          :style="{ animationDelay: (idx * 80) + 'ms' }"
-        >
-          <span class="overdue-alert-no">{{ item.payableNo }}</span>
-          <span class="overdue-alert-supplier">{{ item.supplierName }}</span>
-          <span class="overdue-alert-amount cell-mono">¥{{ formatMoney(item.remainingAmount) }}</span>
-          <span class="overdue-alert-days">逾期 {{ overdueDays(item.dueDate) }} 天</span>
+        <!-- 逾期预警 -->
+        <div v-if="overdueList.length > 0" class="overdue-alert">
+          <div class="overdue-alert-header">
+            <span class="pulse-dot" style="background: var(--color-danger)"></span>
+            <span class="overdue-alert-title">逾期预警</span>
+            <span class="overdue-alert-count">共 {{ overdueList.length }} 笔</span>
+          </div>
+          <div class="overdue-alert-body">
+            <div
+              v-for="(item, idx) in overdueList.slice(0, 5)"
+              :key="item.id"
+              class="overdue-alert-item"
+              :style="{ animationDelay: idx * 80 + 'ms' }"
+            >
+              <span class="overdue-alert-no">{{ item.payableNo }}</span>
+              <span class="overdue-alert-supplier">{{ item.supplierName }}</span>
+              <span class="overdue-alert-amount cell-mono">¥{{ formatMoney(item.remainingAmount) }}</span>
+              <span class="overdue-alert-days">逾期 {{ overdueDays(item.dueDate) }} 天</span>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
       </div>
     </div>
 
     <!-- 筛选栏 -->
     <div class="filter-bar">
       <input
+        v-model="filters.search"
         type="text"
         class="form-input"
-        v-model="filters.search"
         placeholder="搜索单号/供应商..."
-        style="min-width:160px"
-      >
-      <select class="form-select" v-model="filters.status">
+        style="min-width: 160px"
+      />
+      <select v-model="filters.status" class="form-select">
         <option value="">全部状态</option>
         <option value="pending">待付款</option>
         <option value="partial">部分付款</option>
         <option value="completed">已付完</option>
         <option value="overdue">已逾期</option>
       </select>
-      <DataSelect module="supplier" variant="active" v-model="filters.supplierId" value-field="id" label-field="name" placeholder="选择供应商" @change="onSupplierChange" />
+      <DataSelect
+        v-model="filters.supplierId"
+        module="supplier"
+        variant="active"
+        value-field="id"
+        label-field="name"
+        placeholder="选择供应商"
+        @change="onSupplierChange"
+      />
       <button class="btn btn-ghost btn-sm" @click="resetFilters">
-        <Icon name="refresh" :size="14" /> 重置
+        <Icon name="refresh" :size="14" />
+        重置
       </button>
     </div>
 
@@ -185,7 +245,8 @@
         :class="{ active: currentTab === tab.key }"
         @click="currentTab = tab.key"
       >
-        <Icon :name="tab.icon" :size="14" /> {{ tab.label }}
+        <Icon :name="tab.icon" :size="14" />
+        {{ tab.label }}
       </button>
     </div>
 
@@ -196,7 +257,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:50px;text-align:center">序号</th>
+                <th style="width: 50px; text-align: center">序号</th>
                 <th>应付编号</th>
                 <th>供应商</th>
                 <th>来源</th>
@@ -206,7 +267,7 @@
                 <th>未付金额</th>
                 <th>到期日</th>
                 <th>状态</th>
-                <th style="min-width:100px">操作</th>
+                <th style="min-width: 100px">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -220,16 +281,18 @@
                 v-for="(py, idx) in paginatedPayables"
                 :key="py.id"
                 class="table-row-animated"
-                :style="{ ...getRowStyle(py), animationDelay: (idx * 20) + 'ms' }"
+                :style="{ ...getRowStyle(py), animationDelay: idx * 20 + 'ms' }"
               >
-                <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (payablePage - 1) * pageSize + idx + 1 }}</td>
-                <td class="cell-mono" style="color:var(--color-accent)">{{ py.payableNo }}</td>
+                <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ (payablePage - 1) * pageSize + idx + 1 }}
+                </td>
+                <td class="cell-mono" style="color: var(--color-accent)">{{ py.payableNo }}</td>
                 <td>{{ py.supplierName }}</td>
                 <td>{{ payableStore.sourceTypeLabels[py.sourceType] || py.sourceType }}</td>
                 <td class="cell-mono">{{ py.sourceNo || '-' }}</td>
                 <td class="cell-mono">¥{{ formatMoney(py.amount) }}</td>
-                <td class="cell-mono" style="color:var(--color-success)">¥{{ formatMoney(py.paidAmount) }}</td>
-                <td class="cell-mono" style="color:var(--color-danger)">¥{{ formatMoney(py.remainingAmount) }}</td>
+                <td class="cell-mono" style="color: var(--color-success)">¥{{ formatMoney(py.paidAmount) }}</td>
+                <td class="cell-mono" style="color: var(--color-danger)">¥{{ formatMoney(py.remainingAmount) }}</td>
                 <td>{{ py.dueDate || '-' }}</td>
                 <td>
                   <span class="status-badge" :class="payableStore.statusBadgeMap[py.status] || 'neutral'">
@@ -240,11 +303,13 @@
                   <button
                     v-if="py.status !== 'completed'"
                     class="btn btn-ghost btn-sm"
-                    style="color:var(--color-success)"
-                    @click="openPaymentForm(py)"
+                    style="color: var(--color-success)"
                     title="付款"
-                  ><Icon name="dollar" :size="14" /></button>
-                  <span v-else style="color:var(--color-text-tertiary);font-size:var(--font-size-xs)">已结清</span>
+                    @click="openPaymentForm(py)"
+                  >
+                    <Icon name="dollar" :size="14" />
+                  </button>
+                  <span v-else style="color: var(--color-text-tertiary); font-size: var(--font-size-xs)">已结清</span>
                 </td>
               </tr>
             </tbody>
@@ -270,7 +335,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:50px;text-align:center">序号</th>
+                <th style="width: 50px; text-align: center">序号</th>
                 <th>付款单号</th>
                 <th>供应商</th>
                 <th>付款金额</th>
@@ -294,19 +359,31 @@
                 v-for="(pm, idx) in paginatedPayments"
                 :key="pm.id"
                 class="table-row-animated"
-                :style="{ animationDelay: (idx * 20) + 'ms' }"
+                :style="{ animationDelay: idx * 20 + 'ms' }"
               >
-                <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (paymentPage - 1) * pageSize + idx + 1 }}</td>
-                <td class="cell-mono" style="color:var(--color-accent)">{{ pm.paymentNo }}</td>
+                <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ (paymentPage - 1) * pageSize + idx + 1 }}
+                </td>
+                <td class="cell-mono" style="color: var(--color-accent)">{{ pm.paymentNo }}</td>
                 <td>{{ pm.supplierName }}</td>
-                <td class="cell-mono" style="color:var(--color-danger)">¥{{ formatMoney(pm.amount) }}</td>
+                <td class="cell-mono" style="color: var(--color-danger)">¥{{ formatMoney(pm.amount) }}</td>
                 <td>{{ payableStore.methodLabels[pm.method] || pm.method }}</td>
                 <td>{{ pm.bankName || '-' }}</td>
                 <td class="cell-mono">{{ pm.referenceNo || '-' }}</td>
                 <td>{{ pm.paymentDate }}</td>
                 <td>{{ pm.operator }}</td>
-                <td style="overflow-wrap:break-word;word-wrap:break-word" :title="pm.notes">{{ pm.notes || '-' }}</td>
-                <td><button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleRevokePayment(pm)">撤销</button></td>
+                <td style="overflow-wrap: break-word; word-wrap: break-word" :title="pm.notes">
+                  {{ pm.notes || '-' }}
+                </td>
+                <td>
+                  <button
+                    class="btn btn-ghost btn-sm"
+                    style="color: var(--color-danger)"
+                    @click="handleRevokePayment(pm)"
+                  >
+                    撤销
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -327,12 +404,15 @@
     <!-- Tab: 账龄分析 -->
     <div v-show="currentTab === 'aging'" class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="chart" :size="14" /> 账龄分析</span>
+        <span class="panel-card-title">
+          <Icon name="chart" :size="14" />
+          账龄分析
+        </span>
       </div>
       <div class="panel-card-body">
         <AgingAnalysis :data="agingData" type="payable" />
         <!-- 账龄矩阵热力图 -->
-        <div class="aging-matrix" style="margin-top: var(--space-4);">
+        <div class="aging-matrix" style="margin-top: var(--space-4)">
           <div class="aging-matrix-header">账龄分析矩阵（按供应商）</div>
           <table class="aging-matrix-table">
             <thead>
@@ -347,13 +427,31 @@
             <tbody>
               <tr v-for="row in agingMatrixData" :key="row.supplier">
                 <td>{{ row.supplier }}</td>
-                <td><span class="matrix-cell" :class="agingCellClass(row.d30)">{{ row.d30 > 0 ? formatAmountShort(row.d30) : '-' }}</span></td>
-                <td><span class="matrix-cell" :class="agingCellClass(row.d60)">{{ row.d60 > 0 ? formatAmountShort(row.d60) : '-' }}</span></td>
-                <td><span class="matrix-cell" :class="agingCellClass(row.d90)">{{ row.d90 > 0 ? formatAmountShort(row.d90) : '-' }}</span></td>
-                <td><span class="matrix-cell" :class="agingCellClass(row.d90plus)">{{ row.d90plus > 0 ? formatAmountShort(row.d90plus) : '-' }}</span></td>
+                <td>
+                  <span class="matrix-cell" :class="agingCellClass(row.d30)">
+                    {{ row.d30 > 0 ? formatAmountShort(row.d30) : '-' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="matrix-cell" :class="agingCellClass(row.d60)">
+                    {{ row.d60 > 0 ? formatAmountShort(row.d60) : '-' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="matrix-cell" :class="agingCellClass(row.d90)">
+                    {{ row.d90 > 0 ? formatAmountShort(row.d90) : '-' }}
+                  </span>
+                </td>
+                <td>
+                  <span class="matrix-cell" :class="agingCellClass(row.d90plus)">
+                    {{ row.d90plus > 0 ? formatAmountShort(row.d90plus) : '-' }}
+                  </span>
+                </td>
               </tr>
               <tr v-if="agingMatrixData.length === 0">
-                <td colspan="5" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4)">暂无账龄数据</td>
+                <td colspan="5" style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-4)">
+                  暂无账龄数据
+                </td>
               </tr>
             </tbody>
           </table>
@@ -362,14 +460,13 @@
     </div>
 
     <!-- 付款弹窗 -->
-    <PaymentFormModal
-      v-model:visible="showPaymentForm"
-      :payable="selectedPayable"
-      @saved="onPaymentSaved"
-    />
+    <PaymentFormModal v-model:visible="showPaymentForm" :payable="selectedPayable" @saved="onPaymentSaved" />
   </div>
 </template>
 
+<script>
+export default { name: 'PayableManagement' }
+</script>
 <script setup>
 import { onMounted, computed, ref } from 'vue'
 import { usePayableStore } from '@/modules/finance/stores/payable'
@@ -384,7 +481,13 @@ const payableStore = usePayableStore()
 const inventoryStore = useInventoryStore()
 
 const {
-  currentTab, tabs, filters, agingData, getRowStyle, resetFilters, onEntityChange,
+  currentTab,
+  tabs,
+  filters,
+  agingData,
+  getRowStyle,
+  resetFilters,
+  onEntityChange,
   filteredPrimaryList,
   showForm: showPaymentForm,
   selectedItem: selectedPayable,
@@ -396,7 +499,7 @@ const {
   totalSecondaryPages: totalPaymentPages,
   openForm: openPaymentForm,
   onFormSaved: onPaymentSaved,
-  handleRevoke: handleRevokePayment,
+  handleRevoke: handleRevokePayment
 } = useFinancePage({
   financeStore: payableStore,
   secondaryStore: inventoryStore,
@@ -427,13 +530,25 @@ const completionOffset = computed(() => CIRCUMFERENCE - (completionRate.value / 
 
 /* 账龄分布百分比 */
 function agingPercent(key) {
-  const total = (agingData.value.current || 0) + (agingData.value.days30 || 0) + (agingData.value.days60 || 0) + (agingData.value.days90 || 0) + (agingData.value.days180 || 0) + (agingData.value.over180 || 0)
+  const total =
+    (agingData.value.current || 0) +
+    (agingData.value.days30 || 0) +
+    (agingData.value.days60 || 0) +
+    (agingData.value.days90 || 0) +
+    (agingData.value.days180 || 0) +
+    (agingData.value.over180 || 0)
   if (!total) return 0
   return Math.min(100, Math.max(2, ((agingData.value[key] || 0) / total) * 100))
 }
 
 const agingPercentOver60 = computed(() => {
-  const total = (agingData.value.current || 0) + (agingData.value.days30 || 0) + (agingData.value.days60 || 0) + (agingData.value.days90 || 0) + (agingData.value.days180 || 0) + (agingData.value.over180 || 0)
+  const total =
+    (agingData.value.current || 0) +
+    (agingData.value.days30 || 0) +
+    (agingData.value.days60 || 0) +
+    (agingData.value.days90 || 0) +
+    (agingData.value.days180 || 0) +
+    (agingData.value.over180 || 0)
   if (!total) return 0
   const v = (agingData.value.days90 || 0) + (agingData.value.days180 || 0) + (agingData.value.over180 || 0)
   return Math.min(100, Math.max(2, (v / total) * 100))
@@ -452,9 +567,11 @@ const topSuppliers = computed(() => {
     prev.amount += remaining
     map.set(p.supplierId, prev)
   }
-  const list = Array.from(map.values()).sort((a, b) => b.amount - a.amount).slice(0, 5)
+  const list = Array.from(map.values())
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5)
   const max = list[0]?.amount || 1
-  return list.map(item => ({ ...item, percent: Math.min(100, Math.max(4, (item.amount / max) * 100)) }))
+  return list.map((item) => ({ ...item, percent: Math.min(100, Math.max(4, (item.amount / max) * 100)) }))
 })
 
 /* 逾期预警列表 */
@@ -462,12 +579,12 @@ const overdueList = computed(() => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   return payableStore.payables
-    .filter(p => p.status === 'overdue' || (p.dueDate && new Date(p.dueDate) < today && p.status !== 'completed'))
-    .map(p => ({
+    .filter((p) => p.status === 'overdue' || (p.dueDate && new Date(p.dueDate) < today && p.status !== 'completed'))
+    .map((p) => ({
       ...p,
       remainingAmount: (parseFloat(p.amount) || 0) - (parseFloat(p.paidAmount) || 0)
     }))
-    .filter(p => p.remainingAmount > 0)
+    .filter((p) => p.remainingAmount > 0)
     .sort((a, b) => new Date(a.dueDate || 0) - new Date(b.dueDate || 0))
 })
 
@@ -531,12 +648,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.payable-page {}
+.payable-page {
+}
 
 /* 资金流水线逾期节点标红 */
 .pipeline-node--danger {
   border: 1px solid rgba(239, 68, 68, 0.3);
-  background: rgba(239, 68, 68, 0.04)}
+  background: rgba(239, 68, 68, 0.04);
+}
 
 /* 账龄矩阵热力图单元格 */
 .matrix-cell {
@@ -545,29 +664,36 @@ onMounted(() => {
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
-  font-weight: 600}
+  font-weight: 600;
+}
 .matrix-cell.empty {
   color: var(--color-text-tertiary);
-  background: transparent}
+  background: transparent;
+}
 .matrix-cell.low {
   color: #166534;
-  background: #dcfce7}
+  background: #dcfce7;
+}
 .matrix-cell.medium {
   color: #92400e;
-  background: #fef3c7}
+  background: #fef3c7;
+}
 .matrix-cell.high {
   color: #9a3412;
-  background: #fed7aa}
+  background: #fed7aa;
+}
 .matrix-cell.critical {
   color: #991b1b;
-  background: #fecaca}
+  background: #fecaca;
+}
 
 /* 统计卡片 */
 .stats-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-4);
-  margin-bottom: var(--space-4)}
+  margin-bottom: var(--space-4);
+}
 .stat-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -577,113 +703,139 @@ onMounted(() => {
   flex-direction: column;
   gap: var(--space-2);
   animation: statCardIn 0.4s ease both;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast)}
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08)}
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
 .stat-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--space-2)}
+  gap: var(--space-2);
+}
 .stat-card-label {
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary)}
+  color: var(--color-text-secondary);
+}
 .stat-card-icon {
-  opacity: 0.7}
+  opacity: 0.7;
+}
 .stat-card-value {
   font-size: var(--font-size-xl);
   font-weight: 700;
   font-family: var(--font-mono);
-  letter-spacing: -0.02em}
+  letter-spacing: -0.02em;
+}
 .pulse-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   display: inline-block;
   animation: pulseDot 2s ease-in-out infinite;
-  flex-shrink: 0}
+  flex-shrink: 0;
+}
 
 /* 概览面板 */
 .overview-row {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-4);
-  margin-bottom: var(--space-4)}
+  margin-bottom: var(--space-4);
+}
 .overview-card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  animation: statCardIn 0.4s ease both}
+  animation: statCardIn 0.4s ease both;
+}
 .overview-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: var(--space-3)}
+  margin-bottom: var(--space-3);
+}
 .overview-content {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2)}
+  gap: var(--space-2);
+}
 .overview-content.center {
   align-items: center;
   justify-content: center;
-  min-height: 80px}
+  min-height: 80px;
+}
 .overview-empty {
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
   text-align: center;
-  padding: var(--space-3) 0}
+  padding: var(--space-3) 0;
+}
 
 /* 进度环 */
 .progress-ring {
-  transform: rotate(-90deg)}
+  transform: rotate(-90deg);
+}
 .progress-ring-bg {
   fill: none;
   stroke: var(--color-bg-primary);
-  stroke-width: 5}
+  stroke-width: 5;
+}
 .progress-ring-fill {
   fill: none;
   stroke-width: 5;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.6s ease, stroke 0.3s ease}
+  transition:
+    stroke-dashoffset 0.6s ease,
+    stroke 0.3s ease;
+}
 .progress-ring-text {
   transform: rotate(90deg);
   font-size: 14px;
   font-weight: 700;
   fill: var(--color-text-primary);
-  font-family: var(--font-mono)}
+  font-family: var(--font-mono);
+}
 
 /* 迷你条形图 */
 .mini-bar-item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  font-size: var(--font-size-xs)}
+  font-size: var(--font-size-xs);
+}
 .mini-bar-label {
   width: 64px;
   color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  flex-shrink: 0}
+  flex-shrink: 0;
+}
 .mini-bar-track {
   flex: 1;
   height: 6px;
   background: var(--color-bg-primary);
   border-radius: var(--radius-full);
-  overflow: hidden}
+  overflow: hidden;
+}
 .mini-bar-fill {
   height: 100%;
   border-radius: var(--radius-full);
   transition: width 0.5s ease;
-  min-width: 2px}
+  min-width: 2px;
+}
 .mini-bar-value {
   width: 72px;
   text-align: right;
   color: var(--color-text-primary);
   font-weight: 600;
-  flex-shrink: 0}
+  flex-shrink: 0;
+}
 
 /* 逾期预警 */
 .overdue-alert {
@@ -692,51 +844,61 @@ onMounted(() => {
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
   margin-bottom: var(--space-4);
-  animation: slideInDown 0.4s ease both}
+  animation: slideInDown 0.4s ease both;
+}
 .overdue-alert-header {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-bottom: var(--space-2)}
+  margin-bottom: var(--space-2);
+}
 .overdue-alert-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: var(--color-danger)}
+  color: var(--color-danger);
+}
 .overdue-alert-count {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
-  margin-left: auto}
+  margin-left: auto;
+}
 .overdue-alert-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2)}
+  gap: var(--space-2);
+}
 .overdue-alert-item {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   font-size: var(--font-size-sm);
   padding: var(--space-1) 0;
-  animation: slideInRight 0.4s ease both}
+  animation: slideInRight 0.4s ease both;
+}
 .overdue-alert-no {
   font-family: var(--font-mono);
   color: var(--color-accent);
-  min-width: 110px}
+  min-width: 110px;
+}
 .overdue-alert-supplier {
   flex: 1;
   color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis}
+  text-overflow: ellipsis;
+}
 .overdue-alert-amount {
   color: var(--color-danger);
   font-weight: 600;
   min-width: 90px;
-  text-align: right}
+  text-align: right;
+}
 .overdue-alert-days {
   color: var(--color-danger);
   font-size: var(--font-size-xs);
   min-width: 70px;
-  text-align: right}
+  text-align: right;
+}
 
 /* Tab */
 .tab-bar {
@@ -744,7 +906,8 @@ onMounted(() => {
   gap: var(--space-1);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
-  padding-bottom: 0}
+  padding-bottom: 0;
+}
 .tab-btn {
   display: flex;
   align-items: center;
@@ -756,23 +919,28 @@ onMounted(() => {
   border: none;
   border-bottom: 2px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-fast)}
+  transition: all var(--transition-fast);
+}
 .tab-btn:hover {
   color: var(--color-text-primary);
-  background: var(--color-surface-hover)}
+  background: var(--color-surface-hover);
+}
 .tab-btn.active {
   color: var(--color-accent);
-  border-bottom-color: var(--color-accent)}
+  border-bottom-color: var(--color-accent);
+}
 
 /* 表格行动画 */
 .table-row-animated {
-  animation: rowSlideIn 0.3s ease both}
+  animation: rowSlideIn 0.3s ease both;
+}
 
 /* 空状态 */
 .empty-state {
   text-align: center;
   padding: var(--space-8) var(--space-4);
-  color: var(--color-text-tertiary)}
+  color: var(--color-text-tertiary);
+}
 .empty-state-circle {
   width: 64px;
   height: 64px;
@@ -782,9 +950,11 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-3);
-  color: var(--color-text-tertiary)}
+  color: var(--color-text-tertiary);
+}
 .empty-state-text {
-  font-size: var(--font-size-sm)}
+  font-size: var(--font-size-sm);
+}
 
 /* 分页 */
 .pagination {
@@ -793,73 +963,101 @@ onMounted(() => {
   justify-content: flex-end;
   gap: var(--space-2);
   padding: var(--space-3);
-  border-top: 1px solid var(--color-border)}
+  border-top: 1px solid var(--color-border);
+}
 .pagination-info {
   font-size: var(--font-size-sm);
-  color: var(--color-text-secondary)}
+  color: var(--color-text-secondary);
+}
 
 /* Keyframes */
 @keyframes statCardIn {
   from {
     opacity: 0;
-    transform: translateY(12px)}
+    transform: translateY(12px);
+  }
   to {
     opacity: 1;
-    transform: translateY(0)}
+    transform: translateY(0);
+  }
 }
 
 @keyframes pulseDot {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
-    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.15)}
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.15);
+  }
   50% {
     opacity: 0.85;
-    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0)}
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0);
+  }
 }
 
 @keyframes slideInDown {
   from {
     opacity: 0;
-    transform: translateY(-8px)}
+    transform: translateY(-8px);
+  }
   to {
     opacity: 1;
-    transform: translateY(0)}
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translateX(-12px)}
+    transform: translateX(-12px);
+  }
   to {
     opacity: 1;
-    transform: translateX(0)}
+    transform: translateX(0);
+  }
 }
 
 @keyframes rowSlideIn {
   from {
     opacity: 0;
-    transform: translateX(-8px)}
+    transform: translateX(-8px);
+  }
   to {
     opacity: 1;
-    transform: translateX(0)}
+    transform: translateX(0);
+  }
 }
 
 /* 响应式 */
 @media (max-width: 1024px) {
-  .stats-grid-4 { grid-template-columns: repeat(2, 1fr)}
-  .overview-row { grid-template-columns: 1fr}
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .overview-row {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 640px) {
-  .stats-grid-4 { grid-template-columns: 1fr}
-  .overview-row { grid-template-columns: 1fr}
-  .filter-bar { flex-direction: column}
-  .tab-bar { overflow-x: auto}
+  .stats-grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .overview-row {
+    grid-template-columns: 1fr;
+  }
+  .filter-bar {
+    flex-direction: column;
+  }
+  .tab-bar {
+    overflow-x: auto;
+  }
   .overdue-alert-item {
     flex-wrap: wrap;
-    gap: var(--space-1)}
+    gap: var(--space-1);
+  }
   .overdue-alert-supplier {
-    width: 100%}
+    width: 100%;
+  }
 }
 .table-container {
-  overflow-x: auto}
+  overflow-x: auto;
+}
 </style>

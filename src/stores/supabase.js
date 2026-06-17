@@ -117,7 +117,7 @@ export const useSupabaseStore = defineStore('supabase', () => {
         url.value = localStorage.getItem(CONFIG_URL_KEY) || ''
         const storedKey = await decryptKey(localStorage.getItem(CONFIG_KEY_KEY))
         anonKey.value = storedKey || ''
-        console.info('[SupabaseStore] 自动连接成功')
+        console.debug('[SupabaseStore] 自动连接成功')
         return true
       }
     } catch (e) {

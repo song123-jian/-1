@@ -1,14 +1,14 @@
 <template>
-  <div class="supplier-select" ref="selectRef">
+  <div ref="selectRef" class="supplier-select">
     <div class="supplier-select-input" @click="toggleDropdown">
       <input
         type="text"
         class="form-input"
         :value="displayValue"
         :placeholder="placeholder"
+        readonly
         @input="onSearch"
         @focus="openDropdown"
-        readonly
       />
       <span class="select-arrow">
         <Icon :name="isOpen ? 'chevronUp' : 'chevronDown'" :size="14" />
@@ -44,9 +44,13 @@
   </div>
 </template>
 
+<script>
+export default { name: 'SupplierSelect' }
+</script>
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useSupplierStore } from '@/modules/purchase/stores/supplier'
+import { useClickOutside } from '@/composables/useClickOutside'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -60,9 +64,7 @@ const searchKeyword = ref('')
 const selectRef = ref(null)
 const searchRef = ref(null)
 
-const selectedSupplier = computed(() =>
-  props.modelValue ? supplierStore.getSupplierById(props.modelValue) : null
-)
+const selectedSupplier = computed(() => (props.modelValue ? supplierStore.getSupplierById(props.modelValue) : null))
 
 const displayValue = computed(() => {
   if (selectedSupplier.value) {
@@ -72,13 +74,14 @@ const displayValue = computed(() => {
 })
 
 const filteredOptions = computed(() => {
-  let list = supplierStore.suppliers.filter(s => s.status !== 'blacklist')
+  let list = supplierStore.suppliers.filter((s) => s.status !== 'blacklist')
   if (searchKeyword.value) {
     const kw = searchKeyword.value.toLowerCase()
-    list = list.filter(s =>
-      (s.code || '').toLowerCase().includes(kw) ||
-      (s.name || '').toLowerCase().includes(kw) ||
-      (s.shortName || '').toLowerCase().includes(kw)
+    list = list.filter(
+      (s) =>
+        (s.code || '').toLowerCase().includes(kw) ||
+        (s.name || '').toLowerCase().includes(kw) ||
+        (s.shortName || '').toLowerCase().includes(kw)
     )
   }
   return list
@@ -116,12 +119,7 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+useClickOutside(handleClickOutside)
 </script>
 
 <style scoped>
@@ -148,7 +146,7 @@ onBeforeUnmount(() => {
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);

@@ -18,7 +18,7 @@
           <span class="ds-screen__refresh-text">实时更新 · {{ lastUpdateTime }} · {{ refreshInterval }}s</span>
         </div>
         <div class="ds-screen__clock">{{ currentTime }}</div>
-        <button class="ds-screen__fullscreen-btn" @click="toggleFullscreen" :title="isFullscreen ? '退出全屏' : '全屏'">
+        <button class="ds-screen__fullscreen-btn" :title="isFullscreen ? '退出全屏' : '全屏'" @click="toggleFullscreen">
           <Icon :name="isFullscreen ? 'minimize' : 'maximize'" :size="18" />
         </button>
       </div>
@@ -45,11 +45,7 @@
             <span>销售概览</span>
           </div>
           <div class="ds-screen__card-grid" :class="{ 'ds-screen__card-grid--flash': isFlashing }">
-            <StatCard
-              v-for="card in dataScreenStore.salesCards"
-              :key="card.title"
-              v-bind="card"
-            />
+            <StatCard v-for="card in dataScreenStore.salesCards" :key="card.title" v-bind="card" />
           </div>
         </div>
         <div class="ds-screen__card-group">
@@ -58,11 +54,7 @@
             <span>库存概览</span>
           </div>
           <div class="ds-screen__card-grid" :class="{ 'ds-screen__card-grid--flash': isFlashing }">
-            <StatCard
-              v-for="card in dataScreenStore.inventoryCards"
-              :key="card.title"
-              v-bind="card"
-            />
+            <StatCard v-for="card in dataScreenStore.inventoryCards" :key="card.title" v-bind="card" />
           </div>
         </div>
         <div class="ds-screen__card-group">
@@ -71,11 +63,7 @@
             <span>财务概览</span>
           </div>
           <div class="ds-screen__card-grid" :class="{ 'ds-screen__card-grid--flash': isFlashing }">
-            <StatCard
-              v-for="card in dataScreenStore.financeCards"
-              :key="card.title"
-              v-bind="card"
-            />
+            <StatCard v-for="card in dataScreenStore.financeCards" :key="card.title" v-bind="card" />
           </div>
         </div>
       </section>
@@ -99,10 +87,7 @@
           />
         </div>
         <div class="ds-screen__chart-medium">
-          <RankList
-            title="热销排行 Top10"
-            :items="dataScreenStore.topProducts"
-          />
+          <RankList title="热销排行 Top10" :items="dataScreenStore.topProducts" />
         </div>
       </section>
 
@@ -117,16 +102,16 @@
           />
         </div>
         <div class="ds-screen__chart-wide">
-          <AlertList
-            title="预警中心"
-            :alerts="dataScreenStore.allAlerts"
-          />
+          <AlertList title="预警中心" :alerts="dataScreenStore.allAlerts" />
         </div>
       </section>
     </main>
   </div>
 </template>
 
+<script>
+export default { name: 'ReportDataScreen' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useDataScreenStore } from '@/modules/report/stores/dataScreen'
@@ -183,19 +168,28 @@ function onRefreshData() {
   // 触发卡片闪烁效果
   isFlashing.value = true
   if (flashTimer) clearTimeout(flashTimer)
-  flashTimer = setTimeout(() => { isFlashing.value = false }, 600)
+  flashTimer = setTimeout(() => {
+    isFlashing.value = false
+  }, 600)
 
   // 显示toast提示
   showToast.value = true
   if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { if (isMounted) showToast.value = false }, 3000)
+  toastTimer = setTimeout(() => {
+    if (isMounted) showToast.value = false
+  }, 3000)
 }
 
 /* ==================== 全屏切换 ==================== */
 const isFullscreen = ref(false)
 
 function getFullscreenElement() {
-  return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+  )
 }
 
 function requestFullscreen(el) {
@@ -216,17 +210,21 @@ function exitFullscreen() {
 
 function toggleFullscreen() {
   if (!getFullscreenElement()) {
-    requestFullscreen(document.documentElement).then(() => {
-      isFullscreen.value = true
-    }).catch(() => {
-      // 全屏请求被拒绝或不支持
-    })
+    requestFullscreen(document.documentElement)
+      .then(() => {
+        isFullscreen.value = true
+      })
+      .catch(() => {
+        // 全屏请求被拒绝或不支持
+      })
   } else {
-    exitFullscreen().then(() => {
-      isFullscreen.value = false
-    }).catch(() => {
-      // 退出全屏失败
-    })
+    exitFullscreen()
+      .then(() => {
+        isFullscreen.value = false
+      })
+      .catch(() => {
+        // 退出全屏失败
+      })
   }
 }
 
@@ -243,8 +241,8 @@ function initParticles() {
   const canvas = particleCanvas.value
   if (!canvas) return
   const ctx = canvas.getContext('2d')
-  let width = canvas.width = window.innerWidth
-  let height = canvas.height = window.innerHeight
+  let width = (canvas.width = window.innerWidth)
+  let height = (canvas.height = window.innerHeight)
 
   const particles = []
   const count = 40
@@ -430,7 +428,7 @@ const inoutTrendDatasets = computed(() => [
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   flex-shrink: 0;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* 头部底部装饰线 */
@@ -461,8 +459,13 @@ const inoutTrendDatasets = computed(() => [
 
 /* Logo呼吸动画 */
 @keyframes logo-breathe {
-  0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.3); }
-  50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.5); }
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+  }
 }
 
 .ds-screen__logo {
@@ -573,7 +576,7 @@ const inoutTrendDatasets = computed(() => [
   padding: 0 var(--space-8);
   margin-top: var(--space-3);
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* ==================== 数据更新Toast提示 ==================== */
@@ -623,9 +626,15 @@ const inoutTrendDatasets = computed(() => [
 
 /* ==================== 卡片数据闪烁效果 ==================== */
 @keyframes data-flash {
-  0% { background-color: transparent; }
-  30% { background-color: rgba(0, 212, 255, 0.12); }
-  100% { background-color: transparent; }
+  0% {
+    background-color: transparent;
+  }
+  30% {
+    background-color: rgba(0, 212, 255, 0.12);
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 .ds-screen__card-grid--flash {
@@ -642,7 +651,7 @@ const inoutTrendDatasets = computed(() => [
   gap: var(--space-5);
   min-height: 0;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* ==================== 卡片区域 ==================== */
@@ -771,9 +780,10 @@ const inoutTrendDatasets = computed(() => [
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
-              radial-gradient(ellipse at 80% 20%, rgba(0, 255, 136, 0.02) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 80%, rgba(114, 46, 209, 0.02) 0%, transparent 50%);
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 212, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0, 255, 136, 0.02) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(114, 46, 209, 0.02) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }

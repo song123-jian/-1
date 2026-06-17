@@ -3,22 +3,56 @@
  * 封装 init/dispose/resize，防止内存泄漏
  */
 import * as echarts from 'echarts/core'
-import { BarChart, LineChart, PieChart, GaugeChart, RadarChart, MapChart, ScatterChart, EffectScatterChart } from 'echarts/charts'
 import {
-  TitleComponent, TooltipComponent, LegendComponent, GridComponent,
-  DatasetComponent, TransformComponent, ToolboxComponent,
-  DataZoomComponent, VisualMapComponent, GeoComponent, GraphicComponent
+  BarChart,
+  LineChart,
+  PieChart,
+  GaugeChart,
+  RadarChart,
+  MapChart,
+  ScatterChart,
+  EffectScatterChart
+} from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent,
+  ToolboxComponent,
+  DataZoomComponent,
+  VisualMapComponent,
+  GeoComponent,
+  GraphicComponent
 } from 'echarts/components'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 
 /* 按需注册 */
 echarts.use([
-  BarChart, LineChart, PieChart, GaugeChart, RadarChart, MapChart, ScatterChart, EffectScatterChart,
-  TitleComponent, TooltipComponent, LegendComponent, GridComponent,
-  DatasetComponent, TransformComponent, ToolboxComponent,
-  DataZoomComponent, VisualMapComponent, GeoComponent, GraphicComponent,
-  LabelLayout, UniversalTransition, CanvasRenderer
+  BarChart,
+  LineChart,
+  PieChart,
+  GaugeChart,
+  RadarChart,
+  MapChart,
+  ScatterChart,
+  EffectScatterChart,
+  TitleComponent,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent,
+  DatasetComponent,
+  TransformComponent,
+  ToolboxComponent,
+  DataZoomComponent,
+  VisualMapComponent,
+  GeoComponent,
+  GraphicComponent,
+  LabelLayout,
+  UniversalTransition,
+  CanvasRenderer
 ])
 
 /** 实例管理 Map */
@@ -123,6 +157,9 @@ export function disposeAllCharts() {
     }
   })
   instanceMap.clear()
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', resizeAllCharts)
+  }
 }
 
 export { echarts }

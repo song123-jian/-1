@@ -1,8 +1,13 @@
 <template>
-  <div class="data-select" :class="{ 'is-disabled': disabled, 'is-open': isOpen }" ref="selectRef">
+  <div ref="selectRef" class="data-select" :class="{ 'is-disabled': disabled, 'is-open': isOpen }">
     <!-- 选择器触发器 -->
-    <div class="data-select-trigger" @click="toggleDropdown" :tabindex="disabled ? -1 : 0"
-         @keydown.enter="toggleDropdown" @keydown.space.prevent="toggleDropdown">
+    <div
+      class="data-select-trigger"
+      :tabindex="disabled ? -1 : 0"
+      @click="toggleDropdown"
+      @keydown.enter="toggleDropdown"
+      @keydown.space.prevent="toggleDropdown"
+    >
       <div class="data-select-input">
         <!-- 已选标签（多选模式） -->
         <div v-if="multiple && selectedItems.length > 0" class="data-select-tags">
@@ -26,10 +31,17 @@
     <div v-if="isOpen" class="data-select-dropdown">
       <!-- 搜索框 -->
       <div v-if="searchable" class="data-select-search">
-        <input v-model="searchText" type="text" class="data-select-search-input"
-               :placeholder="searchPlaceholder" ref="searchInput"
-               @keydown.down.prevent="highlightNext" @keydown.up.prevent="highlightPrev"
-               @keydown.enter.prevent="selectHighlighted" @keydown.esc.prevent="closeDropdown" />
+        <input
+          ref="searchInput"
+          v-model="searchText"
+          type="text"
+          class="data-select-search-input"
+          :placeholder="searchPlaceholder"
+          @keydown.down.prevent="highlightNext"
+          @keydown.up.prevent="highlightPrev"
+          @keydown.enter.prevent="selectHighlighted"
+          @keydown.esc.prevent="closeDropdown"
+        />
       </div>
 
       <!-- 选项列表 -->
@@ -38,15 +50,18 @@
         <template v-if="hasGroups">
           <div v-for="group in filteredGroups" :key="group.group" class="data-select-group">
             <div class="data-select-group-label">{{ group.group }}</div>
-            <div v-for="option in group.items" :key="option.value"
-                 class="data-select-option"
-                 :class="{
-                   'is-selected': isSelected(option),
-                   'is-highlighted': highlightedIndex === getOptionIndex(option),
-                   'is-disabled': option.disabled
-                 }"
-                 @click="selectOption(option)"
-                 @mouseenter="highlightedIndex = getOptionIndex(option)">
+            <div
+              v-for="option in group.items"
+              :key="option.value"
+              class="data-select-option"
+              :class="{
+                'is-selected': isSelected(option),
+                'is-highlighted': highlightedIndex === getOptionIndex(option),
+                'is-disabled': option.disabled
+              }"
+              @click="selectOption(option)"
+              @mouseenter="highlightedIndex = getOptionIndex(option)"
+            >
               <span v-if="multiple" class="checkbox-icon">{{ isSelected(option) ? '[勾]' : '[框]' }}</span>
               <span class="option-label">{{ option.label }}</span>
               <span v-if="option.extra" class="option-extra">{{ option.extra }}</span>
@@ -56,15 +71,18 @@
 
         <!-- 非分组选项 -->
         <template v-else>
-          <div v-for="(option, idx) in filteredOptions" :key="option.value"
-               class="data-select-option"
-               :class="{
-                 'is-selected': isSelected(option),
-                 'is-highlighted': highlightedIndex === idx,
-                 'is-disabled': option.disabled
-               }"
-               @click="selectOption(option)"
-               @mouseenter="highlightedIndex = idx">
+          <div
+            v-for="(option, idx) in filteredOptions"
+            :key="option.value"
+            class="data-select-option"
+            :class="{
+              'is-selected': isSelected(option),
+              'is-highlighted': highlightedIndex === idx,
+              'is-disabled': option.disabled
+            }"
+            @click="selectOption(option)"
+            @mouseenter="highlightedIndex = idx"
+          >
             <span v-if="multiple" class="checkbox-icon">{{ isSelected(option) ? '[勾]' : '[框]' }}</span>
             <span class="option-label">{{ option.label }}</span>
             <span v-if="option.extra" class="option-extra">{{ option.extra }}</span>
@@ -79,12 +97,8 @@
 
       <!-- 底部操作 -->
       <div v-if="allowCreate || showRefresh" class="data-select-footer">
-        <button v-if="allowCreate" class="data-select-create-btn" @click="handleCreate">
-          + 新增{{ moduleName }}
-        </button>
-        <button v-if="showRefresh" class="data-select-refresh-btn" @click="handleRefresh">
-          刷新
-        </button>
+        <button v-if="allowCreate" class="data-select-create-btn" @click="handleCreate">+ 新增{{ moduleName }}</button>
+        <button v-if="showRefresh" class="data-select-refresh-btn" @click="handleRefresh">刷新</button>
       </div>
     </div>
   </div>
@@ -151,10 +165,14 @@ export default {
       try {
         const raw = localStorage.getItem(freqKey.value)
         return raw ? JSON.parse(raw) : {}
-      } catch (e) { return {} }
+      } catch (e) {
+        return {}
+      }
     }
     function saveFreqMap(map) {
-      try { localStorage.setItem(freqKey.value, JSON.stringify(map)) } catch (e) {}
+      try {
+        localStorage.setItem(freqKey.value, JSON.stringify(map))
+      } catch (e) { console.warn('[DataSelect] saveFreqMap失败:', e.message) }
     }
     function recordUsage(value) {
       const map = getFreqMap()
@@ -176,7 +194,10 @@ export default {
     /* 获取选项列表 */
     const rawOptions = computed(() => {
       /* 合并静态 filters 和动态 parentFilters */
-      const allFilters = [...props.filters, ...props.parentFilters.filter(pf => pf.value !== undefined && pf.value !== null && pf.value !== '')]
+      const allFilters = [
+        ...props.filters,
+        ...props.parentFilters.filter((pf) => pf.value !== undefined && pf.value !== null && pf.value !== '')
+      ]
       const opts = dataCenter.getSelectOptions(props.module, props.variant, {
         valueField: props.valueField,
         labelField: props.labelField,
@@ -184,7 +205,7 @@ export default {
       })
       /* 按使用频率排序 */
       if (opts.length > 0 && opts[0]?.group !== undefined) {
-        return opts.map(g => ({ ...g, items: sortByFreq(g.items || []) }))
+        return opts.map((g) => ({ ...g, items: sortByFreq(g.items || []) }))
       }
       return sortByFreq(opts)
     })
@@ -197,7 +218,7 @@ export default {
     /* 扁平化选项列表（用于搜索和键盘导航） */
     const flatOptions = computed(() => {
       if (hasGroups.value) {
-        return rawOptions.value.flatMap(g => g.items || [])
+        return rawOptions.value.flatMap((g) => g.items || [])
       }
       return rawOptions.value
     })
@@ -206,10 +227,11 @@ export default {
     const filteredOptions = computed(() => {
       if (!searchText.value) return flatOptions.value
       const keyword = searchText.value.toLowerCase()
-      return flatOptions.value.filter(opt =>
-        String(opt.label).toLowerCase().includes(keyword) ||
-        String(opt.value).toLowerCase().includes(keyword) ||
-        (opt.extra && String(opt.extra).toLowerCase().includes(keyword))
+      return flatOptions.value.filter(
+        (opt) =>
+          String(opt.label).toLowerCase().includes(keyword) ||
+          String(opt.value).toLowerCase().includes(keyword) ||
+          (opt.extra && String(opt.extra).toLowerCase().includes(keyword))
       )
     })
 
@@ -218,14 +240,14 @@ export default {
       if (!searchText.value) return rawOptions.value
       const keyword = searchText.value.toLowerCase()
       return rawOptions.value
-        .map(group => ({
+        .map((group) => ({
           ...group,
-          items: (group.items || []).filter(opt =>
-            String(opt.label).toLowerCase().includes(keyword) ||
-            String(opt.value).toLowerCase().includes(keyword)
+          items: (group.items || []).filter(
+            (opt) =>
+              String(opt.label).toLowerCase().includes(keyword) || String(opt.value).toLowerCase().includes(keyword)
           )
         }))
-        .filter(group => group.items && group.items.length > 0)
+        .filter((group) => group.items && group.items.length > 0)
     })
 
     /* 是否为空 */
@@ -238,7 +260,7 @@ export default {
     const selectedItems = computed(() => {
       if (props.multiple) {
         const values = Array.isArray(props.modelValue) ? props.modelValue : []
-        return flatOptions.value.filter(opt => values.includes(opt.value))
+        return flatOptions.value.filter((opt) => values.includes(opt.value))
       }
       return []
     })
@@ -246,7 +268,7 @@ export default {
     /* 单选已选标签 */
     const selectedLabel = computed(() => {
       if (props.multiple) return ''
-      const opt = flatOptions.value.find(o => o.value === props.modelValue)
+      const opt = flatOptions.value.find((o) => o.value === props.modelValue)
       if (!opt) {
         /* 尝试从数据中查找 */
         const data = opt?.data
@@ -266,7 +288,7 @@ export default {
 
     /* 获取选项在扁平列表中的索引 */
     function getOptionIndex(option) {
-      return flatOptions.value.findIndex(o => o.value === option.value)
+      return flatOptions.value.findIndex((o) => o.value === option.value)
     }
 
     /* 切换下拉 */
@@ -365,22 +387,26 @@ export default {
     }
 
     /* 级联过滤变化时，如果当前选中值不在新选项中，则清空 */
-    watch(() => props.parentFilters, () => {
-      if (props.modelValue) {
-        const validValues = flatOptions.value.map(o => o.value)
-        if (props.multiple) {
-          const current = Array.isArray(props.modelValue) ? props.modelValue : []
-          const filtered = current.filter(v => validValues.includes(v))
-          if (filtered.length !== current.length) {
-            emit('update:modelValue', filtered)
-          }
-        } else {
-          if (!validValues.includes(props.modelValue)) {
-            emit('update:modelValue', '')
+    watch(
+      () => props.parentFilters,
+      () => {
+        if (props.modelValue) {
+          const validValues = flatOptions.value.map((o) => o.value)
+          if (props.multiple) {
+            const current = Array.isArray(props.modelValue) ? props.modelValue : []
+            const filtered = current.filter((v) => validValues.includes(v))
+            if (filtered.length !== current.length) {
+              emit('update:modelValue', filtered)
+            }
+          } else {
+            if (!validValues.includes(props.modelValue)) {
+              emit('update:modelValue', '')
+            }
           }
         }
-      }
-    }, { deep: true })
+      },
+      { deep: true }
+    )
 
     onMounted(() => {
       document.addEventListener('click', handleClickOutside)
@@ -391,12 +417,31 @@ export default {
     })
 
     return {
-      selectRef, searchInput, isOpen, searchText, highlightedIndex,
-      rawOptions, hasGroups, flatOptions, filteredOptions, filteredGroups,
-      isEmpty, selectedItems, selectedLabel,
-      isSelected, getOptionIndex, toggleDropdown, closeDropdown,
-      selectOption, removeItem, highlightNext, highlightPrev, selectHighlighted,
-      handleCreate, handleRefresh, handleClear
+      selectRef,
+      searchInput,
+      isOpen,
+      searchText,
+      highlightedIndex,
+      rawOptions,
+      hasGroups,
+      flatOptions,
+      filteredOptions,
+      filteredGroups,
+      isEmpty,
+      selectedItems,
+      selectedLabel,
+      isSelected,
+      getOptionIndex,
+      toggleDropdown,
+      closeDropdown,
+      selectOption,
+      removeItem,
+      highlightNext,
+      highlightPrev,
+      selectHighlighted,
+      handleCreate,
+      handleRefresh,
+      handleClear
     }
   }
 }
@@ -422,7 +467,9 @@ export default {
   position: relative;
   transition: border-color 0.2s;
 }
-.data-select-trigger:hover { border-color: var(--color-primary, #3b82f6); }
+.data-select-trigger:hover {
+  border-color: var(--color-primary, #3b82f6);
+}
 .data-select.is-disabled .data-select-trigger {
   background: var(--color-bg-disabled, #f3f4f6);
   cursor: not-allowed;
@@ -432,8 +479,12 @@ export default {
   flex: 1;
   overflow: hidden;
 }
-.data-select-value { color: var(--color-text, #1f2937); }
-.data-select-placeholder { color: var(--color-text-muted, #9ca3af); }
+.data-select-value {
+  color: var(--color-text, #1f2937);
+}
+.data-select-placeholder {
+  color: var(--color-text-muted, #9ca3af);
+}
 .data-select-tags {
   display: flex;
   flex-wrap: wrap;
@@ -459,7 +510,9 @@ export default {
   line-height: 1;
   margin-left: var(--space-1);
 }
-.tag-close:hover { color: var(--color-danger, #ef4444); }
+.tag-close:hover {
+  color: var(--color-danger, #ef4444);
+}
 .data-select-clear {
   position: absolute;
   right: 24px;
@@ -472,7 +525,9 @@ export default {
   padding: 0 var(--space-1);
   transition: color 0.2s;
 }
-.data-select-clear:hover { color: var(--color-danger, #ef4444); }
+.data-select-clear:hover {
+  color: var(--color-danger, #ef4444);
+}
 .data-select-arrow {
   position: absolute;
   right: 8px;
@@ -482,18 +537,20 @@ export default {
   font-size: 12px;
   transition: transform 0.2s;
 }
-.data-select-arrow.is-open { transform: translateY(-50%) rotate(180deg); }
+.data-select-arrow.is-open {
+  transform: translateY(-50%) rotate(180deg);
+}
 
 .data-select-dropdown {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   background: var(--color-bg, #fff);
   border: 1px solid var(--color-border, #d1d5db);
   border-radius: var(--radius-md, 6px);
-  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0,0,0,0.1));
+  box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
   max-height: 320px;
   overflow: hidden;
   display: flex;
@@ -512,7 +569,9 @@ export default {
   outline: none;
   box-sizing: border-box;
 }
-.data-select-search-input:focus { border-color: var(--color-primary, #3b82f6); }
+.data-select-search-input:focus {
+  border-color: var(--color-primary, #3b82f6);
+}
 
 .data-select-options {
   overflow-y: auto;
@@ -545,8 +604,16 @@ export default {
   color: var(--color-text-muted, #9ca3af);
   cursor: not-allowed;
 }
-.checkbox-icon { font-size: 14px; flex-shrink: 0; }
-.option-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.checkbox-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.option-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .option-extra {
   font-size: 12px;
   color: var(--color-text-muted, #9ca3af);
@@ -573,6 +640,12 @@ export default {
   font-size: 12px;
   color: var(--color-text, #374151);
 }
-.data-select-create-btn:hover { border-color: var(--color-primary, #3b82f6); color: var(--color-primary, #3b82f6); }
-.data-select-refresh-btn:hover { border-color: var(--color-success, #10b981); color: var(--color-success, #10b981); }
+.data-select-create-btn:hover {
+  border-color: var(--color-primary, #3b82f6);
+  color: var(--color-primary, #3b82f6);
+}
+.data-select-refresh-btn:hover {
+  border-color: var(--color-success, #10b981);
+  color: var(--color-success, #10b981);
+}
 </style>

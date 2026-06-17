@@ -1,11 +1,12 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 800px">
       <div class="modal-header">
         <span class="modal-title">
-          <Icon name="printer" :size="14" /> 条码打印
+          <Icon name="printer" :size="14" />
+          条码打印
         </span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <!-- 标签大小选择 -->
@@ -27,7 +28,7 @@
         <!-- 显示二维码 -->
         <div class="form-group">
           <label style="display: flex; align-items: center; gap: var(--space-2); cursor: pointer">
-            <input type="checkbox" v-model="showQR" />
+            <input v-model="showQR" type="checkbox" />
             <span class="form-label" style="margin-bottom: 0">同时显示二维码</span>
           </label>
         </div>
@@ -39,7 +40,7 @@
             <div v-for="item in items" :key="item.code" class="barcode-preview-item">
               <div class="barcode-preview-name">{{ item.name }}</div>
               <div class="barcode-preview-code">
-                <span v-html="sanitizeHtml(getBarcodeSvg(item.code))"></span>
+                <span v-safe-html="getBarcodeSvg(item.code)"></span>
               </div>
               <div v-if="showQR" class="barcode-preview-qr">
                 <img :src="getQRCode(item.code)" style="width: 50px; height: 50px" />
@@ -51,22 +52,26 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
+        <button class="btn btn-ghost" @click="emit('close')">关闭</button>
         <button class="btn btn-outline" @click="handlePrint">
-          <Icon name="printer" :size="14" /> 打印
+          <Icon name="printer" :size="14" />
+          打印
         </button>
         <button class="btn btn-primary" @click="handleBatchPrint">
-          <Icon name="layers" :size="14" /> 批量打印
+          <Icon name="layers" :size="14" />
+          批量打印
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'BarcodePrint' }
+</script>
 <script setup>
 import { ref } from 'vue'
 import { generateBarcode, generateQRCode, generateLabels } from '@/utils/barcode'
-import { sanitizeHtml } from '@/utils/format'
 
 const props = defineProps({
   items: { type: Array, default: () => [] }
@@ -110,7 +115,13 @@ function handleBatchPrint() {
 }
 
 function printHtml(html) {
-  const printWindow = window.open('', '_blank')printWindow.document.write(`<html><head><title>条码打印</title><style>        body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; padding: var(--space-2); }
+  const printWindow = window.open('', '_blank')
+  printWindow.document.write(`
+<html>
+<head>
+<title>条码打印</title>
+<style>
+        body { font-family: -apple-system, 'Microsoft YaHei', sans-serif; padding: var(--space-2); }
         @page { margin: 5mm; }
         @media print { body { padding: 0; } }
       </style>
@@ -119,7 +130,9 @@ function printHtml(html) {
     </html>
   `)
   printWindow.document.close()
-  setTimeout(() => { printWindow.print() }, 300)
+  setTimeout(() => {
+    printWindow.print()
+  }, 300)
 }
 </script>
 

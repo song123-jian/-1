@@ -24,8 +24,7 @@ export function useFormValidator(form, rules = {}) {
     if (rules.required) {
       for (const field of rules.required) {
         const val = f[field.key]
-        const isEmpty = val === '' || val === null || val === undefined ||
-          (Array.isArray(val) && val.length === 0)
+        const isEmpty = val === '' || val === null || val === undefined || (Array.isArray(val) && val.length === 0)
         if (isEmpty) {
           errors.value.push({ field: field.key, message: field.label + '为必填项' })
         }

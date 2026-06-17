@@ -12,11 +12,11 @@ export function levelLabel(level) {
 }
 
 export function getTagName(tags, tagId) {
-  const tag = tags?.find(t => t.id === tagId)
+  const tag = tags?.find((t) => t.id === tagId)
   return tag ? tag.name : tagId
 }
 
 export function getTagStyle(tags, tagId) {
-  const tag = tags?.find(t => t.id === tagId)
+  const tag = tags?.find((t) => t.id === tagId)
   return tag ? { background: tag.color + '20', color: tag.color } : {}
 }

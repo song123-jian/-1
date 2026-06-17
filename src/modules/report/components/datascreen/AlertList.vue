@@ -5,22 +5,22 @@
         <span class="ds-alert-list__title-dot" :class="worstLevel"></span>
         {{ title }}
       </div>
-      <div class="ds-alert-list__stats" v-if="alerts.length > 0">
-        <span class="ds-alert-list__badge critical" v-if="criticalCount > 0">
+      <div v-if="alerts.length > 0" class="ds-alert-list__stats">
+        <span v-if="criticalCount > 0" class="ds-alert-list__badge critical">
           <span class="ds-alert-list__badge-dot critical"></span>
           {{ criticalCount }}
         </span>
-        <span class="ds-alert-list__badge warning" v-if="warningCount > 0">
+        <span v-if="warningCount > 0" class="ds-alert-list__badge warning">
           <span class="ds-alert-list__badge-dot warning"></span>
           {{ warningCount }}
         </span>
-        <span class="ds-alert-list__badge info" v-if="infoCount > 0">
+        <span v-if="infoCount > 0" class="ds-alert-list__badge info">
           <span class="ds-alert-list__badge-dot info"></span>
           {{ infoCount }}
         </span>
       </div>
     </div>
-    <div class="ds-alert-list__body" ref="scrollBody">
+    <div ref="scrollBody" class="ds-alert-list__body">
       <div
         v-for="(alert, idx) in alerts"
         :key="idx"
@@ -47,6 +47,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'AlertList' }
+</script>
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
@@ -58,9 +61,9 @@ const props = defineProps({
 const scrollBody = ref(null)
 let scrollTimer = null
 
-const criticalCount = computed(() => props.alerts.filter(a => a.level === 'critical').length)
-const warningCount = computed(() => props.alerts.filter(a => a.level === 'warning').length)
-const infoCount = computed(() => props.alerts.filter(a => a.level === 'info').length)
+const criticalCount = computed(() => props.alerts.filter((a) => a.level === 'critical').length)
+const warningCount = computed(() => props.alerts.filter((a) => a.level === 'warning').length)
+const infoCount = computed(() => props.alerts.filter((a) => a.level === 'info').length)
 
 const worstLevel = computed(() => {
   if (criticalCount.value > 0) return 'critical'
@@ -166,8 +169,13 @@ onUnmounted(() => {
 }
 
 @keyframes dot-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
 }
 
 .ds-alert-list__stats {
@@ -208,9 +216,15 @@ onUnmounted(() => {
   color: #1890ff;
 }
 
-.ds-alert-list__badge-dot.critical { background: #ff4d4f; }
-.ds-alert-list__badge-dot.warning { background: #faad14; }
-.ds-alert-list__badge-dot.info { background: #1890ff; }
+.ds-alert-list__badge-dot.critical {
+  background: #ff4d4f;
+}
+.ds-alert-list__badge-dot.warning {
+  background: #faad14;
+}
+.ds-alert-list__badge-dot.info {
+  background: #1890ff;
+}
 
 .ds-alert-list__body {
   flex: 1;
@@ -234,8 +248,14 @@ onUnmounted(() => {
 
 /* 入场动画 */
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .ds-alert-list__item {
@@ -261,12 +281,19 @@ onUnmounted(() => {
 
 /* 闪烁动画 - critical级别 */
 @keyframes alertBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .ds-alert-list__item.blink {
-  animation: alertSlideIn 0.4s ease-out both, alertBlink 2s ease-in-out 0.5s infinite;
+  animation:
+    alertSlideIn 0.4s ease-out both,
+    alertBlink 2s ease-in-out 0.5s infinite;
 }
 
 .ds-alert-list__indicator {
@@ -303,8 +330,13 @@ onUnmounted(() => {
 }
 
 @keyframes ring-pulse-critical {
-  0%, 100% { box-shadow: 0 0 4px rgba(255, 77, 79, 0.4); }
-  50% { box-shadow: 0 0 12px rgba(255, 77, 79, 0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(255, 77, 79, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(255, 77, 79, 0.7);
+  }
 }
 
 .ds-alert-list__content {

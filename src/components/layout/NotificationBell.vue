@@ -1,7 +1,7 @@
 <template>
-  <div class="notification-bell" ref="bellRef">
+  <div ref="bellRef" class="notification-bell">
     <!-- 铃铛按钮 -->
-    <button class="bell-btn" @click="togglePanel" title="通知中心">
+    <button class="bell-btn" title="通知中心" @click="togglePanel">
       <Icon name="bell" :size="18" />
       <span v-if="notificationStore.unreadCount > 0" class="bell-badge">
         {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
@@ -14,11 +14,9 @@
         <div class="panel-header">
           <h3 class="panel-title">通知中心</h3>
           <div class="panel-actions">
-            <button
-              v-if="notificationStore.unreadCount > 0"
-              class="panel-action-btn"
-              @click="handleMarkAllRead"
-            >全部已读</button>
+            <button v-if="notificationStore.unreadCount > 0" class="panel-action-btn" @click="handleMarkAllRead">
+              全部已读
+            </button>
             <button class="panel-action-btn" @click="handleClearAll">清空</button>
           </div>
         </div>
@@ -55,19 +53,10 @@
               <div class="item-time">{{ formatTime(item.createTime) }}</div>
             </div>
             <div class="item-actions">
-              <button
-                v-if="!item.read"
-                class="item-read-btn"
-                @click.stop="handleMarkRead(item.id)"
-                title="标记已读"
-              >
+              <button v-if="!item.read" class="item-read-btn" title="标记已读" @click.stop="handleMarkRead(item.id)">
                 <Icon name="check" :size="12" />
               </button>
-              <button
-                class="item-delete-btn"
-                @click.stop="handleDelete(item.id)"
-                title="删除"
-              >
+              <button class="item-delete-btn" title="删除" @click.stop="handleDelete(item.id)">
                 <Icon name="close" :size="12" />
               </button>
             </div>
@@ -85,12 +74,16 @@
   </div>
 </template>
 
+<script>
+export default { name: 'NotificationBell' }
+</script>
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNotificationStore } from '@/stores/notification'
 import { NotificationType, NotificationLevel } from '@/stores/notification'
 import { useConfirm } from '@/composables/useConfirm'
+import { useClickOutside } from '@/composables/useClickOutside'
 
 const router = useRouter()
 const notificationStore = useNotificationStore()
@@ -107,15 +100,27 @@ watch(activePanelTab, () => {
 
 const panelTabs = computed(() => [
   { key: 'all', label: '全部', count: notificationStore.notifications.length },
-  { key: 'todo', label: '待办', count: notificationStore.getByType(NotificationType.TODO).filter(n => !n.read).length },
-  { key: 'alert', label: '预警', count: notificationStore.getByType(NotificationType.ALERT).filter(n => !n.read).length },
-  { key: 'message', label: '消息', count: notificationStore.getByType(NotificationType.MESSAGE).filter(n => !n.read).length }
+  {
+    key: 'todo',
+    label: '待办',
+    count: notificationStore.getByType(NotificationType.TODO).filter((n) => !n.read).length
+  },
+  {
+    key: 'alert',
+    label: '预警',
+    count: notificationStore.getByType(NotificationType.ALERT).filter((n) => !n.read).length
+  },
+  {
+    key: 'message',
+    label: '消息',
+    count: notificationStore.getByType(NotificationType.MESSAGE).filter((n) => !n.read).length
+  }
 ])
 
 const filteredNotifications = computed(() => {
   let list = notificationStore.notifications
   if (activePanelTab.value !== 'all') {
-    list = list.filter(n => n.type === activePanelTab.value)
+    list = list.filter((n) => n.type === activePanelTab.value)
   }
   return list.slice(0, displayLimit.value)
 })
@@ -123,7 +128,7 @@ const filteredNotifications = computed(() => {
 const hasMoreNotifications = computed(() => {
   let list = notificationStore.notifications
   if (activePanelTab.value !== 'all') {
-    list = list.filter(n => n.type === activePanelTab.value)
+    list = list.filter((n) => n.type === activePanelTab.value)
   }
   return list.length > displayLimit.value
 })
@@ -169,7 +174,7 @@ function handleClickItem(item) {
   }
   if (item.actionUrl) {
     showPanel.value = false
-    router.push(item.actionUrl)
+    router.push(item.actionUrl).catch(() => {})
   }
 }
 
@@ -200,13 +205,10 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-  notificationStore.clearExpired()
-})
+useClickOutside(handleClickOutside)
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+onMounted(() => {
+  notificationStore.clearExpired()
 })
 </script>
 
@@ -265,7 +267,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  z-index: 200;
+  z-index: var(--z-sticky);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -548,9 +550,15 @@ onBeforeUnmount(() => {
 }
 
 @keyframes badgePop {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* 响应式 */

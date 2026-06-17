@@ -117,7 +117,7 @@
         class="topbar-connection"
         :class="{ connected: sbStore.isConnected }"
         :title="sbStore.isConnected ? '云端同步已连接' : '云端同步未连接'"
-        @click="$router.push('/system/database')"
+        @click="$router.push('/system/database').catch(() => {})"
       >
         <span class="connection-dot"></span>
         <span class="connection-label">{{ sbStore.isConnected ? '已同步' : '离线' }}</span>
@@ -132,9 +132,13 @@
   </header>
 </template>
 
+<script>
+export default { name: 'AppTopbar' }
+</script>
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useClickOutside } from '@/composables/useClickOutside'
 import { useThemeStore } from '@/stores/theme'
 import { useSessionStore } from '@/stores/session'
 import { useSupabaseStore } from '@/stores/supabase'
@@ -282,7 +286,7 @@ function onSearchResultClick(item) {
   showSearchResults.value = false
   searchQuery.value = ''
   if (item.path) {
-    router.push(item.path)
+    router.push(item.path).catch(() => {})
   }
 }
 
@@ -295,12 +299,9 @@ function handleClickOutside(e) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+useClickOutside(handleClickOutside)
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
   clearTimeout(debounceTimer)
   try {
     themeStore.stopAutoSwitch()
@@ -323,7 +324,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-6, 1.5rem);
-  z-index: 90;
+  z-index: var(--z-sticky);
   transition: left 300ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 

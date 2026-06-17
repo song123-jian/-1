@@ -79,9 +79,20 @@ const TABLES_TO_WATCH = [
   'deliveries',
   'collections',
   'statements',
+  'suppliers',
   'todos',
   'cost_records',
-  'warehouse_locations'
+  'warehouse_locations',
+  'transactions',
+  'purchase_orders',
+  'approval_rules',
+  'audit_logs',
+  'notifications',
+  'batches',
+  'tags',
+  'archives',
+  'doc_settings',
+  'permissions'
 ]
 
 /**
@@ -113,7 +124,7 @@ async function init(url, anonKey, options = {}) {
     // 使用 localStorage 存储加密后的 anon key
     localStorage.setItem(STORAGE_KEY_KEY, await encryptKey(anonKey))
     _connected = true
-    console.info('[Supabase] 连接成功:', url)
+    console.debug('[Supabase] 连接成功:', url)
 
     // 重置重连计数
     _reconnectAttempt = 0
@@ -135,22 +146,27 @@ async function init(url, anonKey, options = {}) {
  * 自动从 localStorage 恢复连接，若无则从 .env 默认配置连接
  */
 async function autoInit() {
-  // 优先从 localStorage 恢复（用户手动配置的）
-  const url = localStorage.getItem(STORAGE_URL_KEY)
-  const key = await decryptKey(localStorage.getItem(STORAGE_KEY_KEY))
-  if (url && key) {
-    return init(url, key)
-  }
+  try {
+    // 优先从 localStorage 恢复（用户手动配置的）
+    const url = localStorage.getItem(STORAGE_URL_KEY)
+    const key = await decryptKey(localStorage.getItem(STORAGE_KEY_KEY))
+    if (url && key) {
+      return init(url, key)
+    }
 
-  // 回退到 .env 默认配置
-  const envUrl = import.meta.env.VITE_SUPABASE_URL
-  const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-  if (envUrl && envKey) {
-    console.info('[Supabase] 使用 .env 默认配置连接')
-    return init(envUrl, envKey)
-  }
+    // 回退到 .env 默认配置
+    const envUrl = import.meta.env.VITE_SUPABASE_URL
+    const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+    if (envUrl && envKey) {
+      console.debug('[Supabase] 使用 .env 默认配置连接')
+      return init(envUrl, envKey)
+    }
 
-  return null
+    return null
+  } catch (e) {
+    console.warn('[Supabase] autoInit 恢复连接失败:', e.message)
+    return null
+  }
 }
 
 /**
@@ -191,7 +207,7 @@ function disconnect() {
   }
   _reconnectAttempt = 0
 
-  console.info('[Supabase] 已断开连接')
+  console.debug('[Supabase] 已断开连接')
 }
 
 function getClient() {
@@ -305,7 +321,7 @@ function autoSubscribeTables(callbacks = {}) {
     channels.push(channel)
   }
 
-  console.info(`[Supabase] 已自动订阅 ${TABLES_TO_WATCH.length} 个表的实时变更`)
+  console.debug(`[Supabase] 已自动订阅 ${TABLES_TO_WATCH.length} 个表的实时变更`)
   return channels
 }
 
@@ -321,7 +337,7 @@ function unsubscribeAllAuto() {
     }
   }
   _autoSubscriptions.clear()
-  console.info('[Supabase] 已取消所有自动订阅')
+  console.debug('[Supabase] 已取消所有自动订阅')
 }
 
 /**
@@ -386,8 +402,10 @@ function reconnect() {
     if (client && hadAutoSubscriptions && savedCallbacks) {
       // 恢复自动订阅
       autoSubscribeTables(savedCallbacks)
-      console.info('[Supabase] 重连并恢复自动订阅成功')
+      console.debug('[Supabase] 重连并恢复自动订阅成功')
     }
+  }).catch((e) => {
+    console.warn('[Supabase] 重连失败:', e.message)
   })
 
   // 返回当前客户端状态（重连是异步的，调用方不应依赖返回值）

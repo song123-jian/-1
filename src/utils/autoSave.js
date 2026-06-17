@@ -93,7 +93,7 @@ class AutoSaveManager {
     this._startAutoSaveTimer()
 
     this._initialized = true
-    console.info('[AutoSave] 自动保存管理器已初始化')
+    console.debug('[AutoSave] 自动保存管理器已初始化')
   }
 
   /**
@@ -157,7 +157,9 @@ class AutoSaveManager {
       const allStates = this._loadFromStorage(VIEW_STATE_KEY, {})
       delete allStates[routePath]
       this._saveToStorage(VIEW_STATE_KEY, allStates)
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /* ========== 表单草稿保存 ========== */
@@ -218,7 +220,9 @@ class AutoSaveManager {
         try {
           const draft = JSON.parse(localStorage.getItem(key))
           drafts.push(draft)
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+          /* ignore */
+        }
       }
     }
     return drafts.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0))
@@ -439,7 +443,9 @@ class AutoSaveManager {
         log.splice(0, log.length - CONFIG.maxSaveLog)
       }
       this._saveToStorage(SAVE_LOG_KEY, log)
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**
@@ -449,7 +455,9 @@ class AutoSaveManager {
     try {
       const raw = localStorage.getItem(key)
       if (raw) return JSON.parse(raw)
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
     return fallback
   }
 
@@ -466,7 +474,9 @@ class AutoSaveManager {
           usedBytes += key.length + (localStorage.getItem(key) || '').length
         }
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
     // localStorage 通常限制为 5MB
     const totalBytes = 5 * 1024 * 1024
     return {
@@ -549,10 +559,12 @@ class AutoSaveManager {
    */
   _syncToGitHub() {
     try {
-      githubSync.uploadAllData().catch(e => {
+      githubSync.uploadAllData().catch((e) => {
         console.warn('[AutoSave] GitHub紧急同步失败:', e)
       })
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**
@@ -572,7 +584,9 @@ class AutoSaveManager {
       if (gistUrl && navigator.sendBeacon) {
         navigator.sendBeacon(gistUrl, payload)
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**

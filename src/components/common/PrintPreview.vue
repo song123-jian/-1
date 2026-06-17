@@ -6,21 +6,26 @@
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
       <div class="modal-body" style="flex: 1; overflow-y: auto; padding: var(--space-4)">
-        <div class="print-preview-frame" ref="previewFrame" v-html="sanitizeHtml(html)"></div>
+        <div ref="previewFrame" class="print-preview-frame" v-html="sanitizeHtml(html)"></div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
         <button class="btn btn-outline" @click="handleExportPDF">
-          <Icon name="download" :size="14" /> 导出PDF
+          <Icon name="download" :size="14" />
+          导出PDF
         </button>
         <button class="btn btn-primary" @click="handlePrint">
-          <Icon name="printer" :size="14" /> 打印
+          <Icon name="printer" :size="14" />
+          打印
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'PrintPreview' }
+</script>
 <script setup>
 import { ref } from 'vue'
 import { getPrintEngine } from '@/utils/printEngine'

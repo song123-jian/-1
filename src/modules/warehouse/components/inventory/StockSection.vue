@@ -296,7 +296,7 @@
             :key="col.key"
             class="column-config-item"
           >
-            <input type="checkbox" v-model="stockColumnVisible[col.key]" />
+            <input v-model="stockColumnVisible[col.key]" type="checkbox" />
             {{ col.label }}
           </label>
         </div>
@@ -376,7 +376,7 @@
             <thead>
               <tr>
                 <th style="width: 40px">
-                  <input type="checkbox" v-model="stockSelectAll" @change="toggleStockSelectAll" />
+                  <input v-model="stockSelectAll" type="checkbox" @change="toggleStockSelectAll" />
                 </th>
                 <th style="width: 50px; text-align: center">序号</th>
                 <th v-if="stockColumnVisible.materialCode">编号</th>
@@ -384,7 +384,7 @@
                 <th v-if="stockColumnVisible.grade">牌号</th>
                 <th v-if="stockColumnVisible.color">颜色</th>
                 <th v-if="stockColumnVisible.lastInboundDate">最近入库日期</th>
-                <th v-if="stockColumnVisible.remainingStock" @click="toggleStockSort('stock')" style="cursor: pointer">
+                <th v-if="stockColumnVisible.remainingStock" style="cursor: pointer" @click="toggleStockSort('stock')">
                   剩余库存(kg)
                   <Icon :name="stockSortIcon" :size="14" class="sort-icon" />
                 </th>
@@ -403,7 +403,7 @@
                 </td>
               </tr>
               <tr v-for="(item, idx) in paginatedInventory" :key="item.id" :style="{ animationDelay: idx * 20 + 'ms' }">
-                <td><input type="checkbox" :value="item.id" v-model="stockSelectedIds" /></td>
+                <td><input v-model="stockSelectedIds" type="checkbox" :value="item.id" /></td>
                 <td style="width: 50px; text-align: center; overflow-wrap: break-word; word-wrap: break-word">
                   {{ (stockPage - 1) * stockPageSize + idx + 1 }}
                 </td>
@@ -469,7 +469,7 @@
       </div>
     </div>
 
-    <div class="pagination-bar" v-if="stockView === 'table' && stockTotalPages > 1">
+    <div v-if="stockView === 'table' && stockTotalPages > 1" class="pagination-bar">
       <span class="page-info">第 {{ stockPage }} / {{ stockTotalPages }} 页，共 {{ filteredInventory.length }} 条</span>
       <div class="page-btns">
         <button class="btn btn-ghost btn-sm" :disabled="stockPage <= 1" @click="stockPage--">
@@ -588,7 +588,7 @@
         <button class="btn btn-ghost btn-sm" @click="stockCalNext"><Icon name="chevronRight" :size="14" /></button>
         <button class="btn btn-ghost btn-sm" @click="stockCalToday">今天</button>
       </div>
-      <div class="panel-card-body no-padding" v-safe-html="stockCalHtml"></div>
+      <div v-safe-html="stockCalHtml" class="panel-card-body no-padding"></div>
     </div>
 
     <div v-if="showAssessment" style="margin-top: var(--space-4)">
@@ -732,12 +732,16 @@
   </div>
 </template>
 
+<script>
+export default { name: 'StockSection' }
+</script>
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
 import { escapeHtml, formatNumber } from '@/utils/format'
 import * as XLSX from 'xlsx'
+import { useClickOutside } from '@/composables/useClickOutside'
 
 const emit = defineEmits(['edit-item', 'open-inbound-wizard'])
 
@@ -1101,13 +1105,7 @@ function handleColumnConfigClick(e) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleColumnConfigClick)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('click', handleColumnConfigClick)
-})
+useClickOutside(handleColumnConfigClick)
 </script>
 
 <style scoped>
@@ -1917,7 +1915,7 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-md);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   min-width: 120px;
   padding: var(--space-1) 0;
 }

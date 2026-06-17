@@ -52,7 +52,10 @@
           :style="{ animationDelay: idx * 80 + 'ms' }"
           @click="showTemplateDetail(tpl)"
         >
-          <div class="tpl-icon" :style="{ background: tplColors[idx % tplColors.length] + '18', color: tplColors[idx % tplColors.length] }">
+          <div
+            class="tpl-icon"
+            :style="{ background: tplColors[idx % tplColors.length] + '18', color: tplColors[idx % tplColors.length] }"
+          >
             <Icon :name="tpl.icon || 'layers'" :size="24" />
           </div>
           <div class="tpl-info">
@@ -182,11 +185,9 @@
               <td>{{ formatTime(inst.startTime) }}</td>
               <td>
                 <button class="btn btn-sm" @click="viewInstance(inst)">查看</button>
-                <button
-                  v-if="inst.status === 'running'"
-                  class="btn btn-sm btn-danger"
-                  @click="handleCancel(inst.id)"
-                >取消</button>
+                <button v-if="inst.status === 'running'" class="btn btn-sm btn-danger" @click="handleCancel(inst.id)">
+                  取消
+                </button>
               </td>
             </tr>
           </tbody>
@@ -312,7 +313,12 @@
               <div v-else class="history-section">
                 <div class="flow-title">审批历史</div>
                 <div class="simple-history">
-                  <div v-for="(h, i) in [...(viewingInstance.history || [])].reverse()" :key="i" class="history-item" :style="{ animationDelay: i * 80 + 'ms' }">
+                  <div
+                    v-for="(h, i) in [...(viewingInstance.history || [])].reverse()"
+                    :key="i"
+                    class="history-item"
+                    :style="{ animationDelay: i * 80 + 'ms' }"
+                  >
                     <span class="history-approver">{{ h.approver }}</span>
                     <span class="history-action" :class="`action-${h.action}`">{{ getActionLabel(h.action) }}</span>
                     <span class="history-comment">{{ h.comment }}</span>
@@ -328,6 +334,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'WorkflowDesign' }
+</script>
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useWorkflowStore } from '@/modules/system/stores/workflow'
@@ -362,7 +371,7 @@ const completedList = computed(() => workflowStore.completedTasks)
 const filteredList = computed(() => {
   let list = workflowStore.instances
   if (instanceFilter.value !== 'all') {
-    list = list.filter(i => i.status === instanceFilter.value)
+    list = list.filter((i) => i.status === instanceFilter.value)
   }
   return list
 })
@@ -396,7 +405,7 @@ function showTemplateDetail(tpl) {
 
 function getNodeName(nodeId) {
   if (!detailTemplate.value) return nodeId
-  const node = detailTemplate.value.nodes.find(n => n.id === nodeId)
+  const node = detailTemplate.value.nodes.find((n) => n.id === nodeId)
   return node ? node.name : nodeId
 }
 
@@ -440,8 +449,6 @@ function formatTime(time) {
   const pad = (n) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
-
-
 </script>
 
 <style scoped>
@@ -516,8 +523,13 @@ function formatTime(time) {
 }
 
 @keyframes pendingPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
-  50% { box-shadow: 0 0 10px rgba(245, 158, 11, 0.6); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  }
 }
 
 .header-stat-num {
@@ -583,8 +595,14 @@ function formatTime(time) {
 }
 
 @keyframes badgePop {
-  from { transform: scale(0.5); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* 模板卡片 */
@@ -595,8 +613,14 @@ function formatTime(time) {
 }
 
 @keyframes cardSlideIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .template-card {
@@ -670,8 +694,14 @@ function formatTime(time) {
 }
 
 @keyframes taskSlideIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .task-card {
@@ -799,8 +829,14 @@ function formatTime(time) {
 }
 
 @keyframes expandIn {
-  from { opacity: 0; max-height: 0; }
-  to { opacity: 1; max-height: 300px; }
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 300px;
+  }
 }
 
 /* 按钮 */
@@ -873,12 +909,20 @@ function formatTime(time) {
   font-size: var(--font-size-sm);
 }
 
-.instance-table th{padding: var(--space-2) var(--space-3);
+.instance-table th {
+  padding: var(--space-2) var(--space-3);
   text-align: left;
-  border-bottom: 1px solid var(--color-border); overflow-wrap: break-word; word-wrap: break-word}
-.instance-table td {padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+.instance-table td {
+  padding: var(--space-2) var(--space-3);
   text-align: left;
-  border-bottom: 1px solid var(--color-border); overflow-wrap: break-word; word-wrap: break-word}
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 .instance-table th {
   background: var(--color-bg-secondary);
@@ -887,19 +931,33 @@ function formatTime(time) {
   white-space: nowrap;
 }
 
-.instance-table td {color: var(--color-text-primary); overflow-wrap: break-word; word-wrap: break-word}
+.instance-table td {
+  color: var(--color-text-primary);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 /* 表格行入场动画 */
 @keyframes rowSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .table-row-animated {
   animation: rowSlideIn 0.3s ease-out both;
 }
 
-.instance-table tr:hover td {background: var(--color-surface-hover); overflow-wrap: break-word; word-wrap: break-word}
+.instance-table tr:hover td {
+  background: var(--color-surface-hover);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 .status-tag {
   display: inline-flex;
@@ -917,15 +975,38 @@ function formatTime(time) {
   border-radius: var(--radius-full);
 }
 
-.dot-running { background: #3b82f6; box-shadow: 0 0 4px rgba(59, 130, 246, 0.3); }
-.dot-completed { background: #22c55e; box-shadow: 0 0 4px rgba(34, 197, 94, 0.3); }
-.dot-rejected { background: #ef4444; box-shadow: 0 0 4px rgba(239, 68, 68, 0.3); }
-.dot-cancelled { background: var(--color-text-tertiary); }
+.dot-running {
+  background: #3b82f6;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+.dot-completed {
+  background: #22c55e;
+  box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+}
+.dot-rejected {
+  background: #ef4444;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+}
+.dot-cancelled {
+  background: var(--color-text-tertiary);
+}
 
-.status-running { background: #dbeafe; color: #2563eb; }
-.status-completed { background: #dcfce7; color: #16a34a; }
-.status-rejected { background: #fef2f2; color: #dc2626; }
-.status-cancelled { background: var(--color-bg-secondary); color: var(--color-text-tertiary); }
+.status-running {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.status-completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.status-rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.status-cancelled {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+}
 
 /* 空状态 */
 .empty-state {
@@ -962,7 +1043,7 @@ function formatTime(time) {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: var(--z-overlay);
   animation: fadeIn 0.2s ease;
 }
 
@@ -990,7 +1071,7 @@ function formatTime(time) {
   position: sticky;
   top: 0;
   background: var(--color-bg-primary);
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .modal-header h3 {
@@ -1123,8 +1204,14 @@ function formatTime(time) {
 }
 
 @keyframes historySlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .history-item {
@@ -1156,11 +1243,28 @@ function formatTime(time) {
   font-weight: 500;
 }
 
-.action-approved, .action-complete { background: #dcfce7; color: #16a34a; }
-.action-rejected { background: #fef2f2; color: #dc2626; }
-.action-submit { background: #dbeafe; color: #2563eb; }
-.action-delegate, .action-addApprover { background: #fef3c7; color: #d97706; }
-.action-cancel { background: var(--color-bg-secondary); color: var(--color-text-tertiary); }
+.action-approved,
+.action-complete {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.action-rejected {
+  background: #fef2f2;
+  color: #dc2626;
+}
+.action-submit {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.action-delegate,
+.action-addApprover {
+  background: #fef3c7;
+  color: #d97706;
+}
+.action-cancel {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-tertiary);
+}
 
 .history-comment {
   color: var(--color-text-secondary);
@@ -1174,13 +1278,23 @@ function formatTime(time) {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes slideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* 响应式 */

@@ -1,24 +1,27 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 800px">
       <div class="modal-header">
         <span class="modal-title">新增调拨单</span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <SmartRecognizePanel
-          v-model:showSmartRec="showSmartRec"
-          v-model:smartRecInput="smartRecInput"
-          :smartRecResult="smartRecResult"
+          v-model:show-smart-rec="showSmartRec"
+          v-model:smart-rec-input="smartRecInput"
+          :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
-          @runSmartRecognize="runSmartRecognize"
-          @applySmartRecognize="applySmartRecognizeToForm"
-          @handleSmartFileUpload="handleSmartFileUpload"
+          @run-smart-recognize="runSmartRecognize"
+          @apply-smart-recognize="applySmartRecognizeToForm"
+          @handle-smart-file-upload="handleSmartFileUpload"
         />
         <!-- 基本信息 -->
         <div class="form-row" style="margin-bottom: var(--space-4)">
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 调拨类型</label>
+            <label class="form-label">
+              <span class="required">*</span>
+              调拨类型
+            </label>
             <select v-model="form.type" class="form-select" :class="{ 'form-error': errors.type }">
               <option value="same_price">同价调拨</option>
               <option value="diff_price">异价调拨</option>
@@ -26,10 +29,13 @@
             <div v-if="errors.type" class="form-error-text">{{ errors.type }}</div>
           </div>
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 调出仓库</label>
+            <label class="form-label">
+              <span class="required">*</span>
+              调出仓库
+            </label>
             <DataSelect
-              module="warehouse"
               v-model="form.fromWarehouseId"
+              module="warehouse"
               value-field="id"
               label-field="name"
               placeholder="选择调出仓库"
@@ -39,10 +45,13 @@
             <div v-if="errors.fromWarehouseId" class="form-error-text">{{ errors.fromWarehouseId }}</div>
           </div>
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 调入仓库</label>
+            <label class="form-label">
+              <span class="required">*</span>
+              调入仓库
+            </label>
             <DataSelect
-              module="warehouse"
               v-model="form.toWarehouseId"
+              module="warehouse"
               value-field="id"
               label-field="name"
               placeholder="选择调入仓库"
@@ -58,9 +67,9 @@
           <div class="form-group" style="flex: 1">
             <label class="form-label">调出仓位</label>
             <DataSelect
+              v-model="form.fromLocation"
               module="warehouseLocation"
               variant="byWarehouse"
-              v-model="form.fromLocation"
               value-field="locationCode"
               label-field="locationCode"
               placeholder="选择调出仓位"
@@ -70,9 +79,9 @@
           <div class="form-group" style="flex: 1">
             <label class="form-label">调入仓位</label>
             <DataSelect
+              v-model="form.toLocation"
               module="warehouseLocation"
               variant="byWarehouse"
-              v-model="form.toLocation"
               value-field="locationCode"
               label-field="locationCode"
               placeholder="选择调入仓位"
@@ -99,13 +108,21 @@
 
         <!-- 物料明细 -->
         <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2)">
-            <label class="form-label" style="margin-bottom: 0"><span class="required">*</span> 物料明细</label>
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-2)"
+          >
+            <label class="form-label" style="margin-bottom: 0">
+              <span class="required">*</span>
+              物料明细
+            </label>
             <button class="btn btn-sm btn-outline" @click="addItem">
-              <Icon name="plus" :size="12" /> 添加物料
+              <Icon name="plus" :size="12" />
+              添加物料
             </button>
           </div>
-          <div v-if="errors.items" class="form-error-text" style="margin-bottom: var(--space-2)">{{ errors.items }}</div>
+          <div v-if="errors.items" class="form-error-text" style="margin-bottom: var(--space-2)">
+            {{ errors.items }}
+          </div>
 
           <div class="table-container">
             <table class="data-table">
@@ -121,12 +138,12 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, idx) in form.items" :key="idx">
+                <tr v-for="(item, idx) in form.items" :key="item.id || idx">
                   <td>
                     <DataSelect
+                      v-model="item.materialCode"
                       module="inventory"
                       variant="inStock"
-                      v-model="item.materialCode"
                       value-field="code"
                       label-field="name"
                       placeholder="选择物料"
@@ -134,8 +151,12 @@
                       @change="onMaterialChange(idx, $event)"
                     />
                   </td>
-                  <td><input v-model="item.spec" type="text" class="form-input" style="width: 100px" placeholder="规格" /></td>
-                  <td><input v-model="item.unit" type="text" class="form-input" style="width: 60px" placeholder="单位" /></td>
+                  <td>
+                    <input v-model="item.spec" type="text" class="form-input" style="width: 100px" placeholder="规格" />
+                  </td>
+                  <td>
+                    <input v-model="item.unit" type="text" class="form-input" style="width: 60px" placeholder="单位" />
+                  </td>
                   <td>
                     <input
                       v-model.number="item.quantity"
@@ -172,20 +193,25 @@
             </table>
           </div>
           <div style="text-align: right; margin-top: var(--space-2); font-size: var(--font-size-sm)">
-            合计金额: <strong style="color: var(--color-accent)">{{ formatMoney(totalAmount) }}</strong>
+            合计金额:
+            <strong style="color: var(--color-accent)">{{ formatMoney(totalAmount) }}</strong>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">取消</button>
+        <button class="btn btn-ghost" @click="emit('close')">取消</button>
         <button class="btn btn-primary" @click="handleSubmit">
-          <Icon name="check" :size="14" /> 确认创建
+          <Icon name="check" :size="14" />
+          确认创建
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'TransferFormModal' }
+</script>
 <script setup>
 import { ref, computed, reactive, watch, onMounted } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
@@ -214,15 +240,19 @@ const form = ref({
 })
 
 const draftData = reactive({})
-watch(form, (f) => {
-  Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
-}, { deep: true })
+watch(
+  form,
+  (f) => {
+    Object.assign(draftData, { ...f, items: f.items ? [...f.items] : [] })
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('transfer-form', draftData, {
   debounce: 1500,
   onRestore: (draft) => {
     if (draft.data.items) {
-      form.value.items = draft.data.items.map(item => ({ ...item }))
+      form.value.items = draft.data.items.map((item) => ({ ...item }))
     }
   }
 })
@@ -233,18 +263,26 @@ onMounted(() => {
   }
 })
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form.value)
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useSmartRecognize(form.value)
 
 function applySmartRecognizeToForm() {
   if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
-  smartRecResult.value.items.forEach(item => {
+  smartRecResult.value.items.forEach((item) => {
     if (item.value && Object.hasOwn(form.value, item.key)) {
       form.value[item.key] = item.value
     }
   })
   // 填入表格明细行
   if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
-    smartRecResult.value.tableRows.forEach(row => {
+    smartRecResult.value.tableRows.forEach((row) => {
       form.value.items.push({
         materialCode: row.materialCode || '',
         materialName: row.materialName || '',
@@ -252,7 +290,7 @@ function applySmartRecognizeToForm() {
         unit: row.unit || 'kg',
         quantity: row.quantity || 0,
         unitPrice: row.unitPrice || 0,
-        amount: (row.quantity && row.unitPrice) ? row.quantity * row.unitPrice : 0
+        amount: row.quantity && row.unitPrice ? row.quantity * row.unitPrice : 0
       })
     })
   }
@@ -314,15 +352,19 @@ function validate() {
   if (!form.value.type) e.type = '请选择调拨类型'
   if (!form.value.fromWarehouseId) e.fromWarehouseId = '请选择调出仓库'
   if (!form.value.toWarehouseId) e.toWarehouseId = '请选择调入仓库'
-  if (form.value.fromWarehouseId && form.value.toWarehouseId && form.value.fromWarehouseId === form.value.toWarehouseId) {
+  if (
+    form.value.fromWarehouseId &&
+    form.value.toWarehouseId &&
+    form.value.fromWarehouseId === form.value.toWarehouseId
+  ) {
     e.toWarehouseId = '调入仓库不能与调出仓库相同'
   }
   if (form.value.items.length === 0) {
     e.items = '请至少添加一条物料明细'
   } else {
-    const hasEmpty = form.value.items.some(i => !i.materialCode)
+    const hasEmpty = form.value.items.some((i) => !i.materialCode)
     if (hasEmpty) e.items = '请为所有明细行选择物料'
-    const hasZeroQty = form.value.items.some(i => !i.quantity || i.quantity <= 0)
+    const hasZeroQty = form.value.items.some((i) => !i.quantity || i.quantity <= 0)
     if (!hasEmpty && hasZeroQty) e.items = '物料数量必须大于0'
   }
   errors.value = e
@@ -350,7 +392,6 @@ function handleSubmit() {
   emit('created')
   emit('close')
 }
-
 </script>
 
 <style scoped>

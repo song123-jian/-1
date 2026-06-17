@@ -5,61 +5,180 @@
         <h2 class="page-header-title">客户管理</h2>
         <p class="page-header-subtitle">全面的客户关系管理，支持多视图、高级筛选、联系人管理</p>
         <div class="status-flow-chips">
-          <span class="status-chip" :class="{ 'chip-active': tagStatusFilter === 'active' }" @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'">
-            <span class="chip-dot chip-dot-active"></span>活跃 <span class="chip-count">{{ customerStore.activeCount }}</span>
+          <span
+            class="status-chip"
+            :class="{ 'chip-active': tagStatusFilter === 'active' }"
+            @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'"
+          >
+            <span class="chip-dot chip-dot-active"></span>
+            活跃
+            <span class="chip-count">{{ customerStore.activeCount }}</span>
           </span>
-          <span class="status-chip" :class="{ 'chip-potential': tagStatusFilter === 'potential' }" @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'">
-            <span class="chip-dot chip-dot-potential"></span>潜在 <span class="chip-count">{{ potentialCount }}</span>
+          <span
+            class="status-chip"
+            :class="{ 'chip-potential': tagStatusFilter === 'potential' }"
+            @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'"
+          >
+            <span class="chip-dot chip-dot-potential"></span>
+            潜在
+            <span class="chip-count">{{ potentialCount }}</span>
           </span>
-          <span class="status-chip" :class="{ 'chip-dormant': tagStatusFilter === 'dormant' }" @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'">
-            <span class="chip-dot chip-dot-dormant"></span>非活跃 <span class="chip-count">{{ customerStore.dormantCount }}</span>
+          <span
+            class="status-chip"
+            :class="{ 'chip-dormant': tagStatusFilter === 'dormant' }"
+            @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'"
+          >
+            <span class="chip-dot chip-dot-dormant"></span>
+            非活跃
+            <span class="chip-count">{{ customerStore.dormantCount }}</span>
           </span>
         </div>
       </div>
       <div class="page-header-actions">
         <div class="view-toggle">
-          <button v-for="v in viewModes" :key="v.key" class="view-btn" :class="{ active: currentView === v.key }" @click="currentView = v.key"><Icon :name="v.icon" :size="14" /> {{ v.label }}</button>
+          <button
+            v-for="v in viewModes"
+            :key="v.key"
+            class="view-btn"
+            :class="{ active: currentView === v.key }"
+            @click="currentView = v.key"
+          >
+            <Icon :name="v.icon" :size="14" />
+            {{ v.label }}
+          </button>
         </div>
         <button v-if="canCreate" class="btn btn-primary" @click="openAddModal">新增客户</button>
         <div class="more-dropdown-wrap">
-          <button class="btn btn-outline" @click="showMoreMenu = !showMoreMenu"><Icon name="more" :size="14" /> 更多</button>
+          <button class="btn btn-outline" @click="showMoreMenu = !showMoreMenu">
+            <Icon name="more" :size="14" />
+            更多
+          </button>
           <div v-if="showMoreMenu" class="more-dropdown-menu" @click.stop>
-            <button class="more-menu-item" @click="handleDownloadTemplate(); showMoreMenu = false"><Icon name="file" :size="14" /> 模板下载</button>
-            <button class="more-menu-item" @click="handleBatchAdd(); showMoreMenu = false"><Icon name="list" :size="14" /> 批量增加</button>
-            <button class="more-menu-item" @click="handleExport(); showMoreMenu = false"><Icon name="download" :size="14" /> 导出CSV</button>
-            <button v-if="canDelete" class="more-menu-item more-menu-danger" @click="handleBatchDelete(); showMoreMenu = false" :disabled="selectedIds.length === 0"><Icon name="delete" :size="14" /> 批量删除</button>
+            <button
+              class="more-menu-item"
+              @click="handleDownloadTemplate(); showMoreMenu = false"
+            >
+              <Icon name="file" :size="14" />
+              模板下载
+            </button>
+            <button
+              class="more-menu-item"
+              @click="handleBatchAdd(); showMoreMenu = false"
+            >
+              <Icon name="list" :size="14" />
+              批量增加
+            </button>
+            <button
+              class="more-menu-item"
+              @click="handleExport(); showMoreMenu = false"
+            >
+              <Icon name="download" :size="14" />
+              导出CSV
+            </button>
+            <button
+              v-if="canDelete"
+              class="more-menu-item more-menu-danger"
+              :disabled="selectedIds.length === 0"
+              @click="handleBatchDelete(); showMoreMenu = false"
+            >
+              <Icon name="delete" :size="14" />
+              批量删除
+            </button>
           </div>
         </div>
         <button v-if="duplicateGroups.length > 0" class="btn btn-duplicate-pulse" @click="showDuplicateModal = true">
-          <Icon name="alert" :size="14" /> 发现 <span class="duplicate-count-badge">{{ duplicateGroups.length }}</span> 组重复
+          <Icon name="alert" :size="14" />
+          发现
+          <span class="duplicate-count-badge">{{ duplicateGroups.length }}</span>
+          组重复
         </button>
       </div>
     </div>
 
     <div class="customer-toolbar">
       <!-- 智能搜索栏 -->
-      <div class="smart-search" style="margin-bottom: var(--space-3);">
-        <span class="smart-search-icon" :class="{ 'search-spinning': isSearching }"><Icon name="search" :size="14" /></span>
-        <input v-model="smartSearchText" type="text" class="smart-search-input" placeholder="搜索客户：输入名称/编号/手机号，或试试 A级客户" @input="onSmartSearchInput" @keydown.k.ctrl="smartSearchInputRef?.focus()" />
-        <span class="smart-search-hint">智能搜索 <kbd class="search-kbd">Ctrl+K</kbd></span>
+      <div class="smart-search" style="margin-bottom: var(--space-3)">
+        <span class="smart-search-icon" :class="{ 'search-spinning': isSearching }">
+          <Icon name="search" :size="14" />
+        </span>
+        <input
+          v-model="smartSearchText"
+          type="text"
+          class="smart-search-input"
+          placeholder="搜索客户：输入名称/编号/手机号，或试试 A级客户"
+          @input="onSmartSearchInput"
+          @keydown.k.ctrl="smartSearchInputRef?.focus()"
+        />
+        <span class="smart-search-hint">
+          智能搜索
+          <kbd class="search-kbd">Ctrl+K</kbd>
+        </span>
       </div>
 
       <!-- 标签式筛选 -->
-      <div class="tag-filters" style="margin-bottom: var(--space-3);">
+      <div class="tag-filters" style="margin-bottom: var(--space-3)">
         <div class="tag-filter-group">
           <span class="tag-filter-group-label">等级:</span>
-          <span class="tag-filter-item" :class="{ 'active-success': tagGradeFilter === 'A' }" @click="tagGradeFilter = tagGradeFilter === 'A' ? '' : 'A'">A级</span>
-          <span class="tag-filter-item" :class="{ 'active': tagGradeFilter === 'B' }" @click="tagGradeFilter = tagGradeFilter === 'B' ? '' : 'B'">B级</span>
-          <span class="tag-filter-item" :class="{ 'active-warning': tagGradeFilter === 'C' }" @click="tagGradeFilter = tagGradeFilter === 'C' ? '' : 'C'">C级</span>
-          <span class="tag-filter-item" :class="{ 'active-danger': tagGradeFilter === 'D' }" @click="tagGradeFilter = tagGradeFilter === 'D' ? '' : 'D'">D级</span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-success': tagGradeFilter === 'A' }"
+            @click="tagGradeFilter = tagGradeFilter === 'A' ? '' : 'A'"
+          >
+            A级
+          </span>
+          <span
+            class="tag-filter-item"
+            :class="{ active: tagGradeFilter === 'B' }"
+            @click="tagGradeFilter = tagGradeFilter === 'B' ? '' : 'B'"
+          >
+            B级
+          </span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-warning': tagGradeFilter === 'C' }"
+            @click="tagGradeFilter = tagGradeFilter === 'C' ? '' : 'C'"
+          >
+            C级
+          </span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-danger': tagGradeFilter === 'D' }"
+            @click="tagGradeFilter = tagGradeFilter === 'D' ? '' : 'D'"
+          >
+            D级
+          </span>
         </div>
         <div class="tag-filter-group">
           <span class="tag-filter-group-label">状态:</span>
-          <span class="tag-filter-item" :class="{ 'active-success': tagStatusFilter === 'active' }" @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'">活跃</span>
-          <span class="tag-filter-item" :class="{ 'active-warning': tagStatusFilter === 'potential' }" @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'">潜在</span>
-          <span class="tag-filter-item" :class="{ 'active-danger': tagStatusFilter === 'dormant' }" @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'">非活跃</span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-success': tagStatusFilter === 'active' }"
+            @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'"
+          >
+            活跃
+          </span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-warning': tagStatusFilter === 'potential' }"
+            @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'"
+          >
+            潜在
+          </span>
+          <span
+            class="tag-filter-item"
+            :class="{ 'active-danger': tagStatusFilter === 'dormant' }"
+            @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'"
+          >
+            非活跃
+          </span>
         </div>
-        <span v-if="tagGradeFilter || tagStatusFilter" class="tag-filter-clear" @click="tagGradeFilter = ''; tagStatusFilter = ''">清除筛选</span>
+        <span
+          v-if="tagGradeFilter || tagStatusFilter"
+          class="tag-filter-clear"
+          @click="tagGradeFilter = ''; tagStatusFilter = ''"
+        >
+          清除筛选
+        </span>
       </div>
 
       <div class="customer-search-grid">
@@ -79,7 +198,12 @@
           <label class="search-field-label">核心关注点</label>
           <input v-model="advFilterConcerns" type="text" class="search-input" placeholder="输入关注点..." />
         </div>
-        <button class="btn btn-ghost search-reset-btn" @click="advFilterNo = ''; advFilterName = ''; advFilterPhone = ''; advFilterConcerns = ''">重置</button>
+        <button
+          class="btn btn-ghost search-reset-btn"
+          @click="advFilterNo = ''; advFilterName = ''; advFilterPhone = ''; advFilterConcerns = ''"
+        >
+          重置
+        </button>
       </div>
       <div class="customer-filters">
         <select v-model="filterLevel" class="form-select filter-select">
@@ -111,7 +235,9 @@
         </select>
         <select v-model="filterTag" class="form-select filter-select">
           <option value="all">全部标签</option>
-          <option v-for="t in customerStore.tags.filter(t => !t.hidden)" :key="t.id" :value="t.id">{{ t.name }}</option>
+          <option v-for="t in customerStore.tags.filter((t) => !t.hidden)" :key="t.id" :value="t.id">
+            {{ t.name }}
+          </option>
         </select>
         <select v-model="sortField" class="form-select filter-select">
           <option value="level">按等级</option>
@@ -120,7 +246,9 @@
           <option value="createdAt">按创建时间</option>
           <option value="name">按名称</option>
         </select>
-        <button class="btn btn-ghost btn-sm" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"><Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" /></button>
+        <button class="btn btn-ghost btn-sm" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">
+          <Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" />
+        </button>
       </div>
     </div>
 
@@ -154,7 +282,8 @@
         <div class="level-stats">
           <span v-for="lvl in levelList" :key="lvl" class="level-stat" :class="'ls-' + lvl">
             <span class="level-dot" :class="'ld-' + lvl"></span>
-            {{ levelLabel(lvl) }} <span style="font-family:var(--font-mono)">{{ customerStore.levelStats[lvl] }}</span>
+            {{ levelLabel(lvl) }}
+            <span style="font-family: var(--font-mono)">{{ customerStore.levelStats[lvl] }}</span>
           </span>
         </div>
       </div>
@@ -163,19 +292,26 @@
     <div v-if="selectedIds.length > 0" class="batch-bar batch-bar-slide-in">
       <span class="batch-bar-count-badge">{{ selectedIds.length }}</span>
       <span>已选 {{ selectedIds.length }} 项</span>
-      <select class="form-select" style="width:120px;font-size:12px" v-model="batchLevel" @change="handleBatchLevel">
+      <select v-model="batchLevel" class="form-select" style="width: 120px; font-size: 12px" @change="handleBatchLevel">
         <option value="">调整等级...</option>
         <option value="A">大客户</option>
         <option value="B">B类客户</option>
         <option value="C">C类客户</option>
       </select>
-      <button class="btn btn-outline" @click="handleBatchTag"><Icon name="tag" :size="14" /> 批量标签</button>
-      <button class="btn btn-outline" @click="handleBatchExport"><Icon name="download" :size="14" /> 导出选中</button>
+      <button class="btn btn-outline" @click="handleBatchTag">
+        <Icon name="tag" :size="14" />
+        批量标签
+      </button>
+      <button class="btn btn-outline" @click="handleBatchExport">
+        <Icon name="download" :size="14" />
+        导出选中
+      </button>
       <button class="btn btn-outline" @click="selectedIds = []">取消选择</button>
     </div>
 
     <!-- 表格视图 -->
-    <CustomerTable v-if="currentView === 'table'"
+    <CustomerTable
+      v-if="currentView === 'table'"
       :customers="filteredCustomers"
       :selected-ids="selectedIds"
       :trend-data="trendData"
@@ -187,7 +323,8 @@
     />
 
     <!-- 列表视图 -->
-    <CustomerList v-if="currentView === 'list'"
+    <CustomerList
+      v-if="currentView === 'list'"
       :customers="filteredCustomers"
       :selected-ids="selectedIds"
       @update:selected-ids="selectedIds = $event"
@@ -197,7 +334,8 @@
     />
 
     <!-- 卡片视图 -->
-    <CustomerCardView v-if="currentView === 'card'"
+    <CustomerCardView
+      v-if="currentView === 'card'"
       :customers="filteredCustomers"
       :selected-ids="selectedIds"
       @open-edit="openEditModal"
@@ -206,16 +344,14 @@
     />
 
     <!-- 日历视图 -->
-    <CustomerCalendarView v-if="currentView === 'calendar'"
+    <CustomerCalendarView
+      v-if="currentView === 'calendar'"
       :customers="filteredCustomers"
       @open-detail="openDetailModal"
     />
 
     <!-- 周视图 -->
-    <CustomerWeekView v-if="currentView === 'week'"
-      :customers="filteredCustomers"
-      @open-detail="openDetailModal"
-    />
+    <CustomerWeekView v-if="currentView === 'week'" :customers="filteredCustomers" @open-detail="openDetailModal" />
 
     <!-- 空状态 -->
     <div v-if="filteredCustomers.length === 0" class="empty-state">
@@ -233,20 +369,27 @@
             <button class="modal-close" @click="closeModal"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
-            <SmartRecognizePanel v-if="!editingCustomer"
-              v-model:showSmartRec="showSmartRec"
-              v-model:smartRecInput="smartRecInput"
-              :smartRecResult="smartRecResult"
+            <SmartRecognizePanel
+              v-if="!editingCustomer"
+              v-model:show-smart-rec="showSmartRec"
+              v-model:smart-rec-input="smartRecInput"
+              :smart-rec-result="smartRecResult"
               :placeholder="smartRecPlaceholder"
-              @runSmartRecognize="runSmartRecognize"
-              @applySmartRecognize="applySmartRecognize"
-              @handleSmartFileUpload="handleSmartFileUpload"
+              @run-smart-recognize="runSmartRecognize"
+              @apply-smart-recognize="applySmartRecognize"
+              @handle-smart-file-upload="handleSmartFileUpload"
               @clear="smartRecInput = ''; smartRecResult = null"
             />
             <div class="form-grid">
               <div class="form-group">
                 <label>客户编号</label>
-                <input v-model="form.customerNo" type="text" class="form-input" :readonly="!!editingCustomer" :style="editingCustomer ? 'opacity:0.7;cursor:not-allowed' : ''" />
+                <input
+                  v-model="form.customerNo"
+                  type="text"
+                  class="form-input"
+                  :readonly="!!editingCustomer"
+                  :style="editingCustomer ? 'opacity:0.7;cursor:not-allowed' : ''"
+                />
               </div>
               <div class="form-group">
                 <label>客户全称</label>
@@ -270,7 +413,14 @@
               </div>
               <div class="form-group">
                 <label>手机号码</label>
-                <input v-model="form.phone" type="tel" class="form-input" placeholder="手机号码（选填）" maxlength="11" @input="form.phone = form.phone.replace(/[^0-9]/g, '')" />
+                <input
+                  v-model="form.phone"
+                  type="tel"
+                  class="form-input"
+                  placeholder="手机号码（选填）"
+                  maxlength="11"
+                  @input="form.phone = form.phone.replace(/[^0-9]/g, '')"
+                />
               </div>
               <div class="form-group">
                 <label>客户等级</label>
@@ -297,7 +447,12 @@
               </div>
               <div class="form-group full-width">
                 <label>核心关注点</label>
-                <textarea v-model="form.coreConcerns" class="form-textarea" rows="2" placeholder="如：交货速度、产品质量（选填）"></textarea>
+                <textarea
+                  v-model="form.coreConcerns"
+                  class="form-textarea"
+                  rows="2"
+                  placeholder="如：交货速度、产品质量（选填）"
+                ></textarea>
               </div>
               <div class="form-group">
                 <label>地区</label>
@@ -305,7 +460,15 @@
               </div>
               <div class="form-group">
                 <label>信用额度</label>
-                <input v-model.number="form.creditLimit" type="number" step="0.01" min="0" class="form-input" placeholder="0" @input="form.creditLimit = String(form.creditLimit).replace(/[^0-9.]/g, '')" />
+                <input
+                  v-model.number="form.creditLimit"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  class="form-input"
+                  placeholder="0"
+                  @input="form.creditLimit = String(form.creditLimit).replace(/[^0-9.]/g, '')"
+                />
               </div>
               <div class="form-group full-width">
                 <label>地址</label>
@@ -314,12 +477,20 @@
               <div class="form-group full-width">
                 <label>标签</label>
                 <div class="tag-selector">
-                  <span v-for="tag in customerStore.tags.filter(t => !t.hidden)" :key="tag.id"
+                  <span
+                    v-for="tag in customerStore.tags.filter((t) => !t.hidden)"
+                    :key="tag.id"
                     class="tag-option"
                     :class="{ selected: form.tags.includes(tag.id) }"
-                    :style="form.tags.includes(tag.id) ? { background: tag.color + '20', color: tag.color, borderColor: tag.color } : {}"
+                    :style="
+                      form.tags.includes(tag.id)
+                        ? { background: tag.color + '20', color: tag.color, borderColor: tag.color }
+                        : {}
+                    "
                     @click="toggleFormTag(tag.id)"
-                  >{{ tag.name }}</span>
+                  >
+                    {{ tag.name }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -329,7 +500,9 @@
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="closeModal">取消</button>
-            <button class="btn btn-primary" @click="saveCustomer">{{ editingCustomer ? '保存修改' : '新增客户' }}</button>
+            <button class="btn btn-primary" @click="saveCustomer">
+              {{ editingCustomer ? '保存修改' : '新增客户' }}
+            </button>
           </div>
         </div>
       </div>
@@ -348,12 +521,14 @@
     <Teleport to="body">
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-dialog modal-sm">
-          <div class="modal-body" style="text-align:center;padding:32px 20px">
-            <div style="font-size:48px;margin-bottom:12px"><Icon name="warning" :size="14" /></div>
-            <div style="font-size:15px;color:var(--color-text-secondary)">{{ confirmMessage }}</div>
+          <div class="modal-body" style="text-align: center; padding: 32px 20px">
+            <div style="font-size: 48px; margin-bottom: 12px"><Icon name="warning" :size="14" /></div>
+            <div style="font-size: 15px; color: var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showConfirm = false">{{ confirmType === 'warning' ? '知道了' : '取消' }}</button>
+            <button class="btn btn-ghost" @click="showConfirm = false">
+              {{ confirmType === 'warning' ? '知道了' : '取消' }}
+            </button>
             <button v-if="confirmType === 'confirm'" class="btn btn-danger" @click="confirmAction">确认删除</button>
           </div>
         </div>
@@ -365,28 +540,53 @@
       <div v-if="showBatchTagModal" class="modal-overlay" @click.self="showBatchTagModal = false">
         <div class="modal-dialog modal-sm">
           <div class="modal-header">
-            <h3><Icon name="tag" :size="14" /> 批量添加标签</h3>
+            <h3>
+              <Icon name="tag" :size="14" />
+              批量添加标签
+            </h3>
             <button class="modal-close" @click="showBatchTagModal = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
-            <div style="margin-bottom:var(--space-3);font-size:var(--font-size-sm);color:var(--color-text-secondary)">
-              已选 <strong>{{ selectedIds.length }}</strong> 位客户，请选择要添加的标签：
+            <div
+              style="margin-bottom: var(--space-3); font-size: var(--font-size-sm); color: var(--color-text-secondary)"
+            >
+              已选
+              <strong>{{ selectedIds.length }}</strong>
+              位客户，请选择要添加的标签：
             </div>
             <div class="batch-tag-list">
-              <span v-for="tag in customerStore.tags.filter(t => !t.hidden)" :key="tag.id"
+              <span
+                v-for="tag in customerStore.tags.filter((t) => !t.hidden)"
+                :key="tag.id"
                 class="batch-tag-option"
                 :class="{ selected: batchSelectedTags.includes(tag.id) }"
-                :style="batchSelectedTags.includes(tag.id) ? { background: tag.color + '20', color: tag.color, borderColor: tag.color } : {}"
+                :style="
+                  batchSelectedTags.includes(tag.id)
+                    ? { background: tag.color + '20', color: tag.color, borderColor: tag.color }
+                    : {}
+                "
                 @click="toggleBatchTag(tag.id)"
-              >{{ tag.name }}</span>
+              >
+                {{ tag.name }}
+              </span>
             </div>
-            <div v-if="customerStore.tags.filter(t => !t.hidden).length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);text-align:center;padding:var(--space-4)">
+            <div
+              v-if="customerStore.tags.filter((t) => !t.hidden).length === 0"
+              style="
+                color: var(--color-text-tertiary);
+                font-size: var(--font-size-sm);
+                text-align: center;
+                padding: var(--space-4);
+              "
+            >
               暂无可用标签，请先在标签分类中创建
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="showBatchTagModal = false">取消</button>
-            <button class="btn btn-primary" @click="applyBatchTags" :disabled="batchSelectedTags.length === 0">确认添加 ({{ batchSelectedTags.length }})</button>
+            <button class="btn btn-primary" :disabled="batchSelectedTags.length === 0" @click="applyBatchTags">
+              确认添加 ({{ batchSelectedTags.length }})
+            </button>
           </div>
         </div>
       </div>
@@ -397,7 +597,10 @@
       <div v-if="showDuplicateModal" class="modal-overlay" @click.self="showDuplicateModal = false">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3><Icon name="alert" :size="14" /> 重复客户检测结果</h3>
+            <h3>
+              <Icon name="alert" :size="14" />
+              重复客户检测结果
+            </h3>
             <button class="modal-close" @click="showDuplicateModal = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
@@ -411,7 +614,15 @@
                 </div>
               </div>
             </div>
-            <div v-if="duplicateGroups.length === 0" style="color:var(--color-text-tertiary);font-size:var(--font-size-sm);text-align:center;padding:var(--space-4)">
+            <div
+              v-if="duplicateGroups.length === 0"
+              style="
+                color: var(--color-text-tertiary);
+                font-size: var(--font-size-sm);
+                text-align: center;
+                padding: var(--space-4);
+              "
+            >
               暂无重复客户
             </div>
           </div>
@@ -424,12 +635,16 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Customers' }
+</script>
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { useDataStore } from '@/stores/data'
 import { useSessionStore } from '@/stores/session'
+import { useClickOutside } from '@/composables/useClickOutside'
 import { useSmartSearch } from '@/composables/useSmartSearch'
 import { useDuplicateDetector } from '@/composables/useDuplicateDetector'
 import { useSmartRecognize } from '@/modules/customer/components/customers/useSmartRecognize'
@@ -504,7 +719,7 @@ const activePercent = computed(() => {
 })
 
 const potentialCount = computed(() => {
-  return customerStore.customers.filter(c => c.status === 'potential').length
+  return customerStore.customers.filter((c) => c.status === 'potential').length
 })
 
 const RING_CIRC = 2 * Math.PI * 18
@@ -527,62 +742,81 @@ const filteredCustomers = computed(() => {
   if (smartSearchText.value) {
     const pf = parsedFilters.value
     if (pf.grade) {
-      list = list.filter(c => c.level === pf.grade)
+      list = list.filter((c) => c.level === pf.grade)
     }
     if (pf.status) {
-      list = list.filter(c => c.status === pf.status)
+      list = list.filter((c) => c.status === pf.status)
     }
     if (pf.region) {
-      list = list.filter(c => c.region === pf.region)
+      list = list.filter((c) => c.region === pf.region)
     }
     if (pf.keyword) {
       const kw = pf.keyword.toLowerCase()
-      list = list.filter(c =>
-        (c.customerNo || '').toLowerCase().includes(kw) ||
-        (c.fullName || c.name || '').toLowerCase().includes(kw) ||
-        (c.phone || '').includes(kw) ||
-        (c.email || '').toLowerCase().includes(kw) ||
-        (c.contactName || c.contact || '').toLowerCase().includes(kw)
+      list = list.filter(
+        (c) =>
+          (c.customerNo || '').toLowerCase().includes(kw) ||
+          (c.fullName || c.name || '').toLowerCase().includes(kw) ||
+          (c.phone || '').includes(kw) ||
+          (c.email || '').toLowerCase().includes(kw) ||
+          (c.contactName || c.contact || '').toLowerCase().includes(kw)
       )
     } else if (!pf.grade && !pf.status && !pf.region) {
       // 没有任何解析出的过滤条件，回退到原始模糊匹配
       const s = smartSearchText.value.toLowerCase()
-      list = list.filter(c =>
-        (c.customerNo || '').toLowerCase().includes(s) ||
-        (c.fullName || c.name || '').toLowerCase().includes(s) ||
-        (c.phone || '').includes(s) ||
-        (c.contactName || c.contact || '').toLowerCase().includes(s)
+      list = list.filter(
+        (c) =>
+          (c.customerNo || '').toLowerCase().includes(s) ||
+          (c.fullName || c.name || '').toLowerCase().includes(s) ||
+          (c.phone || '').includes(s) ||
+          (c.contactName || c.contact || '').toLowerCase().includes(s)
       )
     }
   }
   // 标签式筛选：等级
   if (tagGradeFilter.value) {
-    list = list.filter(c => c.level === tagGradeFilter.value)
+    list = list.filter((c) => c.level === tagGradeFilter.value)
   }
   // 标签式筛选：状态
   if (tagStatusFilter.value) {
-    list = list.filter(c => c.status === tagStatusFilter.value)
+    list = list.filter((c) => c.status === tagStatusFilter.value)
   }
-  if (advFilterNo.value) list = list.filter(c => (c.customerNo || '').includes(advFilterNo.value))
-  if (advFilterName.value) list = list.filter(c => (c.fullName || c.name || '').includes(advFilterName.value))
-  if (advFilterPhone.value) list = list.filter(c => (c.phone || '').includes(advFilterPhone.value))
-  if (advFilterConcerns.value) list = list.filter(c => (c.coreConcerns || '').includes(advFilterConcerns.value))
-  if (filterLevel.value !== 'all') list = list.filter(c => c.level === filterLevel.value)
-  if (filterDept.value !== 'all') list = list.filter(c => c.department === filterDept.value)
-  if (filterRegion.value !== 'all') list = list.filter(c => c.region === filterRegion.value)
-  if (filterStatus.value !== 'all') list = list.filter(c => c.status === filterStatus.value)
-  if (filterDecision.value !== 'all') list = list.filter(c => c.decisionAuthority === filterDecision.value)
-  if (filterTag.value !== 'all') list = list.filter(c => c.tags && c.tags.includes(filterTag.value))
+  if (advFilterNo.value) list = list.filter((c) => (c.customerNo || '').includes(advFilterNo.value))
+  if (advFilterName.value) list = list.filter((c) => (c.fullName || c.name || '').includes(advFilterName.value))
+  if (advFilterPhone.value) list = list.filter((c) => (c.phone || '').includes(advFilterPhone.value))
+  if (advFilterConcerns.value) list = list.filter((c) => (c.coreConcerns || '').includes(advFilterConcerns.value))
+  if (filterLevel.value !== 'all') list = list.filter((c) => c.level === filterLevel.value)
+  if (filterDept.value !== 'all') list = list.filter((c) => c.department === filterDept.value)
+  if (filterRegion.value !== 'all') list = list.filter((c) => c.region === filterRegion.value)
+  if (filterStatus.value !== 'all') list = list.filter((c) => c.status === filterStatus.value)
+  if (filterDecision.value !== 'all') list = list.filter((c) => c.decisionAuthority === filterDecision.value)
+  if (filterTag.value !== 'all') list = list.filter((c) => c.tags && c.tags.includes(filterTag.value))
   const levelOrder = { A: 0, B: 1, C: 2 }
   list.sort((a, b) => {
     let va, vb
     switch (sortField.value) {
-      case 'level': va = levelOrder[a.level] ?? 4; vb = levelOrder[b.level] ?? 4; break
-      case 'balance': va = a.balance || 0; vb = b.balance || 0; break
-      case 'creditLimit': va = a.creditLimit || 0; vb = b.creditLimit || 0; break
-      case 'createdAt': va = a.createdAt || ''; vb = b.createdAt || ''; break
-      case 'name': va = (a.fullName || a.name || '').toLowerCase(); vb = (b.fullName || b.name || '').toLowerCase(); break
-      default: va = levelOrder[a.level] ?? 4; vb = levelOrder[b.level] ?? 4
+      case 'level':
+        va = levelOrder[a.level] ?? 4
+        vb = levelOrder[b.level] ?? 4
+        break
+      case 'balance':
+        va = a.balance || 0
+        vb = b.balance || 0
+        break
+      case 'creditLimit':
+        va = a.creditLimit || 0
+        vb = b.creditLimit || 0
+        break
+      case 'createdAt':
+        va = a.createdAt || ''
+        vb = b.createdAt || ''
+        break
+      case 'name':
+        va = (a.fullName || a.name || '').toLowerCase()
+        vb = (b.fullName || b.name || '').toLowerCase()
+        break
+      default:
+        va = levelOrder[a.level] ?? 4
+        vb = levelOrder[b.level] ?? 4
     }
     if (va < vb) return sortDir.value === 'asc' ? -1 : 1
     if (va > vb) return sortDir.value === 'asc' ? 1 : -1
@@ -597,14 +831,35 @@ const { trendData, anomalyData } = useTableEnhance(
 )
 
 const defaultForm = () => ({
-  customerNo: '', fullName: '', shortName: '', contactName: '', phone: '',
-  email: '', department: '', position: '', region: '',
-  level: 'B', decisionAuthority: '', coreConcerns: '',
-  creditLimit: 0, status: 'active', tags: [], address: ''
+  customerNo: '',
+  fullName: '',
+  shortName: '',
+  contactName: '',
+  phone: '',
+  email: '',
+  department: '',
+  position: '',
+  region: '',
+  level: 'B',
+  decisionAuthority: '',
+  coreConcerns: '',
+  creditLimit: 0,
+  status: 'active',
+  tags: [],
+  address: ''
 })
 const form = reactive(defaultForm())
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useSmartRecognize(form)
 const { handleBatchAdd } = useCustomerImport(customerStore)
 
 function openAddModal() {
@@ -621,13 +876,22 @@ function openEditModal(c) {
   editingCustomer.value = c
   formErrors.value = []
   Object.assign(form, {
-    customerNo: c.customerNo || '', fullName: c.fullName || c.name || '',
-    shortName: c.shortName || '', contactName: c.contactName || c.contact || '',
-    phone: c.phone || '', email: c.email || '', department: c.department || '',
-    position: c.position || '', region: c.region || '', level: c.level || 'B',
-    decisionAuthority: c.decisionAuthority || '', coreConcerns: c.coreConcerns || '',
-    creditLimit: c.creditLimit || 0, status: c.status || 'active',
-    tags: [...(c.tags || [])], address: c.address || ''
+    customerNo: c.customerNo || '',
+    fullName: c.fullName || c.name || '',
+    shortName: c.shortName || '',
+    contactName: c.contactName || c.contact || '',
+    phone: c.phone || '',
+    email: c.email || '',
+    department: c.department || '',
+    position: c.position || '',
+    region: c.region || '',
+    level: c.level || 'B',
+    decisionAuthority: c.decisionAuthority || '',
+    coreConcerns: c.coreConcerns || '',
+    creditLimit: c.creditLimit || 0,
+    status: c.status || 'active',
+    tags: [...(c.tags || [])],
+    address: c.address || ''
   })
   showModal.value = true
 }
@@ -640,7 +904,7 @@ function openDetailModal(c) {
 function goCustomerDetail(c) {
   if (!c) return
   showDetail.value = false
-  router.push({ path: '/customer-detail', query: { id: c.id } })
+  router.push({ path: '/customer-detail', query: { id: c.id } }).catch(() => {})
 }
 
 function handleDetailEdit(customer) {
@@ -663,8 +927,8 @@ function saveCustomer() {
 
   // 客户编号唯一性校验
   if (form.customerNo) {
-    const existing = customerStore.customers.find(c =>
-      c.customerNo === form.customerNo && (!editingCustomer.value || c.id !== editingCustomer.value.id)
+    const existing = customerStore.customers.find(
+      (c) => c.customerNo === form.customerNo && (!editingCustomer.value || c.id !== editingCustomer.value.id)
     )
     if (existing) {
       formErrors.value.push('客户编号已存在，请使用其他编号')
@@ -756,8 +1020,8 @@ function toggleBatchTag(tagId) {
 
 function applyBatchTags() {
   if (batchSelectedTags.value.length === 0) return
-  selectedIds.value.forEach(id => {
-    batchSelectedTags.value.forEach(tagId => {
+  selectedIds.value.forEach((id) => {
+    batchSelectedTags.value.forEach((tagId) => {
       customerStore.addTagToCustomer(id, tagId)
     })
   })
@@ -766,55 +1030,77 @@ function applyBatchTags() {
 }
 
 function handleBatchExport() {
-  const selected = customerStore.customers.filter(c => selectedIds.value.includes(c.id))
-  const statusText = (s) => s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠'
-  const data = selected.map(c => ({
-    编号: c.customerNo, 名称: c.fullName || c.name, 联系人: c.contactName || c.contact,
-    电话: c.phone, 邮箱: c.email, 部门: c.department, 等级: levelLabel(c.level),
-    决策权: c.decisionAuthority, 区域: c.region, 余额: c.balance,
-    信用额度: c.creditLimit, 状态: statusText(c.status)
+  const selected = customerStore.customers.filter((c) => selectedIds.value.includes(c.id))
+  const statusText = (s) => (s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠')
+  const data = selected.map((c) => ({
+    编号: c.customerNo,
+    名称: c.fullName || c.name,
+    联系人: c.contactName || c.contact,
+    电话: c.phone,
+    邮箱: c.email,
+    部门: c.department,
+    等级: levelLabel(c.level),
+    决策权: c.decisionAuthority,
+    区域: c.region,
+    余额: c.balance,
+    信用额度: c.creditLimit,
+    状态: statusText(c.status)
   }))
   exportToCSV(data, `客户数据_选中${selected.length}条`)
 }
 
 function handleExport() {
   try {
-  const statusText = (s) => s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠'
-  const data = filteredCustomers.value.map(c => ({
-    编号: c.customerNo, 名称: c.fullName || c.name, 联系人: c.contactName || c.contact,
-    电话: c.phone, 邮箱: c.email, 部门: c.department, 等级: levelLabel(c.level),
-    决策权: c.decisionAuthority, 区域: c.region, 余额: c.balance,
-    信用额度: c.creditLimit, 状态: statusText(c.status)
-  }))
-  exportToCSV(data, '客户数据')
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
+    const statusText = (s) => (s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠')
+    const data = filteredCustomers.value.map((c) => ({
+      编号: c.customerNo,
+      名称: c.fullName || c.name,
+      联系人: c.contactName || c.contact,
+      电话: c.phone,
+      邮箱: c.email,
+      部门: c.department,
+      等级: levelLabel(c.level),
+      决策权: c.decisionAuthority,
+      区域: c.region,
+      余额: c.balance,
+      信用额度: c.creditLimit,
+      状态: statusText(c.status)
+    }))
+    exportToCSV(data, '客户数据')
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
+  }
 }
 
 function exportToCSV(data, filename) {
   try {
-  if (!data || data.length === 0) return
-  const headers = Object.keys(data[0])
-  const csvRows = [headers.join(',')]
-  for (const row of data) {
-    const values = headers.map(h => {
-      const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : ''
-      // CSV 中包含逗号、引号或换行符的字段需要用双引号包裹
-      if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-        return '"' + val.replace(/"/g, '""') + '"'
-      }
-      return val
-    })
-    csvRows.push(values.join(','))
+    if (!data || data.length === 0) return
+    const headers = Object.keys(data[0])
+    const csvRows = [headers.join(',')]
+    for (const row of data) {
+      const values = headers.map((h) => {
+        const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : ''
+        // CSV 中包含逗号、引号或换行符的字段需要用双引号包裹
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+          return '"' + val.replace(/"/g, '""') + '"'
+        }
+        return val
+      })
+      csvRows.push(values.join(','))
+    }
+    const csv = '\uFEFF' + csvRows.join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
   }
-  const csv = '\uFEFF' + csvRows.join('\n')
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
-  a.click()
-  URL.revokeObjectURL(url)
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
 }
 
 function handleDeptChange() {
@@ -829,7 +1115,21 @@ function handleDeptChange() {
 }
 
 function handleDownloadTemplate() {
-  const headers = ['客户编号', '客户全称', '联系人', '部门', '职位', '手机号码', '邮箱', '等级', '决策权限', '核心关注点', '地区', '信用额度', '地址']
+  const headers = [
+    '客户编号',
+    '客户全称',
+    '联系人',
+    '部门',
+    '职位',
+    '手机号码',
+    '邮箱',
+    '等级',
+    '决策权限',
+    '核心关注点',
+    '地区',
+    '信用额度',
+    '地址'
+  ]
   const csv = headers.join(',') + '\n'
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -852,26 +1152,62 @@ onMounted(() => {
   // 处理从客户详情页跳转过来的编辑请求
   const editId = route.query.editId
   if (editId) {
-    const customer = customerStore.customers.find(c => c.id === editId)
+    const customer = customerStore.customers.find((c) => c.id === editId)
     if (customer) {
       openEditModal(customer)
     }
     // 清除 URL 中的 editId 参数，避免刷新页面时重复打开
     router.replace({ path: '/customers', query: {} })
   }
-  // 点击外部关闭更多菜单
-  document.addEventListener('click', () => { showMoreMenu.value = false })
+})
+
+function _handleOutsideClick() {
+  showMoreMenu.value = false
+}
+
+useClickOutside(_handleOutsideClick)
+
+onBeforeUnmount(() => {
+  clearTimeout(searchTimer)
 })
 </script>
 
 <style scoped>
-.customer-page { }
-.page-header-actions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
-.view-toggle { display: flex; border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; }
-.view-btn { padding: var(--space-2) var(--space-4); font-size: var(--font-size-sm); font-weight: 500; background: transparent; border: none; color: var(--color-text-secondary); cursor: pointer; transition: all var(--transition-fast); border-right: 1px solid var(--color-border); }
-.view-btn:last-child { border-right: none; }
-.view-btn:hover { background: var(--color-surface-hover); }
-.view-btn.active { background: var(--color-accent-subtle); color: var(--color-accent); }
+.customer-page {
+}
+.page-header-actions {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.view-btn {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-right: 1px solid var(--color-border);
+}
+.view-btn:last-child {
+  border-right: none;
+}
+.view-btn:hover {
+  background: var(--color-surface-hover);
+}
+.view-btn.active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
 
 /* Status Flow Chips */
 .status-flow-chips {
@@ -919,9 +1255,15 @@ onMounted(() => {
   border-radius: var(--radius-full);
   flex-shrink: 0;
 }
-.chip-dot-active { background: var(--color-success); }
-.chip-dot-potential { background: var(--color-warning); }
-.chip-dot-dormant { background: var(--color-danger); }
+.chip-dot-active {
+  background: var(--color-success);
+}
+.chip-dot-potential {
+  background: var(--color-warning);
+}
+.chip-dot-dormant {
+  background: var(--color-danger);
+}
 .chip-count {
   font-family: var(--font-mono);
   font-weight: 700;
@@ -943,7 +1285,7 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   padding: var(--space-1) 0;
   animation: fade-in 150ms ease;
 }
@@ -998,8 +1340,13 @@ onMounted(() => {
   color: #fff;
 }
 @keyframes duplicate-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-  50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0);
+  }
 }
 .duplicate-count-badge {
   display: inline-flex;
@@ -1016,7 +1363,13 @@ onMounted(() => {
   font-family: var(--font-mono);
 }
 
-.customer-toolbar { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap; align-items: end; }
+.customer-toolbar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+  align-items: end;
+}
 .smart-search {
   position: relative;
   flex: 1;
@@ -1051,8 +1404,12 @@ onMounted(() => {
   animation: search-spin 1s linear infinite;
 }
 @keyframes search-spin {
-  from { transform: translateY(-50%) rotate(0deg); }
-  to { transform: translateY(-50%) rotate(360deg); }
+  from {
+    transform: translateY(-50%) rotate(0deg);
+  }
+  to {
+    transform: translateY(-50%) rotate(360deg);
+  }
 }
 .smart-search-hint {
   position: absolute;
@@ -1142,18 +1499,63 @@ onMounted(() => {
 .tag-filter-clear:hover {
   color: var(--color-danger);
 }
-.customer-search-grid { display: grid; grid-template-columns: repeat(4, 1fr) auto; gap: var(--space-3); align-items: end; flex: 1; }
-.search-field { display: flex; flex-direction: column; gap: var(--space-1); }
-.search-field-label { font-size: 11px; font-weight: 600; color: var(--color-text-tertiary); white-space: nowrap; }
-.search-field .search-input { background: var(--color-bg-primary); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2) var(--space-2); font-size: 13px; color: var(--color-text-primary); width: 100%; outline: none; }
-.search-field .search-input:focus { border-color: var(--color-accent); }
-.search-field .search-input::placeholder { color: var(--color-text-tertiary); }
-.search-reset-btn { align-self: end; }
-.customer-filters { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.filter-select { width: auto; min-width: 100px; }
+.customer-search-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  gap: var(--space-3);
+  align-items: end;
+  flex: 1;
+}
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.search-field-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+.search-field .search-input {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-2);
+  font-size: 13px;
+  color: var(--color-text-primary);
+  width: 100%;
+  outline: none;
+}
+.search-field .search-input:focus {
+  border-color: var(--color-accent);
+}
+.search-field .search-input::placeholder {
+  color: var(--color-text-tertiary);
+}
+.search-reset-btn {
+  align-self: end;
+}
+.customer-filters {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.filter-select {
+  width: auto;
+  min-width: 100px;
+}
 
 /* Stats Bar - Compact Horizontal Layout */
-.customer-stats-bar { display: flex; align-items: center; margin-bottom: var(--space-4); padding: var(--space-3) var(--space-4); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); }
+.customer-stats-bar {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
 .stats-compact-row {
   display: flex;
   align-items: center;
@@ -1171,16 +1573,33 @@ onMounted(() => {
   border-radius: var(--radius-md);
   padding: var(--space-1);
 }
-.stat-icon-total { color: var(--color-accent); background: var(--color-accent-subtle); }
-.stat-icon-active { color: var(--color-success); background: var(--color-success-subtle); }
-.stat-icon-dormant { color: var(--color-text-tertiary); background: var(--color-bg-tertiary); }
+.stat-icon-total {
+  color: var(--color-accent);
+  background: var(--color-accent-subtle);
+}
+.stat-icon-active {
+  color: var(--color-success);
+  background: var(--color-success-subtle);
+}
+.stat-icon-dormant {
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+}
 .stat-compact-text {
   display: flex;
   flex-direction: column;
   line-height: 1.2;
 }
-.stat-num { font-weight: 700; font-family: var(--font-mono); font-size: var(--font-size-base); color: var(--color-text-primary); }
-.stat-label { color: var(--color-text-tertiary); font-size: var(--font-size-xs); }
+.stat-num {
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+}
+.stat-label {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-xs);
+}
 .stat-trend {
   display: inline-flex;
   align-items: center;
@@ -1192,24 +1611,73 @@ onMounted(() => {
   background: var(--color-border);
   flex-shrink: 0;
 }
-.level-stats { display: flex; gap: var(--space-2); }
-.level-stat { font-size: var(--font-size-sm); font-weight: 600; padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); display: inline-flex; align-items: center; gap: var(--space-1); }
-.level-dot { width: 6px; height: 6px; border-radius: var(--radius-full); }
-.ld-A { background: #ef4444; box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
-.ld-B { background: #f59e0b; box-shadow: 0 0 4px rgba(245, 158, 11, 0.3); }
-.ld-C { background: #3b82f6; box-shadow: 0 0 4px rgba(59, 130, 246, 0.3); }
-.ls-A { background: var(--color-danger-subtle); color: var(--color-danger); }
-.ls-B { background: var(--color-warning-subtle); color: var(--color-warning); }
-.ls-C { background: var(--color-info-subtle); color: var(--color-accent); }
+.level-stats {
+  display: flex;
+  gap: var(--space-2);
+}
+.level-stat {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.level-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+}
+.ld-A {
+  background: #ef4444;
+  box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+}
+.ld-B {
+  background: #f59e0b;
+  box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+}
+.ld-C {
+  background: #3b82f6;
+  box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+}
+.ls-A {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+.ls-B {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.ls-C {
+  background: var(--color-info-subtle);
+  color: var(--color-accent);
+}
 
 /* Batch Bar - Slide-in Animation */
-.batch-bar { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-4); background: var(--color-accent-subtle); border-radius: var(--radius-md); margin-bottom: var(--space-3); font-size: var(--font-size-sm); color: var(--color-accent); }
+.batch-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+}
 .batch-bar-slide-in {
   animation: batch-slide-in 0.3s ease-out;
 }
 @keyframes batch-slide-in {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .batch-bar-count-badge {
   display: inline-flex;
@@ -1226,76 +1694,314 @@ onMounted(() => {
   font-family: var(--font-mono);
 }
 
-.empty-state { text-align: center; padding: var(--space-16) 0; }
-.empty-icon-circle { width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary); display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-4); color: var(--color-text-tertiary); }
-.empty-text { font-size: var(--font-size-lg); color: var(--color-text-primary); margin-bottom: var(--space-2); }
-.empty-sub { color: var(--color-text-tertiary); font-size: var(--font-size-sm); }
-.modal-overlay { animation: fade-in 200ms ease; }
-.modal-dialog { background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-xl); width: 90%; max-width: 640px; max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-xl); animation: slide-up 200ms ease; }
-.modal-sm { max-width: 400px; }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); position: sticky; top: 0; background: var(--color-bg-secondary); z-index: 1; }
-.modal-header h3 { font-size: var(--font-size-lg); font-weight: 600; color: var(--color-text-primary); }
-.modal-close { background: none; border: none; font-size: 18px; color: var(--color-text-tertiary); cursor: pointer; padding: var(--space-1); border-radius: var(--radius-sm); }
-.modal-close:hover { background: var(--color-surface-hover); color: var(--color-text-primary); }
-.modal-body { padding: var(--space-5); }
-.modal-footer { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-border); }
-.btn-danger { background: var(--color-danger); color: #fff; border-color: var(--color-danger); }
-.btn-danger:hover { opacity: 0.9; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
-.form-group { display: flex; flex-direction: column; gap: var(--space-1); }
-.form-group.full-width { grid-column: 1 / -1; }
-.form-group label { font-size: var(--font-size-xs); font-weight: 500; color: var(--color-text-secondary); }
-.form-textarea { width: 100%; padding: var(--space-2) var(--space-3); font-size: var(--font-size-sm); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-primary); color: var(--color-text-primary); resize: vertical; font-family: inherit; line-height: 1.5; }
-.form-textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 3px var(--color-accent-subtle); }
-.form-textarea::placeholder { color: var(--color-text-tertiary); }
+.empty-state {
+  text-align: center;
+  padding: var(--space-16) 0;
+}
+.empty-icon-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-4);
+  color: var(--color-text-tertiary);
+}
+.empty-text {
+  font-size: var(--font-size-lg);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+.empty-sub {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+}
+.modal-overlay {
+  animation: fade-in 200ms ease;
+}
+.modal-dialog {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  width: 90%;
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+  animation: slide-up 200ms ease;
+}
+.modal-sm {
+  max-width: 400px;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-bg-secondary);
+  z-index: var(--z-base);
+}
+.modal-header h3 {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--color-text-tertiary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.modal-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-primary);
+}
+.modal-body {
+  padding: var(--space-5);
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.btn-danger {
+  background: var(--color-danger);
+  color: #fff;
+  border-color: var(--color-danger);
+}
+.btn-danger:hover {
+  opacity: 0.9;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+.form-group label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+.form-textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+}
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-subtle);
+}
+.form-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
 .form-errors-block {
   margin-top: var(--space-3);
   padding: var(--space-3);
-  background: rgba(239,68,68,0.1);
+  background: rgba(239, 68, 68, 0.1);
   border-radius: var(--radius-md);
-  border: 1px solid rgba(239,68,68,0.3);
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 .form-error-item {
   font-size: var(--font-size-sm);
   color: var(--color-danger);
   padding: var(--space-1) 0;
 }
-.tag-selector { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.tag-option { padding: var(--space-1) var(--space-2); border-radius: 14px; font-size: 11px; cursor: pointer; border: 1px dashed var(--color-border); color: var(--color-text-secondary); transition: all var(--transition-fast); }
-.tag-option:hover { border-style: solid; }
-.tag-option.selected { border-style: solid; }
-.batch-tag-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-.batch-tag-option { padding: var(--space-1) var(--space-3); border-radius: 14px; font-size: var(--font-size-sm); cursor: pointer; border: 1px dashed var(--color-border); color: var(--color-text-secondary); transition: all var(--transition-fast); }
-.batch-tag-option:hover { border-style: solid; }
-.batch-tag-option.selected { border-style: solid; }
-.duplicate-group { margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-3); background: var(--color-surface); }
-.duplicate-group-title { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-primary); margin-bottom: var(--space-2); }
-.duplicate-group-list { display: flex; flex-direction: column; gap: var(--space-2); }
-.duplicate-item { display: flex; align-items: center; gap: var(--space-3); font-size: var(--font-size-sm); padding: var(--space-2); background: var(--color-bg-primary); border-radius: var(--radius-md); }
-.duplicate-item-name { flex: 1; font-weight: 500; color: var(--color-text-primary); }
-.duplicate-item-phone { color: var(--color-text-secondary); font-family: var(--font-mono); }
-.duplicate-item-level { font-size: 11px; font-weight: 700; padding: var(--space-1) var(--space-2); border-radius: 12px; }
-.level-badge { padding: var(--space-1) var(--space-2); border-radius: 12px; font-size: 12px; font-weight: 700; }
-.level-A { background: var(--color-danger-subtle); color: var(--color-danger); }
-.level-B { background: var(--color-warning-subtle); color: var(--color-warning); }
-.level-C { background: var(--color-info-subtle); color: var(--color-accent); }
-.status-badge { padding: var(--space-1) var(--space-2); border-radius: var(--radius-full); font-size: 10px; font-weight: 600; }
-.status-active { background: var(--color-success-subtle); color: var(--color-success); }
-.status-dormant { background: var(--color-bg-tertiary); color: var(--color-text-tertiary); }
-.mini-tag { display: inline-block; font-size: 10px; padding: var(--space-1) var(--space-2); border-radius: 10px; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.tag-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.tag-option {
+  padding: var(--space-1) var(--space-2);
+  border-radius: 14px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+.tag-option:hover {
+  border-style: solid;
+}
+.tag-option.selected {
+  border-style: solid;
+}
+.batch-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.batch-tag-option {
+  padding: var(--space-1) var(--space-3);
+  border-radius: 14px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+.batch-tag-option:hover {
+  border-style: solid;
+}
+.batch-tag-option.selected {
+  border-style: solid;
+}
+.duplicate-group {
+  margin-bottom: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background: var(--color-surface);
+}
+.duplicate-group-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+.duplicate-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.duplicate-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--font-size-sm);
+  padding: var(--space-2);
+  background: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+}
+.duplicate-item-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.duplicate-item-phone {
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+}
+.duplicate-item-level {
+  font-size: 11px;
+  font-weight: 700;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 12px;
+}
+.level-badge {
+  padding: var(--space-1) var(--space-2);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.level-A {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
+.level-B {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.level-C {
+  background: var(--color-info-subtle);
+  color: var(--color-accent);
+}
+.status-badge {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: 600;
+}
+.status-active {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.status-dormant {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+}
+.mini-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: 10px;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 @media (max-width: 1024px) {
-  .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 768px) {
-  .form-grid { grid-template-columns: 1fr; }
-  .page-header-actions { flex-direction: column; align-items: flex-start; }
-  .stats-compact-row { flex-direction: column; align-items: flex-start; }
-  .stat-compact-divider { width: 100%; height: 1px; }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .page-header-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stats-compact-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .stat-compact-divider {
+    width: 100%;
+    height: 1px;
+  }
 }
-.trend-up { color: var(--color-danger); }
-.trend-down { color: var(--color-success); }
-.trend-neutral { color: var(--color-text-tertiary); }
-.anomaly-highlight { background: var(--color-danger-subtle) !important; }
+.trend-up {
+  color: var(--color-danger);
+}
+.trend-down {
+  color: var(--color-success);
+}
+.trend-neutral {
+  color: var(--color-text-tertiary);
+}
+.anomaly-highlight {
+  background: var(--color-danger-subtle) !important;
+}
 </style>

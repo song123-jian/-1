@@ -1,13 +1,22 @@
-﻿<template>
+<template>
   <div class="table-container">
     <div class="table-toolbar">
       <span class="table-toolbar-info">共 {{ transactions.length }} 条记录</span>
-      <button class="btn btn-outline" @click="showSpacingPanel = !showSpacingPanel" :class="{ active: showSpacingPanel }">间距评估</button>
+      <button
+        class="btn btn-outline"
+        :class="{ active: showSpacingPanel }"
+        @click="showSpacingPanel = !showSpacingPanel"
+      >
+        间距评估
+      </button>
     </div>
 
     <div v-if="showSpacingPanel" class="spacing-eval-panel">
       <div class="spacing-eval-header">
-        <span class="spacing-eval-title"><Icon name="table" :size="14" /> 自动化内容间距评估报告</span>
+        <span class="spacing-eval-title">
+          <Icon name="table" :size="14" />
+          自动化内容间距评估报告
+        </span>
         <button class="btn btn-outline" @click="runSpacingEval">重新评估</button>
       </div>
       <div class="spacing-eval-body">
@@ -19,22 +28,30 @@
           <div class="eval-metrics">
             <div class="eval-metric">
               <span class="eval-metric-label">列间距均衡度</span>
-              <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.columnBalance + '%' }"></div></div>
+              <div class="eval-metric-bar">
+                <div class="eval-metric-fill" :style="{ width: spacingMetrics.columnBalance + '%' }"></div>
+              </div>
               <span class="eval-metric-value">{{ spacingMetrics.columnBalance }}%</span>
             </div>
             <div class="eval-metric">
               <span class="eval-metric-label">文本对齐一致性</span>
-              <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.alignmentConsistency + '%' }"></div></div>
+              <div class="eval-metric-bar">
+                <div class="eval-metric-fill" :style="{ width: spacingMetrics.alignmentConsistency + '%' }"></div>
+              </div>
               <span class="eval-metric-value">{{ spacingMetrics.alignmentConsistency }}%</span>
             </div>
             <div class="eval-metric">
               <span class="eval-metric-label">内容密度适宜度</span>
-              <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.densityScore + '%' }"></div></div>
+              <div class="eval-metric-bar">
+                <div class="eval-metric-fill" :style="{ width: spacingMetrics.densityScore + '%' }"></div>
+              </div>
               <span class="eval-metric-value">{{ spacingMetrics.densityScore }}%</span>
             </div>
             <div class="eval-metric">
               <span class="eval-metric-label">视觉层级清晰度</span>
-              <div class="eval-metric-bar"><div class="eval-metric-fill" :style="{ width: spacingMetrics.visualHierarchy + '%' }"></div></div>
+              <div class="eval-metric-bar">
+                <div class="eval-metric-fill" :style="{ width: spacingMetrics.visualHierarchy + '%' }"></div>
+              </div>
               <span class="eval-metric-value">{{ spacingMetrics.visualHierarchy }}%</span>
             </div>
           </div>
@@ -50,7 +67,7 @@
             </div>
           </div>
         </div>
-        <div class="spacing-eval-suggestions" v-if="spacingSuggestions.length > 0">
+        <div v-if="spacingSuggestions.length > 0" class="spacing-eval-suggestions">
           <div class="eval-suggest-title">优化建议</div>
           <div v-for="(s, i) in spacingSuggestions" :key="i" class="eval-suggest-item">
             <span class="eval-suggest-icon">{{ s.icon }}</span>
@@ -60,7 +77,7 @@
       </div>
     </div>
 
-    <table class="data-table txn-table" ref="txnTableRef">
+    <table ref="txnTableRef" class="data-table txn-table">
       <colgroup>
         <col v-if="columnVisible.refNo" class="col-ref" />
         <col v-if="columnVisible.type" class="col-type" />
@@ -73,20 +90,45 @@
       </colgroup>
       <thead>
         <tr>
-          <th v-if="columnVisible.refNo" class="th-ref"><Icon name="hash" :size="12" class="th-icon" />编号</th>
-          <th v-if="columnVisible.type" class="th-type"><Icon name="tag" :size="12" class="th-icon" />类型</th>
-          <th v-if="columnVisible.customerName" class="th-customer"><Icon name="user" :size="12" class="th-icon" />客户</th>
-          <th v-if="columnVisible.date" class="th-date"><Icon name="calendar" :size="12" class="th-icon" />日期</th>
-          <th v-if="columnVisible.amount" class="th-amount"><Icon name="dollarSign" :size="12" class="th-icon" />金额</th>
-          <th v-if="columnVisible.status" class="th-status"><Icon name="activity" :size="12" class="th-icon" />状态</th>
-          <th v-if="columnVisible.relatedDocs" class="th-related"><Icon name="link" :size="12" class="th-icon" />关联单据</th>
-          <th class="th-actions"><Icon name="settings" :size="12" class="th-icon" />操作</th>
+          <th v-if="columnVisible.refNo" class="th-ref">
+            <Icon name="hash" :size="12" class="th-icon" />
+            编号
+          </th>
+          <th v-if="columnVisible.type" class="th-type">
+            <Icon name="tag" :size="12" class="th-icon" />
+            类型
+          </th>
+          <th v-if="columnVisible.customerName" class="th-customer">
+            <Icon name="user" :size="12" class="th-icon" />
+            客户
+          </th>
+          <th v-if="columnVisible.date" class="th-date">
+            <Icon name="calendar" :size="12" class="th-icon" />
+            日期
+          </th>
+          <th v-if="columnVisible.amount" class="th-amount">
+            <Icon name="dollarSign" :size="12" class="th-icon" />
+            金额
+          </th>
+          <th v-if="columnVisible.status" class="th-status">
+            <Icon name="activity" :size="12" class="th-icon" />
+            状态
+          </th>
+          <th v-if="columnVisible.relatedDocs" class="th-related">
+            <Icon name="link" :size="12" class="th-icon" />
+            关联单据
+          </th>
+          <th class="th-actions">
+            <Icon name="settings" :size="12" class="th-icon" />
+            操作
+          </th>
         </tr>
       </thead>
       <tbody>
         <tr v-if="pagedTransactions.length === 0">
           <td colspan="8" class="empty-state">
-            <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>暂无交易记录
+            <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>
+            暂无交易记录
           </td>
         </tr>
         <tr v-for="t in pagedTransactions" :key="t.id" :class="{ 'row-overdue': t.status === 'overdue' }">
@@ -107,20 +149,40 @@
           <td v-if="columnVisible.relatedDocs" class="cell-related">
             <template v-if="t.relatedDocs && t.relatedDocs.length > 0">
               <div v-for="rd in t.relatedDocs" :key="rd.refNo" class="related-doc-item">
-                <span class="type-badge" :class="'type-' + rd.type" style="font-size:10px;padding:1px 4px">{{ typeLabels[rd.type] }}</span>
+                <span class="type-badge" :class="'type-' + rd.type" style="font-size: 10px; padding: 1px 4px">
+                  {{ typeLabels[rd.type] }}
+                </span>
                 <span class="related-ref" @click="emit('navigateToPath', rd.path)">{{ rd.refNo }}</span>
               </div>
             </template>
             <span v-else class="cell-placeholder">—</span>
           </td>
           <td class="cell-actions">
-            <button class="btn btn-sm btn-outline" @click="emit('viewDetail', t)" title="查看详情">查看</button>
+            <button class="btn btn-sm btn-outline" title="查看详情" @click="emit('viewDetail', t)">查看</button>
             <div class="action-more-wrapper">
-              <button class="btn btn-sm btn-outline" @click="toggleActionMore(t.id)" title="更多操作">···</button>
+              <button class="btn btn-sm btn-outline" title="更多操作" @click="toggleActionMore(t.id)">···</button>
               <div v-if="activeActionId === t.id" class="action-more-dropdown">
-                <button v-if="t.type === 'manual'" class="action-more-item" @click="emit('openForm', t); activeActionId = null">编辑</button>
-                <button v-if="t.relatedPath" class="action-more-item" @click="emit('navigateToPath', t.relatedPath); activeActionId = null">跳转关联</button>
-                <button v-if="t.type === 'manual'" class="action-more-item action-more-danger" @click="emit('handleDelete', t.id); activeActionId = null">删除</button>
+                <button
+                  v-if="t.type === 'manual'"
+                  class="action-more-item"
+                  @click="emit('openForm', t); activeActionId = null"
+                >
+                  编辑
+                </button>
+                <button
+                  v-if="t.relatedPath"
+                  class="action-more-item"
+                  @click="emit('navigateToPath', t.relatedPath); activeActionId = null"
+                >
+                  跳转关联
+                </button>
+                <button
+                  v-if="t.type === 'manual'"
+                  class="action-more-item action-more-danger"
+                  @click="emit('handleDelete', t.id); activeActionId = null"
+                >
+                  删除
+                </button>
               </div>
             </div>
           </td>
@@ -130,7 +192,15 @@
     <div v-if="totalPages > 1" class="pagination-bar">
       <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage = 1">«</button>
       <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage--">‹</button>
-      <button v-for="p in visiblePages" :key="p" class="pagination-btn" :class="{ active: p === currentPage }" @click="currentPage = p">{{ p }}</button>
+      <button
+        v-for="p in visiblePages"
+        :key="p"
+        class="pagination-btn"
+        :class="{ active: p === currentPage }"
+        @click="currentPage = p"
+      >
+        {{ p }}
+      </button>
       <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage++">›</button>
       <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">»</button>
       <span class="pagination-info">第 {{ currentPage }}/{{ totalPages }} 页 · 共 {{ transactions.length }} 条</span>
@@ -138,6 +208,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'TransactionTable' }
+</script>
 <script setup>
 import { ref, computed, nextTick, watch } from 'vue'
 import { formatMoney } from '@/utils/format'
@@ -167,7 +240,7 @@ const visiblePages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
   let start = Math.max(1, current - 2)
-  let end = Math.min(total, start + 4)
+  const end = Math.min(total, start + 4)
   if (end - start < 4) start = Math.max(1, end - 4)
   for (let i = start; i <= end; i++) pages.push(i)
   return pages
@@ -178,11 +251,14 @@ const pagedTransactions = computed(() => {
   return props.transactions.slice(start, start + pageSize)
 })
 
-watch(() => props.transactions, () => {
-  if (currentPage.value > totalPages.value) {
-    currentPage.value = 1
+watch(
+  () => props.transactions,
+  () => {
+    if (currentPage.value > totalPages.value) {
+      currentPage.value = 1
+    }
   }
-})
+)
 
 const showSpacingPanel = ref(false)
 const txnTableRef = ref(null)
@@ -246,15 +322,24 @@ function runSpacingEval() {
       const diff = Math.abs(cw - ow)
       let statusClass = 'status-optimal'
       let statusText = '最佳'
-      if (diff > 40) { statusClass = 'status-warning'; statusText = '偏窄' }
-      if (cw > ow + 60) { statusClass = 'status-loose'; statusText = '偏宽' }
-      if (diff <= 20) { statusClass = 'status-optimal'; statusText = '最佳' }
+      if (diff > 40) {
+        statusClass = 'status-warning'
+        statusText = '偏窄'
+      }
+      if (cw > ow + 60) {
+        statusClass = 'status-loose'
+        statusText = '偏宽'
+      }
+      if (diff <= 20) {
+        statusClass = 'status-optimal'
+        statusText = '最佳'
+      }
       return { key: def.key, label: def.label, currentWidth: cw, optimalWidth: ow, statusClass, statusText }
     })
     columnSpacingDetails.value = details
 
     const avgDiff = details.reduce((s, d) => s + Math.abs(d.currentWidth - d.optimalWidth), 0) / details.length
-    const maxOptimal = Math.max(...spacingColumnDefs.map(d => d.optimalWidth))
+    const maxOptimal = Math.max(...spacingColumnDefs.map((d) => d.optimalWidth))
     const balanceScore = Math.max(0, Math.min(100, Math.round(100 - (avgDiff / maxOptimal) * 100)))
 
     const actualAligns = []
@@ -262,7 +347,7 @@ function runSpacingEval() {
       const style = window.getComputedStyle(th)
       actualAligns.push(style.textAlign || 'left')
     })
-    const expectedAligns = spacingColumnDefs.map(d => d.align)
+    const expectedAligns = spacingColumnDefs.map((d) => d.align)
     let alignMatches = 0
     expectedAligns.forEach((ea, i) => {
       if (actualAligns[i] === ea) alignMatches++
@@ -295,13 +380,23 @@ function runSpacingEval() {
     }
 
     const suggestions = []
-    if (balanceScore < 80) suggestions.push({ icon: '', text: '部分列宽偏离建议值较大，建议通过colgroup精确控制各列宽度比例' })
-    if (alignScore < 100) suggestions.push({ icon: '', text: '部分列文本对齐方式与最佳实践不一致：数字列应右对齐，标签列应居中，文本列应左对齐' })
-    if (densityScore < 85) suggestions.push({ icon: '', text: '行高偏小导致内容密度过高，建议增加行内间距(padding)至12px 16px以提升可读性' })
-    if (hierarchyScore < 85) suggestions.push({ icon: '', text: '视觉层级不够清晰，建议使用table-layout:fixed配合colgroup确保列宽稳定' })
-    details.forEach(d => {
+    if (balanceScore < 80)
+      suggestions.push({ icon: '', text: '部分列宽偏离建议值较大，建议通过colgroup精确控制各列宽度比例' })
+    if (alignScore < 100)
+      suggestions.push({
+        icon: '',
+        text: '部分列文本对齐方式与最佳实践不一致：数字列应右对齐，标签列应居中，文本列应左对齐'
+      })
+    if (densityScore < 85)
+      suggestions.push({ icon: '', text: '行高偏小导致内容密度过高，建议增加行内间距(padding)至12px 16px以提升可读性' })
+    if (hierarchyScore < 85)
+      suggestions.push({ icon: '', text: '视觉层级不够清晰，建议使用table-layout:fixed配合colgroup确保列宽稳定' })
+    details.forEach((d) => {
       if (d.statusClass !== 'status-optimal') {
-        suggestions.push({ icon: '', text: `「${d.label}」列当前${d.currentWidth}px，建议调整为${d.optimalWidth}px（${d.statusText}）` })
+        suggestions.push({
+          icon: '',
+          text: `「${d.label}」列当前${d.currentWidth}px，建议调整为${d.optimalWidth}px（${d.statusText}）`
+        })
       }
     })
     if (suggestions.length === 0) {
@@ -310,7 +405,6 @@ function runSpacingEval() {
     spacingSuggestions.value = suggestions
   })
 }
-
 </script>
 
 <style scoped>
@@ -332,14 +426,30 @@ function runSpacingEval() {
   border-collapse: collapse;
   font-size: var(--font-size-sm);
 }
-.txn-table col.col-ref { width: 140px; }
-.txn-table col.col-type { width: 80px; }
-.txn-table col.col-customer { width: 140px; }
-.txn-table col.col-date { width: 110px; }
-.txn-table col.col-amount { width: 120px; }
-.txn-table col.col-status { width: 80px; }
-.txn-table col.col-related { width: 205px; }
-.txn-table col.col-actions { width: 230px; }
+.txn-table col.col-ref {
+  width: 140px;
+}
+.txn-table col.col-type {
+  width: 80px;
+}
+.txn-table col.col-customer {
+  width: 140px;
+}
+.txn-table col.col-date {
+  width: 110px;
+}
+.txn-table col.col-amount {
+  width: 120px;
+}
+.txn-table col.col-status {
+  width: 80px;
+}
+.txn-table col.col-related {
+  width: 205px;
+}
+.txn-table col.col-actions {
+  width: 230px;
+}
 .txn-table thead th {
   padding: var(--space-2) var(--space-3);
   font-size: var(--font-size-xs);
@@ -356,13 +466,28 @@ function runSpacingEval() {
   opacity: 0.5;
   vertical-align: middle;
 }
-.th-ref, .th-customer, .th-related { text-align: left; }
-.th-type, .th-date, .th-status, .th-actions { text-align: center; }
-.th-amount { text-align: right; }
-.txn-table tbody td {padding: var(--space-2) var(--space-3);
+.th-ref,
+.th-customer,
+.th-related {
+  text-align: left;
+}
+.th-type,
+.th-date,
+.th-status,
+.th-actions {
+  text-align: center;
+}
+.th-amount {
+  text-align: right;
+}
+.txn-table tbody td {
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
-  line-height: 1.5; overflow-wrap: break-word; word-wrap: break-word}
+  line-height: 1.5;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 .cell-ref {
   cursor: pointer;
   color: var(--color-accent);
@@ -374,16 +499,26 @@ function runSpacingEval() {
 .cell-ref:hover {
   text-decoration: underline;
 }
-.cell-type { text-align: center; }
+.cell-type {
+  text-align: center;
+}
 .cell-customer {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 140px;
 }
-.cell-date { text-align: center; color: var(--color-text-secondary); }
-.cell-amount { text-align: right; font-weight: 600; }
-.cell-status { text-align: center; }
+.cell-date {
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+.cell-amount {
+  text-align: right;
+  font-weight: 600;
+}
+.cell-status {
+  text-align: center;
+}
 .cell-related {
   max-width: 160px;
   overflow: hidden;
@@ -442,11 +577,26 @@ function runSpacingEval() {
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.type-quotation { background: var(--color-info-subtle); color: var(--color-info); }
-.type-contract { background: var(--color-accent-subtle); color: var(--color-accent); }
-.type-collection { background: var(--color-success-subtle); color: var(--color-success); }
-.type-delivery { background: var(--color-warning-subtle); color: var(--color-warning); }
-.type-manual { background: var(--color-purple-subtle); color: var(--color-purple); }
+.type-quotation {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
+.type-contract {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.type-collection {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.type-delivery {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.type-manual {
+  background: var(--color-purple-subtle);
+  color: var(--color-purple);
+}
 .related-doc-item {
   display: inline-flex;
   align-items: center;
@@ -465,15 +615,46 @@ function runSpacingEval() {
   background: var(--color-danger-subtle);
   animation: overduePulse 3s ease-in-out infinite;
 }
-@keyframes overduePulse { 0%, 100% { background: var(--color-danger-subtle); } 50% { background: rgba(239, 68, 68, 0.08); } }
-@keyframes rowSlideIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
-.txn-table tbody tr { animation: rowSlideIn 0.3s ease-out both; }
-.txn-table tbody tr:nth-child(1) { animation-delay: 0ms; }
-.txn-table tbody tr:nth-child(2) { animation-delay: 20ms; }
-.txn-table tbody tr:nth-child(3) { animation-delay: 40ms; }
-.txn-table tbody tr:nth-child(4) { animation-delay: 60ms; }
-.txn-table tbody tr:nth-child(5) { animation-delay: 80ms; }
-.txn-table tbody tr:nth-child(n+6) { animation-delay: 100ms; }
+@keyframes overduePulse {
+  0%,
+  100% {
+    background: var(--color-danger-subtle);
+  }
+  50% {
+    background: rgba(239, 68, 68, 0.08);
+  }
+}
+@keyframes rowSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.txn-table tbody tr {
+  animation: rowSlideIn 0.3s ease-out both;
+}
+.txn-table tbody tr:nth-child(1) {
+  animation-delay: 0ms;
+}
+.txn-table tbody tr:nth-child(2) {
+  animation-delay: 20ms;
+}
+.txn-table tbody tr:nth-child(3) {
+  animation-delay: 40ms;
+}
+.txn-table tbody tr:nth-child(4) {
+  animation-delay: 60ms;
+}
+.txn-table tbody tr:nth-child(5) {
+  animation-delay: 80ms;
+}
+.txn-table tbody tr:nth-child(n + 6) {
+  animation-delay: 100ms;
+}
 .cell-mono {
   font-family: var(--font-mono);
 }
@@ -486,9 +667,16 @@ function runSpacingEval() {
   color: var(--color-text-tertiary);
 }
 .empty-state-icon {
-  width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary);
-  display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-2);
-  color: var(--color-text-tertiary); font-size: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: 24px;
 }
 .pagination-bar {
   display: flex;
@@ -560,10 +748,22 @@ function runSpacingEval() {
   border-radius: var(--radius-lg);
   min-width: 100px;
 }
-.score-excellent { background: var(--color-success-subtle); color: var(--color-success); }
-.score-good { background: var(--color-info-subtle); color: var(--color-accent); }
-.score-fair { background: var(--color-warning-subtle); color: var(--color-warning); }
-.score-poor { background: var(--color-danger-subtle); color: var(--color-danger); }
+.score-excellent {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.score-good {
+  background: var(--color-info-subtle);
+  color: var(--color-accent);
+}
+.score-fair {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.score-poor {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+}
 .eval-score-value {
   font-size: 2rem;
   font-weight: 800;
@@ -614,7 +814,8 @@ function runSpacingEval() {
 .spacing-eval-columns {
   margin-bottom: var(--space-4);
 }
-.eval-col-title, .eval-suggest-title {
+.eval-col-title,
+.eval-suggest-title {
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-primary);
@@ -655,9 +856,18 @@ function runSpacingEval() {
   border-radius: var(--radius-full);
   font-size: 10px;
 }
-.status-optimal { background: #e6f9ee; color: #0d8042; }
-.status-warning { background: #fce8e6; color: #c5221f; }
-.status-loose { background: #fef7e0; color: #b06000; }
+.status-optimal {
+  background: #e6f9ee;
+  color: #0d8042;
+}
+.status-warning {
+  background: #fce8e6;
+  color: #c5221f;
+}
+.status-loose {
+  background: #fef7e0;
+  color: #b06000;
+}
 .spacing-eval-suggestions {
   padding-top: var(--space-2);
 }

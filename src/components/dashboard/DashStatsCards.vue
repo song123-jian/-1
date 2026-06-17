@@ -25,11 +25,14 @@
           <span class="dash-stat-sub-text">{{ card.subText }}</span>
         </div>
       </div>
-      <div class="dash-stat-card__ring" v-if="card.ringPercent !== undefined">
+      <div v-if="card.ringPercent !== undefined" class="dash-stat-card__ring">
         <svg width="48" height="48" viewBox="0 0 48 48">
           <circle cx="24" cy="24" r="20" fill="none" :stroke="card.color + '20'" stroke-width="4" />
           <circle
-            cx="24" cy="24" r="20" fill="none"
+            cx="24"
+            cy="24"
+            r="20"
+            fill="none"
             :stroke="card.color"
             stroke-width="4"
             stroke-linecap="round"
@@ -58,11 +61,16 @@
       </div>
       <div class="stat-card-value">{{ stat.value }}</div>
       <div class="stat-card-label">{{ stat.label }}</div>
-      <div class="stat-card-change" :style="{ color: stat.changeColor || 'var(--color-text-tertiary)' }">{{ stat.change }}</div>
+      <div class="stat-card-change" :style="{ color: stat.changeColor || 'var(--color-text-tertiary)' }">
+        {{ stat.change }}
+      </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'DashStatsCards' }
+</script>
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 
@@ -124,7 +132,12 @@ const highlightCards = computed(() => [
     displayValue: refValues.alert.value,
     icon: 'alertCircle',
     color: '#ef4444',
-    subText: (props.inventoryStore.lowStockCount + props.inventoryStore.exhaustedCount) + ' 低库存 / ' + props.todoStore.stats.overdue + ' 逾期',
+    subText:
+      props.inventoryStore.lowStockCount +
+      props.inventoryStore.exhaustedCount +
+      ' 低库存 / ' +
+      props.todoStore.stats.overdue +
+      ' 逾期',
     ringPercent: undefined
   }
 ])
@@ -137,7 +150,7 @@ const refValues = {
   alert: ref('0')
 }
 
-let animFrames = {}
+const animFrames = {}
 
 function animateNum(key, from, to, duration, formatter) {
   if (animFrames[key]) cancelAnimationFrame(animFrames[key])
@@ -170,35 +183,57 @@ function formatInt(v) {
   return Math.round(v).toString()
 }
 
-watch(() => props.totalRevenue, (newVal) => {
-  const from = parseInt(String(refValues.revenue.value).replace(/,/g, '')) || 0
-  animateNum('revenue', from, newVal, 1000, formatRevenue)
-}, { immediate: false })
+watch(
+  () => props.totalRevenue,
+  (newVal) => {
+    const from = parseInt(String(refValues.revenue.value).replace(/,/g, '')) || 0
+    animateNum('revenue', from, newVal, 1000, formatRevenue)
+  },
+  { immediate: false }
+)
 
-watch(() => props.collectionRate, (newVal) => {
-  const from = parseInt(refValues.rate.value) || 0
-  animateNum('rate', from, newVal, 800, formatRate)
-}, { immediate: false })
+watch(
+  () => props.collectionRate,
+  (newVal) => {
+    const from = parseInt(refValues.rate.value) || 0
+    animateNum('rate', from, newVal, 800, formatRate)
+  },
+  { immediate: false }
+)
 
-watch(() => props.quotationStore.pendingCount + props.contractStore.pendingApprovalCount, (newVal) => {
-  const from = parseInt(refValues.pending.value) || 0
-  animateNum('pending', from, newVal, 600, formatInt)
-}, { immediate: false })
+watch(
+  () => props.quotationStore.pendingCount + props.contractStore.pendingApprovalCount,
+  (newVal) => {
+    const from = parseInt(refValues.pending.value) || 0
+    animateNum('pending', from, newVal, 600, formatInt)
+  },
+  { immediate: false }
+)
 
-watch(() => props.inventoryStore.lowStockCount + props.inventoryStore.exhaustedCount + props.todoStore.stats.overdue, (newVal) => {
-  const from = parseInt(refValues.alert.value) || 0
-  animateNum('alert', from, newVal, 600, formatInt)
-}, { immediate: false })
+watch(
+  () => props.inventoryStore.lowStockCount + props.inventoryStore.exhaustedCount + props.todoStore.stats.overdue,
+  (newVal) => {
+    const from = parseInt(refValues.alert.value) || 0
+    animateNum('alert', from, newVal, 600, formatInt)
+  },
+  { immediate: false }
+)
 
 onMounted(() => {
   animateNum('revenue', 0, props.totalRevenue, 1200, formatRevenue)
   animateNum('rate', 0, props.collectionRate, 1000, formatRate)
   animateNum('pending', 0, props.quotationStore.pendingCount + props.contractStore.pendingApprovalCount, 800, formatInt)
-  animateNum('alert', 0, props.inventoryStore.lowStockCount + props.inventoryStore.exhaustedCount + props.todoStore.stats.overdue, 800, formatInt)
+  animateNum(
+    'alert',
+    0,
+    props.inventoryStore.lowStockCount + props.inventoryStore.exhaustedCount + props.todoStore.stats.overdue,
+    800,
+    formatInt
+  )
 })
 
 onUnmounted(() => {
-  Object.values(animFrames).forEach(id => cancelAnimationFrame(id))
+  Object.values(animFrames).forEach((id) => cancelAnimationFrame(id))
 })
 </script>
 
@@ -221,7 +256,9 @@ onUnmounted(() => {
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   border-left: 4px solid var(--card-color, var(--color-accent));
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   position: relative;
   overflow: hidden;
   display: flex;
@@ -318,7 +355,9 @@ onUnmounted(() => {
 }
 
 @keyframes ringDraw {
-  from { stroke-dashoffset: 125.66; }
+  from {
+    stroke-dashoffset: 125.66;
+  }
 }
 
 .dash-stat-ring-progress {
@@ -343,13 +382,21 @@ onUnmounted(() => {
   background: var(--color-surface-elevated);
   border-radius: var(--radius-lg);
   padding: var(--space-3) var(--space-4);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   animation: statCardIn 0.5s ease-out both;
 }
 
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .stat-card:hover {
@@ -392,11 +439,19 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1024px) {
-  .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .stats-grid-7 { grid-template-columns: repeat(3, 1fr); }
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .stats-grid-7 {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 @media (max-width: 640px) {
-  .stats-grid-4 { grid-template-columns: 1fr; }
-  .stats-grid-7 { grid-template-columns: repeat(2, 1fr); }
+  .stats-grid-4 {
+    grid-template-columns: 1fr;
+  }
+  .stats-grid-7 {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

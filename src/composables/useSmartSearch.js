@@ -21,15 +21,21 @@ export function useSmartSearch(fields = []) {
     if (gradeMatch) filters.grade = gradeMatch[1]
 
     // 状态筛选：活跃、潜在、非活跃
-    const statusMap = { '活跃': 'active', '潜在': 'potential', '非活跃': 'dormant', '休眠': 'dormant' }
+    const statusMap = { 活跃: 'active', 潜在: 'potential', 非活跃: 'dormant', 休眠: 'dormant' }
     for (const [keyword, val] of Object.entries(statusMap)) {
-      if (lowerText.includes(keyword)) { filters.status = val; break }
+      if (lowerText.includes(keyword)) {
+        filters.status = val
+        break
+      }
     }
 
     // 地区筛选
     const regionKeywords = ['华东', '华北', '华南', '华中', '西南', '西北', '东北']
     for (const r of regionKeywords) {
-      if (text.includes(r)) { filters.region = r; break }
+      if (text.includes(r)) {
+        filters.region = r
+        break
+      }
     }
 
     // 金额范围：大于1000、小于5000、1000-5000
@@ -62,7 +68,7 @@ export function useSmartSearch(fields = []) {
     }
 
     // 关键词搜索（去除已解析的特殊词后剩余文本）
-    let keyword = text
+    const keyword = text
       .replace(/[ABCD][级类]?(?:客户|供应商)?/g, '')
       .replace(/(?:活跃|潜在|非活跃|休眠)(?:客户|供应商)?/g, '')
       .replace(/(?:华东|华北|华南|华中|西南|西北|东北)/g, '')

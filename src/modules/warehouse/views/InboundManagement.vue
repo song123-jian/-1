@@ -1,12 +1,12 @@
 <template>
   <div class="inbound-management-page">
-    <InboundSection
-      ref="inboundRef"
-      @quick-outbound="handleQuickOutbound"
-    />
+    <InboundSection ref="inboundRef" @quick-outbound="handleQuickOutbound" />
   </div>
 </template>
 
+<script>
+export default { name: 'InboundManagement' }
+</script>
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -17,7 +17,7 @@ const route = useRoute()
 const inboundRef = ref(null)
 
 function handleQuickOutbound() {
-  router.push('/outbound')
+  router.push('/outbound').catch(() => {})
 }
 
 /* 接收路由参数并自动填充物料信息 */

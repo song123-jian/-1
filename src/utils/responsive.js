@@ -13,10 +13,10 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 /* 断点定义 */
 const BREAKPOINTS = {
-  mobile: 768,       /* 手机 */
-  tablet: 1024,      /* 平板 */
-  desktop: 1440,     /* 桌面 */
-  widescreen: 1920   /* 宽屏 */
+  mobile: 768 /* 手机 */,
+  tablet: 1024 /* 平板 */,
+  desktop: 1440 /* 桌面 */,
+  widescreen: 1920 /* 宽屏 */
 }
 
 /* 设备类型枚举 */
@@ -29,8 +29,8 @@ export const DeviceType = {
 
 /* 布局模式 */
 export const LayoutMode = {
-  COMPACT: 'compact',     /* 紧凑模式：侧边栏收起，内容区最大化 */
-  STANDARD: 'standard',   /* 标准模式：侧边栏展开，正常间距 */
+  COMPACT: 'compact' /* 紧凑模式：侧边栏收起，内容区最大化 */,
+  STANDARD: 'standard' /* 标准模式：侧边栏展开，正常间距 */,
   COMFORTABLE: 'comfortable' /* 舒适模式：宽屏，更大间距 */
 }
 
@@ -93,7 +93,7 @@ class ResponsiveManager {
     this._updateCSSVariables()
 
     this._initialized = true
-    console.info('[Responsive] 响应式管理器已初始化')
+    console.debug('[Responsive] 响应式管理器已初始化')
   }
 
   /**
@@ -236,7 +236,7 @@ class ResponsiveManager {
    * @param {Function} callback
    */
   offLayoutChange(callback) {
-    this._layoutChangeCallbacks = this._layoutChangeCallbacks.filter(cb => cb !== callback)
+    this._layoutChangeCallbacks = this._layoutChangeCallbacks.filter((cb) => cb !== callback)
   }
 
   /**
@@ -292,11 +292,8 @@ class ResponsiveManager {
    * 检测触摸设备
    */
   _detectTouchDevice() {
-    this._isTouchDevice.value = (
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
-      navigator.msMaxTouchPoints > 0
-    )
+    this._isTouchDevice.value =
+      'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0
   }
 
   /**
@@ -347,10 +344,18 @@ export function useResponsive() {
   const shouldUseCompactTable = computed(() => responsive.shouldUseCompactTable)
 
   return {
-    deviceType, layoutMode,
-    isMobile, isTablet, isDesktop, isWidescreen,
-    isTouchDevice, screenWidth, screenHeight, orientation,
-    shouldUseHamburger, shouldUseCompactTable,
+    deviceType,
+    layoutMode,
+    isMobile,
+    isTablet,
+    isDesktop,
+    isWidescreen,
+    isTouchDevice,
+    screenWidth,
+    screenHeight,
+    orientation,
+    shouldUseHamburger,
+    shouldUseCompactTable,
     responsive
   }
 }

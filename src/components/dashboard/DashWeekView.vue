@@ -1,11 +1,20 @@
 <template>
   <div class="week-view-section">
     <div class="week-view-header">
-      <span class="panel-card-title"><Icon name="calendar" :size="14" /> 周视图</span>
+      <span class="panel-card-title">
+        <Icon name="calendar" :size="14" />
+        周视图
+      </span>
       <div class="week-view-nav">
-        <button class="dp-nav-btn" @click="$emit('weekPrev')"><Icon name="chevronLeft" :size="14" /> 上一周</button>
+        <button class="dp-nav-btn" @click="$emit('weekPrev')">
+          <Icon name="chevronLeft" :size="14" />
+          上一周
+        </button>
         <button class="dp-today-btn" @click="$emit('weekGoToday')">本周</button>
-        <button class="dp-nav-btn" @click="$emit('weekNext')">下一周 <Icon name="chevronRight" :size="14" /></button>
+        <button class="dp-nav-btn" @click="$emit('weekNext')">
+          下一周
+          <Icon name="chevronRight" :size="14" />
+        </button>
         <span class="week-view-range">{{ weekRangeLabel }}</span>
       </div>
     </div>
@@ -28,10 +37,7 @@
             v-for="todo in day.todos"
             :key="todo.id"
             class="week-todo-item"
-            :class="[
-              'priority-' + todo.priority,
-              { completed: todo.status === 'completed', overdue: isOverdue(todo) }
-            ]"
+            :class="['priority-' + todo.priority, { completed: todo.status === 'completed', overdue: isOverdue(todo) }]"
             @click.stop="todoStore.toggleTodo(todo.id, todo.auto || false)"
           >
             <span class="week-todo-dot"></span>
@@ -45,6 +51,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'DashWeekView' }
+</script>
 <script setup>
 import { useTodoStore } from '@/stores/todo'
 
@@ -104,8 +113,14 @@ function isOverdue(todo) {
 }
 
 @keyframes weekColIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .week-day-col {
@@ -169,8 +184,13 @@ function isOverdue(todo) {
 }
 
 @keyframes todayPulse {
-  0%, 100% { text-shadow: 0 0 0 transparent; }
-  50% { text-shadow: 0 0 8px var(--color-accent); }
+  0%,
+  100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  50% {
+    text-shadow: 0 0 8px var(--color-accent);
+  }
 }
 
 /* 待办计数 badge */
@@ -232,9 +252,15 @@ function isOverdue(todo) {
   flex-shrink: 0;
 }
 
-.week-todo-item.priority-high .week-todo-dot { background: var(--color-danger); }
-.week-todo-item.priority-medium .week-todo-dot { background: var(--color-warning); }
-.week-todo-item.priority-low .week-todo-dot { background: var(--color-info); }
+.week-todo-item.priority-high .week-todo-dot {
+  background: var(--color-danger);
+}
+.week-todo-item.priority-medium .week-todo-dot {
+  background: var(--color-warning);
+}
+.week-todo-item.priority-low .week-todo-dot {
+  background: var(--color-info);
+}
 
 .week-todo-title {
   overflow: hidden;
@@ -271,7 +297,9 @@ function isOverdue(todo) {
   transition: all 0.15s;
 }
 
-.dp-nav-btn:hover { background: var(--color-accent-subtle); }
+.dp-nav-btn:hover {
+  background: var(--color-accent-subtle);
+}
 
 .dp-today-btn {
   background: var(--color-accent-subtle);
@@ -291,11 +319,19 @@ function isOverdue(todo) {
 }
 
 @media (max-width: 1024px) {
-  .week-view-grid { grid-template-columns: repeat(4, 1fr); }
-  .week-day-col:nth-child(n+5) { display: none; }
+  .week-view-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .week-day-col:nth-child(n + 5) {
+    display: none;
+  }
 }
 @media (max-width: 640px) {
-  .week-view-grid { grid-template-columns: repeat(3, 1fr); }
-  .week-day-col:nth-child(n+4) { display: none; }
+  .week-view-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .week-day-col:nth-child(n + 4) {
+    display: none;
+  }
 }
 </style>

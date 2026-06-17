@@ -2,7 +2,10 @@
   <div class="content-grid content-grid-2">
     <div class="panel-card">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="zap" :size="14" /> 快速操作</span>
+        <span class="panel-card-title">
+          <Icon name="zap" :size="14" />
+          快速操作
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="quick-actions">
@@ -24,9 +27,17 @@
 
     <div class="panel-card ai-insight-panel">
       <div class="panel-card-header">
-        <span class="panel-card-title"><span class="ai-icon">AI</span> AI 智能分析</span>
-        <button class="btn btn-ghost" @click="$emit('refreshInsights')" :class="{ 'is-spinning': isRefreshingInsights }">
-          <Icon name="refresh" :size="14" /> 刷新
+        <span class="panel-card-title">
+          <span class="ai-icon">AI</span>
+          AI 智能分析
+        </span>
+        <button
+          class="btn btn-ghost"
+          :class="{ 'is-spinning': isRefreshingInsights }"
+          @click="$emit('refreshInsights')"
+        >
+          <Icon name="refresh" :size="14" />
+          刷新
         </button>
       </div>
       <div class="panel-card-body">
@@ -58,6 +69,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'DashQuickActions' }
+</script>
 <script setup>
 defineProps({
   aiSummary: { type: String, default: '' },
@@ -71,7 +85,12 @@ const actions = [
   { label: '新建报价', icon: 'edit', path: '/quotations', gradient: 'linear-gradient(135deg, #3b82f6, #2563eb)' },
   { label: '新建合同', icon: 'file', path: '/contracts', gradient: 'linear-gradient(135deg, #22c55e, #16a34a)' },
   { label: '新建客户', icon: 'building', path: '/customers', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
-  { label: '入库登记', icon: 'download', path: '/inventory?tab=inbound', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
+  {
+    label: '入库登记',
+    icon: 'download',
+    path: '/inventory?tab=inbound',
+    gradient: 'linear-gradient(135deg, #f59e0b, #d97706)'
+  },
   { label: '记录回款', icon: 'dollar', path: '/collections', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
   { label: '创建送货单', icon: 'truck', path: '/deliveries', gradient: 'linear-gradient(135deg, #ec4899, #db2777)' },
   { label: '查看报表', icon: 'trendUp', path: '/reports', gradient: 'linear-gradient(135deg, #14b8a6, #0d9488)' }
@@ -86,8 +105,14 @@ const actions = [
 }
 
 @keyframes actionFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .quick-action-card {
@@ -147,8 +172,12 @@ const actions = [
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .ai-loading {
@@ -216,8 +245,14 @@ const actions = [
 }
 
 @keyframes insightFadeIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .ai-insight-item {
@@ -242,9 +277,13 @@ const actions = [
 }
 
 @media (max-width: 1024px) {
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 @media (max-width: 640px) {
-  .quick-actions { grid-template-columns: repeat(2, 1fr); }
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

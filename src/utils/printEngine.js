@@ -338,17 +338,17 @@ class PrintEngine {
 
   /* 根据ID获取模板 */
   getTemplate(templateId) {
-    return this.templates.find(t => t.id === templateId) || null
+    return this.templates.find((t) => t.id === templateId) || null
   }
 
   /* 根据类型获取模板 */
   getTemplateByType(type) {
-    return this.templates.find(t => t.type === type) || null
+    return this.templates.find((t) => t.type === type) || null
   }
 
   /* 保存模板 */
   saveTemplate(template) {
-    const idx = this.templates.findIndex(t => t.id === template.id)
+    const idx = this.templates.findIndex((t) => t.id === template.id)
     if (idx !== -1) {
       this.templates[idx] = { ...this.templates[idx], ...template }
     } else {
@@ -360,7 +360,7 @@ class PrintEngine {
 
   /* 删除模板 */
   deleteTemplate(templateId) {
-    this.templates = this.templates.filter(t => t.id !== templateId)
+    this.templates = this.templates.filter((t) => t.id !== templateId)
     saveTemplates(this.templates)
   }
 
@@ -387,15 +387,17 @@ class PrintEngine {
     html = html.replace(loopRegex, (match, key, inner) => {
       const items = data[key]
       if (!Array.isArray(items)) return ''
-      return items.map((item, idx) => {
-        let row = inner
-        /* 替换循环内的变量，对值进行HTML转义防止XSS */
-        for (const [k, v] of Object.entries(item)) {
-          row = row.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), this._escapeHtml(v))
-        }
-        row = row.replace(/\{\{index\}\}/g, idx + 1)
-        return row
-      }).join('')
+      return items
+        .map((item, idx) => {
+          let row = inner
+          /* 替换循环内的变量，对值进行HTML转义防止XSS */
+          for (const [k, v] of Object.entries(item)) {
+            row = row.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), this._escapeHtml(v))
+          }
+          row = row.replace(/\{\{index\}\}/g, idx + 1)
+          return row
+        })
+        .join('')
     })
 
     /* 替换简单变量 {{variable}}，对值进行HTML转义防止XSS */
@@ -426,7 +428,9 @@ class PrintEngine {
       </html>
     `)
     printWindow.document.close()
-    setTimeout(() => { printWindow.print() }, 300)
+    setTimeout(() => {
+      printWindow.print()
+    }, 300)
   }
 
   /* 导出PDF（简化版，使用打印对话框） */
@@ -446,19 +450,60 @@ class PrintEngine {
       </html>
     `)
     printWindow.document.close()
-    setTimeout(() => { printWindow.print() }, 300)
+    setTimeout(() => {
+      printWindow.print()
+    }, 300)
   }
 
   /* 获取模板可用变量列表 */
   getVariablesByType(type) {
     const varMap = {
-      quotation: ['title', 'orderNo', 'date', 'companyName', 'customerName', 'totalAmount', 'notes', 'items[name,spec,quantity,unitPrice,amount]'],
+      quotation: [
+        'title',
+        'orderNo',
+        'date',
+        'companyName',
+        'customerName',
+        'totalAmount',
+        'notes',
+        'items[name,spec,quantity,unitPrice,amount]'
+      ],
       contract: ['title', 'contractNo', 'partyA', 'partyB', 'signDate', 'totalAmount', 'content', 'companyName'],
       outbound: ['orderNo', 'date', 'type', 'warehouse', 'notes', 'items[code,name,spec,quantity,unit,location]'],
-      delivery: ['orderNo', 'date', 'companyName', 'customerName', 'address', 'contact', 'items[name,spec,quantity,remark]'],
-      statement: ['companyName', 'customerName', 'periodStart', 'periodEnd', 'totalBalance', 'items[date,orderNo,summary,debit,credit,balance]'],
-      purchase: ['orderNo', 'date', 'companyName', 'supplierName', 'deliveryDate', 'totalAmount', 'items[name,spec,quantity,unitPrice,amount]'],
-      transfer: ['orderNo', 'type', 'fromWarehouse', 'toWarehouse', 'totalAmount', 'items[code,name,spec,quantity,unitPrice,amount]']
+      delivery: [
+        'orderNo',
+        'date',
+        'companyName',
+        'customerName',
+        'address',
+        'contact',
+        'items[name,spec,quantity,remark]'
+      ],
+      statement: [
+        'companyName',
+        'customerName',
+        'periodStart',
+        'periodEnd',
+        'totalBalance',
+        'items[date,orderNo,summary,debit,credit,balance]'
+      ],
+      purchase: [
+        'orderNo',
+        'date',
+        'companyName',
+        'supplierName',
+        'deliveryDate',
+        'totalAmount',
+        'items[name,spec,quantity,unitPrice,amount]'
+      ],
+      transfer: [
+        'orderNo',
+        'type',
+        'fromWarehouse',
+        'toWarehouse',
+        'totalAmount',
+        'items[code,name,spec,quantity,unitPrice,amount]'
+      ]
     }
     return varMap[type] || []
   }

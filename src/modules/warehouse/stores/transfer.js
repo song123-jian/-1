@@ -214,8 +214,26 @@ export const useTransferStore = defineStore('transfer', () => {
         toWarehouseName: '二号仓库',
         status: 'completed',
         items: [
-          { id: generateId('dbi'), materialCode: 'MT-001', materialName: '碳钢Q235', spec: '热轧板', unit: '吨', quantity: 20, unitPrice: 5200, amount: 104000 },
-          { id: generateId('dbi'), materialCode: 'MT-002', materialName: '碳钢Q345', spec: '中厚板', unit: '吨', quantity: 10, unitPrice: 5800, amount: 58000 }
+          {
+            id: generateId('dbi'),
+            materialCode: 'MT-001',
+            materialName: '碳钢Q235',
+            spec: '热轧板',
+            unit: '吨',
+            quantity: 20,
+            unitPrice: 5200,
+            amount: 104000
+          },
+          {
+            id: generateId('dbi'),
+            materialCode: 'MT-002',
+            materialName: '碳钢Q345',
+            spec: '中厚板',
+            unit: '吨',
+            quantity: 10,
+            unitPrice: 5800,
+            amount: 58000
+          }
         ],
         totalAmount: 162000,
         requester: '张三',
@@ -236,7 +254,16 @@ export const useTransferStore = defineStore('transfer', () => {
         toWarehouseName: '一号仓库',
         status: 'pending',
         items: [
-          { id: generateId('dbi'), materialCode: 'MT-003', materialName: '电阻', spec: '1/4W 10K', unit: '个', quantity: 1000, unitPrice: 0.5, amount: 500 }
+          {
+            id: generateId('dbi'),
+            materialCode: 'MT-003',
+            materialName: '电阻',
+            spec: '1/4W 10K',
+            unit: '个',
+            quantity: 1000,
+            unitPrice: 0.5,
+            amount: 500
+          }
         ],
         totalAmount: 500,
         requester: '李四',

@@ -1,19 +1,24 @@
 <template>
-  <div class="page-header" style="margin-bottom:var(--space-3)">
+  <div class="page-header" style="margin-bottom: var(--space-3)">
     <div></div>
     <div class="page-header-actions">
       <button class="btn btn-primary" @click="handleCreateBackup">
-        <Icon name="save" :size="14" /> 立即备份
+        <Icon name="save" :size="14" />
+        立即备份
       </button>
       <button class="btn btn-ghost" @click="handleClearCache">
-        <Icon name="delete" :size="14" /> 清除缓存
+        <Icon name="delete" :size="14" />
+        清除缓存
       </button>
     </div>
   </div>
 
   <div class="panel-card">
     <div class="panel-card-header">
-      <span class="panel-card-title"><Icon name="save" :size="14" /> 备份记录</span>
+      <span class="panel-card-title">
+        <Icon name="save" :size="14" />
+        备份记录
+      </span>
     </div>
     <div class="panel-card-body no-padding">
       <div class="table-container">
@@ -42,7 +47,13 @@
               </td>
               <td>
                 <button class="btn btn-ghost btn-sm" @click="handleRestoreBackup(bk)">恢复</button>
-                <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDeleteBackup(bk.id)">删除</button>
+                <button
+                  class="btn btn-ghost btn-sm"
+                  style="color: var(--color-danger)"
+                  @click="handleDeleteBackup(bk.id)"
+                >
+                  删除
+                </button>
               </td>
             </tr>
           </tbody>
@@ -52,6 +63,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'BackupRecords' }
+</script>
 <script setup>
 import { useSystemStore } from '@/modules/system/stores/system'
 

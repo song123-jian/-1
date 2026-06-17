@@ -5,7 +5,7 @@
         <span class="ds-trend-chart__title-dot"></span>
         {{ title }}
       </div>
-      <div class="ds-trend-chart__legend" v-if="datasets.length > 1">
+      <div v-if="datasets.length > 1" class="ds-trend-chart__legend">
         <span v-for="(ds, i) in datasets" :key="i" class="ds-trend-chart__legend-item">
           <span class="ds-trend-chart__legend-dot" :style="{ background: ds.borderColor || defaultColors[i] }"></span>
           {{ ds.label }}
@@ -18,6 +18,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'TrendChart' }
+</script>
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
@@ -230,8 +233,13 @@ onUnmounted(() => {
 }
 
 @keyframes dot-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .ds-trend-chart__legend {

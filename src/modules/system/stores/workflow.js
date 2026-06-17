@@ -298,7 +298,7 @@ export const useWorkflowStore = defineStore('workflow', () => {
       const { useDataCenterStore } = await import('@/stores/dataCenter.js')
       const dataCenter = useDataCenterStore()
       await dataCenter.update(businessType, businessId, { status: newStatus }, { skipApproval: true })
-      console.info(`[Workflow] 审批完成，已将 ${businessType} ${businessId} 状态推进为 ${newStatus}`)
+      console.debug(`[Workflow] 审批完成，已将 ${businessType} ${businessId} 状态推进为 ${newStatus}`)
     } catch (e) {
       console.warn(`[Workflow] 推进业务状态失败:`, e.message)
     }

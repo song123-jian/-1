@@ -3,41 +3,40 @@
  * @param {Object} customerStore - Pinia customer store 实例
  */
 export function useCustomerImport(customerStore) {
-
   // 表头别名映射（中文→英文字段名）
   const HEADER_ALIASES = {
-    '客户编号': 'customerNo',
-    '编号': 'customerNo',
-    '客户全称': 'fullName',
-    '全称': 'fullName',
-    '公司名称': 'fullName',
-    '名称': 'fullName',
-    '客户名称': 'fullName',
-    '联系人': 'contactName',
-    '姓名': 'contactName',
-    '联系姓名': 'contactName',
-    '部门': 'department',
-    '职位': 'position',
-    '职务': 'position',
-    '手机号码': 'phone',
-    '手机': 'phone',
-    '电话': 'phone',
-    '邮箱': 'email',
-    '电子邮件': 'email',
-    '等级': 'level',
-    '客户等级': 'level',
-    '决策权限': 'decisionAuthority',
-    '决策权': 'decisionAuthority',
-    '核心关注点': 'coreConcerns',
-    '关注点': 'coreConcerns',
-    '地区': 'region',
-    '区域': 'region',
-    '信用额度': 'creditLimit',
-    '授信额度': 'creditLimit',
-    '地址': 'address',
-    '详细地址': 'address',
-    '余额': 'balance',
-    '状态': 'status'
+    客户编号: 'customerNo',
+    编号: 'customerNo',
+    客户全称: 'fullName',
+    全称: 'fullName',
+    公司名称: 'fullName',
+    名称: 'fullName',
+    客户名称: 'fullName',
+    联系人: 'contactName',
+    姓名: 'contactName',
+    联系姓名: 'contactName',
+    部门: 'department',
+    职位: 'position',
+    职务: 'position',
+    手机号码: 'phone',
+    手机: 'phone',
+    电话: 'phone',
+    邮箱: 'email',
+    电子邮件: 'email',
+    等级: 'level',
+    客户等级: 'level',
+    决策权限: 'decisionAuthority',
+    决策权: 'decisionAuthority',
+    核心关注点: 'coreConcerns',
+    关注点: 'coreConcerns',
+    地区: 'region',
+    区域: 'region',
+    信用额度: 'creditLimit',
+    授信额度: 'creditLimit',
+    地址: 'address',
+    详细地址: 'address',
+    余额: 'balance',
+    状态: 'status'
   }
 
   /**
@@ -110,7 +109,7 @@ export function useCustomerImport(customerStore) {
    * 解析分隔符文本（CSV/TSV）
    */
   function parseDelimitedText(text, delimiter = ',') {
-    const lines = text.split(/\r?\n/).filter(l => l.trim())
+    const lines = text.split(/\r?\n/).filter((l) => l.trim())
     if (lines.length < 2) return []
     const headers = splitLine(lines[0], delimiter)
     const data = []
@@ -133,9 +132,9 @@ export function useCustomerImport(customerStore) {
     const doc = parser.parseFromString(text, 'text/xml')
     const rows = doc.querySelectorAll('row, item, record, customer')
     const data = []
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const obj = {}
-      row.querySelectorAll('*').forEach(child => {
+      row.querySelectorAll('*').forEach((child) => {
         obj[child.tagName] = child.textContent || ''
       })
       data.push(autoMapRow(obj))
@@ -153,7 +152,7 @@ export function useCustomerImport(customerStore) {
       const text = await readFileAsText(file)
       const parsed = JSON.parse(text)
       if (Array.isArray(parsed)) {
-        return parsed.map(row => autoMapRow(row))
+        return parsed.map((row) => autoMapRow(row))
       }
       return []
     }
@@ -182,7 +181,7 @@ export function useCustomerImport(customerStore) {
         const sheetName = workbook.SheetNames[0]
         const sheet = workbook.Sheets[sheetName]
         const jsonData = XLSX.utils.sheet_to_json(sheet)
-        return jsonData.map(row => autoMapRow(row))
+        return jsonData.map((row) => autoMapRow(row))
       } catch (e) {
         console.warn('[useCustomerImport] xlsx库加载失败，尝试CSV解析:', e)
         // 降级为CSV解析

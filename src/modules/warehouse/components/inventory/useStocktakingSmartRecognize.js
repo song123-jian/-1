@@ -23,7 +23,7 @@ export function useSmartRecognize(form) {
 
     const typeMatch = text.match(/(?:全盘|抽盘|循环盘点)/)
     if (typeMatch) {
-      const typeMap = { '全盘': 'full', '抽盘': 'partial', '循环盘点': 'cycle' }
+      const typeMap = { 全盘: 'full', 抽盘: 'partial', 循环盘点: 'cycle' }
       pushItem(makeItem('type', '盘点类型', typeMap[typeMatch[0]] || 'full', 85))
     }
 
@@ -38,7 +38,10 @@ export function useSmartRecognize(form) {
 
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
-      if (match) { pushItem(makeItem('executor', '盘点人', match[1], 70)); break }
+      if (match) {
+        pushItem(makeItem('executor', '盘点人', match[1], 70))
+        break
+      }
     }
 
     const notesMatch = text.match(/(?:备注|说明|要求)[:\s：]*(.{5,100})/)
@@ -55,5 +58,9 @@ export function useSmartRecognize(form) {
     return result
   }
 
-  return useSmartRecognizeBase(form, parseStocktakingInfo, '粘贴盘点信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...')
+  return useSmartRecognizeBase(
+    form,
+    parseStocktakingInfo,
+    '粘贴盘点信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+  )
 }

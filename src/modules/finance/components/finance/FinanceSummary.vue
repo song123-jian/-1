@@ -6,7 +6,9 @@
           <Icon name="trendUp" :size="16" />
           <span>应收总额</span>
         </div>
-        <div class="summary-card-value cell-mono" style="color:var(--color-success)">¥{{ formatMoney(receivableStore.totalAmount) }}</div>
+        <div class="summary-card-value cell-mono" style="color: var(--color-success)">
+          ¥{{ formatMoney(receivableStore.totalAmount) }}
+        </div>
       </div>
       <div class="summary-vs">
         <span class="vs-label">VS</span>
@@ -16,13 +18,18 @@
           <Icon name="arrowDown" :size="16" />
           <span>应付总额</span>
         </div>
-        <div class="summary-card-value cell-mono" style="color:var(--color-danger)">¥{{ formatMoney(payableStore.totalAmount) }}</div>
+        <div class="summary-card-value cell-mono" style="color: var(--color-danger)">
+          ¥{{ formatMoney(payableStore.totalAmount) }}
+        </div>
       </div>
     </div>
 
     <div class="summary-net">
       <div class="summary-net-label">净额 (应收 - 应付)</div>
-      <div class="summary-net-value cell-mono" :style="{ color: netAmount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }">
+      <div
+        class="summary-net-value cell-mono"
+        :style="{ color: netAmount >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }"
+      >
         {{ netAmount >= 0 ? '+' : '' }}¥{{ formatMoney(Math.abs(netAmount)) }}
       </div>
     </div>
@@ -30,17 +37,24 @@
     <div class="summary-monthly">
       <div class="summary-monthly-item">
         <div class="summary-monthly-label">本月收款</div>
-        <div class="summary-monthly-value cell-mono" style="color:var(--color-success)">¥{{ formatMoney(receivableStore.thisMonthReceipts) }}</div>
+        <div class="summary-monthly-value cell-mono" style="color: var(--color-success)">
+          ¥{{ formatMoney(receivableStore.thisMonthReceipts) }}
+        </div>
       </div>
       <div class="summary-monthly-divider"></div>
       <div class="summary-monthly-item">
         <div class="summary-monthly-label">本月付款</div>
-        <div class="summary-monthly-value cell-mono" style="color:var(--color-danger)">¥{{ formatMoney(payableStore.thisMonthPayments) }}</div>
+        <div class="summary-monthly-value cell-mono" style="color: var(--color-danger)">
+          ¥{{ formatMoney(payableStore.thisMonthPayments) }}
+        </div>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'FinanceSummary' }
+</script>
 <script setup>
 import { computed } from 'vue'
 import { useReceivableStore } from '@/modules/finance/stores/receivable'
@@ -147,7 +161,11 @@ function formatMoney(num) {
   background: var(--color-border);
 }
 @media (max-width: 640px) {
-  .summary-row { flex-direction: column; }
-  .summary-vs { display: none; }
+  .summary-row {
+    flex-direction: column;
+  }
+  .summary-vs {
+    display: none;
+  }
 }
 </style>

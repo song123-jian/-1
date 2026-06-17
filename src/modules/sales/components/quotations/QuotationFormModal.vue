@@ -7,25 +7,34 @@
           <button class="modal-close" @click="handleClose"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
-          <SmartRecognizePanel v-if="!isEditing"
-            v-model:showSmartRec="showSmartRec"
-            v-model:smartRecInput="smartRecInput"
-            :smartRecResult="smartRecResult"
+          <SmartRecognizePanel
+            v-if="!isEditing"
+            v-model:show-smart-rec="showSmartRec"
+            v-model:smart-rec-input="smartRecInput"
+            :smart-rec-result="smartRecResult"
             :placeholder="smartRecPlaceholder"
-            @runSmartRecognize="runSmartRecognize"
-            @applySmartRecognize="applySmartRecognize"
-            @handleSmartFileUpload="handleSmartFileUpload"
+            @run-smart-recognize="runSmartRecognize"
+            @apply-smart-recognize="applySmartRecognize"
+            @handle-smart-file-upload="handleSmartFileUpload"
           />
           <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
             <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
             <div v-for="w in warnings" :key="w.field" class="val-warning">{{ w.message }}</div>
           </div>
           <div class="form-section">
-            <h4 class="form-section-title"><Icon name="list" :size="14" /> 报价基本信息</h4>
+            <h4 class="form-section-title">
+              <Icon name="list" :size="14" />
+              报价基本信息
+            </h4>
             <div class="form-row form-row-3">
               <div class="form-group">
                 <label class="form-label">报价编号</label>
-                <input v-model="form.quoteNo" class="form-input" :readonly="isEditing" :style="isEditing ? 'opacity:0.7;cursor:not-allowed' : ''" />
+                <input
+                  v-model="form.quoteNo"
+                  class="form-input"
+                  :readonly="isEditing"
+                  :style="isEditing ? 'opacity:0.7;cursor:not-allowed' : ''"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">报价日期</label>
@@ -39,14 +48,17 @@
           </div>
 
           <div class="form-section">
-            <h4 class="form-section-title"><Icon name="building" :size="14" /> 客户信息</h4>
+            <h4 class="form-section-title">
+              <Icon name="building" :size="14" />
+              客户信息
+            </h4>
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">客户公司</label>
                 <DataSelect
+                  v-model="form.customerId"
                   module="customer"
                   variant="active"
-                  v-model="form.customerId"
                   value-field="id"
                   label-field="name"
                   placeholder="选择客户"
@@ -75,11 +87,14 @@
           </div>
 
           <div class="form-section">
-            <h4 class="form-section-title"><Icon name="building" :size="14" /> 我方信息</h4>
+            <h4 class="form-section-title">
+              <Icon name="building" :size="14" />
+              我方信息
+            </h4>
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">发件方</label>
-                <input v-model="form.senderCompany" class="form-input" readonly style="opacity:0.8" />
+                <input v-model="form.senderCompany" class="form-input" readonly style="opacity: 0.8" />
               </div>
               <div class="form-group">
                 <label class="form-label">业务对接人</label>
@@ -99,40 +114,55 @@
           </div>
 
           <div class="form-section">
-            <h4 class="form-section-title"><Icon name="package" :size="14" /> 产品报价明细</h4>
-            <div style="overflow-x:auto;margin-bottom:8px">
-              <table class="data-table items-table" style="min-width:700px">
+            <h4 class="form-section-title">
+              <Icon name="package" :size="14" />
+              产品报价明细
+            </h4>
+            <div style="overflow-x: auto; margin-bottom: 8px">
+              <table class="data-table items-table" style="min-width: 700px">
                 <thead>
                   <tr>
-                    <th style="width:40px">序号</th>
+                    <th style="width: 40px">序号</th>
                     <th>牌号/规格</th>
                     <th>材料标准</th>
-                    <th style="width:90px">数量(KG)</th>
-                    <th style="width:130px">含税单价(元/KG)</th>
-                    <th style="width:100px">小计(元)</th>
+                    <th style="width: 90px">数量(KG)</th>
+                    <th style="width: 130px">含税单价(元/KG)</th>
+                    <th style="width: 100px">小计(元)</th>
                     <th>备注(最小起订量等)</th>
-                    <th style="width:40px"></th>
+                    <th style="width: 40px"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(item, idx) in formItems" :key="idx">
-                    <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ idx + 1 }}</td>
+                  <tr v-for="(item, idx) in formItems" :key="item.id || idx">
+                    <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">{{ idx + 1 }}</td>
                     <td><input v-model="item.grade" class="form-input" placeholder="牌号" /></td>
                     <td><input v-model="item.standard" class="form-input" placeholder="标准" /></td>
                     <td><input v-model.number="item.qty" type="number" class="form-input" min="0" step="0.01" /></td>
                     <td><input v-model.number="item.price" type="number" class="form-input" min="0" step="0.01" /></td>
-                    <td class="mono" style="text-align:right;font-weight:600">{{ formatNumber(item.qty * item.price) }}</td>
+                    <td class="mono" style="text-align: right; font-weight: 600">
+                      {{ formatNumber(item.qty * item.price) }}
+                    </td>
                     <td><input v-model="item.remark" class="form-input" placeholder="备注" /></td>
-                    <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word"><button class="action-btn danger" @click="removeItem(idx)" :disabled="formItems.length <= 1"><Icon name="close" :size="14" /></button></td>
+                    <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                      <button class="action-btn danger" :disabled="formItems.length <= 1" @click="removeItem(idx)">
+                        <Icon name="close" :size="14" />
+                      </button>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <button class="btn btn-secondary btn-sm" @click="addItem" style="margin-bottom:12px">添加产品行</button>
+            <button class="btn btn-secondary btn-sm" style="margin-bottom: 12px" @click="addItem">添加产品行</button>
             <div class="form-row form-row-4">
               <div class="form-group">
                 <label class="form-label">不含税金额</label>
-                <input v-model.number="form.subtotal" type="number" step="0.01" class="form-input" @input="recalcTotal" />
+                <input
+                  v-model.number="form.subtotal"
+                  type="number"
+                  step="0.01"
+                  class="form-input"
+                  @input="recalcTotal"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">税率(%)</label>
@@ -140,7 +170,13 @@
               </div>
               <div class="form-group">
                 <label class="form-label">含税合计</label>
-                <input :value="calculatedTotal.toFixed(2)" type="text" class="form-input" readonly style="opacity:0.8;font-weight:700;color:var(--color-accent)" />
+                <input
+                  :value="calculatedTotal.toFixed(2)"
+                  type="text"
+                  class="form-input"
+                  readonly
+                  style="opacity: 0.8; font-weight: 700; color: var(--color-accent)"
+                />
               </div>
               <div class="form-group">
                 <label class="form-label">成本基准</label>
@@ -150,7 +186,10 @@
           </div>
 
           <div class="form-section">
-            <h4 class="form-section-title"><Icon name="edit" :size="14" /> 报价说明条款</h4>
+            <h4 class="form-section-title">
+              <Icon name="edit" :size="14" />
+              报价说明条款
+            </h4>
             <div class="form-group">
               <label class="form-label">价格条款</label>
               <input v-model="form.termPrice" class="form-input" />
@@ -183,8 +222,11 @@
               <label class="form-label">法律效力声明</label>
               <textarea v-model="form.termLegal" class="form-textarea" rows="2"></textarea>
             </div>
-            <div style="margin-bottom:12px" v-if="!isEditing">
-              <button class="btn btn-secondary btn-sm" type="button" @click="saveAsTemplate"><Icon name="save" :size="14" /> 另存为模板</button>
+            <div v-if="!isEditing" style="margin-bottom: 12px">
+              <button class="btn btn-secondary btn-sm" type="button" @click="saveAsTemplate">
+                <Icon name="save" :size="14" />
+                另存为模板
+              </button>
             </div>
             <div class="form-group">
               <label class="form-label">备注</label>
@@ -194,8 +236,12 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary" @click="handleClose">取消</button>
-          <label class="save-template-check" style="display:flex;align-items:center;gap:6px;margin-left:auto;cursor:pointer;font-size:13px;">
-            <input type="checkbox" v-model="saveAsTemplateFlag"> 另存为模板
+          <label
+            class="save-template-check"
+            style="display: flex; align-items: center; gap: 6px; margin-left: auto; cursor: pointer; font-size: 13px"
+          >
+            <input v-model="saveAsTemplateFlag" type="checkbox" />
+            另存为模板
           </label>
           <button class="btn btn-primary" @click="handleSave">保存</button>
         </div>
@@ -204,6 +250,9 @@
   </Teleport>
 </template>
 
+<script>
+export default { name: 'QuotationFormModal' }
+</script>
 <script setup>
 import { ref, computed, watch, reactive } from 'vue'
 import { useQuotationStore } from '@/modules/sales/stores/quotation'
@@ -235,9 +284,7 @@ const { warnings, errors, hasErrors, hasWarnings, validate, clearWarnings } = us
     { key: 'customerFullName', label: '客户公司全称' },
     { key: 'custContact', label: '联系人' }
   ],
-  amountCheck: [
-    { field: 'taxRate', label: '税率', max: 100 }
-  ]
+  amountCheck: [{ field: 'taxRate', label: '税率', max: 100 }]
 })
 
 const draftData = reactive({})
@@ -247,24 +294,36 @@ const { restoreDraft, clearDraft, hasDraft } = useFormDraft('quotation-form', dr
     if (draft.data) {
       Object.assign(form.value, draft.data)
       if (draft.data.items) {
-        formItems.value = draft.data.items.map(item => ({ ...item }))
+        formItems.value = draft.data.items.map((item) => ({ ...item }))
       }
     }
   }
 })
 
-watch([form, formItems], ([f, items]) => {
-  if (isEditing.value) return
-  Object.assign(draftData, { ...f, items: items ? [...items] : [] })
-}, { deep: true })
+watch(
+  [form, formItems],
+  ([f, items]) => {
+    if (isEditing.value) return
+    Object.assign(draftData, { ...f, items: items ? [...items] : [] })
+  },
+  { deep: true }
+)
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form.value)
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useSmartRecognize(form.value)
 
 function applySmartRecognize() {
   if (!smartRecResult.value) return
   // 填入表头字段
   if (smartRecResult.value.items && smartRecResult.value.items.length > 0) {
-    smartRecResult.value.items.forEach(item => {
+    smartRecResult.value.items.forEach((item) => {
       if (item.value && Object.hasOwn(form.value, item.key)) {
         form.value[item.key] = item.value
       }
@@ -272,7 +331,7 @@ function applySmartRecognize() {
   }
   // 填入表格明细行
   if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
-    smartRecResult.value.tableRows.forEach(row => {
+    smartRecResult.value.tableRows.forEach((row) => {
       formItems.value.push({
         grade: row.grade || '',
         standard: row.standard || '',
@@ -294,9 +353,8 @@ const calculatedProfitMargin = computed(() => {
 
 function generateQuoteNo() {
   const now = new Date()
-  const prefix = 'QT' + now.getFullYear() +
-    String(now.getMonth() + 1).padStart(2, '0') +
-    String(now.getDate()).padStart(2, '0')
+  const prefix =
+    'QT' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
   let maxSeq = 0
   for (const q of quotationStore.quotations) {
     if (q.quoteNo && q.quoteNo.startsWith(prefix)) {
@@ -312,25 +370,38 @@ function resetForm() {
   const expiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   form.value = {
     quoteNo: generateQuoteNo(),
-    customerId: '', customerName: '', customerFullName: '',
-    custContact: '', custPhone: '', custEmail: '',
-    senderContact: '', senderCompany: '苏州冠久新材料科技有限公司', senderPhone: '', senderEmail: '',
-    date: today, expiryDate: expiry,
-    subtotal: 0, taxRate: 13, costBasis: 0, notes: '',
+    customerId: '',
+    customerName: '',
+    customerFullName: '',
+    custContact: '',
+    custPhone: '',
+    custEmail: '',
+    senderContact: '',
+    senderCompany: '苏州冠久新材料科技有限公司',
+    senderPhone: '',
+    senderEmail: '',
+    date: today,
+    expiryDate: expiry,
+    subtotal: 0,
+    taxRate: 13,
+    costBasis: 0,
+    notes: '',
     termPrice: '本报价所有金额均为人民币含税价格（含13%增值税），已包含标准包装费及国内运输费用。',
     termPayment: '默认采用"款到发货"结算方式，具体付款条件可根据订单金额另行友好协商确定。',
     termDelivery: '在收到贵司全额货款后5个工作日内完成生产并发货。',
     termDeliveryAddr: '',
     termQuality: '产品质量严格符合国家相关行业标准及双方确认的技术要求，随货提供质检报告。',
-    termPriceAdj: '本报价基于当前市场原材料价格制定，若遇主要原材料价格波动超过±5%，我司有权对未确认订单价格进行相应调整，正式下单前请以双方最新书面确认为准。',
-    termLegal: '本报价函经双方授权代表签字并加盖公司公章后即构成具有法律约束力的合同要约，与正式采购合同具有同等法律效力。'
+    termPriceAdj:
+      '本报价基于当前市场原材料价格制定，若遇主要原材料价格波动超过±5%，我司有权对未确认订单价格进行相应调整，正式下单前请以双方最新书面确认为准。',
+    termLegal:
+      '本报价函经双方授权代表签字并加盖公司公章后即构成具有法律约束力的合同要约，与正式采购合同具有同等法律效力。'
   }
   formItems.value = [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
   resetSmartRec()
 }
 
 function onCustomerChange(event) {
-  const customer = customerStore.customers.find(c => c.id === event?.value)
+  const customer = customerStore.customers.find((c) => c.id === event?.value)
   if (customer) {
     if (!form.value.customerName) form.value.customerName = customer.fullName || customer.name || ''
     if (!form.value.customerFullName) form.value.customerFullName = customer.fullName || customer.name || ''
@@ -418,74 +489,263 @@ function handleSave() {
   emit('save', { data, isEditing: isEditing.value, editingId: props.editingQuotation?.id })
 }
 
-watch(() => props.showModal, (val) => {
-  if (val) {
-    if (props.editingQuotation) {
-      const q = props.editingQuotation
-      form.value = {
-        quoteNo: q.quoteNo || '',
-        customerId: q.customerId || '', customerName: q.customerName || '', customerFullName: q.customerFullName || '',
-        custContact: q.custContact || '', custPhone: q.custPhone || '', custEmail: q.custEmail || '',
-        senderContact: q.senderContact || '', senderCompany: q.senderCompany || '苏州冠久新材料科技有限公司', senderPhone: q.senderPhone || '', senderEmail: q.senderEmail || '',
-        date: q.date || '', expiryDate: q.expiryDate || '',
-        subtotal: q.subtotal || 0, taxRate: q.taxRate ?? 13, costBasis: q.costBasis || 0, notes: q.notes || '',
-        termPrice: q.termPrice || '', termPayment: q.termPayment || '', termDelivery: q.termDelivery || '',
-        termDeliveryAddr: q.termDeliveryAddr || '', termQuality: q.termQuality || '', termPriceAdj: q.termPriceAdj || '', termLegal: q.termLegal || ''
-      }
-      try {
-        const parsed = JSON.parse(q.items || '[]')
-        formItems.value = parsed.length > 0 ? parsed : [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
-      } catch {
-        formItems.value = [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
-      }
-    } else {
-      resetForm()
-      if (hasDraft()) {
-        restoreDraft()
+watch(
+  () => props.showModal,
+  (val) => {
+    if (val) {
+      if (props.editingQuotation) {
+        const q = props.editingQuotation
+        form.value = {
+          quoteNo: q.quoteNo || '',
+          customerId: q.customerId || '',
+          customerName: q.customerName || '',
+          customerFullName: q.customerFullName || '',
+          custContact: q.custContact || '',
+          custPhone: q.custPhone || '',
+          custEmail: q.custEmail || '',
+          senderContact: q.senderContact || '',
+          senderCompany: q.senderCompany || '苏州冠久新材料科技有限公司',
+          senderPhone: q.senderPhone || '',
+          senderEmail: q.senderEmail || '',
+          date: q.date || '',
+          expiryDate: q.expiryDate || '',
+          subtotal: q.subtotal || 0,
+          taxRate: q.taxRate ?? 13,
+          costBasis: q.costBasis || 0,
+          notes: q.notes || '',
+          termPrice: q.termPrice || '',
+          termPayment: q.termPayment || '',
+          termDelivery: q.termDelivery || '',
+          termDeliveryAddr: q.termDeliveryAddr || '',
+          termQuality: q.termQuality || '',
+          termPriceAdj: q.termPriceAdj || '',
+          termLegal: q.termLegal || ''
+        }
+        try {
+          const parsed = JSON.parse(q.items || '[]')
+          formItems.value = parsed.length > 0 ? parsed : [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
+        } catch {
+          formItems.value = [{ grade: '', standard: '', qty: 0, price: 0, remark: '' }]
+        }
+      } else {
+        resetForm()
+        if (hasDraft()) {
+          restoreDraft()
+        }
       }
     }
   }
-})
+)
 </script>
 
 <style scoped>
-.modal-overlay { align-items: flex-start; padding: var(--space-5); overflow-y: auto; }
-.modal-dialog { background: var(--color-surface); border-radius: var(--radius-lg); width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-xl); }
-.modal-lg { max-width: 900px; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); position: sticky; top: 0; background: var(--color-surface); z-index: 1; }
-.modal-header h3 { margin: 0; font-size: var(--font-size-xl); }
-.modal-close { width: 28px; height: 28px; border: none; background: transparent; font-size: 16px; cursor: pointer; border-radius: 4px; color: var(--color-text-secondary); }
-.modal-close:hover { background: var(--color-bg-tertiary); }
-.modal-body { padding: var(--space-5); }
-.modal-footer { display: flex; justify-content: flex-end; gap: var(--space-2); padding: var(--space-3) var(--space-5); border-top: 1px solid var(--color-border); }
-.form-section { margin-bottom: var(--space-5); }
-.form-section-title { font-size: var(--font-size-base); font-weight: 600; color: var(--color-accent); margin: 0 0 var(--space-3); padding-bottom: var(--space-2); border-bottom: 1px solid var(--color-border); }
-.form-row { display: grid; gap: var(--space-3); }
-.form-row-2 { grid-template-columns: 1fr 1fr; }
-.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
-.form-row-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
-.form-group { display: flex; flex-direction: column; gap: var(--space-1); }
-.form-label { font-size: var(--font-size-sm); font-weight: 600; color: var(--color-text-secondary); }
-.form-input, .form-select, .form-textarea { padding: var(--space-2) var(--space-2); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); background: var(--color-surface); color: var(--color-text-primary); }
-.form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-subtle, rgba(59,130,246,0.1)); }
-.form-validation-panel { margin-bottom: var(--space-3); padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-surface); border: 1px solid var(--color-border); }
-.val-error { color: var(--color-danger); background: var(--color-danger-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
-.val-warning { color: var(--color-warning); background: var(--color-warning-subtle); padding: var(--space-1) var(--space-2); border-radius: var(--radius-sm); margin-bottom: var(--space-1); font-size: var(--font-size-sm); }
-.form-textarea { resize: vertical; }
-.items-table { font-size: var(--font-size-sm); }
-.items-table input { padding: var(--space-1) var(--space-2); font-size: var(--font-size-sm); }
-.mono { font-family: var(--font-mono); }
-.btn { padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); font-size: var(--font-size-sm); cursor: pointer; transition: all 0.15s; background: var(--color-surface); color: var(--color-text-primary); }
-.btn:hover { background: var(--color-bg-secondary); }
-.btn-primary { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
-.btn-primary:hover { opacity: 0.9; }
-.btn-secondary { background: var(--color-bg-secondary); color: var(--color-text-primary); border-color: var(--color-border); }
-.btn-sm { padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); }
-.action-btn { padding: var(--space-1) var(--space-2); font-size: var(--font-size-xs); border: none; background: transparent; cursor: pointer; border-radius: 4px; transition: background 0.15s; }
-.action-btn:hover { background: var(--color-bg-tertiary); }
-.action-btn.danger { color: var(--color-danger); }
-.save-template-check { color: var(--color-text-secondary); }
-.data-table { width: 100%; border-collapse: collapse; font-size: var(--font-size-sm); }
-.data-table th { padding: var(--space-2) var(--space-3); text-align: left; font-weight: 600; color: var(--color-text-secondary); border-bottom: 2px solid var(--color-border); font-size: var(--font-size-sm); white-space: nowrap; }
-.data-table td {padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--color-border); overflow-wrap: break-word; word-wrap: break-word}
+.modal-overlay {
+  align-items: flex-start;
+  padding: var(--space-5);
+  overflow-y: auto;
+}
+.modal-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-xl);
+}
+.modal-lg {
+  max-width: 900px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: var(--z-base);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+}
+.modal-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--color-text-secondary);
+}
+.modal-close:hover {
+  background: var(--color-bg-tertiary);
+}
+.modal-body {
+  padding: var(--space-5);
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+.form-section {
+  margin-bottom: var(--space-5);
+}
+.form-section-title {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-accent);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+}
+.form-row {
+  display: grid;
+  gap: var(--space-3);
+}
+.form-row-2 {
+  grid-template-columns: 1fr 1fr;
+}
+.form-row-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.form-row-4 {
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.form-label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.form-input,
+.form-select,
+.form-textarea {
+  padding: var(--space-2) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px var(--color-accent-subtle, rgba(59, 130, 246, 0.1));
+}
+.form-validation-panel {
+  margin-bottom: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+.val-error {
+  color: var(--color-danger);
+  background: var(--color-danger-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.val-warning {
+  color: var(--color-warning);
+  background: var(--color-warning-subtle);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+.form-textarea {
+  resize: vertical;
+}
+.items-table {
+  font-size: var(--font-size-sm);
+}
+.items-table input {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+}
+.mono {
+  font-family: var(--font-mono);
+}
+.btn {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+.btn:hover {
+  background: var(--color-bg-secondary);
+}
+.btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+  border-color: var(--color-accent);
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-secondary {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+.action-btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.action-btn:hover {
+  background: var(--color-bg-tertiary);
+}
+.action-btn.danger {
+  color: var(--color-danger);
+}
+.save-template-check {
+  color: var(--color-text-secondary);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.data-table th {
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-border);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+.data-table td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 </style>

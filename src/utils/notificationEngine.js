@@ -5,11 +5,7 @@
 
 import eventBus from '@/utils/eventBus'
 import { useNotificationStore } from '@/stores/notification'
-import {
-  NotificationType,
-  NotificationCategory,
-  NotificationLevel
-} from '@/stores/notification'
+import { NotificationType, NotificationCategory, NotificationLevel } from '@/stores/notification'
 
 /* 通知模板 */
 const NOTIFICATION_TEMPLATES = {
@@ -19,7 +15,8 @@ const NOTIFICATION_TEMPLATES = {
     category: NotificationCategory.INVENTORY,
     level: NotificationLevel.WARNING,
     titleTemplate: '库存预警',
-    contentTemplate: (data) => `物料「${data.materialName || data.name || '未知'}」库存低于安全库存，当前库存 ${data.currentStock || 0}，安全库存 ${data.safeStock || 0}`,
+    contentTemplate: (data) =>
+      `物料「${data.materialName || data.name || '未知'}」库存低于安全库存，当前库存 ${data.currentStock || 0}，安全库存 ${data.safeStock || 0}`,
     actionUrl: '/inventory'
   },
   /* 库存耗尽 */
@@ -37,7 +34,8 @@ const NOTIFICATION_TEMPLATES = {
     category: NotificationCategory.CONTRACT,
     level: NotificationLevel.WARNING,
     titleTemplate: '合同即将到期',
-    contentTemplate: (data) => `合同「${data.contractName || data.name || data.contractNo || '未知'}」将于${data.daysRemaining || 0}天后到期，请及时续签`,
+    contentTemplate: (data) =>
+      `合同「${data.contractName || data.name || data.contractNo || '未知'}」将于${data.daysRemaining || 0}天后到期，请及时续签`,
     actionUrl: '/contracts'
   },
   /* 合同待审批 */
@@ -55,7 +53,8 @@ const NOTIFICATION_TEMPLATES = {
     category: NotificationCategory.APPROVAL,
     level: NotificationLevel.WARNING,
     titleTemplate: '审批待办',
-    contentTemplate: (data) => `您有一条${data.templateName || '审批'}待处理：${data.businessNo || data.businessId || '未知'}`,
+    contentTemplate: (data) =>
+      `您有一条${data.templateName || '审批'}待处理：${data.businessNo || data.businessId || '未知'}`,
     actionUrl: '/workflow'
   },
   /* 逾期通知 */
@@ -64,7 +63,8 @@ const NOTIFICATION_TEMPLATES = {
     category: NotificationCategory.FINANCE,
     level: NotificationLevel.ERROR,
     titleTemplate: '逾期提醒',
-    contentTemplate: (data) => `客户「${data.customerName || '未知'}」有 ${data.overdueAmount || 0} 元已逾期${data.overdueDays || 0}天，请及时催收`,
+    contentTemplate: (data) =>
+      `客户「${data.customerName || '未知'}」有 ${data.overdueAmount || 0} 元已逾期${data.overdueDays || 0}天，请及时催收`,
     actionUrl: '/collections'
   }
 }
@@ -100,7 +100,7 @@ class NotificationEngine {
     if (this._initialized) return
 
     /* 注册所有事件监听 */
-    Object.keys(NOTIFICATION_TEMPLATES).forEach(event => {
+    Object.keys(NOTIFICATION_TEMPLATES).forEach((event) => {
       const unsub = eventBus.on(event, (data) => {
         this._handleEvent(event, data)
       })
@@ -108,14 +108,14 @@ class NotificationEngine {
     })
 
     this._initialized = true
-    console.info('[NotificationEngine] 通知引擎已初始化')
+    console.debug('[NotificationEngine] 通知引擎已初始化')
   }
 
   /**
    * 销毁通知引擎
    */
   destroy() {
-    this._unsubscribers.forEach(unsub => {
+    this._unsubscribers.forEach((unsub) => {
       if (typeof unsub === 'function') unsub()
     })
     this._unsubscribers = []

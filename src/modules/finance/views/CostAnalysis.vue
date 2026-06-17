@@ -6,268 +6,383 @@
       <div class="access-denied-desc">您没有成本核算的查看权限，请联系管理员开通。</div>
     </div>
     <template v-else>
-    <div class="page-header">
-      <div>
-        <h2 class="page-header-title">成本核算</h2>
-        <p class="page-header-subtitle">实际成本 vs 标准成本对比分析，颜色编码差异指示</p>
-      </div>
-      <div class="page-header-actions">
-        <div class="column-config-wrapper">
-          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
-          <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
-            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
-              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
-            </label>
-          </div>
+      <div class="page-header">
+        <div>
+          <h2 class="page-header-title">成本核算</h2>
+          <p class="page-header-subtitle">实际成本 vs 标准成本对比分析，颜色编码差异指示</p>
         </div>
-        <button v-if="canExport" class="btn btn-primary btn-sm" @click="exportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
-        <span v-if="exportError" class="export-error-msg">{{ exportError }}</span>
-      </div>
-    </div>
-
-    <div class="collapsible-stats">
-      <div class="collapsible-stats-header" @click="showCostStatsExpanded = !showCostStatsExpanded">
-        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 统计与概览</span>
-        <span class="collapsible-stats-toggle" :class="{ expanded: showCostStatsExpanded }">▼</span>
-      </div>
-      <div v-show="showCostStatsExpanded" class="collapsible-stats-body">
-
-    <div class="stats-row stats-grid-4">
-      <div class="stat-card" style="animation-delay:0ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">实际总成本</span>
-          <Icon name="wallet" :size="16" class="stat-card-icon" />
-        </div>
-        <div class="stat-card-value">¥{{ formatMoney(costStore.totalActual) }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay:80ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">标准总成本</span>
-          <Icon name="target" :size="16" class="stat-card-icon" />
-        </div>
-        <div class="stat-card-value">¥{{ formatMoney(costStore.totalStandard) }}</div>
-      </div>
-      <div class="stat-card" style="animation-delay:160ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">成本差异金额</span>
-          <span class="pulse-dot" :class="costStore.totalVariance > 0 ? 'pulse-danger' : costStore.totalVariance < 0 ? 'pulse-success' : 'pulse-neutral'"></span>
-        </div>
-        <div class="stat-card-value" :style="{ color: costStore.totalVariance > 0 ? 'var(--color-danger)' : costStore.totalVariance < 0 ? 'var(--color-success)' : '' }">
-          {{ costStore.totalVariance >= 0 ? '+¥' : '-¥' }}{{ formatMoney(Math.abs(costStore.totalVariance)) }}
-        </div>
-      </div>
-      <div class="stat-card" style="animation-delay:240ms">
-        <div class="stat-card-header">
-          <span class="stat-card-label">差异率</span>
-          <span class="pulse-dot" :class="costStore.varianceRate > 0 ? 'pulse-danger' : costStore.varianceRate < 0 ? 'pulse-success' : 'pulse-neutral'"></span>
-        </div>
-        <div class="stat-card-value" :style="{ color: costStore.varianceRate > 0 ? 'var(--color-danger)' : costStore.varianceRate < 0 ? 'var(--color-success)' : '' }">
-          {{ costStore.varianceRate >= 0 ? '+' : '' }}{{ costStore.varianceRate.toFixed(2) }}%
-        </div>
-      </div>
-    </div>
-
-    <div class="overview-row">
-      <div class="overview-card">
-        <div class="overview-title">成本健康度</div>
-        <div class="overview-content">
-          <svg class="health-ring" viewBox="0 0 60 60">
-            <circle class="health-ring-bg" cx="30" cy="30" r="26" />
-            <circle class="health-ring-fill" cx="30" cy="30" r="26" :stroke-dasharray="healthRingDash" :stroke="healthRingColor" />
-          </svg>
-          <div class="health-text">
-            <div class="health-percent" :style="{ color: healthRingColor }">{{ healthPercent }}%</div>
-            <div class="health-label">{{ healthLabel }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="overview-card">
-        <div class="overview-title">成本状态分布</div>
-        <div class="overview-content">
-          <div class="status-stack">
-            <div class="status-stack-bar">
-              <div class="status-seg status-over" :style="{ width: statusPct.over + '%' }"></div>
-              <div class="status-seg status-under" :style="{ width: statusPct.under + '%' }"></div>
-              <div class="status-seg status-normal" :style="{ width: statusPct.normal + '%' }"></div>
-            </div>
-            <div class="status-legend">
-              <span><span class="legend-dot" style="background:var(--color-danger)"></span>超预算 {{ statusPct.over }}%</span>
-              <span><span class="legend-dot" style="background:var(--color-success)"></span>低于预算 {{ statusPct.under }}%</span>
-              <span><span class="legend-dot" style="background:var(--color-warning)"></span>正常 {{ statusPct.normal }}%</span>
+        <div class="page-header-actions">
+          <div class="column-config-wrapper">
+            <button class="btn btn-outline" @click="toggleColumnConfig">
+              <Icon name="setting" :size="14" />
+              列
+            </button>
+            <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
+              <label
+                v-for="col in columnDefs.filter((c) => c.hideable !== false)"
+                :key="col.key"
+                class="column-config-item"
+              >
+                <input v-model="columnVisible[col.key]" type="checkbox" />
+                {{ col.label }}
+              </label>
             </div>
           </div>
+          <button v-if="canExport" class="btn btn-primary btn-sm" @click="exportCSV">
+            <Icon name="upload" :size="14" />
+            导出CSV
+          </button>
+          <span v-if="exportError" class="export-error-msg">{{ exportError }}</span>
         </div>
       </div>
-      <div class="overview-card">
-        <div class="overview-title">供应商成本 TOP5</div>
-        <div class="overview-content">
-          <div class="top5-list">
-            <div v-for="(s, idx) in top5Suppliers" :key="s.supplierName" class="top5-item">
-              <span class="top5-rank">{{ idx + 1 }}</span>
-              <span class="top5-name" :title="s.supplierName">{{ s.supplierName }}</span>
-              <div class="top5-bar-wrap">
-                <div class="top5-bar" :style="{ width: s.pct + '%' }"></div>
+
+      <div class="collapsible-stats">
+        <div class="collapsible-stats-header" @click="showCostStatsExpanded = !showCostStatsExpanded">
+          <span class="collapsible-stats-title">
+            <Icon name="chart" :size="14" />
+            统计与概览
+          </span>
+          <span class="collapsible-stats-toggle" :class="{ expanded: showCostStatsExpanded }">▼</span>
+        </div>
+        <div v-show="showCostStatsExpanded" class="collapsible-stats-body">
+          <div class="stats-row stats-grid-4">
+            <div class="stat-card" style="animation-delay: 0ms">
+              <div class="stat-card-header">
+                <span class="stat-card-label">实际总成本</span>
+                <Icon name="wallet" :size="16" class="stat-card-icon" />
               </div>
-              <span class="top5-value">¥{{ formatMoney(s.actualCost) }}</span>
+              <div class="stat-card-value">¥{{ formatMoney(costStore.totalActual) }}</div>
+            </div>
+            <div class="stat-card" style="animation-delay: 80ms">
+              <div class="stat-card-header">
+                <span class="stat-card-label">标准总成本</span>
+                <Icon name="target" :size="16" class="stat-card-icon" />
+              </div>
+              <div class="stat-card-value">¥{{ formatMoney(costStore.totalStandard) }}</div>
+            </div>
+            <div class="stat-card" style="animation-delay: 160ms">
+              <div class="stat-card-header">
+                <span class="stat-card-label">成本差异金额</span>
+                <span
+                  class="pulse-dot"
+                  :class="
+                    costStore.totalVariance > 0
+                      ? 'pulse-danger'
+                      : costStore.totalVariance < 0
+                        ? 'pulse-success'
+                        : 'pulse-neutral'
+                  "
+                ></span>
+              </div>
+              <div
+                class="stat-card-value"
+                :style="{
+                  color:
+                    costStore.totalVariance > 0
+                      ? 'var(--color-danger)'
+                      : costStore.totalVariance < 0
+                        ? 'var(--color-success)'
+                        : ''
+                }"
+              >
+                {{ costStore.totalVariance >= 0 ? '+¥' : '-¥' }}{{ formatMoney(Math.abs(costStore.totalVariance)) }}
+              </div>
+            </div>
+            <div class="stat-card" style="animation-delay: 240ms">
+              <div class="stat-card-header">
+                <span class="stat-card-label">差异率</span>
+                <span
+                  class="pulse-dot"
+                  :class="
+                    costStore.varianceRate > 0
+                      ? 'pulse-danger'
+                      : costStore.varianceRate < 0
+                        ? 'pulse-success'
+                        : 'pulse-neutral'
+                  "
+                ></span>
+              </div>
+              <div
+                class="stat-card-value"
+                :style="{
+                  color:
+                    costStore.varianceRate > 0
+                      ? 'var(--color-danger)'
+                      : costStore.varianceRate < 0
+                        ? 'var(--color-success)'
+                        : ''
+                }"
+              >
+                {{ costStore.varianceRate >= 0 ? '+' : '' }}{{ costStore.varianceRate.toFixed(2) }}%
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- 成本瀑布图 -->
-    <div class="waterfall-chart">
-      <div class="waterfall-chart-title">成本瀑布图 · 标准成本 → 实际成本</div>
-      <div class="waterfall-chart-body">
-        <div class="waterfall-bar-group">
-          <div class="waterfall-bar waterfall-bar-base" :style="{ height: waterfallBaseHeight + '%' }">
-            <span class="waterfall-bar-label">标准成本</span>
-            <span class="waterfall-bar-value">¥{{ formatMoney(costStore.totalStandard) }}</span>
-          </div>
-        </div>
-        <div class="waterfall-bar-group" v-for="(item, idx) in waterfallItems" :key="idx">
-          <div class="waterfall-bar-connector" :style="{ bottom: item.bottom + '%' }"></div>
-          <div class="waterfall-bar" :class="item.value >= 0 ? 'waterfall-bar-increase' : 'waterfall-bar-decrease'" :style="{ bottom: item.bottom + '%', height: item.height + '%' }">
-            <span class="waterfall-bar-label">{{ item.label }}</span>
-            <span class="waterfall-bar-value">{{ item.value >= 0 ? '+' : '' }}¥{{ formatMoney(item.value) }}</span>
-          </div>
-        </div>
-        <div class="waterfall-bar-group">
-          <div class="waterfall-bar waterfall-bar-total" :style="{ height: waterfallTotalHeight + '%' }">
-            <span class="waterfall-bar-label">实际成本</span>
-            <span class="waterfall-bar-value">¥{{ formatMoney(costStore.totalActual) }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-      </div>
-    </div>
-
-    <div class="filter-bar" style="margin-bottom:var(--space-4)">
-      <select class="form-select" v-model="periodFilter" style="width:auto;min-width:100px">
-        <option value="all">全部</option>
-        <option value="month">本月</option>
-        <option value="quarter">本季</option>
-        <option value="year">本年</option>
-      </select>
-      <select class="form-select" v-model="supplierFilter" style="width:auto;min-width:140px">
-        <option value="all">全部供应商</option>
-        <option v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.shortName || s.name }}</option>
-      </select>
-      <button class="btn btn-secondary btn-sm" @click="resetFilters"><Icon name="refresh" :size="14" /> 刷新</button>
-    </div>
-
-    <div class="panel-card">
-      <div class="panel-card-body no-padding">
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th style="width:50px;text-align:center">序号</th>
-                <th v-if="columnVisible.purchaseNo">采购单号</th>
-                <th v-if="columnVisible.supplier">供应商</th>
-                <th v-if="columnVisible.date">日期</th>
-                <th v-if="columnVisible.material">物料</th>
-                <th v-if="columnVisible.quantity">数量</th>
-                <th v-if="columnVisible.actualCost">实际成本</th>
-                <th v-if="columnVisible.standardCost">标准成本</th>
-                <th v-if="columnVisible.variance">差异金额</th>
-                <th v-if="columnVisible.varianceRate">差异率</th>
-                <th v-if="columnVisible.status">状态</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-if="filteredRecords.length === 0">
-                <td colspan="11" class="empty-state">
-                  <div class="empty-state-circle"><Icon name="empty" :size="32" /></div>
-                  <div class="empty-state-text">暂无成本数据</div>
-                </td>
-              </tr>
-              <tr v-for="(r, idx) in filteredRecords" :key="r.id"
-                :class="{ 'row-over-budget': r.variance > 0, 'row-under-budget': r.variance < 0, 'row-slide-in': true }"
-                :style="{ animationDelay: (idx * 20) + 'ms' }">
-                <td style="width:50px;text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ idx + 1 }}</td>
-                <td v-if="columnVisible.purchaseNo">{{ r.poNo || '-' }}</td>
-                <td v-if="columnVisible.supplier">{{ r.supplierName || '-' }}</td>
-                <td v-if="columnVisible.date">{{ r.date || '-' }}</td>
-                <td v-if="columnVisible.material">{{ r.materialName || '-' }}</td>
-                <td v-if="columnVisible.quantity">{{ r.quantity || 0 }}</td>
-                <td v-if="columnVisible.actualCost" class="cell-mono">¥{{ formatMoney(r.actualCost) }}</td>
-                <td v-if="columnVisible.standardCost" class="cell-mono">¥{{ formatMoney(r.standardCost) }}</td>
-                <td v-if="columnVisible.variance">
-                  <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
-                    {{ r.variance >= 0 ? '+¥' : '-¥' }}{{ formatMoney(Math.abs(r.variance)) }}
-                  </span>
-                </td>
-                <td v-if="columnVisible.varianceRate">
-                  <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
-                    {{ r.varianceRate >= 0 ? '+' : '' }}{{ (r.varianceRate || 0).toFixed(1) }}%
-                  </span>
-                </td>
-                <td v-if="columnVisible.status">
-                  <span class="status-badge" :class="costStore.statusBadgeMap[r.status] || 'neutral'">
-                    {{ costStore.statusLabels[r.status] || r.status }}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin-top:var(--space-4)">
-      <div class="panel-card">
-        <div class="panel-card-header"><span class="panel-card-title"><Icon name="trendUp" :size="14" /> 成本趋势</span></div>
-        <div class="panel-card-body">
-          <div v-if="monthlyTrend.length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4)">暂无数据</div>
-          <div v-else class="trend-list">
-            <div v-for="m in monthlyTrend" :key="m.period" class="trend-item">
-              <div class="trend-period">{{ m.period }}</div>
-              <div class="trend-bar-container">
-                <div class="trend-bar actual bar-shimmer" :style="{ width: barWidth(m.actualCost) }">
-                  <span class="trend-label">实际 ¥{{ formatMoney(m.actualCost) }}</span>
-                </div>
-                <div class="trend-bar standard bar-shimmer" :style="{ width: barWidth(m.standardCost) }">
-                  <span class="trend-label">标准 ¥{{ formatMoney(m.standardCost) }}</span>
+          <div class="overview-row">
+            <div class="overview-card">
+              <div class="overview-title">成本健康度</div>
+              <div class="overview-content">
+                <svg class="health-ring" viewBox="0 0 60 60">
+                  <circle class="health-ring-bg" cx="30" cy="30" r="26" />
+                  <circle
+                    class="health-ring-fill"
+                    cx="30"
+                    cy="30"
+                    r="26"
+                    :stroke-dasharray="healthRingDash"
+                    :stroke="healthRingColor"
+                  />
+                </svg>
+                <div class="health-text">
+                  <div class="health-percent" :style="{ color: healthRingColor }">{{ healthPercent }}%</div>
+                  <div class="health-label">{{ healthLabel }}</div>
                 </div>
               </div>
-              <div class="trend-variance" :style="{ color: m.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }">
-                {{ m.variance >= 0 ? '+' : '' }}¥{{ formatMoney(m.variance) }}
+            </div>
+            <div class="overview-card">
+              <div class="overview-title">成本状态分布</div>
+              <div class="overview-content">
+                <div class="status-stack">
+                  <div class="status-stack-bar">
+                    <div class="status-seg status-over" :style="{ width: statusPct.over + '%' }"></div>
+                    <div class="status-seg status-under" :style="{ width: statusPct.under + '%' }"></div>
+                    <div class="status-seg status-normal" :style="{ width: statusPct.normal + '%' }"></div>
+                  </div>
+                  <div class="status-legend">
+                    <span>
+                      <span class="legend-dot" style="background: var(--color-danger)"></span>
+                      超预算 {{ statusPct.over }}%
+                    </span>
+                    <span>
+                      <span class="legend-dot" style="background: var(--color-success)"></span>
+                      低于预算 {{ statusPct.under }}%
+                    </span>
+                    <span>
+                      <span class="legend-dot" style="background: var(--color-warning)"></span>
+                      正常 {{ statusPct.normal }}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-title">供应商成本 TOP5</div>
+              <div class="overview-content">
+                <div class="top5-list">
+                  <div v-for="(s, idx) in top5Suppliers" :key="s.supplierName" class="top5-item">
+                    <span class="top5-rank">{{ idx + 1 }}</span>
+                    <span class="top5-name" :title="s.supplierName">{{ s.supplierName }}</span>
+                    <div class="top5-bar-wrap">
+                      <div class="top5-bar" :style="{ width: s.pct + '%' }"></div>
+                    </div>
+                    <span class="top5-value">¥{{ formatMoney(s.actualCost) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 成本瀑布图 -->
+          <div class="waterfall-chart">
+            <div class="waterfall-chart-title">成本瀑布图 · 标准成本 → 实际成本</div>
+            <div class="waterfall-chart-body">
+              <div class="waterfall-bar-group">
+                <div class="waterfall-bar waterfall-bar-base" :style="{ height: waterfallBaseHeight + '%' }">
+                  <span class="waterfall-bar-label">标准成本</span>
+                  <span class="waterfall-bar-value">¥{{ formatMoney(costStore.totalStandard) }}</span>
+                </div>
+              </div>
+              <div v-for="(item, idx) in waterfallItems" :key="idx" class="waterfall-bar-group">
+                <div class="waterfall-bar-connector" :style="{ bottom: item.bottom + '%' }"></div>
+                <div
+                  class="waterfall-bar"
+                  :class="item.value >= 0 ? 'waterfall-bar-increase' : 'waterfall-bar-decrease'"
+                  :style="{ bottom: item.bottom + '%', height: item.height + '%' }"
+                >
+                  <span class="waterfall-bar-label">{{ item.label }}</span>
+                  <span class="waterfall-bar-value">
+                    {{ item.value >= 0 ? '+' : '' }}¥{{ formatMoney(item.value) }}
+                  </span>
+                </div>
+              </div>
+              <div class="waterfall-bar-group">
+                <div class="waterfall-bar waterfall-bar-total" :style="{ height: waterfallTotalHeight + '%' }">
+                  <span class="waterfall-bar-label">实际成本</span>
+                  <span class="waterfall-bar-value">¥{{ formatMoney(costStore.totalActual) }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="filter-bar" style="margin-bottom: var(--space-4)">
+        <select v-model="periodFilter" class="form-select" style="width: auto; min-width: 100px">
+          <option value="all">全部</option>
+          <option value="month">本月</option>
+          <option value="quarter">本季</option>
+          <option value="year">本年</option>
+        </select>
+        <select v-model="supplierFilter" class="form-select" style="width: auto; min-width: 140px">
+          <option value="all">全部供应商</option>
+          <option v-for="s in supplierOptions" :key="s.id" :value="s.id">{{ s.shortName || s.name }}</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" @click="resetFilters">
+          <Icon name="refresh" :size="14" />
+          刷新
+        </button>
       </div>
 
       <div class="panel-card">
-        <div class="panel-card-header"><span class="panel-card-title"><Icon name="users" :size="14" /> 供应商成本分布</span></div>
-        <div class="panel-card-body">
-          <div v-if="supplierBreakdown.length === 0" style="text-align:center;color:var(--color-text-tertiary);padding:var(--space-4)">暂无数据</div>
-          <div v-else class="supplier-list">
-            <div v-for="s in supplierBreakdown" :key="s.supplierName" class="supplier-item">
-              <div class="supplier-name">{{ s.supplierName }}</div>
-              <div class="supplier-stats">
-                <span>实际: ¥{{ formatMoney(s.actualCost) }}</span>
-                <span>标准: ¥{{ formatMoney(s.standardCost) }}</span>
-                <span :style="{ color: s.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }">
-                  差异: {{ s.variance >= 0 ? '+' : '' }}¥{{ formatMoney(s.variance) }}
-                </span>
+        <div class="panel-card-body no-padding">
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px; text-align: center">序号</th>
+                  <th v-if="columnVisible.purchaseNo">采购单号</th>
+                  <th v-if="columnVisible.supplier">供应商</th>
+                  <th v-if="columnVisible.date">日期</th>
+                  <th v-if="columnVisible.material">物料</th>
+                  <th v-if="columnVisible.quantity">数量</th>
+                  <th v-if="columnVisible.actualCost">实际成本</th>
+                  <th v-if="columnVisible.standardCost">标准成本</th>
+                  <th v-if="columnVisible.variance">差异金额</th>
+                  <th v-if="columnVisible.varianceRate">差异率</th>
+                  <th v-if="columnVisible.status">状态</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-if="filteredRecords.length === 0">
+                  <td colspan="11" class="empty-state">
+                    <div class="empty-state-circle"><Icon name="empty" :size="32" /></div>
+                    <div class="empty-state-text">暂无成本数据</div>
+                  </td>
+                </tr>
+                <tr
+                  v-for="(r, idx) in filteredRecords"
+                  :key="r.id"
+                  :class="{
+                    'row-over-budget': r.variance > 0,
+                    'row-under-budget': r.variance < 0,
+                    'row-slide-in': true
+                  }"
+                  :style="{ animationDelay: idx * 20 + 'ms' }"
+                >
+                  <td style="width: 50px; text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                    {{ idx + 1 }}
+                  </td>
+                  <td v-if="columnVisible.purchaseNo">{{ r.poNo || '-' }}</td>
+                  <td v-if="columnVisible.supplier">{{ r.supplierName || '-' }}</td>
+                  <td v-if="columnVisible.date">{{ r.date || '-' }}</td>
+                  <td v-if="columnVisible.material">{{ r.materialName || '-' }}</td>
+                  <td v-if="columnVisible.quantity">{{ r.quantity || 0 }}</td>
+                  <td v-if="columnVisible.actualCost" class="cell-mono">¥{{ formatMoney(r.actualCost) }}</td>
+                  <td v-if="columnVisible.standardCost" class="cell-mono">¥{{ formatMoney(r.standardCost) }}</td>
+                  <td v-if="columnVisible.variance">
+                    <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
+                      {{ r.variance >= 0 ? '+¥' : '-¥' }}{{ formatMoney(Math.abs(r.variance)) }}
+                    </span>
+                  </td>
+                  <td v-if="columnVisible.varianceRate">
+                    <span :class="r.variance > 0 ? 'variance-positive' : r.variance < 0 ? 'variance-negative' : ''">
+                      {{ r.varianceRate >= 0 ? '+' : '' }}{{ (r.varianceRate || 0).toFixed(1) }}%
+                    </span>
+                  </td>
+                  <td v-if="columnVisible.status">
+                    <span class="status-badge" :class="costStore.statusBadgeMap[r.status] || 'neutral'">
+                      {{ costStore.statusLabels[r.status] || r.status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); margin-top: var(--space-4)">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">
+              <Icon name="trendUp" :size="14" />
+              成本趋势
+            </span>
+          </div>
+          <div class="panel-card-body">
+            <div
+              v-if="monthlyTrend.length === 0"
+              style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-4)"
+            >
+              暂无数据
+            </div>
+            <div v-else class="trend-list">
+              <div v-for="m in monthlyTrend" :key="m.period" class="trend-item">
+                <div class="trend-period">{{ m.period }}</div>
+                <div class="trend-bar-container">
+                  <div class="trend-bar actual bar-shimmer" :style="{ width: barWidth(m.actualCost) }">
+                    <span class="trend-label">实际 ¥{{ formatMoney(m.actualCost) }}</span>
+                  </div>
+                  <div class="trend-bar standard bar-shimmer" :style="{ width: barWidth(m.standardCost) }">
+                    <span class="trend-label">标准 ¥{{ formatMoney(m.standardCost) }}</span>
+                  </div>
+                </div>
+                <div
+                  class="trend-variance"
+                  :style="{ color: m.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }"
+                >
+                  {{ m.variance >= 0 ? '+' : '' }}¥{{ formatMoney(m.variance) }}
+                </div>
               </div>
-              <div class="supplier-bar-container">
-                <div class="supplier-bar bar-shimmer" :style="{ width: supplierBarWidth(s.actualCost), background: s.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <span class="panel-card-title">
+              <Icon name="users" :size="14" />
+              供应商成本分布
+            </span>
+          </div>
+          <div class="panel-card-body">
+            <div
+              v-if="supplierBreakdown.length === 0"
+              style="text-align: center; color: var(--color-text-tertiary); padding: var(--space-4)"
+            >
+              暂无数据
+            </div>
+            <div v-else class="supplier-list">
+              <div v-for="s in supplierBreakdown" :key="s.supplierName" class="supplier-item">
+                <div class="supplier-name">{{ s.supplierName }}</div>
+                <div class="supplier-stats">
+                  <span>实际: ¥{{ formatMoney(s.actualCost) }}</span>
+                  <span>标准: ¥{{ formatMoney(s.standardCost) }}</span>
+                  <span :style="{ color: s.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)' }">
+                    差异: {{ s.variance >= 0 ? '+' : '' }}¥{{ formatMoney(s.variance) }}
+                  </span>
+                </div>
+                <div class="supplier-bar-container">
+                  <div
+                    class="supplier-bar bar-shimmer"
+                    :style="{
+                      width: supplierBarWidth(s.actualCost),
+                      background: s.variance > 0 ? 'var(--color-danger)' : 'var(--color-success)'
+                    }"
+                  ></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
     </template>
   </div>
 </template>
 
+<script>
+export default { name: 'CostAnalysis' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useCostStore } from '@/modules/finance/stores/cost'
@@ -300,7 +415,7 @@ const columnDefs = [
   { key: 'varianceRate', label: '差异率' },
   { key: 'status', label: '状态' }
 ]
-const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const columnVisible = ref(Object.fromEntries(columnDefs.filter((c) => c.hideable !== false).map((c) => [c.key, true])))
 const showColumnConfig = ref(false)
 const colDropdownStyle = ref({})
 function toggleColumnConfig(event) {
@@ -320,7 +435,7 @@ const filteredRecords = computed(() => costStore.getFilteredRecords(periodFilter
 const monthlyTrend = computed(() => costStore.getMonthlyTrend())
 const supplierBreakdown = computed(() => costStore.getSupplierBreakdown())
 
-const maxActual = computed(() => Math.max(...monthlyTrend.value.map(m => m.actualCost || 0), 1))
+const maxActual = computed(() => Math.max(...monthlyTrend.value.map((m) => m.actualCost || 0), 1))
 
 const healthPercent = computed(() => {
   const rate = Math.abs(costStore.varianceRate || 0)
@@ -348,9 +463,9 @@ const healthLabel = computed(() => {
 const statusPct = computed(() => {
   const list = costStore.records || []
   const total = list.length || 1
-  const over = list.filter(r => (r.variance || 0) > 0).length
-  const under = list.filter(r => (r.variance || 0) < 0).length
-  const normal = list.filter(r => (r.variance || 0) === 0).length
+  const over = list.filter((r) => (r.variance || 0) > 0).length
+  const under = list.filter((r) => (r.variance || 0) < 0).length
+  const normal = list.filter((r) => (r.variance || 0) === 0).length
   return {
     over: Math.round((over / total) * 100),
     under: Math.round((under / total) * 100),
@@ -362,17 +477,16 @@ const top5Suppliers = computed(() => {
   const list = [...(costStore.getSupplierBreakdown() || [])]
   list.sort((a, b) => (b.actualCost || 0) - (a.actualCost || 0))
   const top = list.slice(0, 5)
-  const max = Math.max(...top.map(s => s.actualCost || 0), 1)
-  return top.map(s => ({ ...s, pct: Math.max(5, ((s.actualCost || 0) / max) * 100) }))
+  const max = Math.max(...top.map((s) => s.actualCost || 0), 1)
+  return top.map((s) => ({ ...s, pct: Math.max(5, ((s.actualCost || 0) / max) * 100) }))
 })
-
 
 function barWidth(val) {
   return Math.max(5, (val / maxActual.value) * 100) + '%'
 }
 
 function supplierBarWidth(val) {
-  const maxVal = Math.max(...supplierBreakdown.value.map(s => s.actualCost || 0), 1)
+  const maxVal = Math.max(...supplierBreakdown.value.map((s) => s.actualCost || 0), 1)
   return Math.max(5, (val / maxVal) * 100) + '%'
 }
 
@@ -382,12 +496,12 @@ const waterfallItems = computed(() => {
   const totalStd = costStore.totalStandard || 0
   const maxVal = Math.max(totalStd, costStore.totalActual || 0, 1)
   let cumulative = totalStd
-  return items.map(s => {
-    const variance = (s.variance || 0)
+  return items.map((s) => {
+    const variance = s.variance || 0
     const prevCumulative = cumulative
     cumulative += variance
-    const bottomPct = Math.max(0, Math.min(prevCumulative, cumulative)) / maxVal * 80
-    const heightPct = Math.max(2, Math.abs(variance) / maxVal * 80)
+    const bottomPct = (Math.max(0, Math.min(prevCumulative, cumulative)) / maxVal) * 80
+    const heightPct = Math.max(2, (Math.abs(variance) / maxVal) * 80)
     return {
       label: s.supplierName || '未知',
       value: variance,
@@ -398,11 +512,11 @@ const waterfallItems = computed(() => {
 })
 const waterfallBaseHeight = computed(() => {
   const maxVal = Math.max(costStore.totalStandard || 0, costStore.totalActual || 0, 1)
-  return Math.max(5, (costStore.totalStandard || 0) / maxVal * 80)
+  return Math.max(5, ((costStore.totalStandard || 0) / maxVal) * 80)
 })
 const waterfallTotalHeight = computed(() => {
   const maxVal = Math.max(costStore.totalStandard || 0, costStore.totalActual || 0, 1)
-  return Math.max(5, (costStore.totalActual || 0) / maxVal * 80)
+  return Math.max(5, ((costStore.totalActual || 0) / maxVal) * 80)
 })
 
 function resetFilters() {
@@ -412,30 +526,44 @@ function resetFilters() {
 
 function exportCSV() {
   try {
-  const list = filteredRecords.value
-  if (list.length === 0) {
-    exportError.value = '无数据可导出'
-    if (exportErrorTimer) clearTimeout(exportErrorTimer)
-    exportErrorTimer = setTimeout(() => { exportError.value = '' }, 3000)
-    return
+    const list = filteredRecords.value
+    if (list.length === 0) {
+      exportError.value = '无数据可导出'
+      if (exportErrorTimer) clearTimeout(exportErrorTimer)
+      exportErrorTimer = setTimeout(() => {
+        exportError.value = ''
+      }, 3000)
+      return
+    }
+    let csv = '采购单号,供应商,日期,物料,数量,实际成本,标准成本,差异金额,差异率,状态\n'
+    for (const r of list) {
+      csv +=
+        [
+          r.poNo || '',
+          r.supplierName || '',
+          r.date || '',
+          r.materialName || '',
+          r.quantity || 0,
+          r.actualCost || 0,
+          r.standardCost || 0,
+          r.variance || 0,
+          (r.varianceRate || 0).toFixed(1) + '%',
+          costStore.statusLabels[r.status] || r.status || ''
+        ]
+          .map((v) => '"' + String(v).replace(/"/g, '""') + '"')
+          .join(',') + '\n'
+    }
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '成本核算_' + new Date().toISOString().split('T')[0] + '.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
   }
-  let csv = '采购单号,供应商,日期,物料,数量,实际成本,标准成本,差异金额,差异率,状态\n'
-  for (const r of list) {
-    csv += [
-      r.poNo || '', r.supplierName || '', r.date || '', r.materialName || '',
-      r.quantity || 0, r.actualCost || 0, r.standardCost || 0,
-      r.variance || 0, (r.varianceRate || 0).toFixed(1) + '%',
-      costStore.statusLabels[r.status] || r.status || ''
-    ].map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',') + '\n'
-  }
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = '成本核算_' + new Date().toISOString().split('T')[0] + '.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
 }
 
 function handleClickOutside(e) {
@@ -586,21 +714,61 @@ onUnmounted(() => {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-.column-config-wrapper { position: relative; }
-.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
-.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
-.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
-.export-error-msg { color: var(--color-danger); font-size: var(--font-size-sm); margin-left: var(--space-2); animation: fadeOut 3s forwards; }
-@keyframes fadeOut { 0%,70% { opacity: 1; } 100% { opacity: 0; } }
+.column-config-wrapper {
+  position: relative;
+}
+.column-config-dropdown {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  z-index: var(--z-popover, 9999);
+  min-width: 160px;
+  max-height: 360px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.column-config-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.column-config-item:hover {
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-sm);
+}
+.export-error-msg {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin-left: var(--space-2);
+  animation: fadeOut 3s forwards;
+}
+@keyframes fadeOut {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 
 /* 统计卡片优化 */
 .stat-card {
   animation: statCardIn 0.4s ease both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 .stat-card-header {
   display: flex;
@@ -681,7 +849,9 @@ onUnmounted(() => {
   fill: none;
   stroke-width: 5;
   stroke-linecap: round;
-  transition: stroke-dasharray 0.6s ease, stroke 0.3s ease;
+  transition:
+    stroke-dasharray 0.6s ease,
+    stroke 0.3s ease;
 }
 .health-text {
   display: flex;
@@ -718,9 +888,15 @@ onUnmounted(() => {
   height: 100%;
   transition: width 0.4s ease;
 }
-.status-over { background: var(--color-danger); }
-.status-under { background: var(--color-success); }
-.status-normal { background: var(--color-warning); }
+.status-over {
+  background: var(--color-danger);
+}
+.status-under {
+  background: var(--color-success);
+}
+.status-normal {
+  background: var(--color-warning);
+}
 .status-legend {
   display: flex;
   gap: var(--space-3);
@@ -778,7 +954,7 @@ onUnmounted(() => {
 .top5-bar {
   height: 100%;
   border-radius: 3px;
-  background: linear-gradient(90deg, rgba(59,130,246,0.7), rgba(59,130,246,0.4));
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.7), rgba(59, 130, 246, 0.4));
   transition: width 0.4s ease;
 }
 .top5-value {
@@ -827,7 +1003,7 @@ onUnmounted(() => {
   left: -100%;
   width: 50%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
   animation: barShimmer 2.5s infinite;
 }
 
@@ -951,7 +1127,9 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   position: absolute;
-  transition: height 0.4s ease, bottom 0.4s ease;
+  transition:
+    height 0.4s ease,
+    bottom 0.4s ease;
   padding: var(--space-1) var(--space-1);
   min-height: 20px;
 }

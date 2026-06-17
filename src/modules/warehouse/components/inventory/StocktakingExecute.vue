@@ -1,9 +1,9 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 900px">
       <div class="modal-header">
         <span class="modal-title">盘点执行 - {{ order.orderNo }}</span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <!-- 汇总信息 -->
@@ -14,15 +14,21 @@
           </div>
           <div class="stat-card" style="flex: 1; min-width: 120px; padding: var(--space-3) var(--space-4)">
             <div class="stat-card-label">已盘</div>
-            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-success)">{{ order.summary.countedItems }}</div>
+            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-success)">
+              {{ order.summary.countedItems }}
+            </div>
           </div>
           <div class="stat-card" style="flex: 1; min-width: 120px; padding: var(--space-3) var(--space-4)">
             <div class="stat-card-label">待盘</div>
-            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-warning)">{{ order.summary.totalItems - order.summary.countedItems }}</div>
+            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-warning)">
+              {{ order.summary.totalItems - order.summary.countedItems }}
+            </div>
           </div>
           <div class="stat-card" style="flex: 1; min-width: 120px; padding: var(--space-3) var(--space-4)">
             <div class="stat-card-label">差异数</div>
-            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-danger)">{{ order.summary.diffItems }}</div>
+            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-danger)">
+              {{ order.summary.diffItems }}
+            </div>
           </div>
         </div>
 
@@ -31,7 +37,10 @@
           <div class="progress-bar">
             <div
               class="progress-bar-fill"
-              :style="{ width: progressPercent + '%', background: progressPercent === 100 ? 'var(--color-success)' : 'var(--color-accent)' }"
+              :style="{
+                width: progressPercent + '%',
+                background: progressPercent === 100 ? 'var(--color-success)' : 'var(--color-accent)'
+              }"
             ></div>
           </div>
           <div style="font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-top: var(--space-1)">
@@ -93,20 +102,24 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
+        <button class="btn btn-ghost" @click="emit('close')">关闭</button>
         <button
           v-if="order.status === 'executing'"
           class="btn btn-primary"
           :disabled="!allCounted"
           @click="handleComplete"
         >
-          <Icon name="check" :size="14" /> 完成盘点
+          <Icon name="check" :size="14" />
+          完成盘点
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'StocktakingExecute' }
+</script>
 <script setup>
 import { computed } from 'vue'
 import { useStocktakingStore } from '@/modules/warehouse/stores/stocktaking'
@@ -126,7 +139,7 @@ const progressPercent = computed(() => {
 })
 
 const allCounted = computed(() => {
-  return props.order.items && props.order.items.every(i => i.actualQty !== null && i.actualQty !== undefined)
+  return props.order.items && props.order.items.every((i) => i.actualQty !== null && i.actualQty !== undefined)
 })
 
 function handleInput(item, event) {

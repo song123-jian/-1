@@ -7,14 +7,15 @@
           <button class="modal-close" @click="handleCancel"><Icon name="close" :size="16" /></button>
         </div>
         <div class="modal-body">
-          <SmartRecognizePanel v-if="!isEdit"
-            v-model:showSmartRec="showSmartRec"
-            v-model:smartRecInput="smartRecInput"
-            :smartRecResult="smartRecResult"
+          <SmartRecognizePanel
+            v-if="!isEdit"
+            v-model:show-smart-rec="showSmartRec"
+            v-model:smart-rec-input="smartRecInput"
+            :smart-rec-result="smartRecResult"
             :placeholder="smartRecPlaceholder"
-            @runSmartRecognize="runSmartRecognize"
-            @applySmartRecognize="applySmartRecognize"
-            @handleSmartFileUpload="handleSmartFileUpload"
+            @run-smart-recognize="runSmartRecognize"
+            @apply-smart-recognize="applySmartRecognize"
+            @handle-smart-file-upload="handleSmartFileUpload"
           />
           <div class="form-row form-row-2">
             <div class="form-group">
@@ -22,7 +23,10 @@
               <input :value="form.code" type="text" class="form-input" readonly disabled />
             </div>
             <div class="form-group">
-              <label class="form-label">供应商名称 <span class="required">*</span></label>
+              <label class="form-label">
+                供应商名称
+                <span class="required">*</span>
+              </label>
               <input v-model="form.name" type="text" class="form-input" placeholder="请输入供应商全称" />
               <span v-if="errors.name" class="form-error">{{ errors.name }}</span>
             </div>
@@ -108,6 +112,9 @@
   </Teleport>
 </template>
 
+<script>
+export default { name: 'SupplierFormModal' }
+</script>
 <script setup>
 import { reactive, computed, watch } from 'vue'
 import { useSupplierStore } from '@/modules/purchase/stores/supplier'
@@ -142,11 +149,15 @@ const form = reactive({
 })
 
 const draftData = reactive({})
-watch([form], ([f]) => {
-  if (!isEdit.value) {
-    Object.assign(draftData, { ...f })
-  }
-}, { deep: true })
+watch(
+  [form],
+  ([f]) => {
+    if (!isEdit.value) {
+      Object.assign(draftData, { ...f })
+    }
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('supplier-form', draftData, {
   debounce: 1500,
@@ -157,7 +168,16 @@ const { restoreDraft, clearDraft, hasDraft } = useFormDraft('supplier-form', dra
   }
 })
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, applySmartRecognize, handleSmartFileUpload, resetSmartRec } = useSmartRecognize(form)
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useSmartRecognize(form)
 
 const errors = reactive({
   name: '',
@@ -165,50 +185,53 @@ const errors = reactive({
   email: ''
 })
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    resetErrors()
-    if (props.supplier?.id) {
-      Object.assign(form, {
-        code: props.supplier.code || '',
-        name: props.supplier.name || '',
-        shortName: props.supplier.shortName || '',
-        category: props.supplier.category || '原材料',
-        contact: props.supplier.contact || '',
-        phone: props.supplier.phone || '',
-        email: props.supplier.email || '',
-        address: props.supplier.address || '',
-        bankName: props.supplier.bankName || '',
-        bankAccount: props.supplier.bankAccount || '',
-        qualification: props.supplier.qualification || '',
-        qualificationExpiry: props.supplier.qualificationExpiry || '',
-        rating: props.supplier.rating || 3,
-        notes: props.supplier.notes || ''
-      })
-    } else {
-      Object.assign(form, {
-        code: '',
-        name: '',
-        shortName: '',
-        category: '原材料',
-        contact: '',
-        phone: '',
-        email: '',
-        address: '',
-        bankName: '',
-        bankAccount: '',
-        qualification: '',
-        qualificationExpiry: '',
-        rating: 3,
-        notes: ''
-      })
-      resetSmartRec()
-      if (hasDraft()) {
-        restoreDraft()
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      resetErrors()
+      if (props.supplier?.id) {
+        Object.assign(form, {
+          code: props.supplier.code || '',
+          name: props.supplier.name || '',
+          shortName: props.supplier.shortName || '',
+          category: props.supplier.category || '原材料',
+          contact: props.supplier.contact || '',
+          phone: props.supplier.phone || '',
+          email: props.supplier.email || '',
+          address: props.supplier.address || '',
+          bankName: props.supplier.bankName || '',
+          bankAccount: props.supplier.bankAccount || '',
+          qualification: props.supplier.qualification || '',
+          qualificationExpiry: props.supplier.qualificationExpiry || '',
+          rating: props.supplier.rating || 3,
+          notes: props.supplier.notes || ''
+        })
+      } else {
+        Object.assign(form, {
+          code: '',
+          name: '',
+          shortName: '',
+          category: '原材料',
+          contact: '',
+          phone: '',
+          email: '',
+          address: '',
+          bankName: '',
+          bankAccount: '',
+          qualification: '',
+          qualificationExpiry: '',
+          rating: 3,
+          notes: ''
+        })
+        resetSmartRec()
+        if (hasDraft()) {
+          restoreDraft()
+        }
       }
     }
   }
-})
+)
 
 function resetErrors() {
   errors.name = ''

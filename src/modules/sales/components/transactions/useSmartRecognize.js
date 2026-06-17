@@ -43,7 +43,7 @@ export function useSmartRecognize(form) {
     // 提取交易类型
     const typeMatch = text.match(/(?:报价|合同|回款|送货|手动)/)
     if (typeMatch) {
-      const typeMap = { '报价': 'quotation', '合同': 'contract', '回款': 'collection', '送货': 'delivery', '手动': 'manual' }
+      const typeMap = { 报价: 'quotation', 合同: 'contract', 回款: 'collection', 送货: 'delivery', 手动: 'manual' }
       pushItem(makeItem('type', '交易类型', typeMap[typeMatch[0]] || 'manual', 70))
     }
 

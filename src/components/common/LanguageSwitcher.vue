@@ -1,10 +1,10 @@
 <template>
-  <div class="language-switcher" ref="switcherRef">
-    <button class="lang-trigger" @click="toggleDropdown" :title="currentLabel">
+  <div ref="switcherRef" class="language-switcher">
+    <button class="lang-trigger" :title="currentLabel" @click="toggleDropdown">
       <Icon name="globe" :size="16" />
       <span class="lang-label">{{ currentLabel }}</span>
     </button>
-    <div class="lang-dropdown" v-show="isOpen" @click.stop>
+    <div v-show="isOpen" class="lang-dropdown" @click.stop>
       <button
         v-for="lang in languages"
         :key="lang.value"
@@ -19,9 +19,13 @@
   </div>
 </template>
 
+<script>
+export default { name: 'LanguageSwitcher' }
+</script>
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed } from 'vue'
 import { useLocaleStore } from '@/stores/locale'
+import { useClickOutside } from '@/composables/useClickOutside'
 
 const localeStore = useLocaleStore()
 const isOpen = ref(false)
@@ -33,7 +37,7 @@ const languages = [
 ]
 
 const currentLabel = computed(() => {
-  const lang = languages.find(l => l.value === localeStore.currentLocale)
+  const lang = languages.find((l) => l.value === localeStore.currentLocale)
   return lang ? lang.label : '中文'
 })
 
@@ -52,13 +56,7 @@ function handleClickOutside(event) {
   }
 }
 
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
-})
+useClickOutside(handleClickOutside)
 </script>
 
 <style scoped>
@@ -103,7 +101,7 @@ onBeforeUnmount(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 200;
+  z-index: var(--z-sticky);
   overflow: hidden;
   padding: var(--space-1) 0;
 }

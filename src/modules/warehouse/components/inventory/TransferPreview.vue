@@ -1,16 +1,23 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 800px">
       <div class="modal-header">
         <span class="modal-title">调拨单预览</span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <!-- 打印风格预览 -->
-        <div class="print-preview-content" ref="printContent">
+        <div ref="printContent" class="print-preview-content">
           <div class="print-header">
             <h2 style="text-align: center; font-size: var(--font-size-xl); margin-bottom: var(--space-2)">调拨单</h2>
-            <div style="text-align: center; font-size: var(--font-size-xs); color: var(--color-text-tertiary); margin-bottom: var(--space-4)">
+            <div
+              style="
+                text-align: center;
+                font-size: var(--font-size-xs);
+                color: var(--color-text-tertiary);
+                margin-bottom: var(--space-4);
+              "
+            >
               单号: {{ order.orderNo }}
             </div>
           </div>
@@ -78,13 +85,16 @@
             <tfoot>
               <tr>
                 <td :colspan="7" style="text-align: right; font-weight: 600">合计</td>
-                <td class="cell-mono" style="font-weight: 600; color: var(--color-accent)">{{ formatMoney(order.totalAmount) }}</td>
+                <td class="cell-mono" style="font-weight: 600; color: var(--color-accent)">
+                  {{ formatMoney(order.totalAmount) }}
+                </td>
               </tr>
             </tfoot>
           </table>
 
           <div v-if="order.notes" style="margin-top: var(--space-4); font-size: var(--font-size-sm)">
-            <span style="color: var(--color-text-tertiary)">备注:</span> {{ order.notes }}
+            <span style="color: var(--color-text-tertiary)">备注:</span>
+            {{ order.notes }}
           </div>
 
           <div class="print-signatures" style="margin-top: var(--space-8)">
@@ -101,19 +111,23 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
+        <button class="btn btn-ghost" @click="emit('close')">关闭</button>
         <button class="btn btn-primary" @click="handlePrint">
-          <Icon name="printer" :size="14" /> 打印
+          <Icon name="printer" :size="14" />
+          打印
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'TransferPreview' }
+</script>
 <script setup>
 import { ref } from 'vue'
 import { useTransferStore } from '@/modules/warehouse/stores/transfer'
-import { formatMoney } from '@/utils/format'
+import { formatMoney, escapeHtml } from '@/utils/format'
 
 const props = defineProps({
   order: { type: Object, required: true }
@@ -130,11 +144,12 @@ function handlePrint() {
   const content = printContent.value
   if (!content) return
   const printWindow = window.open('', '_blank')
-  printWindow.document.write(`<html><head><title>调拨单 - ${props.order.orderNo}</title><style>body{font-family:-apple-system,"Microsoft YaHei",sans-serif;padding:var(--space-5);color:#333}table{width:100%;border-collapse:collapse}th{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left;font-size:13px;overflow-wrap:break-word;word-wrap:break-word}td{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left;font-size:13px;overflow-wrap:break-word;word-wrap:break-word}th{background:#f5f5f5;font-weight:600}.print-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);font-size:13px}.print-info-label{color:#888;margin-right:var(--space-2)}.print-signatures{display:flex;justify-content:space-around;margin-top:var(--space-10);font-size:13px}</style></head><body>${content.innerHTML}</body></html>`)
+  printWindow.document.write(
+    `<html><head><title>调拨单 - ${escapeHtml(props.order.orderNo)}</title><style>body{font-family:-apple-system,"Microsoft YaHei",sans-serif;padding:var(--space-5);color:#333}table{width:100%;border-collapse:collapse}th{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left;font-size:13px;overflow-wrap:break-word;word-wrap:break-word}td{border:1px solid #ccc;padding:var(--space-2) var(--space-2);text-align:left;font-size:13px;overflow-wrap:break-word;word-wrap:break-word}th{background:#f5f5f5;font-weight:600}.print-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-2);font-size:13px}.print-info-label{color:#888;margin-right:var(--space-2)}.print-signatures{display:flex;justify-content:space-around;margin-top:var(--space-10);font-size:13px}</style></head><body>${content.innerHTML}</body></html>`
+  )
   printWindow.document.close()
   printWindow.print()
 }
-
 </script>
 
 <style scoped>

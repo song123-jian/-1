@@ -7,11 +7,14 @@
       :class="{ active: modelValue === t.key }"
       :style="{ background: t.color }"
       :title="t.label"
-      @click="$emit('update:modelValue', t.key)"
+      @click="emit('update:modelValue', t.key)"
     ></button>
   </div>
 </template>
 
+<script>
+export default { name: 'ThemeSwitch' }
+</script>
 <script setup>
 defineProps({
   modelValue: { type: String, default: 'dark-tech' }
@@ -45,7 +48,7 @@ const themes = [
 }
 .theme-switch__dot.active {
   border-color: #fff;
-  box-shadow: 0 0 8px rgba(255,255,255,0.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
   transform: scale(1.2);
 }
 </style>

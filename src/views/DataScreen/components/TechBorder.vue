@@ -4,13 +4,16 @@
     <div class="tech-border__corner tech-border__corner--tr"></div>
     <div class="tech-border__corner tech-border__corner--bl"></div>
     <div class="tech-border__corner tech-border__corner--br"></div>
-    <div class="tech-border__glow-top" v-if="showGlow"></div>
+    <div v-if="showGlow" class="tech-border__glow-top"></div>
     <div class="tech-border__content">
       <slot></slot>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'TechBorder' }
+</script>
 <script setup>
 import { computed } from 'vue'
 
@@ -40,12 +43,32 @@ const cssVars = computed(() => ({
   position: absolute;
   width: 12px;
   height: 12px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
-.tech-border__corner--tl { top: 0; left: 0; border-top: 2px solid var(--tb-color); border-left: 2px solid var(--tb-color); }
-.tech-border__corner--tr { top: 0; right: 0; border-top: 2px solid var(--tb-color); border-right: 2px solid var(--tb-color); }
-.tech-border__corner--bl { bottom: 0; left: 0; border-bottom: 2px solid var(--tb-color); border-left: 2px solid var(--tb-color); }
-.tech-border__corner--br { bottom: 0; right: 0; border-bottom: 2px solid var(--tb-color); border-right: 2px solid var(--tb-color); }
+.tech-border__corner--tl {
+  top: 0;
+  left: 0;
+  border-top: 2px solid var(--tb-color);
+  border-left: 2px solid var(--tb-color);
+}
+.tech-border__corner--tr {
+  top: 0;
+  right: 0;
+  border-top: 2px solid var(--tb-color);
+  border-right: 2px solid var(--tb-color);
+}
+.tech-border__corner--bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: 2px solid var(--tb-color);
+  border-left: 2px solid var(--tb-color);
+}
+.tech-border__corner--br {
+  bottom: 0;
+  right: 0;
+  border-bottom: 2px solid var(--tb-color);
+  border-right: 2px solid var(--tb-color);
+}
 .tech-border__glow-top {
   position: absolute;
   top: 0;

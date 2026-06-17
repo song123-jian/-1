@@ -50,7 +50,13 @@ export function formatMoney(num) {
  */
 export function toLocalDateStr(d) {
   const date = d || new Date()
-  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+  return (
+    date.getFullYear() +
+    '-' +
+    String(date.getMonth() + 1).padStart(2, '0') +
+    '-' +
+    String(date.getDate()).padStart(2, '0')
+  )
 }
 
 /**
@@ -61,8 +67,103 @@ export function toLocalDateStr(d) {
  */
 export function sanitizeHtml(html, options = {}) {
   if (!html || typeof html !== 'string') return ''
-  const defaultTags = ['b','i','em','strong','a','p','br','ul','ol','li','span','div','table','thead','tbody','tr','th','td','h1','h2','h3','h4','h5','h6','hr','img','sub','sup','small','mark','del','ins','blockquote','pre','code','style','section','article','header','footer','main','figure','figcaption','dl','dt','dd','svg','path','line','circle','rect','polyline','polygon','ellipse','g','text','tspan']
-  const defaultAttr = ['href','target','rel','class','src','alt','title','colspan','rowspan','width','height','style','id','d','x1','y1','x2','y2','cx','cy','r','rx','ry','x','y','points','fill','stroke','stroke-width','stroke-linecap','stroke-linejoin','viewBox','xmlns','font-size','text-anchor','transform']
+  const defaultTags = [
+    'b',
+    'i',
+    'em',
+    'strong',
+    'a',
+    'p',
+    'br',
+    'ul',
+    'ol',
+    'li',
+    'span',
+    'div',
+    'table',
+    'thead',
+    'tbody',
+    'tr',
+    'th',
+    'td',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'hr',
+    'img',
+    'sub',
+    'sup',
+    'small',
+    'mark',
+    'del',
+    'ins',
+    'blockquote',
+    'pre',
+    'code',
+    'style',
+    'section',
+    'article',
+    'header',
+    'footer',
+    'main',
+    'figure',
+    'figcaption',
+    'dl',
+    'dt',
+    'dd',
+    'svg',
+    'path',
+    'line',
+    'circle',
+    'rect',
+    'polyline',
+    'polygon',
+    'ellipse',
+    'g',
+    'text',
+    'tspan'
+  ]
+  const defaultAttr = [
+    'href',
+    'target',
+    'rel',
+    'class',
+    'src',
+    'alt',
+    'title',
+    'colspan',
+    'rowspan',
+    'width',
+    'height',
+    'style',
+    'id',
+    'd',
+    'x1',
+    'y1',
+    'x2',
+    'y2',
+    'cx',
+    'cy',
+    'r',
+    'rx',
+    'ry',
+    'x',
+    'y',
+    'points',
+    'fill',
+    'stroke',
+    'stroke-width',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'viewBox',
+    'xmlns',
+    'font-size',
+    'text-anchor',
+    'transform'
+  ]
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: options.allowedTags || defaultTags,
     ALLOWED_ATTR: options.allowedAttr || defaultAttr,

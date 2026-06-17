@@ -295,6 +295,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'DatabaseConnection' }
+</script>
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useSupabaseStore } from '@/stores/supabase'
@@ -472,25 +475,39 @@ function formatTime(t) {
 }
 
 async function handleTest() {
-  await sbStore.testConnection()
+  try {
+    await sbStore.testConnection()
+  } catch (e) {
+    console.error('[DatabaseConnection] 测试连接失败:', e)
+    alert('测试连接失败: ' + (e.message || '未知错误'))
+  }
 }
 
 async function handleConnect() {
-  const result = await sbStore.connect()
-  if (result.success) {
-    // 连接成功后订阅实时变更
-    subscribeAllTables()
+  try {
+    const result = await sbStore.connect()
+    if (result.success) {
+      // 连接成功后订阅实时变更
+      subscribeAllTables()
+    }
+  } catch (e) {
+    console.error('[DatabaseConnection] 连接失败:', e)
+    alert('连接失败: ' + (e.message || '未知错误'))
   }
 }
 
 async function handleDisconnect() {
-  const ok = await confirm.show({
-    title: '断开连接',
-    message: '断开连接后，数据将仅保存在本地浏览器中。确定断开？',
-    danger: true
-  })
-  if (ok) {
-    sbStore.disconnect()
+  try {
+    const ok = await confirm.show({
+      title: '断开连接',
+      message: '断开连接后，数据将仅保存在本地浏览器中。确定断开？',
+      danger: true
+    })
+    if (ok) {
+      sbStore.disconnect()
+    }
+  } catch (e) {
+    console.warn('[DatabaseConnection] 断开连接异常:', e.message)
   }
 }
 
@@ -534,7 +551,7 @@ function subscribeAllTables() {
         const data = config.store[config.dataKey]
         if (Array.isArray(data) && !data.some((item) => item.id === row.id)) {
           data.push(row)
-          console.info(`[Realtime] ${t} 新增同步到Store:`, row.id)
+          console.debug(`[Realtime] ${t} 新增同步到Store:`, row.id)
         }
       },
       onUpdate: (row) => {
@@ -544,7 +561,7 @@ function subscribeAllTables() {
           const idx = data.findIndex((item) => item.id === row.id)
           if (idx !== -1) {
             data[idx] = row
-            console.info(`[Realtime] ${t} 更新同步到Store:`, row.id)
+            console.debug(`[Realtime] ${t} 更新同步到Store:`, row.id)
           }
         }
       },
@@ -562,7 +579,7 @@ function subscribeAllTables() {
             } else {
               config.store[config.dataKey] = filtered
             }
-            console.info(`[Realtime] ${t} 删除同步到Store:`, old.id)
+            console.debug(`[Realtime] ${t} 删除同步到Store:`, old.id)
           }
         }
       }
@@ -712,7 +729,7 @@ async function handleBidirectionalSync() {
 function handleAutoSync() {
   const result = syncEngine.initAutoSync()
   if (result) {
-    console.info('[数据库连接] 自动同步已启动')
+    console.debug('[数据库连接] 自动同步已启动')
   }
 }
 

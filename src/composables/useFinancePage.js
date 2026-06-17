@@ -71,12 +71,15 @@ export function useFinancePage(config) {
 
   /* 筛选后的主列表（应付/应收） */
   const filteredPrimaryList = computed(() => {
-    return financeStore[primaryListKey].filter(item => {
+    return financeStore[primaryListKey].filter((item) => {
       if (filters.search) {
         const s = filters.search.toLowerCase()
-        if (!(item[primaryNoField] || '').toLowerCase().includes(s) &&
-            !(item[entityNameField] || '').toLowerCase().includes(s) &&
-            !(item.sourceNo || '').toLowerCase().includes(s)) return false
+        if (
+          !(item[primaryNoField] || '').toLowerCase().includes(s) &&
+          !(item[entityNameField] || '').toLowerCase().includes(s) &&
+          !(item.sourceNo || '').toLowerCase().includes(s)
+        )
+          return false
       }
       if (filters.status && item.status !== filters.status) return false
       if (filters[entityIdField] && item[entityIdField] !== filters[entityIdField]) return false
@@ -89,13 +92,14 @@ export function useFinancePage(config) {
     let list = [...financeStore[secondaryListKey]]
     if (filters.search) {
       const s = filters.search.toLowerCase()
-      list = list.filter(item =>
-        (item[secondaryNoField] || '').toLowerCase().includes(s) ||
-        (item[entityNameField] || '').toLowerCase().includes(s)
+      list = list.filter(
+        (item) =>
+          (item[secondaryNoField] || '').toLowerCase().includes(s) ||
+          (item[entityNameField] || '').toLowerCase().includes(s)
       )
     }
     if (filters[entityIdField]) {
-      list = list.filter(item => item[entityIdField] === filters[entityIdField])
+      list = list.filter((item) => item[entityIdField] === filters[entityIdField])
     }
     return list.sort((a, b) => (b[secondaryDateField] || '').localeCompare(a[secondaryDateField] || ''))
   })
@@ -136,7 +140,12 @@ export function useFinancePage(config) {
 
   function handleRevoke(record) {
     const label = isPayable ? '付款' : '收款'
-    if (!confirm(`确定要撤销${label}记录「${record[secondaryNoField] || ''}」吗？撤销后${isPayable ? '应付' : '应收'}金额将回退。`)) return
+    if (
+      !confirm(
+        `确定要撤销${label}记录「${record[secondaryNoField] || ''}」吗？撤销后${isPayable ? '应付' : '应收'}金额将回退。`
+      )
+    )
+      return
 
     const parentIdField = isPayable ? 'payableId' : 'receivableId'
     const parentId = record[parentIdField]
@@ -144,8 +153,8 @@ export function useFinancePage(config) {
 
     if (!parentId) {
       /* 尝试从主单据中查找关联 */
-      const found = financeStore[primaryListKey].find(item =>
-        (item[secondaryListKey] || []).some(r => r.id === record.id)
+      const found = financeStore[primaryListKey].find((item) =>
+        (item[secondaryListKey] || []).some((r) => r.id === record.id)
       )
       if (!found) {
         alert(`无法找到关联的${isPayable ? '应付' : '应收'}单，撤销失败`)
@@ -180,22 +189,40 @@ export function useFinancePage(config) {
 
   return {
     /* 状态 */
-    currentTab, showForm, selectedItem,
-    primaryPage, secondaryPage, pageSize, tabs, filters,
+    currentTab,
+    showForm,
+    selectedItem,
+    primaryPage,
+    secondaryPage,
+    pageSize,
+    tabs,
+    filters,
 
     /* 计算属性 */
     entityList,
-    filteredPrimaryList, filteredSecondaryList,
-    totalPrimaryPages, paginatedPrimaryList,
-    totalSecondaryPages, paginatedSecondaryList,
+    filteredPrimaryList,
+    filteredSecondaryList,
+    totalPrimaryPages,
+    paginatedPrimaryList,
+    totalSecondaryPages,
+    paginatedSecondaryList,
     agingData,
 
     /* 方法 */
-    resetFilters, openForm, onFormSaved, handleRevoke, getRowStyle, onEntityChange,
+    resetFilters,
+    openForm,
+    onFormSaved,
+    handleRevoke,
+    getRowStyle,
+    onEntityChange,
 
     /* 字段名常量（供模板使用） */
-    primaryListKey, secondaryListKey,
-    primaryNoField, secondaryNoField,
-    entityNameField, entityIdField, secondaryDateField
+    primaryListKey,
+    secondaryListKey,
+    primaryNoField,
+    secondaryNoField,
+    entityNameField,
+    entityIdField,
+    secondaryDateField
   }
 }

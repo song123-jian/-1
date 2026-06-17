@@ -39,24 +39,90 @@ export const accentPresets = [
 ]
 
 export const accentSwatches = [
-  { name: '海洋蓝', color: '#3b82f6' }, { name: '翡翠绿', color: '#10b981' },
-  { name: '琥珀金', color: '#f59e0b' }, { name: '绯红', color: '#ef4444' },
-  { name: '皇家紫', color: '#8b5cf6' }, { name: '玫瑰粉', color: '#ec4899' },
-  { name: '青色', color: '#06b6d4' }, { name: '青柠', color: '#84cc16' },
-  { name: '日落橙', color: '#f97316' }, { name: '靛蓝', color: '#6366f1' },
-  { name: '青碧', color: '#14b8a6' }, { name: '薰衣草', color: '#a78bfa' }
+  { name: '海洋蓝', color: '#3b82f6' },
+  { name: '翡翠绿', color: '#10b981' },
+  { name: '琥珀金', color: '#f59e0b' },
+  { name: '绯红', color: '#ef4444' },
+  { name: '皇家紫', color: '#8b5cf6' },
+  { name: '玫瑰粉', color: '#ec4899' },
+  { name: '青色', color: '#06b6d4' },
+  { name: '青柠', color: '#84cc16' },
+  { name: '日落橙', color: '#f97316' },
+  { name: '靛蓝', color: '#6366f1' },
+  { name: '青碧', color: '#14b8a6' },
+  { name: '薰衣草', color: '#a78bfa' }
 ]
 
 export const splashOptions = [
-  { name: '星空粒子', icon: 'zap', desc: '星座连线网络', gradient: 'linear-gradient(135deg,#050a18,#3b82f6)', radius: '12px' },
-  { name: '极简光晕', icon: 'dollar-sign', desc: '呼吸发光', gradient: 'linear-gradient(160deg,#0f172a,#1e293b)', radius: '12px', border: '1px solid #3b82f6' },
-  { name: '渐变流动', icon: 'palette', desc: '柔美粒子拖尾', gradient: 'linear-gradient(135deg,#667eea,#764ba2)', radius: '50%' },
-  { name: '数据矩阵', icon: 'table', desc: '业务数据流', gradient: '#020a02', radius: '8px', border: '2px solid #22c55e', textColor: '#22c55e' },
-  { name: '齿轮联动', icon: 'building', desc: '机械精密旋转', gradient: 'linear-gradient(135deg,#d97706,#92400e)', radius: '50%' },
-  { name: '生长动画', icon: 'sun', desc: '自然生命力', gradient: 'linear-gradient(135deg,#22c55e,#059669)', radius: '24px' },
-  { name: '水墨晕染', icon: 'palette', desc: '东方美学', gradient: '#f5f0e8', radius: '50%', border: '2px solid #333', textColor: '#1a1a1a' },
-  { name: '光效脉冲', icon: 'star', desc: '爆发力冲击', gradient: 'radial-gradient(circle,#f43f5e,#be123c)', radius: '50%', boxShadow: '0 0 16px rgba(244,63,94,0.5)' },
-  { name: '水波纹理', icon: 'globe', desc: '同心波纹扩散', gradient: 'linear-gradient(135deg,#0ea5e9,#0284c7)', radius: '50%' }
+  {
+    name: '星空粒子',
+    icon: 'zap',
+    desc: '星座连线网络',
+    gradient: 'linear-gradient(135deg,#050a18,#3b82f6)',
+    radius: '12px'
+  },
+  {
+    name: '极简光晕',
+    icon: 'dollar-sign',
+    desc: '呼吸发光',
+    gradient: 'linear-gradient(160deg,#0f172a,#1e293b)',
+    radius: '12px',
+    border: '1px solid #3b82f6'
+  },
+  {
+    name: '渐变流动',
+    icon: 'palette',
+    desc: '柔美粒子拖尾',
+    gradient: 'linear-gradient(135deg,#667eea,#764ba2)',
+    radius: '50%'
+  },
+  {
+    name: '数据矩阵',
+    icon: 'table',
+    desc: '业务数据流',
+    gradient: '#020a02',
+    radius: '8px',
+    border: '2px solid #22c55e',
+    textColor: '#22c55e'
+  },
+  {
+    name: '齿轮联动',
+    icon: 'building',
+    desc: '机械精密旋转',
+    gradient: 'linear-gradient(135deg,#d97706,#92400e)',
+    radius: '50%'
+  },
+  {
+    name: '生长动画',
+    icon: 'sun',
+    desc: '自然生命力',
+    gradient: 'linear-gradient(135deg,#22c55e,#059669)',
+    radius: '24px'
+  },
+  {
+    name: '水墨晕染',
+    icon: 'palette',
+    desc: '东方美学',
+    gradient: '#f5f0e8',
+    radius: '50%',
+    border: '2px solid #333',
+    textColor: '#1a1a1a'
+  },
+  {
+    name: '光效脉冲',
+    icon: 'star',
+    desc: '爆发力冲击',
+    gradient: 'radial-gradient(circle,#f43f5e,#be123c)',
+    radius: '50%',
+    boxShadow: '0 0 16px rgba(244,63,94,0.5)'
+  },
+  {
+    name: '水波纹理',
+    icon: 'globe',
+    desc: '同心波纹扩散',
+    gradient: 'linear-gradient(135deg,#0ea5e9,#0284c7)',
+    radius: '50%'
+  }
 ]
 
 export const splashComparisonRows = [
@@ -72,12 +138,48 @@ export const splashComparisonRows = [
 ]
 
 export const presetThemeList = [
-  { name: 'ocean', label: '海洋蓝', color: '#3b82f6', desc: '专业沉稳，适合企业办公', colors: ['#3b82f6', '#60a5fa', '#1e40af'] },
-  { name: 'forest', label: '森林绿', color: '#22c55e', desc: '自然清新，适合环保行业', colors: ['#22c55e', '#4ade80', '#166534'] },
-  { name: 'sunset', label: '日落橙', color: '#f59e0b', desc: '温暖活力，适合营销团队', colors: ['#f59e0b', '#fbbf24', '#b45309'] },
-  { name: 'royal', label: '皇家紫', color: '#a855f7', desc: '高贵典雅，适合设计团队', colors: ['#a855f7', '#c084fc', '#7e22ce'] },
-  { name: 'crimson', label: '绯红', color: '#ef4444', desc: '热情奔放，适合销售团队', colors: ['#ef4444', '#f87171', '#b91c1c'] },
-  { name: 'emerald', label: '翡翠绿', color: '#10b981', desc: '清新明亮，适合数据看板', colors: ['#10b981', '#34d399', '#065f46'] }
+  {
+    name: 'ocean',
+    label: '海洋蓝',
+    color: '#3b82f6',
+    desc: '专业沉稳，适合企业办公',
+    colors: ['#3b82f6', '#60a5fa', '#1e40af']
+  },
+  {
+    name: 'forest',
+    label: '森林绿',
+    color: '#22c55e',
+    desc: '自然清新，适合环保行业',
+    colors: ['#22c55e', '#4ade80', '#166534']
+  },
+  {
+    name: 'sunset',
+    label: '日落橙',
+    color: '#f59e0b',
+    desc: '温暖活力，适合营销团队',
+    colors: ['#f59e0b', '#fbbf24', '#b45309']
+  },
+  {
+    name: 'royal',
+    label: '皇家紫',
+    color: '#a855f7',
+    desc: '高贵典雅，适合设计团队',
+    colors: ['#a855f7', '#c084fc', '#7e22ce']
+  },
+  {
+    name: 'crimson',
+    label: '绯红',
+    color: '#ef4444',
+    desc: '热情奔放，适合销售团队',
+    colors: ['#ef4444', '#f87171', '#b91c1c']
+  },
+  {
+    name: 'emerald',
+    label: '翡翠绿',
+    color: '#10b981',
+    desc: '清新明亮，适合数据看板',
+    colors: ['#10b981', '#34d399', '#065f46']
+  }
 ]
 
 /**
@@ -120,22 +222,28 @@ export const themeSchema = [
         fields: [
           { type: 'modeGrid', key: 'mode', label: '选择显示模式', hint: 'desc' },
           { type: 'range', key: 'brightness', label: '亮度调节', min: 50, max: 150, step: 1, unit: '%' },
-          { type: 'buttonGroup', actions: [
-            { label: '明暗切换', icon: 'refresh-cw', action: 'toggleMode' },
-            { label: '恢复默认', icon: 'rotate-ccw', action: 'resetDefault' }
-          ]}
+          {
+            type: 'buttonGroup',
+            actions: [
+              { label: '明暗切换', icon: 'refresh-cw', action: 'toggleMode' },
+              { label: '恢复默认', icon: 'rotate-ccw', action: 'resetDefault' }
+            ]
+          }
         ]
       },
       {
         title: '当前状态',
         icon: 'info',
         fields: [
-          { type: 'statusPreview', items: [
-            { label: '模式', key: 'modeName' },
-            { label: '亮度', key: 'brightness', suffix: '%' },
-            { label: '主题色', key: 'accentColor', format: 'colorDot' },
-            { label: '过渡动画', key: 'transitionDuration', suffix: 'ms' }
-          ]},
+          {
+            type: 'statusPreview',
+            items: [
+              { label: '模式', key: 'modeName' },
+              { label: '亮度', key: 'brightness', suffix: '%' },
+              { label: '主题色', key: 'accentColor', format: 'colorDot' },
+              { label: '过渡动画', key: 'transitionDuration', suffix: 'ms' }
+            ]
+          },
           { type: 'livePreview', style: 'accent' }
         ]
       },
@@ -144,12 +252,27 @@ export const themeSchema = [
         icon: 'clock',
         headerToggle: { key: 'autoSwitch.enabled', label: '启用自动切换' },
         fields: [
-          { type: 'radio', key: 'autoSwitch.followSystem', label: '切换方式', options: [
-            { value: true, label: '跟随系统设置' },
-            { value: false, label: '按时间 schedule' }
-          ]},
-          { type: 'time', key: 'autoSwitch.schedule.lightStart', label: '浅色模式开始时间', condition: { key: 'autoSwitch.followSystem', value: false } },
-          { type: 'time', key: 'autoSwitch.schedule.darkStart', label: '深色模式开始时间', condition: { key: 'autoSwitch.followSystem', value: false } },
+          {
+            type: 'radio',
+            key: 'autoSwitch.followSystem',
+            label: '切换方式',
+            options: [
+              { value: true, label: '跟随系统设置' },
+              { value: false, label: '按时间 schedule' }
+            ]
+          },
+          {
+            type: 'time',
+            key: 'autoSwitch.schedule.lightStart',
+            label: '浅色模式开始时间',
+            condition: { key: 'autoSwitch.followSystem', value: false }
+          },
+          {
+            type: 'time',
+            key: 'autoSwitch.schedule.darkStart',
+            label: '深色模式开始时间',
+            condition: { key: 'autoSwitch.followSystem', value: false }
+          },
           { type: 'infoBox', content: '系统将根据您的设置自动在浅色和深色模式间切换' }
         ]
       }
@@ -164,7 +287,13 @@ export const themeSchema = [
         title: '主色配置',
         icon: 'palette',
         fields: [
-          { type: 'select', key: 'accentPreset', label: '选择主题色', options: accentPresets, action: 'applyAccentPreset' },
+          {
+            type: 'select',
+            key: 'accentPreset',
+            label: '选择主题色',
+            options: accentPresets,
+            action: 'applyAccentPreset'
+          },
           { type: 'color', key: 'accentColor', label: '自定义主色' },
           { type: 'color', key: 'accentHover', label: '悬停色', readOnly: true },
           { type: 'contrastDisplay', label: '对比度检测' },
@@ -174,9 +303,7 @@ export const themeSchema = [
       {
         title: '主色预览',
         icon: 'eye',
-        fields: [
-          { type: 'accentPreview' }
-        ]
+        fields: [{ type: 'accentPreview' }]
       }
     ]
   },
@@ -206,9 +333,7 @@ export const themeSchema = [
       {
         title: '排版间距预览',
         icon: 'eye',
-        fields: [
-          { type: 'typographyPreview' }
-        ]
+        fields: [{ type: 'typographyPreview' }]
       }
     ]
   },
@@ -221,24 +346,41 @@ export const themeSchema = [
         title: '背景配置',
         icon: 'image',
         fields: [
-          { type: 'select', key: 'bgType', label: '背景类型', options: [
-            { value: 'solid', label: '纯色' },
-            { value: 'gradient', label: '渐变' }
-          ]},
+          {
+            type: 'select',
+            key: 'bgType',
+            label: '背景类型',
+            options: [
+              { value: 'solid', label: '纯色' },
+              { value: 'gradient', label: '渐变' }
+            ]
+          },
           { type: 'color', key: 'bgColor', label: '背景颜色', condition: { key: 'bgType', value: 'solid' } },
           { type: 'color', key: 'gradientColor', label: '渐变起始色', condition: { key: 'bgType', value: 'gradient' } },
-          { type: 'color', key: 'gradientColor2', label: '渐变终止色', condition: { key: 'bgType', value: 'gradient' } },
-          { type: 'select', key: 'gradientDir', label: '渐变方向', condition: { key: 'bgType', value: 'gradient' }, options: [
-            { value: 'to right', label: '向右' },
-            { value: 'to bottom', label: '向下' },
-            { value: 'to bottom right', label: '右下' },
-            { value: '135deg', label: '135°' },
-            { value: 'to top', label: '向上' },
-            { value: 'to left', label: '向左' }
-          ]},
-          { type: 'buttonGroup', actions: [
-            { label: '重置为模式默认背景', icon: 'rotate-ccw', action: 'resetBackground' }
-          ]}
+          {
+            type: 'color',
+            key: 'gradientColor2',
+            label: '渐变终止色',
+            condition: { key: 'bgType', value: 'gradient' }
+          },
+          {
+            type: 'select',
+            key: 'gradientDir',
+            label: '渐变方向',
+            condition: { key: 'bgType', value: 'gradient' },
+            options: [
+              { value: 'to right', label: '向右' },
+              { value: 'to bottom', label: '向下' },
+              { value: 'to bottom right', label: '右下' },
+              { value: '135deg', label: '135°' },
+              { value: 'to top', label: '向上' },
+              { value: 'to left', label: '向左' }
+            ]
+          },
+          {
+            type: 'buttonGroup',
+            actions: [{ label: '重置为模式默认背景', icon: 'rotate-ccw', action: 'resetBackground' }]
+          }
         ]
       },
       {
@@ -249,18 +391,26 @@ export const themeSchema = [
           { type: 'color', key: 'surfaceElevated', label: '提升表面色' },
           { type: 'color', key: 'borderColor', label: '边框色' },
           { type: 'toggle', key: 'shadowEnabled', label: '启用阴影' },
-          { type: 'range', key: 'shadowIntensity', label: '阴影强度', min: 10, max: 100, step: 10, unit: '%', condition: { key: 'shadowEnabled', value: true } },
-          { type: 'buttonGroup', actions: [
-            { label: '重置为模式默认表面', icon: 'rotate-ccw', action: 'resetSurface' }
-          ]}
+          {
+            type: 'range',
+            key: 'shadowIntensity',
+            label: '阴影强度',
+            min: 10,
+            max: 100,
+            step: 10,
+            unit: '%',
+            condition: { key: 'shadowEnabled', value: true }
+          },
+          {
+            type: 'buttonGroup',
+            actions: [{ label: '重置为模式默认表面', icon: 'rotate-ccw', action: 'resetSurface' }]
+          }
         ]
       },
       {
         title: '背景与表面预览',
         icon: 'eye',
-        fields: [
-          { type: 'bgSurfacePreview' }
-        ]
+        fields: [{ type: 'bgSurfacePreview' }]
       }
     ]
   },
@@ -274,7 +424,15 @@ export const themeSchema = [
         icon: 'zap',
         fields: [
           { type: 'toggle', key: 'animation.enabled', label: '启用过渡动画' },
-          { type: 'range', key: 'animation.transitionDuration', label: '动画时长', min: 0, max: 1000, step: 50, unit: 'ms' },
+          {
+            type: 'range',
+            key: 'animation.transitionDuration',
+            label: '动画时长',
+            min: 0,
+            max: 1000,
+            step: 50,
+            unit: 'ms'
+          },
           { type: 'toggle', key: 'animation.reduceMotion', label: '减少动态效果（偏好减少动画）' }
         ]
       },
@@ -299,11 +457,14 @@ export const themeSchema = [
         icon: 'sparkles',
         fields: [
           { type: 'infoBox', content: '基于当前主题模式和用户偏好自动推荐最佳启动动画方案。' },
-          { type: 'buttonGroup', actions: [
-            { label: '一键应用推荐', icon: 'target', action: 'applyAutoSplash' },
-            { label: '重新分析', icon: 'refresh-cw', action: 'refreshSplash' },
-            { label: '应用动态配色', icon: 'palette', action: 'applyDynamicSplash' }
-          ]}
+          {
+            type: 'buttonGroup',
+            actions: [
+              { label: '一键应用推荐', icon: 'target', action: 'applyAutoSplash' },
+              { label: '重新分析', icon: 'refresh-cw', action: 'refreshSplash' },
+              { label: '应用动态配色', icon: 'palette', action: 'applyDynamicSplash' }
+            ]
+          }
         ]
       },
       {
@@ -311,29 +472,36 @@ export const themeSchema = [
         icon: 'activity',
         fields: [
           { type: 'splashGrid', key: 'splash', options: splashOptions },
-          { type: 'select', key: 'splashBgPattern', label: 'UI背景图自动搭配', options: [
-            { value: 'auto', label: '自动匹配主题' },
-            { value: 'dots', label: '圆点纹理' },
-            { value: 'grid', label: '网格纹理' },
-            { value: 'waves', label: '波纹纹理' },
-            { value: 'none', label: '无纹理' }
-          ]},
-          { type: 'buttonGroup', actions: [
-            { label: '预览当前方案', icon: 'eye', action: 'previewSplash' }
-          ]}
+          {
+            type: 'select',
+            key: 'splashBgPattern',
+            label: 'UI背景图自动搭配',
+            options: [
+              { value: 'auto', label: '自动匹配主题' },
+              { value: 'dots', label: '圆点纹理' },
+              { value: 'grid', label: '网格纹理' },
+              { value: 'waves', label: '波纹纹理' },
+              { value: 'none', label: '无纹理' }
+            ]
+          },
+          { type: 'buttonGroup', actions: [{ label: '预览当前方案', icon: 'eye', action: 'previewSplash' }] }
         ]
       },
       {
         title: '方案对比',
         icon: 'list',
         fields: [
-          { type: 'comparisonTable', columns: [
-            { key: 'name', label: '方案', icon: true },
-            { key: 'performance', label: '性能', format: 'stars' },
-            { key: 'visual', label: '视觉', format: 'stars' },
-            { key: 'adaptability', label: '适配', format: 'stars' },
-            { key: 'recommended', label: '推荐场景' }
-          ], rows: splashComparisonRows }
+          {
+            type: 'comparisonTable',
+            columns: [
+              { key: 'name', label: '方案', icon: true },
+              { key: 'performance', label: '性能', format: 'stars' },
+              { key: 'visual', label: '视觉', format: 'stars' },
+              { key: 'adaptability', label: '适配', format: 'stars' },
+              { key: 'recommended', label: '推荐场景' }
+            ],
+            rows: splashComparisonRows
+          }
         ]
       }
     ]
@@ -346,16 +514,12 @@ export const themeSchema = [
       {
         title: '预设主题方案',
         icon: 'target',
-        fields: [
-          { type: 'presetGrid', key: 'activePreset', options: presetThemeList }
-        ]
+        fields: [{ type: 'presetGrid', key: 'activePreset', options: presetThemeList }]
       },
       {
         title: '自定义预设',
         icon: 'save',
-        fields: [
-          { type: 'customPreset' }
-        ]
+        fields: [{ type: 'customPreset' }]
       },
       {
         title: '色彩系统参考',
@@ -364,9 +528,7 @@ export const themeSchema = [
           { label: '刷新', icon: 'refresh-cw', action: 'refreshColorSystem' },
           { label: '重置所有自定义', icon: 'rotate-ccw', action: 'resetAllCustom' }
         ],
-        fields: [
-          { type: 'colorSystem' }
-        ]
+        fields: [{ type: 'colorSystem' }]
       }
     ]
   }

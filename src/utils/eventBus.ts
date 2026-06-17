@@ -126,7 +126,7 @@ class EventBus {
     }
 
     if (this._debug) {
-      console.info(`[EventBus] ${event}`, data)
+      console.debug(`[EventBus] ${event}`, data)
     }
 
     const listeners = this._listeners.get(event)

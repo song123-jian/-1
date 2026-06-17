@@ -61,14 +61,14 @@ export function getDeniedPermissions(moduleKey) {
   const role = sessionStore.currentRole
   if (!role) {
     // 无角色时，返回该模块所有权限作为被拒绝项
-    const mod = permissionStore.defaultModules.find(m => m.key === moduleKey)
+    const mod = permissionStore.defaultModules.find((m) => m.key === moduleKey)
     return mod ? [...mod.perms] : []
   }
 
-  const mod = permissionStore.defaultModules.find(m => m.key === moduleKey)
+  const mod = permissionStore.defaultModules.find((m) => m.key === moduleKey)
   if (!mod) return []
 
-  return mod.perms.filter(perm => !permissionStore.getPerm(role, moduleKey, perm))
+  return mod.perms.filter((perm) => !permissionStore.getPerm(role, moduleKey, perm))
 }
 
 /**
@@ -83,10 +83,10 @@ export function getAllowedPermissions(moduleKey) {
   const role = sessionStore.currentRole
   if (!role) return []
 
-  const mod = permissionStore.defaultModules.find(m => m.key === moduleKey)
+  const mod = permissionStore.defaultModules.find((m) => m.key === moduleKey)
   if (!mod) return []
 
-  return mod.perms.filter(perm => permissionStore.getPerm(role, moduleKey, perm))
+  return mod.perms.filter((perm) => permissionStore.getPerm(role, moduleKey, perm))
 }
 
 /**
@@ -170,7 +170,7 @@ export function usePermission() {
    * 判断是否拥有任一权限
    */
   function hasAnyPermission(moduleKey, actions) {
-    return actions.some(action => checkPermission(moduleKey, action))
+    return actions.some((action) => checkPermission(moduleKey, action))
   }
 
   return {

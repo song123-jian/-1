@@ -2,7 +2,8 @@
   <div class="production-schedule">
     <div class="schedule-header">
       <div class="schedule-title">
-        <Icon name="calendar" :size="14" /> 生产排程甘特图
+        <Icon name="calendar" :size="14" />
+        生产排程甘特图
       </div>
       <div class="schedule-controls">
         <button class="btn btn-ghost btn-sm" @click="scrollLeft"><Icon name="chevronLeft" :size="14" /></button>
@@ -11,7 +12,7 @@
       </div>
     </div>
 
-    <div class="schedule-body" ref="scheduleBody">
+    <div ref="scheduleBody" class="schedule-body">
       <!-- 日期轴 -->
       <div class="schedule-timeline">
         <div class="schedule-label-col"></div>
@@ -30,11 +31,7 @@
 
       <!-- 工单行 -->
       <div v-if="scheduleOrders.length === 0" class="schedule-empty">暂无排程数据</div>
-      <div
-        v-for="order in scheduleOrders"
-        :key="order.id"
-        class="schedule-row"
-      >
+      <div v-for="order in scheduleOrders" :key="order.id" class="schedule-row">
         <div class="schedule-label-col">
           <span class="schedule-order-no">{{ order.orderNo }}</span>
           <span class="schedule-product-name">{{ order.productName }}</span>
@@ -47,12 +44,7 @@
             :class="{ weekend: date.isWeekend, today: date.isToday }"
           ></div>
           <!-- 进度条 -->
-          <div
-            class="schedule-bar"
-            :class="'bar-' + order.status"
-            :style="barStyle(order)"
-            :title="barTooltip(order)"
-          >
+          <div class="schedule-bar" :class="'bar-' + order.status" :style="barStyle(order)" :title="barTooltip(order)">
             <div class="bar-progress" :style="{ width: order.progress + '%' }"></div>
             <span class="bar-label">{{ order.progress }}%</span>
           </div>
@@ -62,15 +54,33 @@
 
     <!-- 图例 -->
     <div class="schedule-legend">
-      <span class="legend-item"><span class="legend-dot" style="background:var(--color-text-tertiary)"></span> 已计划</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--color-info)"></span> 已下达</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--color-accent)"></span> 生产中</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--color-warning)"></span> 质检中</span>
-      <span class="legend-item"><span class="legend-dot" style="background:var(--color-success)"></span> 已完成</span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background: var(--color-text-tertiary)"></span>
+        已计划
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background: var(--color-info)"></span>
+        已下达
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background: var(--color-accent)"></span>
+        生产中
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background: var(--color-warning)"></span>
+        质检中
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background: var(--color-success)"></span>
+        已完成
+      </span>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'ProductionSchedule' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 
@@ -86,7 +96,7 @@ const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 
 /* 过滤出有日期的工单 */
 const scheduleOrders = computed(() => {
-  return props.orders.filter(o => o.plannedStartDate && o.plannedEndDate && o.status !== 'cancelled')
+  return props.orders.filter((o) => o.plannedStartDate && o.plannedEndDate && o.status !== 'cancelled')
 })
 
 /* 日期列表 */
@@ -317,11 +327,26 @@ function scrollRight() {
   opacity: 0.8;
 }
 
-.schedule-bar.bar-planned { background: var(--color-text-tertiary); opacity: 0.4; }
-.schedule-bar.bar-released { background: var(--color-info); opacity: 0.5; }
-.schedule-bar.bar-in_progress { background: var(--color-accent); opacity: 0.6; }
-.schedule-bar.bar-quality_check { background: var(--color-warning); opacity: 0.6; }
-.schedule-bar.bar-completed { background: var(--color-success); opacity: 0.6; }
+.schedule-bar.bar-planned {
+  background: var(--color-text-tertiary);
+  opacity: 0.4;
+}
+.schedule-bar.bar-released {
+  background: var(--color-info);
+  opacity: 0.5;
+}
+.schedule-bar.bar-in_progress {
+  background: var(--color-accent);
+  opacity: 0.6;
+}
+.schedule-bar.bar-quality_check {
+  background: var(--color-warning);
+  opacity: 0.6;
+}
+.schedule-bar.bar-completed {
+  background: var(--color-success);
+  opacity: 0.6;
+}
 
 .bar-progress {
   position: absolute;
@@ -333,15 +358,25 @@ function scrollRight() {
   border-radius: var(--radius-sm);
 }
 
-.bar-planned .bar-progress { background: var(--color-text-tertiary); }
-.bar-released .bar-progress { background: var(--color-info); }
-.bar-in_progress .bar-progress { background: var(--color-accent); }
-.bar-quality_check .bar-progress { background: var(--color-warning); }
-.bar-completed .bar-progress { background: var(--color-success); }
+.bar-planned .bar-progress {
+  background: var(--color-text-tertiary);
+}
+.bar-released .bar-progress {
+  background: var(--color-info);
+}
+.bar-in_progress .bar-progress {
+  background: var(--color-accent);
+}
+.bar-quality_check .bar-progress {
+  background: var(--color-warning);
+}
+.bar-completed .bar-progress {
+  background: var(--color-success);
+}
 
 .bar-label {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   font-size: 10px;
   font-weight: 700;
   color: var(--color-text-primary);

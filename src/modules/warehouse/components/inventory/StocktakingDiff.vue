@@ -1,9 +1,9 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 900px">
       <div class="modal-header">
         <span class="modal-title">差异处理 - {{ order.orderNo }}</span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <!-- 差异汇总 -->
@@ -12,7 +12,9 @@
             <div class="stat-card-icon" style="background: var(--color-success-subtle); color: var(--color-success)">
               <Icon name="trendUp" :size="14" />
             </div>
-            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-success)">{{ profitCount }}</div>
+            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-success)">
+              {{ profitCount }}
+            </div>
             <div class="stat-card-label">盘盈笔数</div>
             <div style="font-size: var(--font-size-xs); color: var(--color-success); margin-top: var(--space-1)">
               金额: {{ formatMoney(order.summary.profitAmount) }}
@@ -22,7 +24,9 @@
             <div class="stat-card-icon" style="background: var(--color-danger-subtle); color: var(--color-danger)">
               <Icon name="trendDown" :size="14" />
             </div>
-            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-danger)">{{ lossCount }}</div>
+            <div class="stat-card-value" style="font-size: var(--font-size-xl); color: var(--color-danger)">
+              {{ lossCount }}
+            </div>
             <div class="stat-card-label">盘亏笔数</div>
             <div style="font-size: var(--font-size-xs); color: var(--color-danger); margin-top: var(--space-1)">
               金额: {{ formatMoney(order.summary.lossAmount) }}
@@ -76,22 +80,25 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">关闭</button>
+        <button class="btn btn-ghost" @click="emit('close')">关闭</button>
         <template v-if="order.status === 'diff_review'">
           <button class="btn btn-danger" @click="handleReject">
-            <Icon name="x" :size="14" /> 驳回
+            <Icon name="x" :size="14" />
+            驳回
           </button>
           <button class="btn btn-primary" @click="handleApprove">
-            <Icon name="check" :size="14" /> 审批通过
+            <Icon name="check" :size="14" />
+            审批通过
           </button>
         </template>
         <button v-if="order.status === 'completed'" class="btn btn-primary" @click="handleAdjust">
-          <Icon name="refreshCw" :size="14" /> 调整库存
+          <Icon name="refreshCw" :size="14" />
+          调整库存
         </button>
       </div>
 
       <!-- 确认弹窗 -->
-      <div v-if="confirmVisible" class="modal-overlay" style="z-index: var(--z-toast); background: rgba(0,0,0,0.4)">
+      <div v-if="confirmVisible" class="modal-overlay" style="z-index: var(--z-toast); background: rgba(0, 0, 0, 0.4)">
         <div class="modal-dialog" style="max-width: 400px">
           <div class="modal-header">
             <span class="modal-title">{{ confirmTitle }}</span>
@@ -109,6 +116,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'StocktakingDiff' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 import { useStocktakingStore } from '@/modules/warehouse/stores/stocktaking'
@@ -122,9 +132,9 @@ const emit = defineEmits(['close', 'reviewed', 'adjusted'])
 
 const store = useStocktakingStore()
 
-const profitCount = computed(() => (props.order.items || []).filter(i => i.diffQty > 0).length)
-const lossCount = computed(() => (props.order.items || []).filter(i => i.diffQty < 0).length)
-const matchCount = computed(() => (props.order.items || []).filter(i => !i.diffQty || i.diffQty === 0).length)
+const profitCount = computed(() => (props.order.items || []).filter((i) => i.diffQty > 0).length)
+const lossCount = computed(() => (props.order.items || []).filter((i) => i.diffQty < 0).length)
+const matchCount = computed(() => (props.order.items || []).filter((i) => !i.diffQty || i.diffQty === 0).length)
 
 const confirmVisible = ref(false)
 const confirmTitle = ref('')
@@ -170,7 +180,6 @@ function getDiffClass(diffQty) {
   if (diffQty === null || diffQty === 0) return ''
   return diffQty > 0 ? 'diff-profit' : 'diff-loss'
 }
-
 </script>
 
 <style scoped>

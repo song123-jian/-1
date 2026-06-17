@@ -34,7 +34,10 @@ export function useSmartRecognize(form) {
 
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
-      if (match) { pushItem(makeItem('requester', '申请人', match[1], 70)); break }
+      if (match) {
+        pushItem(makeItem('requester', '申请人', match[1], 70))
+        break
+      }
     }
 
     const dateMatch = text.match(/(?:预计到货|计划到货|到货日期)[:\s：]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?)/)
@@ -57,5 +60,9 @@ export function useSmartRecognize(form) {
     return result
   }
 
-  return useSmartRecognizeBase(form, parseTransferInfo, '粘贴调拨信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...')
+  return useSmartRecognizeBase(
+    form,
+    parseTransferInfo,
+    '粘贴调拨信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+  )
 }

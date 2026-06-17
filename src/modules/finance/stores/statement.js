@@ -421,8 +421,30 @@ export const useStatementStore = defineStore('statement', () => {
         sellerPhone: '',
         sellerEmail: '',
         items: [
-          { date: '2024-12-01', name: '不锈钢板304', code: 'MT-001', spec: '2B面', color: '', unit: '吨', qty: 100, price: 152, amount: 15200, remark: '' },
-          { date: '2024-12-10', name: '碳钢Q235', code: 'MT-002', spec: '热轧板', color: '', unit: '吨', qty: 50, price: 55, amount: 2750, remark: '' }
+          {
+            date: '2024-12-01',
+            name: '不锈钢板304',
+            code: 'MT-001',
+            spec: '2B面',
+            color: '',
+            unit: '吨',
+            qty: 100,
+            price: 152,
+            amount: 15200,
+            remark: ''
+          },
+          {
+            date: '2024-12-10',
+            name: '碳钢Q235',
+            code: 'MT-002',
+            spec: '热轧板',
+            color: '',
+            unit: '吨',
+            qty: 50,
+            price: 55,
+            amount: 2750,
+            remark: ''
+          }
         ],
         subtotal: 17950,
         taxRate: 13,
@@ -466,7 +488,18 @@ export const useStatementStore = defineStore('statement', () => {
         sellerPhone: '',
         sellerEmail: '',
         items: [
-          { date: '2024-12-15', name: '铝合金型材6063', code: 'MT-005', spec: 'T6', color: '', unit: '吨', qty: 200, price: 135, amount: 27000, remark: '' }
+          {
+            date: '2024-12-15',
+            name: '铝合金型材6063',
+            code: 'MT-005',
+            spec: 'T6',
+            color: '',
+            unit: '吨',
+            qty: 200,
+            price: 135,
+            amount: 27000,
+            remark: ''
+          }
         ],
         subtotal: 27000,
         taxRate: 13,

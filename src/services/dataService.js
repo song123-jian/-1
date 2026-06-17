@@ -689,7 +689,11 @@ class DataService {
       supplier: 'suppliers',
       warehouseLocation: 'locations',
       cost: 'records',
-      todo: 'todos'
+      todo: 'todos',
+      transaction: 'transactions',
+      purchase: 'purchaseOrders',
+      production: 'productionOrders',
+      transfer: 'transferOrders'
     }
     return keyMap[module] || module
   }
@@ -705,10 +709,15 @@ class DataService {
       inventory: 'addInventoryItem',
       delivery: 'addDelivery',
       collection: 'addCollection',
+      statement: 'addStatement',
       supplier: 'addSupplier',
       warehouseLocation: 'addLocation',
       cost: 'addRecord',
-      todo: 'addTodo'
+      todo: 'addTodo',
+      transaction: 'addTransaction',
+      purchase: 'addOrder',
+      production: 'addOrder',
+      transfer: 'addOrder'
     }
     return methodMap[module] || 'addItem'
   }
@@ -724,10 +733,15 @@ class DataService {
       inventory: 'updateInventoryItem',
       delivery: 'updateDelivery',
       collection: 'updateCollection',
+      statement: 'updateStatement',
       supplier: 'updateSupplier',
       warehouseLocation: 'updateLocation',
       cost: 'updateRecord',
-      todo: 'updateTodo'
+      todo: 'updateTodo',
+      transaction: 'updateTransaction',
+      purchase: 'updateOrder',
+      production: 'updateOrder',
+      transfer: 'updateOrder'
     }
     return methodMap[module] || 'updateItem'
   }
@@ -743,10 +757,15 @@ class DataService {
       inventory: 'deleteInventoryItem',
       delivery: 'deleteDelivery',
       collection: 'deleteCollection',
+      statement: 'deleteStatement',
       supplier: 'deleteSupplier',
       warehouseLocation: 'deleteLocation',
       cost: 'deleteRecord',
-      todo: 'deleteTodo'
+      todo: 'deleteTodo',
+      transaction: 'deleteTransaction',
+      purchase: 'deleteOrder',
+      production: 'deleteOrder',
+      transfer: 'deleteOrder'
     }
     return methodMap[module] || 'deleteItem'
   }
@@ -801,7 +820,8 @@ class DataService {
     const map = {
       quotation: 'quotation',
       contract: 'contract',
-      purchase: 'purchase'
+      purchase: 'purchase',
+      collection: 'payment'
     }
     if (module === 'inventory') {
       if (data.type === 'inbound') return 'inbound'
@@ -817,7 +837,23 @@ class DataService {
   _syncToSupabase(module, data, action) {
     try {
       if (!SupabaseClient.isConnected()) return
-      const tableName = API.getTableName(module)
+      /* 模块名 → Supabase表名 的正确映射 */
+      const MODULE_TO_TABLE = {
+        customer: 'customers',
+        quotation: 'quotations',
+        contract: 'contracts',
+        inventory: 'inventory',
+        delivery: 'deliveries',
+        collection: 'collections',
+        statement: 'statements',
+        supplier: 'suppliers',
+        warehouseLocation: 'warehouse_locations',
+        cost: 'cost_records',
+        todo: 'todos',
+        transaction: 'transactions',
+        purchase: 'purchase_orders'
+      }
+      const tableName = MODULE_TO_TABLE[module]
       if (!tableName) return
 
       if (action === 'upsert') {
@@ -873,7 +909,7 @@ class DataService {
               })
               .catch(() => {})
 
-            console.info(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
+            console.debug(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
           }
         })
         .catch(() => {})

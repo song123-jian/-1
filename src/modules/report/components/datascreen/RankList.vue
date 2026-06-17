@@ -35,6 +35,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'RankList' }
+</script>
 <script setup>
 const props = defineProps({
   title: { type: String, default: '' },
@@ -57,7 +60,7 @@ function rankIcon(rank) {
 
 function barWidth(value) {
   if (!props.items.length) return 0
-  const max = Math.max(...props.items.map(i => i.value || 0))
+  const max = Math.max(...props.items.map((i) => i.value || 0))
   if (max === 0) return 0
   return Math.max((value / max) * 100, 2)
 }
@@ -108,8 +111,13 @@ function barColor(rank) {
 }
 
 @keyframes dot-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .ds-rank-list__body {
@@ -120,8 +128,14 @@ function barColor(rank) {
 
 /* 入场动画 */
 @keyframes slideIn {
-  from { opacity: 0; transform: translateX(-12px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .ds-rank-list__item {
@@ -222,9 +236,15 @@ function barColor(rank) {
 }
 
 @keyframes bar-shine {
-  0% { left: -100%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 .ds-rank-list__value {

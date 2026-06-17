@@ -12,7 +12,8 @@
  */
 export function generateOrderNo(prefix, list, noField) {
   const now = new Date()
-  const dateStr = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
+  const dateStr =
+    now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0')
   const p = prefix + dateStr
   let maxSeq = 0
   for (const item of list) {
@@ -36,8 +37,18 @@ export function computeAging(items, amountField, paidField) {
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const result = {
-    current: 0, days30: 0, days60: 0, days90: 0, days180: 0, over180: 0,
-    currentCount: 0, days30Count: 0, days60Count: 0, days90Count: 0, days180Count: 0, over180Count: 0
+    current: 0,
+    days30: 0,
+    days60: 0,
+    days90: 0,
+    days180: 0,
+    over180: 0,
+    currentCount: 0,
+    days30Count: 0,
+    days60Count: 0,
+    days90Count: 0,
+    days180Count: 0,
+    over180Count: 0
   }
 
   for (const item of items) {

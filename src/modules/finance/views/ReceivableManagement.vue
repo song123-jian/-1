@@ -507,6 +507,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'ReceivableManagement' }
+</script>
 <script setup>
 import { onMounted, computed, ref } from 'vue'
 import { useReceivableStore } from '@/modules/finance/stores/receivable'

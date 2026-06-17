@@ -1,32 +1,43 @@
 <template>
-  <aside class="app-sidebar" :class="{ 'collapsed': isCollapsed, 'open': isMobileOpen }">
+  <aside class="app-sidebar" :class="{ collapsed: isCollapsed, open: isMobileOpen }">
     <div class="sidebar-header">
       <div class="sidebar-logo">冠</div>
-      <span class="sidebar-brand" v-show="!isCollapsed">冠久ERP</span>
-      <button class="sidebar-collapse-btn" @click="handleToggleCollapse" :title="isCollapsed ? '展开侧边栏' : '折叠侧边栏'">
+      <span v-show="!isCollapsed" class="sidebar-brand">冠久ERP</span>
+      <button
+        class="sidebar-collapse-btn"
+        :title="isCollapsed ? '展开侧边栏' : '折叠侧边栏'"
+        @click="handleToggleCollapse"
+      >
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-          <path d="M10 3L5 8L10 13"/>
+          <path d="M10 3L5 8L10 13" />
         </svg>
       </button>
     </div>
 
-    <div class="sidebar-shortcuts" v-show="!isCollapsed">
+    <div v-show="!isCollapsed" class="sidebar-shortcuts">
       <span class="sidebar-shortcuts-label">快捷入口</span>
-      <button class="sidebar-shortcut-btn" @click="navigateTo('/dashboard')" title="仪表盘"><Icon name="chart" :size="16" /></button>
-      <button class="sidebar-shortcut-btn" @click="navigateTo('/customers')" title="客户管理"><Icon name="users" :size="16" /></button>
-      <button class="sidebar-shortcut-btn" @click="navigateTo('/inbound')" title="入库管理"><Icon name="upload" :size="16" /></button>
-      <button class="sidebar-shortcut-btn" @click="navigateTo('/quotations')" title="报价管理"><Icon name="edit" :size="16" /></button>
+      <button class="sidebar-shortcut-btn" title="仪表盘" @click="navigateTo('/dashboard')">
+        <Icon name="chart" :size="16" />
+      </button>
+      <button class="sidebar-shortcut-btn" title="客户管理" @click="navigateTo('/customers')">
+        <Icon name="users" :size="16" />
+      </button>
+      <button class="sidebar-shortcut-btn" title="入库管理" @click="navigateTo('/inbound')">
+        <Icon name="upload" :size="16" />
+      </button>
+      <button class="sidebar-shortcut-btn" title="报价管理" @click="navigateTo('/quotations')">
+        <Icon name="edit" :size="16" />
+      </button>
     </div>
 
     <nav class="sidebar-nav">
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.overview }"
-        data-section="overview"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.overview }" data-section="overview">
         <div class="nav-section-title" @click="toggleSection('overview')">
-          <Icon name="chart" :size="14" /> 概览
-          <span class="section-arrow"><Icon :name="sectionCollapsed.overview ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="chart" :size="14" />
+          概览
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.overview ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -44,14 +55,13 @@
         </div>
       </div>
 
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.sales }"
-        data-section="sales"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.sales }" data-section="sales">
         <div class="nav-section-title" @click="toggleSection('sales')">
-          <Icon name="dollar" :size="14" /> 销售
-          <span class="section-arrow"><Icon :name="sectionCollapsed.sales ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="dollar" :size="14" />
+          销售
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.sales ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -69,14 +79,13 @@
         </div>
       </div>
 
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.warehouse }"
-        data-section="warehouse"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.warehouse }" data-section="warehouse">
         <div class="nav-section-title" @click="toggleSection('warehouse')">
-          <Icon name="package" :size="14" /> 仓储
-          <span class="section-arrow"><Icon :name="sectionCollapsed.warehouse ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="package" :size="14" />
+          仓储
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.warehouse ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -94,14 +103,13 @@
         </div>
       </div>
 
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.finance }"
-        data-section="finance"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.finance }" data-section="finance">
         <div class="nav-section-title" @click="toggleSection('finance')">
-          <Icon name="dollar" :size="14" /> 财务与结算
-          <span class="section-arrow"><Icon :name="sectionCollapsed.finance ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="dollar" :size="14" />
+          财务与结算
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.finance ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -119,14 +127,13 @@
         </div>
       </div>
 
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.resource }"
-        data-section="resource"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.resource }" data-section="resource">
         <div class="nav-section-title" @click="toggleSection('resource')">
-          <Icon name="card" :size="14" /> 资源与档案
-          <span class="section-arrow"><Icon :name="sectionCollapsed.resource ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="card" :size="14" />
+          资源与档案
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.resource ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
           <router-link
@@ -144,20 +151,21 @@
         </div>
       </div>
 
-      <div
-        class="nav-section"
-        :class="{ collapsed: sectionCollapsed.system }"
-        data-section="system"
-      >
+      <div class="nav-section" :class="{ collapsed: sectionCollapsed.system }" data-section="system">
         <div class="nav-section-title" @click="toggleSection('system')">
-          <Icon name="setting" :size="14" /> 系统与管理
-          <span class="section-arrow"><Icon :name="sectionCollapsed.system ? 'chevronRight' : 'chevronDown'" :size="12" /></span>
+          <Icon name="setting" :size="14" />
+          系统与管理
+          <span class="section-arrow">
+            <Icon :name="sectionCollapsed.system ? 'chevronRight' : 'chevronDown'" :size="12" />
+          </span>
         </div>
         <div class="nav-section-body">
-          <div class="nav-item has-submenu" @click="toggleSettingsSubmenu" :class="{ open: settingsSubmenuOpen }">
+          <div class="nav-item has-submenu" :class="{ open: settingsSubmenuOpen }" @click="toggleSettingsSubmenu">
             <span class="nav-item-icon"><Icon name="setting" :size="18" /></span>
             <span class="nav-item-text">系统设置</span>
-            <span class="nav-item-badge settings-toggle-badge"><Icon :name="settingsSubmenuOpen ? 'chevronDown' : 'chevronRight'" :size="12" /></span>
+            <span class="nav-item-badge settings-toggle-badge">
+              <Icon :name="settingsSubmenuOpen ? 'chevronDown' : 'chevronRight'" :size="12" />
+            </span>
           </div>
           <div class="nav-submenu" :class="{ collapsed: !settingsSubmenuOpen }">
             <router-link
@@ -187,16 +195,14 @@
       </div>
     </nav>
 
-    <div class="sidebar-fav" v-show="!isCollapsed">
-      <div class="sidebar-fav-label"><Icon name="star" :size="14" /> 收藏</div>
+    <div v-show="!isCollapsed" class="sidebar-fav">
+      <div class="sidebar-fav-label">
+        <Icon name="star" :size="14" />
+        收藏
+      </div>
       <div class="sidebar-fav-list">
         <div v-if="favorites.length === 0" class="sidebar-fav-empty">右键导航项可添加收藏</div>
-        <div
-          v-for="fav in favorites"
-          :key="fav.path"
-          class="sidebar-fav-item"
-          @click="navigateTo(fav.path)"
-        >
+        <div v-for="fav in favorites" :key="fav.path" class="sidebar-fav-item" @click="navigateTo(fav.path)">
           <span><Icon :name="fav.icon" :size="14" /></span>
           <span>{{ fav.label }}</span>
           <span class="fav-remove" @click.stop="removeFavorite(fav.path)"><Icon name="close" :size="12" /></span>
@@ -212,29 +218,38 @@
         :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
       >
         <div class="context-menu-item" @click="handleContextAddFavorite">
-          <Icon name="star" :size="14" /> 添加收藏
+          <Icon name="star" :size="14" />
+          添加收藏
         </div>
         <div class="context-menu-item" @click="handleContextRemoveFavorite">
-          <Icon name="close" :size="14" /> 移除收藏
+          <Icon name="close" :size="14" />
+          移除收藏
         </div>
       </div>
     </Teleport>
 
     <div class="sidebar-footer">
-      <div class="sidebar-user" @click="handleSwitchRole" :title="'点击切换角色'">
+      <div class="sidebar-user">
         <div class="sidebar-avatar">{{ sessionStore.roleName?.charAt(0) || '?' }}</div>
-        <div class="sidebar-user-info" v-show="!isCollapsed">
+        <div v-show="!isCollapsed" class="sidebar-user-info">
           <div class="sidebar-user-name">{{ sessionStore.roleName }}</div>
-          <div class="sidebar-user-role"><Icon name="greenCircle" :size="10" /> 在线 {{ sessionStore.onlineMembers.length }}人 · <Icon name="refresh" :size="10" /> 切换身份</div>
+          <div class="sidebar-user-role">
+            <Icon name="greenCircle" :size="10" />
+            管理员模式
+          </div>
         </div>
       </div>
     </div>
   </aside>
 </template>
 
+<script>
+export default { name: 'AppSidebar' }
+</script>
 <script setup>
-import { ref, reactive, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useClickOutside } from '@/composables/useClickOutside'
 import { useTodoStore } from '@/stores/todo'
 import { useQuotationStore } from '@/modules/sales/stores/quotation'
 import { useContractStore } from '@/modules/sales/stores/contract'
@@ -270,16 +285,9 @@ function handleToggleCollapse() {
 }
 
 function navigateTo(path) {
-  router.push(path)
+  router.push(path).catch(() => {})
   /* 移动端导航后关闭菜单 */
   emit('close-mobile')
-}
-
-function handleSwitchRole() {
-  const syncEngine = useSyncEngine()
-  syncEngine.stopAutoSync()
-  sessionStore.clearSession()
-  router.push('/role-select')
 }
 
 const FAV_STORAGE_KEY = 'gj_erp_navFavorites'
@@ -289,14 +297,18 @@ function loadFromStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
     if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
   return fallback
 }
 
 function saveToStorage(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 const sectionCollapsed = reactive({
@@ -333,7 +345,7 @@ function isItemActive(item) {
 }
 
 function addFavorite(item) {
-  const exists = favorites.value.find(f => f.path === item.path && f.label === item.label)
+  const exists = favorites.value.find((f) => f.path === item.path && f.label === item.label)
   if (exists) return
   if (favorites.value.length >= 15) return
   favorites.value.push({ path: item.path, label: item.label, icon: item.icon })
@@ -341,7 +353,7 @@ function addFavorite(item) {
 }
 
 function removeFavorite(path) {
-  favorites.value = favorites.value.filter(f => f.path !== path)
+  favorites.value = favorites.value.filter((f) => f.path !== path)
   saveToStorage(FAV_STORAGE_KEY, favorites.value)
 }
 
@@ -383,27 +395,33 @@ function closeContextMenu(e) {
 onMounted(() => {
   /* 恢复导航分区折叠状态 */
   const collapsedState = loadFromStorage(COLLAPSED_STORAGE_KEY, {})
-  Object.keys(collapsedState).forEach(key => {
+  Object.keys(collapsedState).forEach((key) => {
     if (key in sectionCollapsed) {
       sectionCollapsed[key] = collapsedState[key]
     }
   })
-  document.addEventListener('click', closeContextMenu)
 })
 
-onBeforeUnmount(() => {
-  document.removeEventListener('click', closeContextMenu)
-})
+useClickOutside(closeContextMenu)
 
 const overviewItems = computed(() => {
   const items = [
     { path: '/dashboard', icon: 'table', label: '仪表盘' },
     { path: '/data-screen', icon: 'database', label: '数据大屏', matchPath: '/data-screen' },
     { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
-    { path: '/workflow', icon: 'layers', label: '工作流管理', matchPath: '/workflow', permModule: 'workflow', permKey: 'workflowView' },
-    { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' },
+    {
+      path: '/workflow',
+      icon: 'layers',
+      label: '工作流管理',
+      matchPath: '/workflow',
+      permModule: 'workflow',
+      permKey: 'workflowView'
+    },
+    { path: '/favorites', icon: 'star', label: '收藏导航', matchPath: '/favorites' }
   ]
-  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+  return items.filter(
+    (item) => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey)
+  )
 })
 
 const salesItems = computed(() => {
@@ -411,46 +429,166 @@ const salesItems = computed(() => {
     { path: '/customers', icon: 'building', label: '客户管理', matchPath: '/customers' },
     { path: '/tag-category', icon: 'tag', label: '标签分类', matchPath: '/tag-category' },
     { path: '/project-tracking', icon: 'target', label: '项目追踪', matchPath: '/project-tracking' },
-    { path: '/quotations', icon: 'list', label: '报价管理', badge: quotationStore.pendingCount || null, matchPath: '/quotations', permModule: 'quote_contract', permKey: 'canCreateQuote' },
-    { path: '/contracts', icon: 'file', label: '合同管理', badge: contractStore.pendingApprovalCount || null, matchPath: '/contracts', permModule: 'quote_contract', permKey: 'canCreateContract' },
+    {
+      path: '/quotations',
+      icon: 'list',
+      label: '报价管理',
+      badge: quotationStore.pendingCount || null,
+      matchPath: '/quotations',
+      permModule: 'quote_contract',
+      permKey: 'canCreateQuote'
+    },
+    {
+      path: '/contracts',
+      icon: 'file',
+      label: '合同管理',
+      badge: contractStore.pendingApprovalCount || null,
+      matchPath: '/contracts',
+      permModule: 'quote_contract',
+      permKey: 'canCreateContract'
+    },
     { path: '/transactions', icon: 'dollar', label: '交易管理', matchPath: '/transactions' },
-    { path: '/statements', icon: 'clipboard', label: '对账管理', matchPath: '/statements', permModule: 'statement', permKey: 'statementCreate' },
+    {
+      path: '/statements',
+      icon: 'clipboard',
+      label: '对账管理',
+      matchPath: '/statements',
+      permModule: 'statement',
+      permKey: 'statementCreate'
+    }
   ]
-  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+  return items.filter(
+    (item) => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey)
+  )
 })
 
 const warehouseItems = computed(() => {
   const items = [
-    { path: '/suppliers', icon: 'building', label: '供应商管理', matchPath: '/suppliers', permModule: 'supplier', permKey: 'supplierView' },
-    { path: '/purchase', icon: 'clipboard', label: '采购管理', matchPath: '/purchase', permModule: 'purchase', permKey: 'purchaseCreate' },
-    { path: '/inbound', icon: 'upload', label: '入库管理', badge: inventoryStore.pendingInboundCount || null, matchPath: '/inbound', permModule: 'inbound', permKey: 'inboundCreate' },
-    { path: '/inventory', icon: 'package', label: '库存管理', badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null, matchPath: '/inventory' },
-    { path: '/outbound', icon: 'download', label: '出库管理', badge: inventoryStore.pendingOutboundCount || null, matchPath: '/outbound', permModule: 'outbound', permKey: 'outboundCreate' },
-    { path: '/stocktaking', icon: 'clipboardCheck', label: '盘点管理', matchPath: '/stocktaking', permModule: 'stocktaking', permKey: 'stocktakingCreate' },
-    { path: '/transfer', icon: 'shuffle', label: '调拨管理', matchPath: '/transfer', permModule: 'transfer', permKey: 'transferCreate' },
-    { path: '/production', icon: 'layers', label: '生产管理', matchPath: '/production', permModule: 'production', permKey: 'productionCreate' },
-    { path: '/warehouse-locations', icon: 'mapPin', label: '仓位管理', matchPath: '/warehouse-locations', permModule: 'warehouse', permKey: 'warehouseCreate' },
-    { path: '/deliveries', icon: 'truck', label: '送货管理', matchPath: '/deliveries', permModule: 'delivery', permKey: 'deliveryCreate' },
-
+    {
+      path: '/suppliers',
+      icon: 'building',
+      label: '供应商管理',
+      matchPath: '/suppliers',
+      permModule: 'supplier',
+      permKey: 'supplierView'
+    },
+    {
+      path: '/purchase',
+      icon: 'clipboard',
+      label: '采购管理',
+      matchPath: '/purchase',
+      permModule: 'purchase',
+      permKey: 'purchaseCreate'
+    },
+    {
+      path: '/inbound',
+      icon: 'upload',
+      label: '入库管理',
+      badge: inventoryStore.pendingInboundCount || null,
+      matchPath: '/inbound',
+      permModule: 'inbound',
+      permKey: 'inboundCreate'
+    },
+    {
+      path: '/inventory',
+      icon: 'package',
+      label: '库存管理',
+      badge: inventoryStore.lowStockCount + inventoryStore.exhaustedCount || null,
+      matchPath: '/inventory'
+    },
+    {
+      path: '/outbound',
+      icon: 'download',
+      label: '出库管理',
+      badge: inventoryStore.pendingOutboundCount || null,
+      matchPath: '/outbound',
+      permModule: 'outbound',
+      permKey: 'outboundCreate'
+    },
+    {
+      path: '/stocktaking',
+      icon: 'clipboardCheck',
+      label: '盘点管理',
+      matchPath: '/stocktaking',
+      permModule: 'stocktaking',
+      permKey: 'stocktakingCreate'
+    },
+    {
+      path: '/transfer',
+      icon: 'shuffle',
+      label: '调拨管理',
+      matchPath: '/transfer',
+      permModule: 'transfer',
+      permKey: 'transferCreate'
+    },
+    {
+      path: '/production',
+      icon: 'layers',
+      label: '生产管理',
+      matchPath: '/production',
+      permModule: 'production',
+      permKey: 'productionCreate'
+    },
+    {
+      path: '/warehouse-locations',
+      icon: 'mapPin',
+      label: '仓位管理',
+      matchPath: '/warehouse-locations',
+      permModule: 'warehouse',
+      permKey: 'warehouseCreate'
+    },
+    {
+      path: '/deliveries',
+      icon: 'truck',
+      label: '送货管理',
+      matchPath: '/deliveries',
+      permModule: 'delivery',
+      permKey: 'deliveryCreate'
+    }
   ]
-  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+  return items.filter(
+    (item) => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey)
+  )
 })
 
 const financeItems = computed(() => {
   const items = [
     { path: '/monthly-stats', icon: 'calendar', label: '月度统计', matchPath: '/monthly-stats' },
     { path: '/collections', icon: 'dollar', label: '回款管理', matchPath: '/collections' },
-    { path: '/receivables', icon: 'trendUp', label: '应收管理', matchPath: '/receivables', permModule: 'receivable', permKey: 'receivableView' },
-    { path: '/payables', icon: 'arrowDown', label: '应付管理', matchPath: '/payables', permModule: 'payable', permKey: 'payableView' },
-    { path: '/cost-analysis', icon: 'calculator', label: '成本核算', matchPath: '/cost-analysis', permModule: 'cost', permKey: 'costView' },
-    { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' },
+    {
+      path: '/receivables',
+      icon: 'trendUp',
+      label: '应收管理',
+      matchPath: '/receivables',
+      permModule: 'receivable',
+      permKey: 'receivableView'
+    },
+    {
+      path: '/payables',
+      icon: 'arrowDown',
+      label: '应付管理',
+      matchPath: '/payables',
+      permModule: 'payable',
+      permKey: 'payableView'
+    },
+    {
+      path: '/cost-analysis',
+      icon: 'calculator',
+      label: '成本核算',
+      matchPath: '/cost-analysis',
+      permModule: 'cost',
+      permKey: 'costView'
+    },
+    { path: '/reports', icon: 'trendUp', label: '报表中心', matchPath: '/reports' }
   ]
-  return items.filter(item => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey))
+  return items.filter(
+    (item) => !item.permModule || permissionStore.getPerm(sessionStore.currentRole, item.permModule, item.permKey)
+  )
 })
 
 const resourceItems = computed(() => [
   { path: '/archives', icon: 'card', label: '档案管理', matchPath: '/archives' },
-  { path: '/doc-settings', icon: 'award', label: '资质设置', matchPath: '/doc-settings' },
+  { path: '/doc-settings', icon: 'award', label: '资质设置', matchPath: '/doc-settings' }
 ])
 
 const settingsItems = computed(() => [
@@ -459,7 +597,7 @@ const settingsItems = computed(() => [
   { path: '/system?tab=themes', icon: 'palette', label: '主题管理', matchPath: '/system', tab: 'themes' },
   { path: '/system?tab=data', icon: 'save', label: '数据管理', matchPath: '/system', tab: 'data' },
   { path: '/system?tab=users', icon: 'users', label: '用户管理', matchPath: '/system', tab: 'users' },
-  { path: '/system?tab=dict', icon: 'list', label: '数据字典', matchPath: '/system', tab: 'dict' },
+  { path: '/system?tab=dict', icon: 'list', label: '数据字典', matchPath: '/system', tab: 'dict' }
 ])
 
 const systemItems = computed(() => [
@@ -467,7 +605,7 @@ const systemItems = computed(() => [
   { path: '/sales-permission', icon: 'shield', label: '销售权限配置', matchPath: '/sales-permission' },
   { path: '/database-connection', icon: 'link', label: '数据库连接', matchPath: '/database-connection' },
   { path: '/logs', icon: 'list', label: '操作日志', matchPath: '/logs' },
-  { path: '/mobile-design', icon: 'mobile', label: '移动端设计', matchPath: '/mobile-design' },
+  { path: '/mobile-design', icon: 'mobile', label: '移动端设计', matchPath: '/mobile-design' }
 ])
 </script>
 
@@ -480,10 +618,12 @@ const systemItems = computed(() => [
   width: var(--sidebar-width, 260px);
   background: var(--color-bg-secondary, #1e293b);
   border-right: 1px solid var(--color-border, #475569);
-  z-index: 100;
+  z-index: var(--z-dropdown);
   display: flex;
   flex-direction: column;
-  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1), transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    width 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 .app-sidebar.collapsed {
@@ -532,7 +672,7 @@ const systemItems = computed(() => [
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--transition-fast);
-  z-index: 200;
+  z-index: var(--z-sticky);
   box-shadow: var(--shadow-md);
 }
 .app-sidebar.collapsed .nav-item:hover::after {
@@ -555,7 +695,7 @@ const systemItems = computed(() => [
 @media (max-width: 1024px) {
   .app-sidebar {
     transform: translateX(-100%);
-    z-index: 200;
+    z-index: var(--z-sticky);
     width: 280px;
   }
   .app-sidebar.open {
@@ -699,7 +839,9 @@ const systemItems = computed(() => [
   display: flex;
   align-items: center;
   justify-content: space-between;
-  transition: color 0.15s ease, background 0.15s ease;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
   user-select: none;
   border-radius: var(--radius-sm);
 }
@@ -718,15 +860,19 @@ const systemItems = computed(() => [
   max-height: 800px;
   opacity: 1;
   overflow: hidden;
-  transition: max-height 250ms ease-in, opacity 150ms ease-in 50ms;
+  transition:
+    max-height 250ms ease-in,
+    opacity 150ms ease-in 50ms;
 }
 .nav-section.collapsed .nav-section-body {
   max-height: 0;
   opacity: 0;
-  transition: max-height 250ms ease-out, opacity 150ms ease-out;
+  transition:
+    max-height 250ms ease-out,
+    opacity 150ms ease-out;
 }
 
-.nav-section[data-section="overview"] .nav-section-title::before {
+.nav-section[data-section='overview'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -736,7 +882,7 @@ const systemItems = computed(() => [
   margin-right: var(--space-2);
   vertical-align: middle;
 }
-.nav-section[data-section="sales"] .nav-section-title::before {
+.nav-section[data-section='sales'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -746,7 +892,7 @@ const systemItems = computed(() => [
   margin-right: var(--space-2);
   vertical-align: middle;
 }
-.nav-section[data-section="warehouse"] .nav-section-title::before {
+.nav-section[data-section='warehouse'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -756,7 +902,7 @@ const systemItems = computed(() => [
   margin-right: var(--space-2);
   vertical-align: middle;
 }
-.nav-section[data-section="finance"] .nav-section-title::before {
+.nav-section[data-section='finance'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -766,7 +912,7 @@ const systemItems = computed(() => [
   margin-right: var(--space-2);
   vertical-align: middle;
 }
-.nav-section[data-section="resource"] .nav-section-title::before {
+.nav-section[data-section='resource'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -776,7 +922,7 @@ const systemItems = computed(() => [
   margin-right: var(--space-2);
   vertical-align: middle;
 }
-.nav-section[data-section="system"] .nav-section-title::before {
+.nav-section[data-section='system'] .nav-section-title::before {
   content: '';
   display: inline-block;
   width: 3px;
@@ -796,7 +942,10 @@ const systemItems = computed(() => [
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
-  transition: background 0.15s ease, transform 0.1s ease, color var(--transition-fast);
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    color var(--transition-fast);
   cursor: pointer;
   white-space: nowrap;
   user-select: none;
@@ -869,7 +1018,9 @@ const systemItems = computed(() => [
   overflow: hidden;
   max-height: 500px;
   opacity: 1;
-  transition: max-height 250ms ease, opacity 200ms ease;
+  transition:
+    max-height 250ms ease,
+    opacity 200ms ease;
 }
 .nav-submenu.collapsed {
   max-height: 0;
@@ -889,7 +1040,9 @@ const systemItems = computed(() => [
   background: var(--color-text-tertiary);
   opacity: 0.5;
   transform: translateY(-50%);
-  transition: background 0.15s ease, opacity 0.15s ease;
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
 }
 .nav-submenu .nav-item:hover::after,
 .nav-submenu .nav-item.active::after {
@@ -934,7 +1087,9 @@ const systemItems = computed(() => [
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background 0.15s ease, padding-left 0.15s ease;
+  transition:
+    background 0.15s ease,
+    padding-left 0.15s ease;
 }
 .sidebar-fav-item:hover {
   background: var(--color-accent-subtle);
@@ -1008,21 +1163,43 @@ const systemItems = computed(() => [
 }
 
 @keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 @keyframes fadeInScale {
-  0% { transform: scale(0); opacity: 0; }
-  60% { transform: scale(1.15); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes favPulse {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); opacity: 0.7; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
 }
 .nav-fav-indicator {
   display: inline-block;

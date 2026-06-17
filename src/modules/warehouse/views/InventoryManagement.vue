@@ -161,6 +161,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'InventoryManagement' }
+</script>
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
@@ -269,11 +272,11 @@ function handleSaveItem() {
 }
 
 function handleOpenInbound() {
-  router.push('/inbound')
+  router.push('/inbound').catch(() => {})
 }
 
 function handleQuickInbound(item) {
-  router.push({ path: '/inbound', query: { materialCode: item.code, materialName: item.name } })
+  router.push({ path: '/inbound', query: { materialCode: item.code, materialName: item.name } }).catch(() => {})
 }
 </script>
 

@@ -2,10 +2,16 @@
   <div class="favorites-page">
     <div class="page-header">
       <div>
-        <h2 class="page-header-title"><Icon name="star" :size="14" /> 收藏导航</h2>
+        <h2 class="page-header-title">
+          <Icon name="star" :size="14" />
+          收藏导航
+        </h2>
         <p class="page-header-subtitle">管理您收藏的常用页面，快速跳转</p>
       </div>
-      <button class="btn btn-ghost" @click="$router.push('/dashboard')"><Icon name="chevronLeft" :size="14" /> 返回仪表盘</button>
+      <button class="btn btn-ghost" @click="$router.push('/dashboard').catch(() => {})">
+        <Icon name="chevronLeft" :size="14" />
+        返回仪表盘
+      </button>
     </div>
 
     <div class="fav-stats-bar">
@@ -23,19 +29,16 @@
       </div>
     </div>
 
-    <div class="fav-grid" v-if="favorites.length > 0">
-      <div
-        v-for="fav in favorites"
-        :key="fav.path"
-        class="panel-card fav-card"
-        @click="navigateTo(fav.path)"
-      >
+    <div v-if="favorites.length > 0" class="fav-grid">
+      <div v-for="fav in favorites" :key="fav.path" class="panel-card fav-card" @click="navigateTo(fav.path)">
         <div class="fav-card-icon"><Icon :name="fav.icon" :size="14" /></div>
         <div class="fav-card-info">
           <div class="fav-card-name">{{ fav.label }}</div>
           <div class="fav-card-path">{{ fav.path }}</div>
         </div>
-        <button class="fav-card-remove" @click.stop="removeFavorite(fav.path)" title="取消收藏"><Icon name="close" :size="14" /></button>
+        <button class="fav-card-remove" title="取消收藏" @click.stop="removeFavorite(fav.path)">
+          <Icon name="close" :size="14" />
+        </button>
       </div>
     </div>
 
@@ -45,18 +48,13 @@
       <div class="fav-empty-desc">右键点击侧边栏导航项可添加收藏</div>
     </div>
 
-    <div class="fav-recommend" v-if="recommendItems.length > 0">
+    <div v-if="recommendItems.length > 0" class="fav-recommend">
       <div class="fav-recommend-header">
         <span class="panel-card-title">[推荐] 推荐收藏</span>
         <span class="fav-recommend-hint">点击快速添加常用页面</span>
       </div>
       <div class="fav-recommend-grid">
-        <div
-          v-for="item in recommendItems"
-          :key="item.path"
-          class="fav-recommend-item"
-          @click="addFavorite(item)"
-        >
+        <div v-for="item in recommendItems" :key="item.path" class="fav-recommend-item" @click="addFavorite(item)">
           <span class="fav-recommend-icon"><Icon :name="item.icon" :size="14" /></span>
           <span class="fav-recommend-label">{{ item.label }}</span>
           <span class="fav-recommend-add">+</span>
@@ -66,6 +64,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'Favorites' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -82,14 +83,18 @@ function loadFromStorage(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
     if (raw) return JSON.parse(raw)
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
   return fallback
 }
 
 function saveToStorage(key, data) {
   try {
     localStorage.setItem(key, JSON.stringify(data))
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    /* ignore */
+  }
 }
 
 const favorites = ref(loadFromStorage(FAV_STORAGE_KEY, []))
@@ -100,7 +105,7 @@ const allNavItems = computed(() => {
   // 排除重定向路由、角色选择页、404页、详情页等非导航页面
   const excludeNames = ['RoleSelect', 'CustomerDetail', 'Favorites']
   return routes
-    .filter(route => {
+    .filter((route) => {
       if (!route.name || !route.path || !route.meta?.title) return false
       if (excludeNames.includes(route.name)) return false
       if (route.path.includes(':') || route.path === '/') return false
@@ -108,7 +113,7 @@ const allNavItems = computed(() => {
       if (route.redirect) return false
       return true
     })
-    .map(route => ({
+    .map((route) => ({
       path: route.path,
       icon: route.meta.icon || 'file',
       label: route.meta.title
@@ -117,16 +122,16 @@ const allNavItems = computed(() => {
 })
 
 const recommendItems = computed(() => {
-  const favPaths = new Set(favorites.value.map(f => f.path))
-  return allNavItems.value.filter(item => !favPaths.has(item.path))
+  const favPaths = new Set(favorites.value.map((f) => f.path))
+  return allNavItems.value.filter((item) => !favPaths.has(item.path))
 })
 
 function navigateTo(path) {
-  router.push(path)
+  router.push(path).catch(() => {})
 }
 
 function addFavorite(item) {
-  const exists = favorites.value.find(f => f.path === item.path)
+  const exists = favorites.value.find((f) => f.path === item.path)
   if (exists) return
   if (favorites.value.length >= maxFavorites) {
     toast.warning(`收藏数量已达上限（${maxFavorites}个），请先移除部分收藏后再添加`)
@@ -137,7 +142,7 @@ function addFavorite(item) {
 }
 
 function removeFavorite(path) {
-  favorites.value = favorites.value.filter(f => f.path !== path)
+  favorites.value = favorites.value.filter((f) => f.path !== path)
   saveToStorage(FAV_STORAGE_KEY, favorites.value)
 }
 

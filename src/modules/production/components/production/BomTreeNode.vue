@@ -2,7 +2,11 @@
   <div class="bom-tree-node" :style="{ paddingLeft: depth * var_space_4 + 'px' }">
     <div class="bom-node-row" @click="toggleExpand">
       <span class="bom-node-toggle">
-        <Icon v-if="node.children && node.children.length > 0" :name="expanded ? 'chevronDown' : 'chevronRight'" :size="12" />
+        <Icon
+          v-if="node.children && node.children.length > 0"
+          :name="expanded ? 'chevronDown' : 'chevronRight'"
+          :size="12"
+        />
         <span v-else class="bom-node-dot"></span>
       </span>
       <span class="bom-node-icon" :class="nodeCategory">
@@ -19,9 +23,7 @@
       </span>
       <span v-if="node.isOptional" class="bom-node-optional">选配</span>
     </div>
-    <div v-if="expanded && depth >= maxDepth" class="bom-node-depth-limit">
-      ...
-    </div>
+    <div v-if="expanded && depth >= maxDepth" class="bom-node-depth-limit">...</div>
     <div v-else-if="expanded && node.children && node.children.length > 0" class="bom-node-children">
       <BomTreeNode
         v-for="child in node.children"
@@ -34,6 +36,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'BomTreeNode' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 

@@ -1,7 +1,7 @@
 <template>
   <div
-    class="inv-section"
     id="section-alert"
+    class="inv-section"
     :class="{
       'has-critical-alerts': inventoryStore.exhaustedCount > 0,
       'has-warning-alerts': inventoryStore.exhaustedCount === 0 && inventoryStore.lowStockCount > 0
@@ -143,6 +143,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'AlertSection' }
+</script>
 <script setup>
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 

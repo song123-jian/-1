@@ -2,11 +2,7 @@
   <div class="aging-analysis">
     <div class="aging-chart">
       <div class="aging-bar-group">
-        <div
-          v-for="segment in segments"
-          :key="segment.key"
-          class="aging-bar-item"
-        >
+        <div v-for="segment in segments" :key="segment.key" class="aging-bar-item">
           <div class="aging-bar-track">
             <div
               class="aging-bar-fill"
@@ -46,15 +42,22 @@
         </tr>
         <tr class="aging-total-row">
           <td><strong>合计</strong></td>
-          <td class="cell-mono"><strong>¥{{ formatMoney(totalAmount) }}</strong></td>
+          <td class="cell-mono">
+            <strong>¥{{ formatMoney(totalAmount) }}</strong>
+          </td>
           <td class="cell-mono"><strong>100%</strong></td>
-          <td><strong>{{ totalCount }}</strong></td>
+          <td>
+            <strong>{{ totalCount }}</strong>
+          </td>
         </tr>
       </tbody>
     </table>
   </div>
 </template>
 
+<script>
+export default { name: 'AgingAnalysis' }
+</script>
 <script setup>
 import { computed } from 'vue'
 
@@ -63,8 +66,18 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
-      current: 0, days30: 0, days60: 0, days90: 0, days180: 0, over180: 0,
-      currentCount: 0, days30Count: 0, days60Count: 0, days90Count: 0, days180Count: 0, over180Count: 0
+      current: 0,
+      days30: 0,
+      days60: 0,
+      days90: 0,
+      days180: 0,
+      over180: 0,
+      currentCount: 0,
+      days30Count: 0,
+      days60Count: 0,
+      days90Count: 0,
+      days180Count: 0,
+      over180Count: 0
     })
   },
   type: {
@@ -100,7 +113,7 @@ function barWidth(key) {
 function getPercent(key) {
   if (totalAmount.value <= 0) return '0.0'
   const val = parseFloat(props.data[key]) || 0
-  return (val / totalAmount.value * 100).toFixed(1)
+  return ((val / totalAmount.value) * 100).toFixed(1)
 }
 
 // 保留本地版本：minimumFractionDigits 为 0（整数不显示小数位），与全局 formatMoney 固定2位小数不同

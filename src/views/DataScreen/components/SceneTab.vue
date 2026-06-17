@@ -13,6 +13,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'SceneTab' }
+</script>
 <script setup>
 defineProps({
   modelValue: { type: String, default: 'overview' }
@@ -31,7 +34,7 @@ const tabs = [
 .scene-tab {
   display: flex;
   gap: 4px;
-  background: rgba(255,255,255,0.04);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 8px;
   padding: 3px;
 }
@@ -42,7 +45,7 @@ const tabs = [
   padding: 6px 16px;
   border: none;
   background: transparent;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 13px;
   font-weight: 500;
   border-radius: 6px;
@@ -50,8 +53,8 @@ const tabs = [
   transition: all 0.25s;
 }
 .scene-tab__btn:hover {
-  color: rgba(255,255,255,0.8);
-  background: rgba(255,255,255,0.06);
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.06);
 }
 .scene-tab__btn.active {
   color: #fff;

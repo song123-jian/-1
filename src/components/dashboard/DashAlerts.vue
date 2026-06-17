@@ -4,9 +4,10 @@
       <div class="panel-card-header">
         <span class="panel-card-title">
           <span class="alert-title-dot" :class="worstLevel"></span>
-          <Icon name="alertCircle" :size="14" /> 预警中心
+          <Icon name="alertCircle" :size="14" />
+          预警中心
         </span>
-        <button class="btn btn-ghost btn-sm" @click="$emit('navigate', '/inbound')">查看全部</button>
+        <button class="btn btn-ghost btn-sm" @click="emit('navigate', '/inbound')">查看全部</button>
       </div>
       <div class="panel-card-body">
         <div class="alert-list">
@@ -38,7 +39,8 @@
       <div class="panel-card-header">
         <span class="panel-card-title">
           <span class="activity-title-dot"></span>
-          <Icon name="clock" :size="14" /> 最近活动
+          <Icon name="clock" :size="14" />
+          最近活动
         </span>
       </div>
       <div class="panel-card-body">
@@ -49,7 +51,10 @@
             class="timeline-item"
             :style="{ animationDelay: idx * 100 + 'ms' }"
           >
-            <div class="timeline-dot" :style="{ background: activity.color, boxShadow: '0 0 8px ' + activity.color + '40' }"></div>
+            <div
+              class="timeline-dot"
+              :style="{ background: activity.color, boxShadow: '0 0 8px ' + activity.color + '40' }"
+            ></div>
             <div v-if="idx < recentActivities.length - 1" class="timeline-line"></div>
             <div class="timeline-content">
               <div class="timeline-text">{{ activity.text }}</div>
@@ -62,6 +67,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'DashAlerts' }
+</script>
 <script setup>
 import { computed } from 'vue'
 
@@ -73,8 +81,8 @@ const props = defineProps({
 defineEmits(['navigate'])
 
 const worstLevel = computed(() => {
-  if (props.alerts.some(a => a.level === 'danger')) return 'danger'
-  if (props.alerts.some(a => a.level === 'warning')) return 'warning'
+  if (props.alerts.some((a) => a.level === 'danger')) return 'danger'
+  if (props.alerts.some((a) => a.level === 'warning')) return 'warning'
   return 'info'
 })
 </script>
@@ -105,8 +113,15 @@ const worstLevel = computed(() => {
 }
 
 @keyframes dotPulse {
-  0%, 100% { opacity: 1; box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
-  50% { opacity: 0.5; box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+  }
 }
 
 .activity-title-dot {
@@ -127,8 +142,14 @@ const worstLevel = computed(() => {
 }
 
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .alert-item {
@@ -147,12 +168,19 @@ const worstLevel = computed(() => {
 }
 
 @keyframes alertBlink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 .alert-item.blink {
-  animation: alertSlideIn 0.4s ease-out both, alertBlink 2s ease-in-out 0.5s infinite;
+  animation:
+    alertSlideIn 0.4s ease-out both,
+    alertBlink 2s ease-in-out 0.5s infinite;
 }
 
 .alert-indicator {
@@ -188,8 +216,13 @@ const worstLevel = computed(() => {
 }
 
 @keyframes ringPulseDanger {
-  0%, 100% { box-shadow: 0 0 4px rgba(239, 68, 68, 0.4); }
-  50% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+  }
 }
 
 .alert-content {
@@ -232,8 +265,14 @@ const worstLevel = computed(() => {
 }
 
 @keyframes timelineSlideIn {
-  from { opacity: 0; transform: translateX(-8px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .timeline-item {
@@ -256,7 +295,7 @@ const worstLevel = computed(() => {
   height: 8px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 .timeline-line {

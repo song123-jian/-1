@@ -18,17 +18,14 @@
     </div>
 
     <div v-if="expanded && bom.components && bom.components.length > 0" class="bom-tree-children">
-      <BomTreeNode
-        v-for="comp in bom.components"
-        :key="comp.id"
-        :node="comp"
-        :depth="1"
-        :max-depth="10"
-      />
+      <BomTreeNode v-for="comp in bom.components" :key="comp.id" :node="comp" :depth="1" :max-depth="10" />
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'BomTree' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 import BomTreeNode from './BomTreeNode.vue'

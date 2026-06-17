@@ -6,27 +6,57 @@
         <p>数据驱动 · 智能仓储管理</p>
       </div>
       <div class="ms-controls">
-        <select class="form-select" v-model.number="store.selectedYear" style="width:100px">
+        <select v-model.number="store.selectedYear" class="form-select" style="width: 100px">
           <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
         </select>
-        <select class="form-select" v-model.number="store.selectedMonth" style="width:90px">
+        <select v-model.number="store.selectedMonth" class="form-select" style="width: 90px">
           <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
         </select>
         <div class="ms-quick-btns">
-          <button class="btn btn-ghost" :class="{ active: store.quickRange === 'prev' }" @click="store.setQuickRange('prev')">上月</button>
-          <button class="btn btn-ghost" :class="{ active: store.quickRange === 'curr' }" @click="store.setQuickRange('curr')">本月</button>
-          <button class="btn btn-ghost" :class="{ active: store.quickRange === '3m' }" @click="store.setQuickRange('3m')">近3月</button>
-          <button class="btn btn-ghost" :class="{ active: store.quickRange === '6m' }" @click="store.setQuickRange('6m')">近6月</button>
-          <button class="btn btn-ghost" :class="{ active: store.quickRange === '12m' }" @click="store.setQuickRange('12m')">近12月</button>
+          <button
+            class="btn btn-ghost"
+            :class="{ active: store.quickRange === 'prev' }"
+            @click="store.setQuickRange('prev')"
+          >
+            上月
+          </button>
+          <button
+            class="btn btn-ghost"
+            :class="{ active: store.quickRange === 'curr' }"
+            @click="store.setQuickRange('curr')"
+          >
+            本月
+          </button>
+          <button
+            class="btn btn-ghost"
+            :class="{ active: store.quickRange === '3m' }"
+            @click="store.setQuickRange('3m')"
+          >
+            近3月
+          </button>
+          <button
+            class="btn btn-ghost"
+            :class="{ active: store.quickRange === '6m' }"
+            @click="store.setQuickRange('6m')"
+          >
+            近6月
+          </button>
+          <button
+            class="btn btn-ghost"
+            :class="{ active: store.quickRange === '12m' }"
+            @click="store.setQuickRange('12m')"
+          >
+            近12月
+          </button>
         </div>
-        <select class="form-select" v-model="store.selectedWarehouse" style="width:120px">
+        <select v-model="store.selectedWarehouse" class="form-select" style="width: 120px">
           <option value="">全部仓库</option>
           <option value="main">主仓库</option>
           <option value="east">东区仓库</option>
           <option value="west">西区仓库</option>
           <option value="south">南区仓库</option>
         </select>
-        <select class="form-select" v-model="store.selectedBizType" style="width:120px">
+        <select v-model="store.selectedBizType" class="form-select" style="width: 120px">
           <option value="">全部业务类型</option>
           <option value="purchase">采购入库</option>
           <option value="sales">销售出库</option>
@@ -38,53 +68,68 @@
           <option value="surplus">盘盈入库</option>
           <option value="loss">盘亏出库</option>
         </select>
-        <button class="btn btn-secondary" @click="store.refresh()"><Icon name="refresh" :size="14" /> 刷新</button>
-        <button class="btn btn-secondary" @click="handleExportCSV"><Icon name="upload" :size="14" /> 导出CSV</button>
-        <button class="btn btn-secondary" @click="handleExportPDF"><Icon name="file" :size="14" /> 导出PDF</button>
-        <button class="btn btn-ghost" @click="handlePrint"><Icon name="print" :size="14" /> 打印</button>
+        <button class="btn btn-secondary" @click="store.refresh()">
+          <Icon name="refresh" :size="14" />
+          刷新
+        </button>
+        <button class="btn btn-secondary" @click="handleExportCSV">
+          <Icon name="upload" :size="14" />
+          导出CSV
+        </button>
+        <button class="btn btn-secondary" @click="handleExportPDF">
+          <Icon name="file" :size="14" />
+          导出PDF
+        </button>
+        <button class="btn btn-ghost" @click="handlePrint">
+          <Icon name="print" :size="14" />
+          打印
+        </button>
       </div>
     </div>
 
     <!-- KPI卡片 -->
     <div class="ms-kpi-grid">
-      <div class="ms-kpi-card" style="animation-delay:0ms">
+      <div class="ms-kpi-card" style="animation-delay: 0ms">
         <span class="ms-kpi-icon"><Icon name="package" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-success)">{{ store.kpiData.inCount }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-success)">{{ store.kpiData.inCount }}</div>
         <div class="ms-kpi-label">入库单数</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:60ms">
+      <div class="ms-kpi-card" style="animation-delay: 60ms">
         <span class="ms-kpi-icon"><Icon name="truck" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-info)">{{ store.kpiData.outCount }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-info)">{{ store.kpiData.outCount }}</div>
         <div class="ms-kpi-label">出库单数</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:120ms">
+      <div class="ms-kpi-card" style="animation-delay: 120ms">
         <span class="ms-kpi-icon"><Icon name="weight" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-success)">{{ store.kpiData.inWeight.toFixed(1) }}kg</div>
+        <div class="ms-kpi-value" style="color: var(--color-success)">{{ store.kpiData.inWeight.toFixed(1) }}kg</div>
         <div class="ms-kpi-label">入库总重量</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:180ms">
+      <div class="ms-kpi-card" style="animation-delay: 180ms">
         <span class="ms-kpi-icon"><Icon name="scale" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-info)">{{ store.kpiData.outWeight.toFixed(1) }}kg</div>
+        <div class="ms-kpi-value" style="color: var(--color-info)">{{ store.kpiData.outWeight.toFixed(1) }}kg</div>
         <div class="ms-kpi-label">出库总重量</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:240ms">
+      <div class="ms-kpi-card" style="animation-delay: 240ms">
         <span class="ms-kpi-icon"><Icon name="dollar" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-success)">¥{{ formatNum(store.kpiData.inAmount) }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-success)">¥{{ formatNum(store.kpiData.inAmount) }}</div>
         <div class="ms-kpi-label">入库总金额</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:300ms">
+      <div class="ms-kpi-card" style="animation-delay: 300ms">
         <span class="ms-kpi-icon"><Icon name="dollarSign" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-info)">¥{{ formatNum(store.kpiData.outAmount) }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-info)">¥{{ formatNum(store.kpiData.outAmount) }}</div>
         <div class="ms-kpi-label">出库总金额</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:360ms">
+      <div class="ms-kpi-card" style="animation-delay: 360ms">
         <span class="ms-kpi-icon"><Icon name="clock" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-warning)"><span class="stat-dot-halo" style="background:var(--color-warning)"></span>{{ store.kpiData.pending }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-warning)">
+          <span class="stat-dot-halo" style="background: var(--color-warning)"></span>
+          {{ store.kpiData.pending }}
+        </div>
         <div class="ms-kpi-label">待处理</div>
       </div>
-      <div class="ms-kpi-card" style="animation-delay:420ms">
+      <div class="ms-kpi-card" style="animation-delay: 420ms">
         <span class="ms-kpi-icon"><Icon name="checkCircle" :size="20" /></span>
-        <div class="ms-kpi-value" style="color:var(--color-accent)">{{ store.kpiData.confirmed }}</div>
+        <div class="ms-kpi-value" style="color: var(--color-accent)">{{ store.kpiData.confirmed }}</div>
         <div class="ms-kpi-label">已完成</div>
       </div>
     </div>
@@ -96,8 +141,19 @@
         <div class="overview-ring-body">
           <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
             <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
-            <circle cx="36" cy="36" r="26" fill="none" :stroke="completionRateColor" stroke-width="5" stroke-linecap="round"
-              :stroke-dasharray="completionRateDash" stroke-dashoffset="0" transform="rotate(-90 36 36)" class="overview-ring-progress" />
+            <circle
+              cx="36"
+              cy="36"
+              r="26"
+              fill="none"
+              :stroke="completionRateColor"
+              stroke-width="5"
+              stroke-linecap="round"
+              :stroke-dasharray="completionRateDash"
+              stroke-dashoffset="0"
+              transform="rotate(-90 36 36)"
+              class="overview-ring-progress"
+            />
           </svg>
           <div class="overview-ring-text">
             <span class="overview-ring-percent" :style="{ color: completionRateColor }">{{ completionRate }}%</span>
@@ -105,8 +161,14 @@
           </div>
         </div>
         <div class="overview-ring-detail">
-          <span class="ring-detail-item"><span class="ring-dot" style="background:var(--color-success)"></span>入库 {{ store.kpiData.inCount }}</span>
-          <span class="ring-detail-item"><span class="ring-dot" style="background:var(--color-info)"></span>出库 {{ store.kpiData.outCount }}</span>
+          <span class="ring-detail-item">
+            <span class="ring-dot" style="background: var(--color-success)"></span>
+            入库 {{ store.kpiData.inCount }}
+          </span>
+          <span class="ring-detail-item">
+            <span class="ring-dot" style="background: var(--color-info)"></span>
+            出库 {{ store.kpiData.outCount }}
+          </span>
         </div>
       </div>
       <div class="overview-card overview-biz-card">
@@ -125,16 +187,20 @@
         <div class="overview-card-title">出入库金额对比</div>
         <div class="amount-compare">
           <div class="amount-compare-item">
-            <span class="amount-compare-label" style="color:var(--color-success)">入库金额</span>
-            <span class="amount-compare-val" style="color:var(--color-success)">¥{{ formatNum(store.kpiData.inAmount) }}</span>
+            <span class="amount-compare-label" style="color: var(--color-success)">入库金额</span>
+            <span class="amount-compare-val" style="color: var(--color-success)">
+              ¥{{ formatNum(store.kpiData.inAmount) }}
+            </span>
           </div>
           <div class="amount-compare-bar">
             <div class="amount-compare-in" :style="{ width: inAmountPercent + '%' }"></div>
             <div class="amount-compare-out" :style="{ width: outAmountPercent + '%' }"></div>
           </div>
           <div class="amount-compare-item">
-            <span class="amount-compare-label" style="color:var(--color-info)">出库金额</span>
-            <span class="amount-compare-val" style="color:var(--color-info)">¥{{ formatNum(store.kpiData.outAmount) }}</span>
+            <span class="amount-compare-label" style="color: var(--color-info)">出库金额</span>
+            <span class="amount-compare-val" style="color: var(--color-info)">
+              ¥{{ formatNum(store.kpiData.outAmount) }}
+            </span>
           </div>
         </div>
       </div>
@@ -143,46 +209,82 @@
     <!-- 库存健康度进度环 + 预警 -->
     <div class="ms-section">
       <div class="ms-section-header" @click="store.toggleSection('health')">
-        <h3><Icon name="heart" :size="14" /> 库存健康度与风险预警 <span class="ms-toggle-icon"><Icon :name="store.collapsedSections.health ? 'chevronRight' : 'chevronDown'" :size="14" /></span></h3>
+        <h3>
+          <Icon name="heart" :size="14" />
+          库存健康度与风险预警
+          <span class="ms-toggle-icon">
+            <Icon :name="store.collapsedSections.health ? 'chevronRight' : 'chevronDown'" :size="14" />
+          </span>
+        </h3>
       </div>
-      <div class="ms-section-body" v-show="!store.collapsedSections.health">
+      <div v-show="!store.collapsedSections.health" class="ms-section-body">
         <div class="ms-health-grid">
           <div class="ms-health-card ms-health-ring-card">
             <div class="ms-health-ring-body">
               <svg width="80" height="80" viewBox="0 0 80 80" class="ms-health-ring-svg">
                 <circle cx="40" cy="40" r="30" fill="none" stroke="var(--color-border)" stroke-width="6" />
-                <circle cx="40" cy="40" r="30" fill="none" :stroke="healthScoreColor" stroke-width="6" stroke-linecap="round"
-                  :stroke-dasharray="healthScoreDash" stroke-dashoffset="0" transform="rotate(-90 40 40)" class="ms-health-ring-progress" />
+                <circle
+                  cx="40"
+                  cy="40"
+                  r="30"
+                  fill="none"
+                  :stroke="healthScoreColor"
+                  stroke-width="6"
+                  stroke-linecap="round"
+                  :stroke-dasharray="healthScoreDash"
+                  stroke-dashoffset="0"
+                  transform="rotate(-90 40 40)"
+                  class="ms-health-ring-progress"
+                />
               </svg>
               <div class="ms-health-ring-text">
-                <span class="ms-health-ring-percent" :style="{ color: healthScoreColor }">{{ store.healthData.healthScore }}</span>
+                <span class="ms-health-ring-percent" :style="{ color: healthScoreColor }">
+                  {{ store.healthData.healthScore }}
+                </span>
                 <span class="ms-health-ring-sub">健康度评分</span>
               </div>
             </div>
           </div>
-          <div class="ms-health-card" style="animation-delay:60ms">
-            <div class="ms-health-value" style="color:var(--color-danger)">{{ store.healthData.exhausted }}</div>
+          <div class="ms-health-card" style="animation-delay: 60ms">
+            <div class="ms-health-value" style="color: var(--color-danger)">{{ store.healthData.exhausted }}</div>
             <div class="ms-health-label">库存耗尽</div>
-            <span v-if="store.healthData.exhausted > 0" class="health-alert-dot" style="background:var(--color-danger)"></span>
+            <span
+              v-if="store.healthData.exhausted > 0"
+              class="health-alert-dot"
+              style="background: var(--color-danger)"
+            ></span>
           </div>
-          <div class="ms-health-card" style="animation-delay:120ms">
-            <div class="ms-health-value" style="color:var(--color-warning)">{{ store.healthData.low }}</div>
+          <div class="ms-health-card" style="animation-delay: 120ms">
+            <div class="ms-health-value" style="color: var(--color-warning)">{{ store.healthData.low }}</div>
             <div class="ms-health-label">低于安全库存</div>
-            <span v-if="store.healthData.low > 0" class="health-alert-dot" style="background:var(--color-warning)"></span>
+            <span
+              v-if="store.healthData.low > 0"
+              class="health-alert-dot"
+              style="background: var(--color-warning)"
+            ></span>
           </div>
-          <div class="ms-health-card" style="animation-delay:180ms">
-            <div class="ms-health-value" style="color:var(--color-purple)">{{ store.healthData.over }}</div>
+          <div class="ms-health-card" style="animation-delay: 180ms">
+            <div class="ms-health-value" style="color: var(--color-purple)">{{ store.healthData.over }}</div>
             <div class="ms-health-label">超量库存</div>
-            <span v-if="store.healthData.over > 0" class="health-alert-dot" style="background:var(--color-purple)"></span>
+            <span
+              v-if="store.healthData.over > 0"
+              class="health-alert-dot"
+              style="background: var(--color-purple)"
+            ></span>
           </div>
-          <div class="ms-health-card" style="animation-delay:240ms">
-            <div class="ms-health-value" style="color:var(--color-success)">{{ store.healthData.normal }}</div>
+          <div class="ms-health-card" style="animation-delay: 240ms">
+            <div class="ms-health-value" style="color: var(--color-success)">{{ store.healthData.normal }}</div>
             <div class="ms-health-label">库存正常</div>
           </div>
         </div>
         <!-- 库存预警区域 -->
         <div v-if="healthAlerts.length > 0" class="ms-health-alert-panel">
-          <div v-for="(a, idx) in healthAlerts" :key="idx" class="ms-health-alert-item" :style="{ animationDelay: idx * 60 + 'ms' }">
+          <div
+            v-for="(a, idx) in healthAlerts"
+            :key="idx"
+            class="ms-health-alert-item"
+            :style="{ animationDelay: idx * 60 + 'ms' }"
+          >
             <span class="ms-health-alert-badge" :class="'alert-' + a.type">{{ a.label }}</span>
             <span class="ms-health-alert-text">{{ a.message }}</span>
             <span class="ms-health-alert-count">{{ a.count }}项</span>
@@ -193,30 +295,57 @@
 
     <div class="ms-section">
       <div class="ms-section-header" @click="store.toggleSection('biz')">
-        <h3><Icon name="table" :size="14" /> 出入库业务结构汇总表 <span class="ms-toggle-icon"><Icon :name="store.collapsedSections.biz ? 'chevronRight' : 'chevronDown'" :size="14" /></span></h3>
+        <h3>
+          <Icon name="table" :size="14" />
+          出入库业务结构汇总表
+          <span class="ms-toggle-icon">
+            <Icon :name="store.collapsedSections.biz ? 'chevronRight' : 'chevronDown'" :size="14" />
+          </span>
+        </h3>
       </div>
-      <div class="ms-section-body" v-show="!store.collapsedSections.biz">
-        <div class="panel-card"><div class="panel-card-body no-padding"><div class="table-container">
-          <table class="data-table">
-            <thead><tr><th>业务类型</th><th>入库单数</th><th>入库重量(kg)</th><th>入库金额(元)</th><th>出库单数</th><th>出库重量(kg)</th><th>出库金额(元)</th></tr></thead>
-            <tbody>
-              <tr v-if="store.bizSummary.length === 0">
-                <td colspan="7" class="empty-state">
-                  <div class="empty-state-icon"><Icon name="table" :size="24" /></div>暂无数据
-                </td>
-              </tr>
-              <tr v-for="(row, idx) in store.bizSummary" :key="row.type" :style="{ animationDelay: idx * 20 + 'ms' }">
-                <td><strong>{{ bizTypeLabel(row.type) }}</strong></td>
-                <td class="cell-mono">{{ row.inCount }}</td>
-                <td class="cell-mono">{{ row.inWeight.toFixed(1) }}</td>
-                <td class="cell-mono">¥{{ formatNum(row.inAmount) }}</td>
-                <td class="cell-mono">{{ row.outCount }}</td>
-                <td class="cell-mono">{{ row.outWeight.toFixed(1) }}</td>
-                <td class="cell-mono">¥{{ formatNum(row.outAmount) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div></div></div>
+      <div v-show="!store.collapsedSections.biz" class="ms-section-body">
+        <div class="panel-card">
+          <div class="panel-card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>业务类型</th>
+                    <th>入库单数</th>
+                    <th>入库重量(kg)</th>
+                    <th>入库金额(元)</th>
+                    <th>出库单数</th>
+                    <th>出库重量(kg)</th>
+                    <th>出库金额(元)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="store.bizSummary.length === 0">
+                    <td colspan="7" class="empty-state">
+                      <div class="empty-state-icon"><Icon name="table" :size="24" /></div>
+                      暂无数据
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(row, idx) in store.bizSummary"
+                    :key="row.type"
+                    :style="{ animationDelay: idx * 20 + 'ms' }"
+                  >
+                    <td>
+                      <strong>{{ bizTypeLabel(row.type) }}</strong>
+                    </td>
+                    <td class="cell-mono">{{ row.inCount }}</td>
+                    <td class="cell-mono">{{ row.inWeight.toFixed(1) }}</td>
+                    <td class="cell-mono">¥{{ formatNum(row.inAmount) }}</td>
+                    <td class="cell-mono">{{ row.outCount }}</td>
+                    <td class="cell-mono">{{ row.outWeight.toFixed(1) }}</td>
+                    <td class="cell-mono">¥{{ formatNum(row.outAmount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -224,96 +353,182 @@
       <div class="ms-top-grid">
         <div class="panel-card">
           <div class="panel-card-header"><span class="panel-card-title">入库金额Top10</span></div>
-          <div class="panel-card-body no-padding"><div class="table-container">
-            <table class="data-table">
-              <thead><tr><th>#</th><th>物料</th><th>金额</th></tr></thead>
-              <tbody>
-                <tr v-if="store.topItems.length === 0">
-                  <td colspan="3" class="empty-state"><div class="empty-state-icon"><Icon name="package" :size="24" /></div>暂无数据</td>
-                </tr>
-                <tr v-for="(item, idx) in store.topItems" :key="'in'+item.code" :style="{ animationDelay: idx * 20 + 'ms' }">
-                  <td class="cell-mono">{{ idx+1 }}</td>
-                  <td>{{ item.name }}</td>
-                  <td class="cell-mono">¥{{ formatNum(item.inAmount) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div></div>
+          <div class="panel-card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>物料</th>
+                    <th>金额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="store.topItems.length === 0">
+                    <td colspan="3" class="empty-state">
+                      <div class="empty-state-icon"><Icon name="package" :size="24" /></div>
+                      暂无数据
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(item, idx) in store.topItems"
+                    :key="'in' + item.code"
+                    :style="{ animationDelay: idx * 20 + 'ms' }"
+                  >
+                    <td class="cell-mono">{{ idx + 1 }}</td>
+                    <td>{{ item.name }}</td>
+                    <td class="cell-mono">¥{{ formatNum(item.inAmount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
         <div class="panel-card">
           <div class="panel-card-header"><span class="panel-card-title">出库金额Top10</span></div>
-          <div class="panel-card-body no-padding"><div class="table-container">
-            <table class="data-table">
-              <thead><tr><th>#</th><th>物料</th><th>金额</th></tr></thead>
-              <tbody>
-                <tr v-if="store.topItems.length === 0">
-                  <td colspan="3" class="empty-state"><div class="empty-state-icon"><Icon name="package" :size="24" /></div>暂无数据</td>
-                </tr>
-                <tr v-for="(item, idx) in store.topItems" :key="'out'+item.code" :style="{ animationDelay: idx * 20 + 'ms' }">
-                  <td class="cell-mono">{{ idx+1 }}</td>
-                  <td>{{ item.name }}</td>
-                  <td class="cell-mono">¥{{ formatNum(item.outAmount) }}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div></div>
+          <div class="panel-card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>物料</th>
+                    <th>金额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="store.topItems.length === 0">
+                    <td colspan="3" class="empty-state">
+                      <div class="empty-state-icon"><Icon name="package" :size="24" /></div>
+                      暂无数据
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(item, idx) in store.topItems"
+                    :key="'out' + item.code"
+                    :style="{ animationDelay: idx * 20 + 'ms' }"
+                  >
+                    <td class="cell-mono">{{ idx + 1 }}</td>
+                    <td>{{ item.name }}</td>
+                    <td class="cell-mono">¥{{ formatNum(item.outAmount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="ms-section">
       <div class="ms-section-header" @click="store.toggleSection('category')">
-        <h3><Icon name="package" :size="14" /> 物料品类汇总表 <span class="ms-toggle-icon"><Icon :name="store.collapsedSections.category ? 'chevronRight' : 'chevronDown'" :size="14" /></span></h3>
+        <h3>
+          <Icon name="package" :size="14" />
+          物料品类汇总表
+          <span class="ms-toggle-icon">
+            <Icon :name="store.collapsedSections.category ? 'chevronRight' : 'chevronDown'" :size="14" />
+          </span>
+        </h3>
       </div>
-      <div class="ms-section-body" v-show="!store.collapsedSections.category">
-        <div class="panel-card"><div class="panel-card-body no-padding"><div class="table-container">
-          <table class="data-table">
-            <thead><tr><th>品类</th><th>物料数</th><th>库存(kg)</th><th>库存金额(元)</th></tr></thead>
-            <tbody>
-              <tr v-if="store.categorySummary.length === 0">
-                <td colspan="4" class="empty-state"><div class="empty-state-icon"><Icon name="package" :size="24" /></div>暂无数据</td>
-              </tr>
-              <tr v-for="(row, idx) in store.categorySummary" :key="row.category" :style="{ animationDelay: idx * 20 + 'ms' }">
-                <td><strong>{{ row.category }}</strong></td>
-                <td class="cell-mono">{{ row.count }}</td>
-                <td class="cell-mono">{{ row.stock.toFixed(1) }}</td>
-                <td class="cell-mono">¥{{ formatNum(row.value) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div></div></div>
+      <div v-show="!store.collapsedSections.category" class="ms-section-body">
+        <div class="panel-card">
+          <div class="panel-card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>品类</th>
+                    <th>物料数</th>
+                    <th>库存(kg)</th>
+                    <th>库存金额(元)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="store.categorySummary.length === 0">
+                    <td colspan="4" class="empty-state">
+                      <div class="empty-state-icon"><Icon name="package" :size="24" /></div>
+                      暂无数据
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(row, idx) in store.categorySummary"
+                    :key="row.category"
+                    :style="{ animationDelay: idx * 20 + 'ms' }"
+                  >
+                    <td>
+                      <strong>{{ row.category }}</strong>
+                    </td>
+                    <td class="cell-mono">{{ row.count }}</td>
+                    <td class="cell-mono">{{ row.stock.toFixed(1) }}</td>
+                    <td class="cell-mono">¥{{ formatNum(row.value) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="ms-section">
       <div class="ms-section-header" @click="store.toggleSection('daily')">
-        <h3><Icon name="calendar" :size="14" /> 每日明细汇总表 <span class="ms-toggle-icon"><Icon :name="store.collapsedSections.daily ? 'chevronRight' : 'chevronDown'" :size="14" /></span></h3>
+        <h3>
+          <Icon name="calendar" :size="14" />
+          每日明细汇总表
+          <span class="ms-toggle-icon">
+            <Icon :name="store.collapsedSections.daily ? 'chevronRight' : 'chevronDown'" :size="14" />
+          </span>
+        </h3>
       </div>
-      <div class="ms-section-body" v-show="!store.collapsedSections.daily">
-        <div class="panel-card"><div class="panel-card-body no-padding"><div class="table-container">
-          <table class="data-table">
-            <thead><tr><th>日期</th><th>入库单数</th><th>入库重量</th><th>入库金额</th><th>出库单数</th><th>出库重量</th><th>出库金额</th></tr></thead>
-            <tbody>
-              <tr v-if="store.dailySummary.length === 0">
-                <td colspan="7" class="empty-state"><div class="empty-state-icon"><Icon name="calendar" :size="24" /></div>暂无数据</td>
-              </tr>
-              <tr v-for="(row, idx) in store.dailySummary" :key="row.date" :style="{ animationDelay: idx * 20 + 'ms' }">
-                <td class="cell-mono">{{ row.date }}</td>
-                <td class="cell-mono">{{ row.inCount }}</td>
-                <td class="cell-mono">{{ row.inWeight.toFixed(1) }}</td>
-                <td class="cell-mono">¥{{ formatNum(row.inAmount) }}</td>
-                <td class="cell-mono">{{ row.outCount }}</td>
-                <td class="cell-mono">{{ row.outWeight.toFixed(1) }}</td>
-                <td class="cell-mono">¥{{ formatNum(row.outAmount) }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div></div></div>
+      <div v-show="!store.collapsedSections.daily" class="ms-section-body">
+        <div class="panel-card">
+          <div class="panel-card-body no-padding">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>入库单数</th>
+                    <th>入库重量</th>
+                    <th>入库金额</th>
+                    <th>出库单数</th>
+                    <th>出库重量</th>
+                    <th>出库金额</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="store.dailySummary.length === 0">
+                    <td colspan="7" class="empty-state">
+                      <div class="empty-state-icon"><Icon name="calendar" :size="24" /></div>
+                      暂无数据
+                    </td>
+                  </tr>
+                  <tr
+                    v-for="(row, idx) in store.dailySummary"
+                    :key="row.date"
+                    :style="{ animationDelay: idx * 20 + 'ms' }"
+                  >
+                    <td class="cell-mono">{{ row.date }}</td>
+                    <td class="cell-mono">{{ row.inCount }}</td>
+                    <td class="cell-mono">{{ row.inWeight.toFixed(1) }}</td>
+                    <td class="cell-mono">¥{{ formatNum(row.inAmount) }}</td>
+                    <td class="cell-mono">{{ row.outCount }}</td>
+                    <td class="cell-mono">{{ row.outWeight.toFixed(1) }}</td>
+                    <td class="cell-mono">¥{{ formatNum(row.outAmount) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'MonthlyStats' }
+</script>
 <script setup>
 import { computed } from 'vue'
 import { useMonthlyStatsStore } from '@/modules/report/stores/monthlyStats'
@@ -328,7 +543,18 @@ const yearOptions = computed(() => {
 })
 
 function bizTypeLabel(type) {
-  const map = { purchase: '采购入库', sales: '销售出库', customer_return: '客户退货', production: '生产领料', production_return: '生产退料', transfer: '调拨', scrap: '报废出库', surplus: '盘盈入库', loss: '盘亏出库', other: '其他' }
+  const map = {
+    purchase: '采购入库',
+    sales: '销售出库',
+    customer_return: '客户退货',
+    production: '生产领料',
+    production_return: '生产退料',
+    transfer: '调拨',
+    scrap: '报废出库',
+    surplus: '盘盈入库',
+    loss: '盘亏出库',
+    other: '其他'
+  }
   return map[type] || type
 }
 
@@ -359,20 +585,29 @@ const completionRateDash = computed(() => {
 
 /* 业务类型分布 */
 const BIZ_COLORS = {
-  purchase: '#10b981', sales: '#3b82f6', customer_return: '#f59e0b',
-  production: '#a855f7', production_return: '#8b5cf6', transfer: '#06b6d4',
-  scrap: '#ef4444', surplus: '#22c55e', loss: '#f97316', other: '#64748b'
+  purchase: '#10b981',
+  sales: '#3b82f6',
+  customer_return: '#f59e0b',
+  production: '#a855f7',
+  production_return: '#8b5cf6',
+  transfer: '#06b6d4',
+  scrap: '#ef4444',
+  surplus: '#22c55e',
+  loss: '#f97316',
+  other: '#64748b'
 }
 const bizTypeStats = computed(() => {
   const list = store.bizSummary || []
-  const max = list.length > 0 ? Math.max(...list.map(r => r.inCount + r.outCount)) : 1
-  return list.map(r => ({
-    type: r.type,
-    label: bizTypeLabel(r.type),
-    count: r.inCount + r.outCount,
-    percent: max > 0 ? Math.round(((r.inCount + r.outCount) / max) * 100) : 0,
-    color: BIZ_COLORS[r.type] || '#64748b'
-  })).sort((a, b) => b.count - a.count)
+  const max = list.length > 0 ? Math.max(...list.map((r) => r.inCount + r.outCount)) : 1
+  return list
+    .map((r) => ({
+      type: r.type,
+      label: bizTypeLabel(r.type),
+      count: r.inCount + r.outCount,
+      percent: max > 0 ? Math.round(((r.inCount + r.outCount) / max) * 100) : 0,
+      color: BIZ_COLORS[r.type] || '#64748b'
+    }))
+    .sort((a, b) => b.count - a.count)
 })
 
 /* 出入库金额对比 */
@@ -403,44 +638,65 @@ const healthScoreDash = computed(() => {
 const healthAlerts = computed(() => {
   const alerts = []
   if (store.healthData.exhausted > 0) {
-    alerts.push({ type: 'exhausted', label: '库存耗尽', count: store.healthData.exhausted, message: '有物料库存已耗尽，需立即补货' })
+    alerts.push({
+      type: 'exhausted',
+      label: '库存耗尽',
+      count: store.healthData.exhausted,
+      message: '有物料库存已耗尽，需立即补货'
+    })
   }
   if (store.healthData.low > 0) {
-    alerts.push({ type: 'low', label: '低于安全库存', count: store.healthData.low, message: '有物料库存低于安全线，建议尽快补货' })
+    alerts.push({
+      type: 'low',
+      label: '低于安全库存',
+      count: store.healthData.low,
+      message: '有物料库存低于安全线，建议尽快补货'
+    })
   }
   if (store.healthData.over > 0) {
-    alerts.push({ type: 'over', label: '超量库存', count: store.healthData.over, message: '有物料库存超量，建议优化库存结构' })
+    alerts.push({
+      type: 'over',
+      label: '超量库存',
+      count: store.healthData.over,
+      message: '有物料库存超量，建议优化库存结构'
+    })
   }
   return alerts
 })
 
 function handleExportCSV() {
   try {
-  const headers = ['业务类型', '入库单数', '入库重量(kg)', '入库金额(元)', '出库单数', '出库重量(kg)', '出库金额(元)']
-  const rows = store.bizSummary.map(r => [
-    bizTypeLabel(r.type),
-    r.inCount,
-    r.inWeight.toFixed(1),
-    r.inAmount.toFixed(2),
-    r.outCount,
-    r.outWeight.toFixed(1),
-    r.outAmount.toFixed(2)
-  ])
-  const csvContent = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = '月度统计_' + store.selectedYear + String(store.selectedMonth).padStart(2, '0') + '.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
+    const headers = ['业务类型', '入库单数', '入库重量(kg)', '入库金额(元)', '出库单数', '出库重量(kg)', '出库金额(元)']
+    const rows = store.bizSummary.map((r) => [
+      bizTypeLabel(r.type),
+      r.inCount,
+      r.inWeight.toFixed(1),
+      r.inAmount.toFixed(2),
+      r.outCount,
+      r.outWeight.toFixed(1),
+      r.outAmount.toFixed(2)
+    ])
+    const csvContent = '\uFEFF' + [headers, ...rows].map((row) => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '月度统计_' + store.selectedYear + String(store.selectedMonth).padStart(2, '0') + '.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
+  }
 }
 
 function handleExportPDF() {
   try {
-  window.print()
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
+    window.print()
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
+  }
 }
 
 function handlePrint() {
@@ -501,15 +757,23 @@ function handlePrint() {
   border-radius: var(--radius-md);
   position: relative;
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .ms-kpi-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .ms-kpi-icon {
   position: absolute;
@@ -540,8 +804,13 @@ function handlePrint() {
   animation: alertDotPulse 1.5s ease-in-out infinite;
 }
 @keyframes alertDotPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(245,158,11,0.3); }
-  50% { box-shadow: 0 0 10px rgba(245,158,11,0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  }
 }
 
 /* ====== 概览面板 ====== */
@@ -558,9 +827,15 @@ function handlePrint() {
   padding: var(--space-3) var(--space-4);
   animation: statCardIn 0.4s ease-out both;
 }
-.overview-card:nth-child(1) { animation-delay: 0ms; }
-.overview-card:nth-child(2) { animation-delay: 80ms; }
-.overview-card:nth-child(3) { animation-delay: 160ms; }
+.overview-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.overview-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+.overview-card:nth-child(3) {
+  animation-delay: 160ms;
+}
 .overview-card-title {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
@@ -574,9 +849,16 @@ function handlePrint() {
   align-items: center;
   gap: var(--space-3);
 }
-.overview-ring-svg { flex-shrink: 0; }
-.overview-ring-progress { transition: stroke-dasharray 0.6s ease; }
-.overview-ring-text { display: flex; flex-direction: column; }
+.overview-ring-svg {
+  flex-shrink: 0;
+}
+.overview-ring-progress {
+  transition: stroke-dasharray 0.6s ease;
+}
+.overview-ring-text {
+  display: flex;
+  flex-direction: column;
+}
 .overview-ring-percent {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   font-size: var(--font-size-xl);
@@ -690,12 +972,14 @@ function handlePrint() {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   position: relative;
 }
 .ms-health-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 .ms-health-ring-card {
   display: flex;
@@ -707,9 +991,16 @@ function handlePrint() {
   align-items: center;
   gap: var(--space-3);
 }
-.ms-health-ring-svg { flex-shrink: 0; }
-.ms-health-ring-progress { transition: stroke-dasharray 0.6s ease; }
-.ms-health-ring-text { display: flex; flex-direction: column; }
+.ms-health-ring-svg {
+  flex-shrink: 0;
+}
+.ms-health-ring-progress {
+  transition: stroke-dasharray 0.6s ease;
+}
+.ms-health-ring-text {
+  display: flex;
+  flex-direction: column;
+}
 .ms-health-ring-percent {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   font-size: var(--font-size-xl);
@@ -759,10 +1050,18 @@ function handlePrint() {
   animation: alertSlideIn 0.3s ease-out both;
   font-size: var(--font-size-sm);
 }
-.ms-health-alert-item:last-child { border-bottom: none; }
+.ms-health-alert-item:last-child {
+  border-bottom: none;
+}
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 .ms-health-alert-badge {
   padding: var(--space-1) var(--space-2);
@@ -798,8 +1097,14 @@ function handlePrint() {
   animation: rowSlideIn 0.3s ease-out both;
 }
 @keyframes rowSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ====== 空状态圆形图标 ====== */
@@ -856,15 +1161,29 @@ function handlePrint() {
 }
 
 @media (max-width: 1024px) {
-  .ms-kpi-grid { grid-template-columns: repeat(3, 1fr); }
-  .ms-overview-row { grid-template-columns: 1fr; }
-  .ms-health-grid { grid-template-columns: repeat(3, 1fr); }
-  .ms-top-grid { grid-template-columns: 1fr 1fr; }
+  .ms-kpi-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ms-overview-row {
+    grid-template-columns: 1fr;
+  }
+  .ms-health-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ms-top-grid {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 @media (max-width: 768px) {
-  .ms-kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .ms-health-grid { grid-template-columns: repeat(2, 1fr); }
-  .ms-top-grid { grid-template-columns: 1fr; }
+  .ms-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ms-health-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .ms-top-grid {
+    grid-template-columns: 1fr;
+  }
 }
 .table-container {
   overflow-x: auto;

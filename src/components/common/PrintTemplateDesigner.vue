@@ -5,10 +5,22 @@
         <span class="modal-title">{{ isEdit ? '编辑模板' : '模板设计器' }}</span>
         <button class="modal-close" @click="$emit('close')">&times;</button>
       </div>
-      <div class="modal-body" style="flex: 1; display: flex; gap: var(--space-4); padding: var(--space-4); overflow: hidden">
+      <div
+        class="modal-body"
+        style="flex: 1; display: flex; gap: var(--space-4); padding: var(--space-4); overflow: hidden"
+      >
         <!-- 左侧：变量列表 -->
         <div class="designer-sidebar" style="width: 200px; flex-shrink: 0; overflow-y: auto">
-          <div style="font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-2); color: var(--color-text-secondary)">可用变量</div>
+          <div
+            style="
+              font-size: var(--font-size-sm);
+              font-weight: 600;
+              margin-bottom: var(--space-2);
+              color: var(--color-text-secondary);
+            "
+          >
+            可用变量
+          </div>
           <div style="margin-bottom: var(--space-3)">
             <select v-model="selectedType" class="form-select" style="margin-bottom: var(--space-2)">
               <option value="quotation">报价单</option>
@@ -20,8 +32,15 @@
               <option value="transfer">调拨单</option>
             </select>
           </div>
-          <div v-for="v in currentVariables" :key="v" class="variable-item" draggable="true" @dragstart="handleDragStart($event, v)">
-            <Icon name="code" :size="12" /> {{ v }}
+          <div
+            v-for="v in currentVariables"
+            :key="v"
+            class="variable-item"
+            draggable="true"
+            @dragstart="handleDragStart($event, v)"
+          >
+            <Icon name="code" :size="12" />
+            {{ v }}
           </div>
         </div>
 
@@ -43,7 +62,16 @@
 
         <!-- 右侧：模板属性 -->
         <div style="width: 200px; flex-shrink: 0; overflow-y: auto">
-          <div style="font-size: var(--font-size-sm); font-weight: 600; margin-bottom: var(--space-3); color: var(--color-text-secondary)">模板属性</div>
+          <div
+            style="
+              font-size: var(--font-size-sm);
+              font-weight: 600;
+              margin-bottom: var(--space-3);
+              color: var(--color-text-secondary);
+            "
+          >
+            模板属性
+          </div>
 
           <div class="form-group">
             <label class="form-label">纸张大小</label>
@@ -92,28 +120,28 @@
           </div>
 
           <button class="btn btn-outline" style="width: 100%; margin-top: var(--space-3)" @click="handlePreview">
-            <Icon name="eye" :size="14" /> 预览
+            <Icon name="eye" :size="14" />
+            预览
           </button>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-ghost" @click="$emit('close')">取消</button>
         <button class="btn btn-primary" @click="handleSave">
-          <Icon name="check" :size="14" /> 保存
+          <Icon name="check" :size="14" />
+          保存
         </button>
       </div>
     </div>
 
     <!-- 预览弹窗 -->
-    <PrintPreview
-      v-if="previewHtml"
-      :html="previewHtml"
-      title="模板预览"
-      @close="previewHtml = ''"
-    />
+    <PrintPreview v-if="previewHtml" :html="previewHtml" title="模板预览" @close="previewHtml = ''" />
   </div>
 </template>
 
+<script>
+export default { name: 'PrintTemplateDesigner' }
+</script>
 <script setup>
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { getPrintEngine } from '@/utils/printEngine'
@@ -210,8 +238,42 @@ function handlePreview() {
     deliveryDate: '2026-06-10',
     content: '示例合同内容...',
     items: [
-      { index: 1, code: 'MTL-001', name: 'ABS树脂', spec: '通用级', quantity: 100, unit: 'kg', unitPrice: 85.5, amount: 8550, location: 'A-01', summary: '销售', debit: 8550, credit: 0, balance: 8550, remark: '', date: '2026-06-01', orderNo: 'SO-001' },
-      { index: 2, code: 'MTL-002', name: '不锈钢板304', spec: '2B/BA', quantity: 200, unit: 'kg', unitPrice: 120, amount: 24000, location: 'B-02', summary: '收款', debit: 0, credit: 12000, balance: -3450, remark: '', date: '2026-06-03', orderNo: 'RC-001' }
+      {
+        index: 1,
+        code: 'MTL-001',
+        name: 'ABS树脂',
+        spec: '通用级',
+        quantity: 100,
+        unit: 'kg',
+        unitPrice: 85.5,
+        amount: 8550,
+        location: 'A-01',
+        summary: '销售',
+        debit: 8550,
+        credit: 0,
+        balance: 8550,
+        remark: '',
+        date: '2026-06-01',
+        orderNo: 'SO-001'
+      },
+      {
+        index: 2,
+        code: 'MTL-002',
+        name: '不锈钢板304',
+        spec: '2B/BA',
+        quantity: 200,
+        unit: 'kg',
+        unitPrice: 120,
+        amount: 24000,
+        location: 'B-02',
+        summary: '收款',
+        debit: 0,
+        credit: 12000,
+        balance: -3450,
+        remark: '',
+        date: '2026-06-03',
+        orderNo: 'RC-001'
+      }
     ]
   }
 

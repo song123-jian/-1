@@ -1,11 +1,14 @@
 <template>
-  <div class="panel-card" style="margin-top:var(--space-4)">
+  <div class="panel-card" style="margin-top: var(--space-4)">
     <div class="panel-card-header">
-      <span class="panel-card-title"><Icon name="list" :size="14" /> 操作历史记录</span>
+      <span class="panel-card-title">
+        <Icon name="list" :size="14" />
+        操作历史记录
+      </span>
     </div>
     <div class="panel-card-body">
-      <div class="filter-bar" style="margin-bottom:var(--space-4)">
-        <input v-model="opHistorySearch" type="text" class="form-input" placeholder="搜索操作...">
+      <div class="filter-bar" style="margin-bottom: var(--space-4)">
+        <input v-model="opHistorySearch" type="text" class="form-input" placeholder="搜索操作..." />
         <select v-model="opHistoryModule" class="form-select">
           <option value="">全部模块</option>
           <option value="customers">客户管理</option>
@@ -22,8 +25,8 @@
           <option value="update">更新</option>
           <option value="config">配置变更</option>
         </select>
-        <input v-model="opHistoryStartDate" type="date" class="form-input">
-        <input v-model="opHistoryEndDate" type="date" class="form-input">
+        <input v-model="opHistoryStartDate" type="date" class="form-input" />
+        <input v-model="opHistoryEndDate" type="date" class="form-input" />
       </div>
       <div class="table-container">
         <table class="data-table">
@@ -56,6 +59,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'OpHistory' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 import { useSystemStore } from '@/modules/system/stores/system'
@@ -70,13 +76,13 @@ const opHistoryEndDate = ref('')
 
 const filteredOpHistory = computed(() => {
   let ops = sysStore.operationHistory || []
-  if (opHistoryModule.value) ops = ops.filter(o => o.module === opHistoryModule.value)
-  if (opHistoryAction.value) ops = ops.filter(o => o.action === opHistoryAction.value)
-  if (opHistoryStartDate.value) ops = ops.filter(o => o.time >= opHistoryStartDate.value)
-  if (opHistoryEndDate.value) ops = ops.filter(o => o.time <= opHistoryEndDate.value + ' 23:59:59')
+  if (opHistoryModule.value) ops = ops.filter((o) => o.module === opHistoryModule.value)
+  if (opHistoryAction.value) ops = ops.filter((o) => o.action === opHistoryAction.value)
+  if (opHistoryStartDate.value) ops = ops.filter((o) => o.time >= opHistoryStartDate.value)
+  if (opHistoryEndDate.value) ops = ops.filter((o) => o.time <= opHistoryEndDate.value + ' 23:59:59')
   if (opHistorySearch.value) {
     const q = opHistorySearch.value.toLowerCase()
-    ops = ops.filter(o => (o.action || '').toLowerCase().includes(q) || (o.summary || '').toLowerCase().includes(q))
+    ops = ops.filter((o) => (o.action || '').toLowerCase().includes(q) || (o.summary || '').toLowerCase().includes(q))
   }
   return ops
 })

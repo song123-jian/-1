@@ -12,7 +12,7 @@ export const Roles = {
 export const RoleGroups = {
   ADMIN_AND_GM: [Roles.ADMIN, Roles.GM],
   FINANCE_ACCESS: [Roles.ADMIN, Roles.GM, Roles.FINANCE],
-  WAREHOUSE_ACCESS: [Roles.ADMIN, Roles.GM, Roles.WAREHOUSE_MANAGER, Roles.WAREHOUSE]
+  WAREHOUSE_ACCESS: [Roles.ADMIN, Roles.GM, Roles.WAREHOUSE_MANAGER]
 }
 
 /* 角色分组（用于身份选择页面展示） */

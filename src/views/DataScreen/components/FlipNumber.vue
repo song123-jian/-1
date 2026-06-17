@@ -1,11 +1,14 @@
 <template>
   <div class="flip-number" :style="cssVars">
-    <span class="flip-number__prefix" v-if="prefix">{{ prefix }}</span>
+    <span v-if="prefix" class="flip-number__prefix">{{ prefix }}</span>
     <span class="flip-number__value">{{ displayValue }}</span>
-    <span class="flip-number__suffix" v-if="suffix">{{ suffix }}</span>
+    <span v-if="suffix" class="flip-number__suffix">{{ suffix }}</span>
   </div>
 </template>
 
+<script>
+export default { name: 'FlipNumber' }
+</script>
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 
@@ -41,13 +44,18 @@ function animate(from, to, duration = 1200) {
   animFrame = requestAnimationFrame(step)
 }
 
-watch(() => props.value, (newVal) => {
-  const from = parseFloat(String(displayValue.value).replace(/,/g, '')) || 0
-  animate(from, newVal)
-})
+watch(
+  () => props.value,
+  (newVal) => {
+    const from = parseFloat(String(displayValue.value).replace(/,/g, '')) || 0
+    animate(from, newVal)
+  }
+)
 
 onMounted(() => animate(0, props.value, 1500))
-onUnmounted(() => { if (animFrame) cancelAnimationFrame(animFrame) })
+onUnmounted(() => {
+  if (animFrame) cancelAnimationFrame(animFrame)
+})
 
 const cssVars = { '--fn-color': props.color, '--fn-size': props.fontSize }
 </script>
@@ -59,7 +67,23 @@ const cssVars = { '--fn-color': props.color, '--fn-size': props.fontSize }
   gap: 2px;
   font-family: 'DIN Alternate', 'Roboto Mono', monospace;
 }
-.flip-number__prefix { font-size: calc(var(--fn-size) * 0.55); color: var(--fn-color); font-weight: 600; opacity: 0.85; }
-.flip-number__value { font-size: var(--fn-size); font-weight: 700; color: var(--fn-color); letter-spacing: -0.5px; line-height: 1; }
-.flip-number__suffix { font-size: calc(var(--fn-size) * 0.5); color: var(--fn-color); font-weight: 600; opacity: 0.85; }
+.flip-number__prefix {
+  font-size: calc(var(--fn-size) * 0.55);
+  color: var(--fn-color);
+  font-weight: 600;
+  opacity: 0.85;
+}
+.flip-number__value {
+  font-size: var(--fn-size);
+  font-weight: 700;
+  color: var(--fn-color);
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.flip-number__suffix {
+  font-size: calc(var(--fn-size) * 0.5);
+  color: var(--fn-color);
+  font-weight: 600;
+  opacity: 0.85;
+}
 </style>

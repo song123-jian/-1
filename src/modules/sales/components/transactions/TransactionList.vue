@@ -1,31 +1,45 @@
 <template>
   <div class="list-view">
-    <div v-for="(t, idx) in transactions" :key="t.id" class="list-item" :style="{ animationDelay: idx * 50 + 'ms' }" @click="emit('viewDetail', t)">
+    <div
+      v-for="(t, idx) in transactions"
+      :key="t.id"
+      class="list-item"
+      :style="{ animationDelay: idx * 50 + 'ms' }"
+      @click="emit('viewDetail', t)"
+    >
       <div class="list-item-header">
         <span class="list-item-title">{{ t.refNo }}</span>
         <span class="type-badge" :class="'type-' + t.type">{{ typeLabels[t.type] }}</span>
-        <span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">{{ statusLabels[t.status] || t.status }}</span>
+        <span class="status-badge" :class="statusBadgeMap[t.status] || 'neutral'">
+          {{ statusLabels[t.status] || t.status }}
+        </span>
       </div>
       <div class="list-item-meta">
         <span>{{ t.customerName }}</span>
         <span class="cell-mono">¥{{ formatMoney(t.amount) }}</span>
         <span>{{ t.date }}</span>
       </div>
-      <div class="list-item-related" v-if="t.relatedDocs && t.relatedDocs.length > 0">
+      <div v-if="t.relatedDocs && t.relatedDocs.length > 0" class="list-item-related">
         <span class="list-related-label">关联：</span>
         <span v-for="(rd, idx) in t.relatedDocs" :key="rd.refNo" class="list-related-item">
-          <span class="type-badge" :class="'type-' + rd.type" style="font-size:10px;padding:1px 4px">{{ typeLabels[rd.type] }}</span>
+          <span class="type-badge" :class="'type-' + rd.type" style="font-size: 10px; padding: 1px 4px">
+            {{ typeLabels[rd.type] }}
+          </span>
           <span class="related-ref" @click.stop="emit('navigateToPath', rd.path)">{{ rd.refNo }}</span>
-          <span v-if="idx < t.relatedDocs.length - 1" style="margin:0 2px">·</span>
+          <span v-if="idx < t.relatedDocs.length - 1" style="margin: 0 2px">·</span>
         </span>
       </div>
     </div>
     <div v-if="transactions.length === 0" class="empty-state">
-      <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>暂无交易记录
+      <div class="empty-state-icon"><Icon name="creditCard" :size="14" /></div>
+      暂无交易记录
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'TransactionList' }
+</script>
 <script setup>
 import { formatMoney } from '@/utils/format'
 defineProps({
@@ -53,7 +67,16 @@ const emit = defineEmits(['viewDetail', 'navigateToPath'])
   transition: all 0.2s ease;
   animation: listSlideIn 0.3s ease-out both;
 }
-@keyframes listSlideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes listSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .list-item:hover {
   border-color: var(--color-accent);
   background: var(--color-accent-subtle);
@@ -101,11 +124,26 @@ const emit = defineEmits(['viewDetail', 'navigateToPath'])
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.type-quotation { background: var(--color-info-subtle); color: var(--color-info); }
-.type-contract { background: var(--color-accent-subtle); color: var(--color-accent); }
-.type-collection { background: var(--color-success-subtle); color: var(--color-success); }
-.type-delivery { background: var(--color-warning-subtle); color: var(--color-warning); }
-.type-manual { background: var(--color-purple-subtle); color: var(--color-purple); }
+.type-quotation {
+  background: var(--color-info-subtle);
+  color: var(--color-info);
+}
+.type-contract {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+.type-collection {
+  background: var(--color-success-subtle);
+  color: var(--color-success);
+}
+.type-delivery {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning);
+}
+.type-manual {
+  background: var(--color-purple-subtle);
+  color: var(--color-purple);
+}
 .related-ref {
   color: var(--color-accent);
   cursor: pointer;
@@ -123,8 +161,15 @@ const emit = defineEmits(['viewDetail', 'navigateToPath'])
   color: var(--color-text-tertiary);
 }
 .empty-state-icon {
-  width: 64px; height: 64px; border-radius: 50%; background: var(--color-bg-secondary);
-  display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-2);
-  color: var(--color-text-tertiary); font-size: 24px;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--space-2);
+  color: var(--color-text-tertiary);
+  font-size: 24px;
 }
 </style>

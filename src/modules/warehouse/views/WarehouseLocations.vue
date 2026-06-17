@@ -7,14 +7,25 @@
       </div>
       <div class="page-header-actions">
         <div class="column-config-wrapper">
-          <button class="btn btn-outline" @click="toggleColumnConfig"><Icon name="setting" :size="14" /> 列</button>
+          <button class="btn btn-outline" @click="toggleColumnConfig">
+            <Icon name="setting" :size="14" />
+            列
+          </button>
           <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
-            <label v-for="col in columnDefs.filter(c => c.hideable !== false)" :key="col.key" class="column-config-item">
-              <input type="checkbox" v-model="columnVisible[col.key]">{{ col.label }}
+            <label
+              v-for="col in columnDefs.filter((c) => c.hideable !== false)"
+              :key="col.key"
+              class="column-config-item"
+            >
+              <input v-model="columnVisible[col.key]" type="checkbox" />
+              {{ col.label }}
             </label>
           </div>
         </div>
-        <button class="btn btn-secondary" @click="handleExport"><Icon name="upload" :size="14" /> 导出</button>
+        <button class="btn btn-secondary" @click="handleExport">
+          <Icon name="upload" :size="14" />
+          导出
+        </button>
         <button class="btn btn-primary" @click="openAddModal">新增库位</button>
       </div>
     </div>
@@ -22,86 +33,109 @@
     <!-- 紧凑指标条 -->
     <div class="compact-metrics">
       <div class="compact-metric">
-        <span class="compact-metric-dot" style="background:var(--color-accent)"></span>
+        <span class="compact-metric-dot" style="background: var(--color-accent)"></span>
         <span class="compact-metric-label">总库位数</span>
         <span class="compact-metric-value">{{ whLocStore.locations.length }}</span>
       </div>
       <span class="compact-metric-sep"></span>
       <div class="compact-metric">
-        <span class="compact-metric-dot" style="background:var(--color-success)"></span>
+        <span class="compact-metric-dot" style="background: var(--color-success)"></span>
         <span class="compact-metric-label">已占用</span>
         <span class="compact-metric-value">{{ occupiedCount }}</span>
       </div>
       <span class="compact-metric-sep"></span>
       <div class="compact-metric">
-        <span class="compact-metric-dot" style="background:var(--color-info)"></span>
+        <span class="compact-metric-dot" style="background: var(--color-info)"></span>
         <span class="compact-metric-label">空库位</span>
         <span class="compact-metric-value">{{ emptyCount }}</span>
       </div>
       <span class="compact-metric-sep"></span>
       <div class="compact-metric">
-        <span class="compact-metric-dot" style="background:var(--color-warning)"></span>
+        <span class="compact-metric-dot" style="background: var(--color-warning)"></span>
         <span class="compact-metric-label">利用率</span>
-        <span class="compact-metric-value">{{ occupancyRate }}<span class="compact-metric-unit">%</span></span>
+        <span class="compact-metric-value">
+          {{ occupancyRate }}
+          <span class="compact-metric-unit">%</span>
+        </span>
       </div>
     </div>
 
     <!-- 折叠统计区 -->
     <div class="collapsible-stats">
       <div class="collapsible-stats-header" @click="showLocationStatsExpanded = !showLocationStatsExpanded">
-        <span class="collapsible-stats-title"><Icon name="chart" :size="14" /> 概览面板</span>
+        <span class="collapsible-stats-title">
+          <Icon name="chart" :size="14" />
+          概览面板
+        </span>
         <span class="collapsible-stats-toggle" :class="{ expanded: showLocationStatsExpanded }">▼</span>
       </div>
       <div v-show="showLocationStatsExpanded" class="collapsible-stats-body">
-
-    <!-- 概览面板：库位利用率 + 库区分布 + 仓库统计 -->
-    <div class="location-overview-row">
-      <div class="overview-card overview-ring-card">
-        <div class="overview-card-title">库位利用率</div>
-        <div class="overview-ring-body">
-          <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
-            <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
-            <circle cx="36" cy="36" r="26" fill="none" :stroke="occupancyRateColor" stroke-width="5" stroke-linecap="round"
-              :stroke-dasharray="occupancyRateDash" stroke-dashoffset="0" transform="rotate(-90 36 36)" class="overview-ring-progress" />
-          </svg>
-          <div class="overview-ring-text">
-            <span class="overview-ring-percent" :style="{ color: occupancyRateColor }">{{ occupancyRate }}%</span>
-            <span class="overview-ring-sub">已占用/总数</span>
-          </div>
-        </div>
-      </div>
-      <div class="overview-card overview-area-card">
-        <div class="overview-card-title">库区分布</div>
-        <div class="area-bars">
-          <div v-for="(count, area) in whLocStore.areaStats" :key="area" class="area-bar-item">
-            <span class="area-bar-label" :style="{ color: whLocStore.AREA_COLORS[area] || 'var(--color-text-secondary)' }">{{ area }}</span>
-            <div class="area-bar-track">
-              <div class="area-bar-fill" :style="{ width: areaPercent(area) + '%', background: whLocStore.AREA_COLORS[area] || '#64748b' }"></div>
+        <!-- 概览面板：库位利用率 + 库区分布 + 仓库统计 -->
+        <div class="location-overview-row">
+          <div class="overview-card overview-ring-card">
+            <div class="overview-card-title">库位利用率</div>
+            <div class="overview-ring-body">
+              <svg width="72" height="72" viewBox="0 0 72 72" class="overview-ring-svg">
+                <circle cx="36" cy="36" r="26" fill="none" stroke="var(--color-border)" stroke-width="5" />
+                <circle
+                  cx="36"
+                  cy="36"
+                  r="26"
+                  fill="none"
+                  :stroke="occupancyRateColor"
+                  stroke-width="5"
+                  stroke-linecap="round"
+                  :stroke-dasharray="occupancyRateDash"
+                  stroke-dashoffset="0"
+                  transform="rotate(-90 36 36)"
+                  class="overview-ring-progress"
+                />
+              </svg>
+              <div class="overview-ring-text">
+                <span class="overview-ring-percent" :style="{ color: occupancyRateColor }">{{ occupancyRate }}%</span>
+                <span class="overview-ring-sub">已占用/总数</span>
+              </div>
             </div>
-            <span class="area-bar-count">{{ count }}</span>
           </div>
-        </div>
-      </div>
-      <div class="overview-card overview-warehouse-card">
-        <div class="overview-card-title">仓库统计</div>
-        <div class="warehouse-bars">
-          <div v-for="w in warehouseStats" :key="w.name" class="warehouse-bar-item">
-            <span class="warehouse-bar-label">{{ w.name }}</span>
-            <div class="warehouse-bar-track">
-              <div class="warehouse-bar-fill" :style="{ width: w.percent + '%', background: w.color }"></div>
+          <div class="overview-card overview-area-card">
+            <div class="overview-card-title">库区分布</div>
+            <div class="area-bars">
+              <div v-for="(count, area) in whLocStore.areaStats" :key="area" class="area-bar-item">
+                <span
+                  class="area-bar-label"
+                  :style="{ color: whLocStore.AREA_COLORS[area] || 'var(--color-text-secondary)' }"
+                >
+                  {{ area }}
+                </span>
+                <div class="area-bar-track">
+                  <div
+                    class="area-bar-fill"
+                    :style="{ width: areaPercent(area) + '%', background: whLocStore.AREA_COLORS[area] || '#64748b' }"
+                  ></div>
+                </div>
+                <span class="area-bar-count">{{ count }}</span>
+              </div>
             </div>
-            <span class="warehouse-bar-count">{{ w.count }}</span>
+          </div>
+          <div class="overview-card overview-warehouse-card">
+            <div class="overview-card-title">仓库统计</div>
+            <div class="warehouse-bars">
+              <div v-for="w in warehouseStats" :key="w.name" class="warehouse-bar-item">
+                <span class="warehouse-bar-label">{{ w.name }}</span>
+                <div class="warehouse-bar-track">
+                  <div class="warehouse-bar-fill" :style="{ width: w.percent + '%', background: w.color }"></div>
+                </div>
+                <span class="warehouse-bar-count">{{ w.count }}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
-
       </div>
     </div>
 
     <div class="filter-bar">
-      <input type="text" class="form-input" v-model="searchText" placeholder="搜索库位编码/仓库名称..." />
-      <select class="form-select" v-model="areaFilter">
+      <input v-model="searchText" type="text" class="form-input" placeholder="搜索库位编码/仓库名称..." />
+      <select v-model="areaFilter" class="form-select">
         <option value="">全部库区</option>
         <option v-for="area in whLocStore.AREA_OPTIONS" :key="area" :value="area">{{ area }}</option>
       </select>
@@ -110,16 +144,31 @@
     <!-- 空库位/高占用预警 -->
     <div v-if="locationAlerts.length > 0" class="panel-card location-alert-panel">
       <div class="panel-card-header">
-        <span class="panel-card-title" style="color:var(--color-warning)"><span class="alert-dot-pulse"></span> 库位预警</span>
+        <span class="panel-card-title" style="color: var(--color-warning)">
+          <span class="alert-dot-pulse"></span>
+          库位预警
+        </span>
       </div>
       <div class="panel-card-body">
-        <div v-for="(a, idx) in locationAlerts" :key="a.id" class="location-alert-item" :style="{ animationDelay: idx * 60 + 'ms' }">
+        <div
+          v-for="(a, idx) in locationAlerts"
+          :key="a.id"
+          class="location-alert-item"
+          :style="{ animationDelay: idx * 60 + 'ms' }"
+        >
           <span class="location-alert-badge" :class="'alert-' + a.alertType">{{ a.alertLabel }}</span>
           <span class="location-alert-code">{{ a.locationCode }}</span>
           <span class="location-alert-warehouse">{{ a.warehouseName }}</span>
-          <span class="location-alert-area" :style="{ color: whLocStore.AREA_COLORS[a.areaName] || 'var(--color-text-secondary)' }">{{ a.areaName }}</span>
+          <span
+            class="location-alert-area"
+            :style="{ color: whLocStore.AREA_COLORS[a.areaName] || 'var(--color-text-secondary)' }"
+          >
+            {{ a.areaName }}
+          </span>
           <span class="location-alert-manager">{{ a.manager }}</span>
-          <span class="location-alert-qty">{{ a.stockInfo.count }}种/{{ (a.stockInfo.totalQty || 0).toFixed(2) }}kg</span>
+          <span class="location-alert-qty">
+            {{ a.stockInfo.count }}种/{{ (a.stockInfo.totalQty || 0).toFixed(2) }}kg
+          </span>
         </div>
       </div>
     </div>
@@ -134,7 +183,7 @@
           <table class="data-table">
             <thead>
               <tr>
-                <th style="width:50px;text-align:center">序号</th>
+                <th style="width: 50px; text-align: center">序号</th>
                 <th v-if="columnVisible.locationCode">库位编码</th>
                 <th v-if="columnVisible.warehouseName">仓库名称</th>
                 <th v-if="columnVisible.areaName">库区名称</th>
@@ -149,22 +198,44 @@
             <tbody>
               <tr v-if="paginatedLocations.length === 0">
                 <td colspan="10" class="empty-state">
-                  <div class="empty-state-icon"><Icon name="mapPin" :size="24" /></div>暂无库位数据
+                  <div class="empty-state-icon"><Icon name="mapPin" :size="24" /></div>
+                  暂无库位数据
                 </td>
               </tr>
               <tr v-for="(loc, idx) in paginatedLocations" :key="loc.id" :style="{ animationDelay: idx * 20 + 'ms' }">
-                <td style="width:50px;text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ (currentPage - 1) * pageSize.value + idx + 1 }}</td>
-                <td v-if="columnVisible.locationCode" class="cell-mono"><strong style="color:var(--color-accent)">{{ loc.locationCode }}</strong></td>
+                <td style="width: 50px; text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ (currentPage - 1) * pageSize.value + idx + 1 }}
+                </td>
+                <td v-if="columnVisible.locationCode" class="cell-mono">
+                  <strong style="color: var(--color-accent)">{{ loc.locationCode }}</strong>
+                </td>
                 <td v-if="columnVisible.warehouseName">{{ loc.warehouseName }}</td>
-                <td v-if="columnVisible.areaName"><span :style="{ color: whLocStore.AREA_COLORS[loc.areaName] || 'var(--color-text-tertiary)', fontWeight: 600 }">{{ loc.areaName }}</span></td>
+                <td v-if="columnVisible.areaName">
+                  <span
+                    :style="{
+                      color: whLocStore.AREA_COLORS[loc.areaName] || 'var(--color-text-tertiary)',
+                      fontWeight: 600
+                    }"
+                  >
+                    {{ loc.areaName }}
+                  </span>
+                </td>
                 <td v-if="columnVisible.manager">{{ loc.manager }}</td>
                 <td v-if="columnVisible.managerPhone" class="cell-mono">{{ loc.managerPhone }}</td>
-                <td style="text-align:center;overflow-wrap:break-word;word-wrap:break-word">{{ whLocStore.getLocationStockInfo[loc.id]?.count || 0 }}</td>
-                <td class="cell-mono" style="text-align:right">{{ (whLocStore.getLocationStockInfo[loc.id]?.totalQty || 0).toFixed(2) }}</td>
+                <td style="text-align: center; overflow-wrap: break-word; word-wrap: break-word">
+                  {{ whLocStore.getLocationStockInfo[loc.id]?.count || 0 }}
+                </td>
+                <td class="cell-mono" style="text-align: right">
+                  {{ (whLocStore.getLocationStockInfo[loc.id]?.totalQty || 0).toFixed(2) }}
+                </td>
                 <td v-if="columnVisible.notes">{{ loc.notes || '-' }}</td>
                 <td class="cell-actions">
-                  <button class="btn btn-ghost btn-sm" @click="openEditModal(loc)"><Icon name="edit" :size="14" /></button>
-                  <button class="btn btn-ghost btn-sm" style="color:var(--color-danger)" @click="handleDelete(loc.id)"><Icon name="delete" :size="14" /></button>
+                  <button class="btn btn-ghost btn-sm" @click="openEditModal(loc)">
+                    <Icon name="edit" :size="14" />
+                  </button>
+                  <button class="btn btn-ghost btn-sm" style="color: var(--color-danger)" @click="handleDelete(loc.id)">
+                    <Icon name="delete" :size="14" />
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -173,14 +244,28 @@
       </div>
     </div>
 
-    <div class="pagination-bar" v-if="totalPages > 1">
+    <div v-if="totalPages > 1" class="pagination-bar">
       <span class="page-info">共 {{ filteredLocations.length }} 条</span>
       <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage = 1">&laquo;</button>
       <button class="pagination-btn" :disabled="currentPage <= 1" @click="currentPage--">&lsaquo;</button>
-      <button v-for="p in visiblePages" :key="p" class="pagination-btn" :class="{ active: p === currentPage }" @click="currentPage = p">{{ p }}</button>
+      <button
+        v-for="p in visiblePages"
+        :key="p"
+        class="pagination-btn"
+        :class="{ active: p === currentPage }"
+        @click="currentPage = p"
+      >
+        {{ p }}
+      </button>
       <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage++">&rsaquo;</button>
-      <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">&raquo;</button>
-      <select v-model="pageSize" class="form-select" style="width:auto;font-size:var(--font-size-xs);padding:2px 4px">
+      <button class="pagination-btn" :disabled="currentPage >= totalPages" @click="currentPage = totalPages">
+        &raquo;
+      </button>
+      <select
+        v-model="pageSize"
+        class="form-select"
+        style="width: auto; font-size: var(--font-size-xs); padding: 2px 4px"
+      >
         <option :value="10">10条/页</option>
         <option :value="20">20条/页</option>
         <option :value="50">50条/页</option>
@@ -188,15 +273,28 @@
     </div>
 
     <!-- 库区分布统计 -->
-    <div class="panel-card" style="margin-top:var(--space-6)">
+    <div class="panel-card" style="margin-top: var(--space-6)">
       <div class="panel-card-header">
-        <span class="panel-card-title"><Icon name="table" :size="14" /> 库区分布统计</span>
+        <span class="panel-card-title">
+          <Icon name="table" :size="14" />
+          库区分布统计
+        </span>
       </div>
       <div class="panel-card-body">
         <div class="area-stats-grid">
-          <div v-for="(count, area, idx) in whLocStore.areaStats" :key="area" class="area-stat-card" :style="{ animationDelay: idx * 60 + 'ms' }">
+          <div
+            v-for="(count, area, idx) in whLocStore.areaStats"
+            :key="area"
+            class="area-stat-card"
+            :style="{ animationDelay: idx * 60 + 'ms' }"
+          >
             <div class="area-stat-top-bar" :style="{ background: whLocStore.AREA_COLORS[area] || '#64748b' }"></div>
-            <div class="area-stat-value" :style="{ color: whLocStore.AREA_COLORS[area] || 'var(--color-text-tertiary)' }">{{ count }}</div>
+            <div
+              class="area-stat-value"
+              :style="{ color: whLocStore.AREA_COLORS[area] || 'var(--color-text-tertiary)' }"
+            >
+              {{ count }}
+            </div>
             <div class="area-stat-label">{{ area }}</div>
           </div>
         </div>
@@ -205,65 +303,119 @@
 
     <!-- 删除确认弹窗 -->
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
-      <div class="modal-panel" style="max-width:400px">
+      <div class="modal-panel" style="max-width: 400px">
         <div class="modal-header">
-          <h3 :style="{ fontSize: '14px', fontWeight: 700, color: deleteConfirmData.type === 'hasStock' ? 'var(--color-warning)' : 'var(--color-danger)' }">{{ deleteConfirmData.type === 'hasStock' ? '无法删除' : '确认删除' }}</h3>
-          <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false"><Icon name="close" :size="14" /></button>
+          <h3
+            :style="{
+              fontSize: '14px',
+              fontWeight: 700,
+              color: deleteConfirmData.type === 'hasStock' ? 'var(--color-warning)' : 'var(--color-danger)'
+            }"
+          >
+            {{ deleteConfirmData.type === 'hasStock' ? '无法删除' : '确认删除' }}
+          </h3>
+          <button class="btn btn-ghost btn-sm" @click="showDeleteConfirm = false">
+            <Icon name="close" :size="14" />
+          </button>
         </div>
-        <div class="modal-body" style="text-align:center;padding:24px">
+        <div class="modal-body" style="text-align: center; padding: 24px">
           <div class="confirm-icon-circle" :class="deleteConfirmData.type === 'hasStock' ? 'warning' : 'danger'">
             <Icon :name="deleteConfirmData.type === 'hasStock' ? 'warning' : 'delete'" :size="24" />
           </div>
-          <div style="font-size:15px;color:var(--color-text-secondary)">{{ deleteConfirmData.message }}</div>
+          <div style="font-size: 15px; color: var(--color-text-secondary)">{{ deleteConfirmData.message }}</div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-ghost" @click="showDeleteConfirm = false">{{ deleteConfirmData.type === 'hasStock' ? '知道了' : '取消' }}</button>
-          <button v-if="deleteConfirmData.type === 'confirm'" class="btn btn-primary" style="background:var(--color-danger)" @click="confirmDeleteLocation">确认删除</button>
+          <button class="btn btn-ghost" @click="showDeleteConfirm = false">
+            {{ deleteConfirmData.type === 'hasStock' ? '知道了' : '取消' }}
+          </button>
+          <button
+            v-if="deleteConfirmData.type === 'confirm'"
+            class="btn btn-primary"
+            style="background: var(--color-danger)"
+            @click="confirmDeleteLocation"
+          >
+            确认删除
+          </button>
         </div>
       </div>
     </div>
 
     <!-- 新增/编辑弹窗 -->
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
-      <div class="modal-panel" style="max-width:600px">
+      <div class="modal-panel" style="max-width: 600px">
         <div class="modal-header">
-          <h3 :style="{ fontSize: '14px', fontWeight: 700, color: 'var(--color-accent)', borderBottom: '2px solid var(--color-accent)', paddingBottom: '8px' }"><Icon name="mapPin" :size="14" /> 库位信息</h3>
+          <h3
+            :style="{
+              fontSize: '14px',
+              fontWeight: 700,
+              color: 'var(--color-accent)',
+              borderBottom: '2px solid var(--color-accent)',
+              paddingBottom: '8px'
+            }"
+          >
+            <Icon name="mapPin" :size="14" />
+            库位信息
+          </h3>
           <button class="btn btn-ghost btn-sm" @click="closeModal"><Icon name="close" :size="14" /></button>
         </div>
         <div class="modal-body">
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">库位编码 <span class="required">*</span></label>
-              <input class="form-input" v-model="formData.locationCode" placeholder="格式：仓库-库区-货架-层（如CK01-YL-A-01）" :readonly="!!editingId" :style="editingId ? 'opacity:0.7;cursor:not-allowed' : ''" />
+              <label class="form-label">
+                库位编码
+                <span class="required">*</span>
+              </label>
+              <input
+                v-model="formData.locationCode"
+                class="form-input"
+                placeholder="格式：仓库-库区-货架-层（如CK01-YL-A-01）"
+                :readonly="!!editingId"
+                :style="editingId ? 'opacity:0.7;cursor:not-allowed' : ''"
+              />
             </div>
             <div class="form-group">
-              <label class="form-label">仓库名称 <span class="required">*</span></label>
-              <input class="form-input" v-model="formData.warehouseName" placeholder="如：原料一库" />
+              <label class="form-label">
+                仓库名称
+                <span class="required">*</span>
+              </label>
+              <input v-model="formData.warehouseName" class="form-input" placeholder="如：原料一库" />
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">库区名称 <span class="required">*</span></label>
-            <select class="form-select" v-model="formData.areaName">
+            <label class="form-label">
+              库区名称
+              <span class="required">*</span>
+            </label>
+            <select v-model="formData.areaName" class="form-select">
               <option v-for="area in whLocStore.AREA_OPTIONS" :key="area" :value="area">{{ area }}</option>
             </select>
           </div>
           <div class="form-row form-row-2">
             <div class="form-group">
-              <label class="form-label">库管员 <span class="required">*</span></label>
-              <input class="form-input" v-model="formData.manager" placeholder="需关联人员档案" />
+              <label class="form-label">
+                库管员
+                <span class="required">*</span>
+              </label>
+              <input v-model="formData.manager" class="form-input" placeholder="需关联人员档案" />
             </div>
             <div class="form-group">
-              <label class="form-label">联系电话 <span class="required">*</span></label>
-              <input class="form-input" v-model="formData.managerPhone" />
+              <label class="form-label">
+                联系电话
+                <span class="required">*</span>
+              </label>
+              <input v-model="formData.managerPhone" class="form-input" />
             </div>
           </div>
           <div class="form-group">
             <label class="form-label">备注</label>
-            <textarea class="form-textarea" rows="2" v-model="formData.notes"></textarea>
+            <textarea v-model="formData.notes" class="form-textarea" rows="2"></textarea>
           </div>
         </div>
         <div v-if="formErrors.length > 0" class="form-errors">
-          <div v-for="(err, idx) in formErrors" :key="idx" class="form-error"><Icon name="warning" :size="14" /> {{ err }}</div>
+          <div v-for="(err, idx) in formErrors" :key="idx" class="form-error">
+            <Icon name="warning" :size="14" />
+            {{ err }}
+          </div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="closeModal">取消</button>
@@ -274,6 +426,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'WarehouseLocations' }
+</script>
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useWarehouseLocationStore } from '@/modules/warehouse/stores/warehouseLocation'
@@ -289,7 +444,7 @@ const columnDefs = [
   { key: 'notes', label: '备注' },
   { key: 'actions', label: '操作', hideable: false }
 ]
-const columnVisible = ref(Object.fromEntries(columnDefs.filter(c => c.hideable !== false).map(c => [c.key, true])))
+const columnVisible = ref(Object.fromEntries(columnDefs.filter((c) => c.hideable !== false).map((c) => [c.key, true])))
 const showColumnConfig = ref(false)
 const colDropdownStyle = ref({})
 function toggleColumnConfig(event) {
@@ -309,18 +464,25 @@ const formErrors = ref([])
 const showDeleteConfirm = ref(false)
 const deleteConfirmData = ref({ id: null, type: '', message: '' })
 const formData = ref({
-  locationCode: '', warehouseName: '', areaName: '合格品区',
-  manager: '', managerPhone: '', notes: ''
+  locationCode: '',
+  warehouseName: '',
+  areaName: '合格品区',
+  manager: '',
+  managerPhone: '',
+  notes: ''
 })
 
 const filteredLocations = computed(() => {
   let list = whLocStore.locations
   const search = searchText.value.toLowerCase()
   if (search) {
-    list = list.filter(l => (l.locationCode || '').toLowerCase().includes(search) || (l.warehouseName || '').toLowerCase().includes(search))
+    list = list.filter(
+      (l) =>
+        (l.locationCode || '').toLowerCase().includes(search) || (l.warehouseName || '').toLowerCase().includes(search)
+    )
   }
   if (areaFilter.value) {
-    list = list.filter(l => l.areaName === areaFilter.value)
+    list = list.filter((l) => l.areaName === areaFilter.value)
   }
   return list
 })
@@ -343,18 +505,20 @@ const visiblePages = computed(() => {
   return pages
 })
 
-watch([searchText, areaFilter], () => { currentPage.value = 1 })
+watch([searchText, areaFilter], () => {
+  currentPage.value = 1
+})
 
 /* ====== 统计计算 ====== */
 const occupiedCount = computed(() => {
-  return whLocStore.locations.filter(l => {
+  return whLocStore.locations.filter((l) => {
     const info = whLocStore.getLocationStockInfo[l.id]
     return info && info.count > 0
   }).length
 })
 
 const emptyCount = computed(() => {
-  return whLocStore.locations.filter(l => {
+  return whLocStore.locations.filter((l) => {
     const info = whLocStore.getLocationStockInfo[l.id]
     return !info || info.count === 0
   }).length
@@ -421,7 +585,14 @@ const locationAlerts = computed(() => {
 
 function openAddModal() {
   editingId.value = null
-  formData.value = { locationCode: '', warehouseName: '', areaName: '合格品区', manager: '', managerPhone: '', notes: '' }
+  formData.value = {
+    locationCode: '',
+    warehouseName: '',
+    areaName: '合格品区',
+    manager: '',
+    managerPhone: '',
+    notes: ''
+  }
   formErrors.value = []
   showModal.value = true
 }
@@ -446,7 +617,9 @@ function handleSave() {
   if (!formData.value.manager) formErrors.value.push('请输入库管员')
   if (!formData.value.managerPhone) formErrors.value.push('请输入联系电话')
   if (formErrors.value.length > 0) return
-  const dupLoc = whLocStore.locations.find(l => l.locationCode === formData.value.locationCode && l.id !== editingId.value)
+  const dupLoc = whLocStore.locations.find(
+    (l) => l.locationCode === formData.value.locationCode && l.id !== editingId.value
+  )
   if (dupLoc) formErrors.value.push('库位编码 ' + formData.value.locationCode + ' 已存在')
   if (formErrors.value.length > 0) return
   if (editingId.value) {
@@ -460,7 +633,11 @@ function handleSave() {
 function handleDelete(id) {
   const stockInfo = whLocStore.getLocationStockInfo[id]
   if (stockInfo && stockInfo.count > 0) {
-    deleteConfirmData.value = { id, type: 'hasStock', message: `该库位关联了 ${stockInfo.count} 种物料（总数量 ${stockInfo.totalQty.toFixed(2)}），请先转移物料后再删除。` }
+    deleteConfirmData.value = {
+      id,
+      type: 'hasStock',
+      message: `该库位关联了 ${stockInfo.count} 种物料（总数量 ${stockInfo.totalQty.toFixed(2)}），请先转移物料后再删除。`
+    }
     showDeleteConfirm.value = true
     return
   }
@@ -477,28 +654,35 @@ function confirmDeleteLocation() {
 
 function handleExport() {
   try {
-  const data = filteredLocations.value.map(l => ({
-    库位编码: l.locationCode, 仓库名称: l.warehouseName, 库区名称: l.areaName,
-    库管员: l.manager, 联系电话: l.managerPhone, 备注: l.notes || ''
-  }))
-  if (data.length === 0) {
-    alert('暂无数据可导出')
-    return
+    const data = filteredLocations.value.map((l) => ({
+      库位编码: l.locationCode,
+      仓库名称: l.warehouseName,
+      库区名称: l.areaName,
+      库管员: l.manager,
+      联系电话: l.managerPhone,
+      备注: l.notes || ''
+    }))
+    if (data.length === 0) {
+      alert('暂无数据可导出')
+      return
+    }
+    const headers = Object.keys(data[0])
+    const csvRows = [headers.join(',')]
+    for (const row of data) {
+      csvRows.push(headers.map((h) => '"' + String(row[h] || '').replace(/"/g, '""') + '"').join(','))
+    }
+    const bom = '\uFEFF'
+    const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = '库位数据_' + new Date().toISOString().split('T')[0] + '.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.error('导出失败:', e)
+    alert('导出失败: ' + e.message)
   }
-  const headers = Object.keys(data[0])
-  const csvRows = [headers.join(',')]
-  for (const row of data) {
-    csvRows.push(headers.map(h => '"' + String(row[h] || '').replace(/"/g, '""') + '"').join(','))
-  }
-  const bom = '\uFEFF'
-  const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = '库位数据_' + new Date().toISOString().split('T')[0] + '.csv'
-  a.click()
-  URL.revokeObjectURL(url)
-  } catch (e) { console.error('导出失败:', e); alert('导出失败: ' + e.message) }
 }
 
 function handleClickOutside(e) {
@@ -526,18 +710,28 @@ onUnmounted(() => {
   gap: var(--space-4);
   margin-bottom: var(--space-5);
 }
-.stats-grid-4 { grid-template-columns: repeat(4, 1fr); }
+.stats-grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
 .stat-card {
   animation: statCardIn 0.4s ease-out both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 @keyframes statCardIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .stat-card-value {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
@@ -555,8 +749,13 @@ onUnmounted(() => {
   animation: alertDotPulse 1.5s ease-in-out infinite;
 }
 @keyframes alertDotPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(245,158,11,0.3); }
-  50% { box-shadow: 0 0 10px rgba(245,158,11,0.7); }
+  0%,
+  100% {
+    box-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.7);
+  }
 }
 
 /* ====== 概览面板 ====== */
@@ -573,9 +772,15 @@ onUnmounted(() => {
   padding: var(--space-3) var(--space-4);
   animation: statCardIn 0.4s ease-out both;
 }
-.overview-card:nth-child(1) { animation-delay: 0ms; }
-.overview-card:nth-child(2) { animation-delay: 80ms; }
-.overview-card:nth-child(3) { animation-delay: 160ms; }
+.overview-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.overview-card:nth-child(2) {
+  animation-delay: 80ms;
+}
+.overview-card:nth-child(3) {
+  animation-delay: 160ms;
+}
 .overview-card-title {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
@@ -589,9 +794,16 @@ onUnmounted(() => {
   align-items: center;
   gap: var(--space-3);
 }
-.overview-ring-svg { flex-shrink: 0; }
-.overview-ring-progress { transition: stroke-dasharray 0.6s ease; }
-.overview-ring-text { display: flex; flex-direction: column; }
+.overview-ring-svg {
+  flex-shrink: 0;
+}
+.overview-ring-progress {
+  transition: stroke-dasharray 0.6s ease;
+}
+.overview-ring-text {
+  display: flex;
+  flex-direction: column;
+}
 .overview-ring-percent {
   font-family: var(--font-mono, 'Menlo', 'Consolas', monospace);
   font-size: var(--font-size-xl);
@@ -699,10 +911,18 @@ onUnmounted(() => {
   animation: alertSlideIn 0.3s ease-out both;
   font-size: var(--font-size-sm);
 }
-.location-alert-item:last-child { border-bottom: none; }
+.location-alert-item:last-child {
+  border-bottom: none;
+}
 @keyframes alertSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 .location-alert-badge {
   padding: var(--space-1) var(--space-2);
@@ -747,8 +967,14 @@ onUnmounted(() => {
   animation: rowSlideIn 0.3s ease-out both;
 }
 @keyframes rowSlideIn {
-  from { opacity: 0; transform: translateX(-6px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ====== 空状态圆形图标 ====== */
@@ -780,11 +1006,11 @@ onUnmounted(() => {
   margin: 0 auto var(--space-3);
 }
 .confirm-icon-circle.warning {
-  background: var(--color-warning-subtle, rgba(245,158,11,0.1));
+  background: var(--color-warning-subtle, rgba(245, 158, 11, 0.1));
   color: var(--color-warning);
 }
 .confirm-icon-circle.danger {
-  background: var(--color-danger-subtle, rgba(239,68,68,0.1));
+  background: var(--color-danger-subtle, rgba(239, 68, 68, 0.1));
   color: var(--color-danger);
 }
 
@@ -806,11 +1032,17 @@ onUnmounted(() => {
 }
 .area-stat-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 @keyframes cardFadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .area-stat-top-bar {
   position: absolute;
@@ -836,10 +1068,35 @@ onUnmounted(() => {
   margin-left: auto;
 }
 
-.column-config-wrapper { position: relative; }
-.column-config-dropdown { position: fixed; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: var(--space-2); z-index: var(--z-popover, 9999); min-width: 160px; max-height: 360px; overflow-y: auto; box-shadow: var(--shadow-lg); }
-.column-config-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-2); color: var(--color-text-primary); font-size: var(--font-size-base); cursor: pointer; white-space: nowrap; }
-.column-config-item:hover { background: var(--color-surface-hover); border-radius: var(--radius-sm); }
+.column-config-wrapper {
+  position: relative;
+}
+.column-config-dropdown {
+  position: fixed;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  z-index: var(--z-popover, 9999);
+  min-width: 160px;
+  max-height: 360px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+.column-config-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.column-config-item:hover {
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-sm);
+}
 
 .pagination-bar {
   display: flex;
@@ -904,11 +1161,17 @@ onUnmounted(() => {
 }
 
 @media (max-width: 1024px) {
-  .stats-grid-4 { grid-template-columns: repeat(2, 1fr); }
-  .location-overview-row { grid-template-columns: 1fr; }
+  .stats-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .location-overview-row {
+    grid-template-columns: 1fr;
+  }
 }
 @media (max-width: 640px) {
-  .stats-grid-4 { grid-template-columns: 1fr; }
+  .stats-grid-4 {
+    grid-template-columns: 1fr;
+  }
   .page-header-actions {
     flex-wrap: wrap;
   }

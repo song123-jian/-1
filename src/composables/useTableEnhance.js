@@ -18,7 +18,7 @@ export function useTableEnhance(data, options = {}) {
   const trendData = computed(() => {
     const rows = resolvedData.value
     if (!trendField || rows.length < 2) return []
-    const values = rows.map(row => parseFloat(row[trendField])).filter(v => !isNaN(v))
+    const values = rows.map((row) => parseFloat(row[trendField])).filter((v) => !isNaN(v))
     const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0
 
     return rows.map((row, idx) => {
@@ -33,10 +33,10 @@ export function useTableEnhance(data, options = {}) {
       }
 
       if (prev === null || isNaN(prev)) {
-        return { trend: val > avg ? 'up' : val < avg ? 'down' : 'neutral', diff: avg ? ((val - avg) / avg) : 0 }
+        return { trend: val > avg ? 'up' : val < avg ? 'down' : 'neutral', diff: avg ? (val - avg) / avg : 0 }
       }
 
-      const diff = prev ? ((val - prev) / Math.abs(prev)) : 0
+      const diff = prev ? (val - prev) / Math.abs(prev) : 0
       return {
         trend: val > prev ? 'up' : val < prev ? 'down' : 'neutral',
         diff
@@ -48,7 +48,7 @@ export function useTableEnhance(data, options = {}) {
   const anomalyData = computed(() => {
     const rows = resolvedData.value
     if (!highlightField || rows.length < 3) return []
-    const values = rows.map(row => parseFloat(row[highlightField])).filter(v => !isNaN(v))
+    const values = rows.map((row) => parseFloat(row[highlightField])).filter((v) => !isNaN(v))
     if (values.length < 3) return []
 
     const avg = values.reduce((a, b) => a + b, 0) / values.length
@@ -56,7 +56,7 @@ export function useTableEnhance(data, options = {}) {
     const stdDev = Math.sqrt(variance)
     const threshold = stdDev * highlightThreshold
 
-    return rows.map(row => {
+    return rows.map((row) => {
       const val = parseFloat(row[highlightField])
       if (isNaN(val)) return { isAnomaly: false }
       return {

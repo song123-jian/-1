@@ -17,9 +17,15 @@ function _numberToChinesePositive(n) {
       const bigIdx = Math.floor(pos / 4)
       if (d === 0) {
         zeroFlag = true
-        if (unitIdx === 0 && bigIdx > 0) { result += bigUnits[bigIdx]; zeroFlag = false }
+        if (unitIdx === 0 && bigIdx > 0) {
+          result += bigUnits[bigIdx]
+          zeroFlag = false
+        }
       } else {
-        if (zeroFlag) { result += '零'; zeroFlag = false }
+        if (zeroFlag) {
+          result += '零'
+          zeroFlag = false
+        }
         result += digits[d] + units[unitIdx]
         if (unitIdx === 0 && bigIdx > 0) result += bigUnits[bigIdx]
       }

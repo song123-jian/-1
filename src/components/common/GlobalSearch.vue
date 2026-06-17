@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <Teleport to="body">
     <div v-if="visible" class="global-search-overlay" @click.self="close">
       <div class="global-search-dialog">
@@ -57,10 +57,14 @@
   </Teleport>
 </template>
 
+<script>
+export default { name: 'GlobalSearch' }
+</script>
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDataCenterStore } from '@/stores/dataCenter'
+import { escapeHtml } from '@/utils/format'
 
 const props = defineProps({
   visible: { type: Boolean, default: false }
@@ -143,7 +147,7 @@ const SEARCH_MODULES = [
   {
     key: 'purchase',
     label: '采购单',
-    data: () => dataCenter._stores?.purchase?.orders || [],
+    data: () => dataCenter._stores?.purchase?.purchaseOrders || [],
     fields: ['orderNo', 'supplierName', 'status'],
     labelField: 'orderNo',
     subField: 'supplierName',
@@ -152,7 +156,7 @@ const SEARCH_MODULES = [
   {
     key: 'production',
     label: '生产工单',
-    data: () => dataCenter._stores?.production?.orders || [],
+    data: () => dataCenter._stores?.production?.productionOrders || [],
     fields: ['orderNo', 'status'],
     labelField: 'orderNo',
     subField: 'status',
@@ -247,18 +251,19 @@ function selectCurrent() {
   if (item) navigateTo(item)
 }
 
-/* 高亮匹配文本 */
+/* 高亮匹配文本（XSS安全：先转义HTML，再高亮） */
 function highlight(text, keyword) {
-  if (!text || !keyword) return text || ''
+  if (!text || !keyword) return escapeHtml(text || '')
   const q = keyword.trim()
-  if (!q) return text
+  if (!q) return escapeHtml(text)
+  const escaped = escapeHtml(String(text))
   const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-  return String(text).replace(regex, '<mark>$1</mark>')
+  return escaped.replace(regex, '<mark>$1</mark>')
 }
 
 /* 导航 */
 function navigateTo(item) {
-  router.push(item.route)
+  router.push(item.route).catch(() => {})
   close()
 }
 

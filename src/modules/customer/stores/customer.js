@@ -69,7 +69,7 @@ function persist(key, data) {
           const tx = db.transaction('keyValue', 'readwrite')
           const store = tx.objectStore('keyValue')
           store.put({ key, value: data })
-          tx.oncomplete = () => console.info('[CustomerStore] 已降级至IndexedDB存储')
+          tx.oncomplete = () => console.debug('[CustomerStore] 已降级至IndexedDB存储')
         }
       } catch (idbErr) {
         console.error('[CustomerStore] IndexedDB降级也失败:', idbErr)

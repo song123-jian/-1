@@ -83,9 +83,17 @@ const DEFAULT_CONFIG = {
   encryptionKey: '',
   /* 上传哪些模块的数据 */
   uploadModules: [
-    'customer', 'quotation', 'contract', 'inventory',
-    'delivery', 'collection', 'statement', 'supplier',
-    'warehouseLocation', 'cost', 'todo'
+    'customer',
+    'quotation',
+    'contract',
+    'inventory',
+    'delivery',
+    'collection',
+    'statement',
+    'supplier',
+    'warehouseLocation',
+    'cost',
+    'todo'
   ],
   /* Gist 描述 */
   gistDescription: '冠久ERP 数据备份 - 自动同步',
@@ -96,7 +104,7 @@ const DEFAULT_CONFIG = {
 /* GitHub OAuth 配置 */
 /* 注意：这里使用设备流(Device Flow)，无需 Client Secret */
 const OAUTH_CONFIG = {
-  clientId: '',  /* 需要用户在 GitHub 创建 OAuth App 后填入 */
+  clientId: '' /* 需要用户在 GitHub 创建 OAuth App 后填入 */,
   scopes: 'gist',
   deviceCodeUrl: 'https://github.com/login/device/code',
   accessTokenUrl: 'https://github.com/login/oauth/access_token'
@@ -133,7 +141,7 @@ class GitHubSync {
     this._loadConfig()
 
     if (this._token) {
-      this._verifyToken().then(valid => {
+      this._verifyToken().then((valid) => {
         if (valid && this._config.autoUpload) {
           this.startAutoUpload()
         }
@@ -141,7 +149,7 @@ class GitHubSync {
     }
 
     this._initialized = true
-    console.info('[GitHubSync] GitHub同步模块已初始化')
+    console.debug('[GitHubSync] GitHub同步模块已初始化')
   }
 
   /* ========== 认证相关 ========== */
@@ -163,7 +171,7 @@ class GitHubSync {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        Accept: 'application/json'
       },
       body: JSON.stringify({
         client_id: clientId,
@@ -209,7 +217,7 @@ class GitHubSync {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Accept': 'application/json'
+              Accept: 'application/json'
             },
             body: JSON.stringify({
               client_id: clientId,
@@ -328,7 +336,9 @@ class GitHubSync {
         }
         localStorage.setItem(GITHUB_USER_KEY, JSON.stringify(this._userInfo))
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**
@@ -359,7 +369,7 @@ class GitHubSync {
     }
 
     if (this._isUploading) {
-      console.info('[GitHubSync] 正在上传中，跳过本次')
+      console.debug('[GitHubSync] 正在上传中，跳过本次')
       return null
     }
 
@@ -399,15 +409,19 @@ class GitHubSync {
 
       /* 元数据 */
       files['erp_meta.json'] = {
-        content: JSON.stringify({
-          version: '1.0',
-          uploadedAt: new Date().toISOString(),
-          uploadedBy: this._userInfo?.login || 'unknown',
-          moduleCount: Object.keys(data.modules || {}).length,
-          totalRecords: Object.values(data.modules || {}).reduce((s, m) => s + (Array.isArray(m) ? m.length : 0), 0),
-          encrypted: this._config.encrypt,
-          appVersion: '2.0'
-        }, null, 2)
+        content: JSON.stringify(
+          {
+            version: '1.0',
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: this._userInfo?.login || 'unknown',
+            moduleCount: Object.keys(data.modules || {}).length,
+            totalRecords: Object.values(data.modules || {}).reduce((s, m) => s + (Array.isArray(m) ? m.length : 0), 0),
+            encrypted: this._config.encrypt,
+            appVersion: '2.0'
+          },
+          null,
+          2
+        )
       }
 
       const description = options.description || this._config.gistDescription
@@ -515,11 +529,12 @@ class GitHubSync {
       viewState: null,
       layoutState: null,
       meta: null,
-      history: gist.history?.map(h => ({
-        version: h.version,
-        committedAt: h.committed_at,
-        url: h.url
-      })) || []
+      history:
+        gist.history?.map((h) => ({
+          version: h.version,
+          committedAt: h.committed_at,
+          url: h.url
+        })) || []
     }
 
     /* 解析文件内容 */
@@ -537,9 +552,7 @@ class GitHubSync {
         } else if (filename.startsWith('erp_') && filename.endsWith('.json')) {
           const moduleName = filename.replace('erp_', '').replace('.json', '')
           const parsed = JSON.parse(content)
-          result.modules[moduleName] = this._config.encrypt
-            ? JSON.parse(this._decrypt(parsed))
-            : parsed
+          result.modules[moduleName] = this._config.encrypt ? JSON.parse(this._decrypt(parsed)) : parsed
         }
       } catch (e) {
         console.warn(`[GitHubSync] 解析文件 ${filename} 失败:`, e)
@@ -568,7 +581,7 @@ class GitHubSync {
       if (!response.ok) return []
 
       const gist = await response.json()
-      return (gist.history || []).map(h => ({
+      return (gist.history || []).map((h) => ({
         version: h.version,
         committedAt: h.committed_at,
         user: h.user?.login || 'unknown',
@@ -594,8 +607,8 @@ class GitHubSync {
 
       const gists = await response.json()
       return gists
-        .filter(g => g.description?.includes('冠久ERP') || g.description?.includes('ERP'))
-        .map(g => ({
+        .filter((g) => g.description?.includes('冠久ERP') || g.description?.includes('ERP'))
+        .map((g) => ({
           id: g.id,
           description: g.description,
           createdAt: g.created_at,
@@ -631,7 +644,7 @@ class GitHubSync {
       }
     }, this._config.autoUploadInterval)
 
-    console.info('[GitHubSync] 自动上传已启动，间隔:', this._config.autoUploadInterval / 1000, '秒')
+    console.debug('[GitHubSync] 自动上传已启动，间隔:', this._config.autoUploadInterval / 1000, '秒')
   }
 
   /**
@@ -663,7 +676,9 @@ class GitHubSync {
         if (store[dataKey] && Array.isArray(store[dataKey])) {
           data.modules[name] = store[dataKey]
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     }
 
     /* 收集视图状态 */
@@ -671,7 +686,9 @@ class GitHubSync {
       try {
         const raw = localStorage.getItem('gj_erp_viewState')
         if (raw) data.viewState = JSON.parse(raw)
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     }
 
     /* 收集布局状态 */
@@ -679,7 +696,9 @@ class GitHubSync {
       try {
         const raw = localStorage.getItem('gj_erp_layoutState')
         if (raw) data.layoutState = JSON.parse(raw)
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        /* ignore */
+      }
     }
 
     return this.uploadSnapshot(data)
@@ -755,8 +774,8 @@ class GitHubSync {
    */
   _getHeaders() {
     return {
-      'Authorization': `Bearer ${this._token}`,
-      'Accept': 'application/vnd.github.v3+json',
+      Authorization: `Bearer ${this._token}`,
+      Accept: 'application/vnd.github.v3+json',
       'Content-Type': 'application/json'
     }
   }
@@ -786,13 +805,17 @@ class GitHubSync {
    */
   _sanitizeForGist(data) {
     try {
-      return JSON.stringify(data, (key, value) => {
-        if (typeof value === 'function') return undefined
-        if (value instanceof Error) return value.message
-        if (typeof value === 'symbol') return undefined
-        if (typeof value === 'bigint') return value.toString()
-        return value
-      }, 2)
+      return JSON.stringify(
+        data,
+        (key, value) => {
+          if (typeof value === 'function') return undefined
+          if (value instanceof Error) return value.message
+          if (typeof value === 'symbol') return undefined
+          if (typeof value === 'bigint') return value.toString()
+          return value
+        },
+        2
+      )
     } catch (e) {
       return JSON.stringify({ error: '序列化失败', message: e.message })
     }
@@ -806,9 +829,7 @@ class GitHubSync {
     const key = this._config.encryptionKey || 'gj_erp_default_key'
     let result = ''
     for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(
-        text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-      )
+      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length))
     }
     return btoa(unescape(encodeURIComponent(result)))
   }
@@ -821,9 +842,7 @@ class GitHubSync {
     const text = decodeURIComponent(escape(atob(encoded)))
     let result = ''
     for (let i = 0; i < text.length; i++) {
-      result += String.fromCharCode(
-        text.charCodeAt(i) ^ key.charCodeAt(i % key.length)
-      )
+      result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length))
     }
     return result
   }
@@ -834,7 +853,9 @@ class GitHubSync {
   _saveConfig() {
     try {
       localStorage.setItem(GITHUB_CONFIG_KEY, JSON.stringify(this._config))
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**
@@ -866,7 +887,9 @@ class GitHubSync {
       if (configRaw) {
         Object.assign(this._config, JSON.parse(configRaw))
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
   }
 
   /**

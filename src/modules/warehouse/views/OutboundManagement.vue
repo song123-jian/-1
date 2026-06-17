@@ -4,6 +4,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'OutboundManagement' }
+</script>
 <script setup>
 import OutboundSection from '@/modules/warehouse/components/inventory/OutboundSection.vue'
 </script>

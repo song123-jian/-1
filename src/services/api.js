@@ -22,7 +22,9 @@ const TABLE_MAP = {
   doc_settings: 'doc_settings',
   cost_records: 'cost_records',
   warehouse_locations: 'warehouse_locations',
-  permissions: 'permissions'
+  permissions: 'permissions',
+  transactions: 'transactions',
+  purchase_orders: 'purchase_orders'
 }
 
 /**
@@ -64,35 +66,25 @@ async function request(method, resource, data = null, options = {}) {
         }
         const { data: result, error } = await query
         if (error) throw error
-        return id ? (result?.[0] || null) : result
+        return id ? result?.[0] || null : result
       }
 
       case 'POST': {
-        const { data: result, error } = await sb
-          .from(tableName)
-          .insert(data)
-          .select()
+        const { data: result, error } = await sb.from(tableName).insert(data).select()
         if (error) throw error
         return result?.[0] || result
       }
 
       case 'PUT': {
         if (!id) throw new Error('更新操作需要提供 id')
-        const { data: result, error } = await sb
-          .from(tableName)
-          .update(data)
-          .eq('id', id)
-          .select()
+        const { data: result, error } = await sb.from(tableName).update(data).eq('id', id).select()
         if (error) throw error
         return result?.[0] || result
       }
 
       case 'DELETE': {
         if (!id) throw new Error('删除操作需要提供 id')
-        const { error } = await sb
-          .from(tableName)
-          .delete()
-          .eq('id', id)
+        const { error } = await sb.from(tableName).delete().eq('id', id)
         if (error) throw error
         return true
       }
@@ -122,14 +114,12 @@ async function syncToServer(resource, items) {
       const BATCH_SIZE = 500
       for (let i = 0; i < items.length; i += BATCH_SIZE) {
         const batch = items.slice(i, i + BATCH_SIZE)
-        const { error: upsertError } = await sb
-          .from(tableName)
-          .upsert(batch, { onConflict: 'id' })
+        const { error: upsertError } = await sb.from(tableName).upsert(batch, { onConflict: 'id' })
         if (upsertError) throw upsertError
       }
     }
 
-    console.info(`[API] 同步 ${resource} 完成: ${items?.length || 0} 条`)
+    console.debug(`[API] 同步 ${resource} 完成: ${items?.length || 0} 条`)
     return true
   } catch (e) {
     console.error(`[API] 同步 ${resource} 失败:`, e.message)
@@ -148,13 +138,10 @@ async function syncFromServer(resource) {
 
   const tableName = getTableName(resource)
   try {
-    const { data, error } = await sb
-      .from(tableName)
-      .select('*')
-      .order('createdAt', { ascending: true })
+    const { data, error } = await sb.from(tableName).select('*').order('createdAt', { ascending: true })
 
     if (error) throw error
-    console.info(`[API] 拉取 ${resource} 完成: ${data?.length || 0} 条`)
+    console.debug(`[API] 拉取 ${resource} 完成: ${data?.length || 0} 条`)
     return data || []
   } catch (e) {
     console.error(`[API] 拉取 ${resource} 失败:`, e.message)
@@ -169,10 +156,7 @@ async function testConnection(url, anonKey) {
   try {
     const { createClient: create } = await import('@supabase/supabase-js')
     const testClient = create(url, anonKey)
-    const { data, error } = await testClient
-      .from('customers')
-      .select('id')
-      .limit(1)
+    const { data, error } = await testClient.from('customers').select('id').limit(1)
     if (error && error.code === '42P01') {
       // 表不存在但连接成功
       return { success: true, message: '连接成功，但数据库表尚未创建' }
@@ -200,12 +184,10 @@ async function upsertToServer(resource, items) {
     const BATCH_SIZE = 500
     for (let i = 0; i < items.length; i += BATCH_SIZE) {
       const batch = items.slice(i, i + BATCH_SIZE)
-      const { error } = await sb
-        .from(tableName)
-        .upsert(batch, { onConflict: 'id' })
+      const { error } = await sb.from(tableName).upsert(batch, { onConflict: 'id' })
       if (error) throw error
     }
-    console.info(`[API] 增量推送 ${resource} 完成: ${items.length} 条`)
+    console.debug(`[API] 增量推送 ${resource} 完成: ${items.length} 条`)
     return true
   } catch (e) {
     console.error(`[API] 增量推送 ${resource} 失败:`, e.message)
@@ -236,7 +218,7 @@ async function pullSince(resource, since) {
     const { data, error } = await query
 
     if (error) throw error
-    console.info(`[API] 增量拉取 ${resource} 完成: ${data?.length || 0} 条${since ? ' (自 ' + since + ')' : ''}`)
+    console.debug(`[API] 增量拉取 ${resource} 完成: ${data?.length || 0} 条${since ? ' (自 ' + since + ')' : ''}`)
     return data || []
   } catch (e) {
     console.error(`[API] 增量拉取 ${resource} 失败:`, e.message)

@@ -1,24 +1,27 @@
 <template>
-  <div class="modal-overlay" @click.self="$emit('close')">
+  <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-dialog" style="max-width: 720px">
       <div class="modal-header">
         <span class="modal-title">新增盘点单</span>
-        <button class="modal-close" @click="$emit('close')">&times;</button>
+        <button class="modal-close" @click="emit('close')">&times;</button>
       </div>
       <div class="modal-body">
         <SmartRecognizePanel
-          v-model:showSmartRec="showSmartRec"
-          v-model:smartRecInput="smartRecInput"
-          :smartRecResult="smartRecResult"
+          v-model:show-smart-rec="showSmartRec"
+          v-model:smart-rec-input="smartRecInput"
+          :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
-          @runSmartRecognize="runSmartRecognize"
-          @applySmartRecognize="applySmartRecognizeToForm"
-          @handleSmartFileUpload="handleSmartFileUpload"
+          @run-smart-recognize="runSmartRecognize"
+          @apply-smart-recognize="applySmartRecognizeToForm"
+          @handle-smart-file-upload="handleSmartFileUpload"
         />
         <!-- 基本信息 -->
         <div class="form-row" style="margin-bottom: var(--space-4)">
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 盘点类型</label>
+            <label class="form-label">
+              <span class="required">*</span>
+              盘点类型
+            </label>
             <select v-model="form.type" class="form-select" :class="{ 'form-error': errors.type }">
               <option value="full">全盘</option>
               <option value="partial">抽盘</option>
@@ -27,7 +30,10 @@
             <div v-if="errors.type" class="form-error-text">{{ errors.type }}</div>
           </div>
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 仓库</label>
+            <label class="form-label">
+              <span class="required">*</span>
+              仓库
+            </label>
             <select v-model="form.warehouseId" class="form-select" :class="{ 'form-error': errors.warehouseId }">
               <option value="main">主仓库</option>
             </select>
@@ -37,8 +43,16 @@
 
         <div class="form-row" style="margin-bottom: var(--space-4)">
           <div class="form-group" style="flex: 1">
-            <label class="form-label"><span class="required">*</span> 计划日期</label>
-            <input v-model="form.plannedDate" type="date" class="form-input" :class="{ 'form-error': errors.plannedDate }" />
+            <label class="form-label">
+              <span class="required">*</span>
+              计划日期
+            </label>
+            <input
+              v-model="form.plannedDate"
+              type="date"
+              class="form-input"
+              :class="{ 'form-error': errors.plannedDate }"
+            />
             <div v-if="errors.plannedDate" class="form-error-text">{{ errors.plannedDate }}</div>
           </div>
           <div class="form-group" style="flex: 1">
@@ -54,9 +68,18 @@
 
         <!-- 物料选择 -->
         <div class="form-group">
-          <label class="form-label"><span class="required">*</span> 选择盘点物料</label>
+          <label class="form-label">
+            <span class="required">*</span>
+            选择盘点物料
+          </label>
           <div class="filter-bar" style="margin-bottom: var(--space-2)">
-            <input v-model="materialSearch" type="text" class="form-input" placeholder="搜索编号/名称..." style="width: 200px" />
+            <input
+              v-model="materialSearch"
+              type="text"
+              class="form-input"
+              placeholder="搜索编号/名称..."
+              style="width: 200px"
+            />
             <select v-model="materialCategoryFilter" class="form-select" style="width: auto; min-width: 120px">
               <option value="">全部类别</option>
               <option value="raw">原材料</option>
@@ -71,10 +94,17 @@
               class="material-select-item"
               :class="{ selected: selectedMaterialIds.includes(item.id) }"
             >
-              <input type="checkbox" :value="item.id" v-model="selectedMaterialIds" style="margin-right: var(--space-2)" />
+              <input
+                v-model="selectedMaterialIds"
+                type="checkbox"
+                :value="item.id"
+                style="margin-right: var(--space-2)"
+              />
               <span class="cell-mono" style="min-width: 80px">{{ item.code }}</span>
               <span style="flex: 1">{{ item.name }}</span>
-              <span style="color: var(--color-text-tertiary); font-size: var(--font-size-xs)">{{ item.grade || '' }}</span>
+              <span style="color: var(--color-text-tertiary); font-size: var(--font-size-xs)">
+                {{ item.grade || '' }}
+              </span>
             </label>
             <div v-if="filteredMaterials.length === 0" class="empty-state">无匹配物料</div>
           </div>
@@ -85,15 +115,19 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" @click="$emit('close')">取消</button>
+        <button class="btn btn-ghost" @click="emit('close')">取消</button>
         <button class="btn btn-primary" @click="handleSubmit">
-          <Icon name="check" :size="14" /> 确认创建
+          <Icon name="check" :size="14" />
+          确认创建
         </button>
       </div>
     </div>
   </div>
 </template>
 
+<script>
+export default { name: 'StocktakingFormModal' }
+</script>
 <script setup>
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
@@ -121,9 +155,13 @@ const materialCategoryFilter = ref('')
 const selectedMaterialIds = ref([])
 
 const draftData = reactive({})
-watch([form, selectedMaterialIds], ([f, ids]) => {
-  Object.assign(draftData, { ...f, selectedMaterialIds: ids ? [...ids] : [] })
-}, { deep: true })
+watch(
+  [form, selectedMaterialIds],
+  ([f, ids]) => {
+    Object.assign(draftData, { ...f, selectedMaterialIds: ids ? [...ids] : [] })
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('stocktaking-form', draftData, {
   debounce: 1500,
@@ -137,7 +175,8 @@ const { restoreDraft, clearDraft, hasDraft } = useFormDraft('stocktaking-form', 
   }
 })
 
-const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload } = useSmartRecognize(form.value)
+const { showSmartRec, smartRecInput, smartRecResult, smartRecPlaceholder, runSmartRecognize, handleSmartFileUpload } =
+  useSmartRecognize(form.value)
 
 onMounted(() => {
   if (hasDraft()) {
@@ -147,7 +186,7 @@ onMounted(() => {
 
 function applySmartRecognizeToForm() {
   if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
-  smartRecResult.value.items.forEach(item => {
+  smartRecResult.value.items.forEach((item) => {
     if (item.value && Object.hasOwn(form.value, item.key)) {
       form.value[item.key] = item.value
     }
@@ -155,7 +194,7 @@ function applySmartRecognizeToForm() {
   // 填入表格明细行 - 盘点单的明细行由store管理，这里只记录识别到的物料编号
   if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
     // 将识别到的物料编号添加到选中列表
-    smartRecResult.value.tableRows.forEach(row => {
+    smartRecResult.value.tableRows.forEach((row) => {
       if (row.materialCode) {
         selectedMaterialIds.value.push(row.materialCode)
       }
@@ -166,20 +205,17 @@ function applySmartRecognizeToForm() {
 const filteredMaterials = computed(() => {
   let list = invStore.inventory || []
   if (materialCategoryFilter.value) {
-    list = list.filter(i => i.category === materialCategoryFilter.value)
+    list = list.filter((i) => i.category === materialCategoryFilter.value)
   }
   if (materialSearch.value) {
     const kw = materialSearch.value.toLowerCase()
-    list = list.filter(i =>
-      (i.code || '').toLowerCase().includes(kw) ||
-      (i.name || '').toLowerCase().includes(kw)
-    )
+    list = list.filter((i) => (i.code || '').toLowerCase().includes(kw) || (i.name || '').toLowerCase().includes(kw))
   }
   return list
 })
 
 function selectAllMaterials() {
-  selectedMaterialIds.value = filteredMaterials.value.map(i => i.id)
+  selectedMaterialIds.value = filteredMaterials.value.map((i) => i.id)
 }
 
 function deselectAllMaterials() {
@@ -199,7 +235,7 @@ function validate() {
 function handleSubmit() {
   if (!validate()) return
 
-  const selectedItems = (invStore.inventory || []).filter(i => selectedMaterialIds.value.includes(i.id))
+  const selectedItems = (invStore.inventory || []).filter((i) => selectedMaterialIds.value.includes(i.id))
   const warehouseMap = { main: '主仓库' }
 
   const order = stocktakingStore.addStocktakingOrder({
@@ -235,9 +271,15 @@ function handleSubmit() {
   transition: background var(--transition-fast);
   font-size: var(--font-size-sm);
 }
-.material-select-item:last-child { border-bottom: none; }
-.material-select-item:hover { background: var(--color-surface-hover); }
-.material-select-item.selected { background: var(--color-accent-subtle); }
+.material-select-item:last-child {
+  border-bottom: none;
+}
+.material-select-item:hover {
+  background: var(--color-surface-hover);
+}
+.material-select-item.selected {
+  background: var(--color-accent-subtle);
+}
 .form-error {
   border-color: var(--color-danger) !important;
 }

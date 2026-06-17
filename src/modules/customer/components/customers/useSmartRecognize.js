@@ -12,13 +12,37 @@ const TABLE_HEADERS = [
 
 // 区域映射表
 const SR_REGION_MAP = {
-  '上海': '华东', '江苏': '华东', '浙江': '华东', '安徽': '华东', '福建': '华东', '江西': '华东', '山东': '华东',
-  '北京': '华北', '天津': '华北', '河北': '华北', '山西': '华北', '内蒙古': '华北',
-  '广东': '华南', '广西': '华南', '海南': '华南',
-  '湖北': '华中', '湖南': '华中', '河南': '华中',
-  '四川': '西南', '重庆': '西南', '贵州': '西南', '云南': '西南', '西藏': '西南',
-  '陕西': '西北', '甘肃': '西北', '青海': '西北', '宁夏': '西北', '新疆': '西北',
-  '辽宁': '东北', '吉林': '东北', '黑龙江': '东北'
+  上海: '华东',
+  江苏: '华东',
+  浙江: '华东',
+  安徽: '华东',
+  福建: '华东',
+  江西: '华东',
+  山东: '华东',
+  北京: '华北',
+  天津: '华北',
+  河北: '华北',
+  山西: '华北',
+  内蒙古: '华北',
+  广东: '华南',
+  广西: '华南',
+  海南: '华南',
+  湖北: '华中',
+  湖南: '华中',
+  河南: '华中',
+  四川: '西南',
+  重庆: '西南',
+  贵州: '西南',
+  云南: '西南',
+  西藏: '西南',
+  陕西: '西北',
+  甘肃: '西北',
+  青海: '西北',
+  宁夏: '西北',
+  新疆: '西北',
+  辽宁: '东北',
+  吉林: '东北',
+  黑龙江: '东北'
 }
 
 export function useSmartRecognize(form) {
@@ -48,7 +72,10 @@ export function useSmartRecognize(form) {
     // 提取联系人
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
-      if (match) { pushItem(makeItem('contactName', '联系人', match[1], 75)); break }
+      if (match) {
+        pushItem(makeItem('contactName', '联系人', match[1], 75))
+        break
+      }
     }
 
     // 提取职位
@@ -82,5 +109,9 @@ export function useSmartRecognize(form) {
     return result
   }
 
-  return useSmartRecognizeBase(form, parseCustomerInfo, '粘贴客户信息或表格数据（名片、邮件、Excel复制），AI将自动识别并提取关键字段...')
+  return useSmartRecognizeBase(
+    form,
+    parseCustomerInfo,
+    '粘贴客户信息或表格数据（名片、邮件、Excel复制），AI将自动识别并提取关键字段...'
+  )
 }

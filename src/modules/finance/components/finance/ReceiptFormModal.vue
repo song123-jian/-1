@@ -1,29 +1,30 @@
 <template>
   <div v-if="visible" class="modal-overlay" @click.self="handleCancel">
-    <div class="modal-content" style="max-width:560px">
+    <div class="modal-content" style="max-width: 560px">
       <div class="modal-header">
         <h3>新增收款单</h3>
         <button class="btn btn-ghost btn-sm" @click="handleCancel"><Icon name="close" :size="14" /></button>
       </div>
       <div class="modal-body">
         <SmartRecognizePanel
-          v-model:showSmartRec="showSmartRec"
-          v-model:smartRecInput="smartRecInput"
-          :smartRecResult="smartRecResult"
+          v-model:show-smart-rec="showSmartRec"
+          v-model:smart-rec-input="smartRecInput"
+          :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
-          @runSmartRecognize="runSmartRecognize"
-          @applySmartRecognize="applySmartRecognize"
-          @handleSmartFileUpload="handleSmartFileUpload"
+          @run-smart-recognize="runSmartRecognize"
+          @apply-smart-recognize="applySmartRecognize"
+          @handle-smart-file-upload="handleSmartFileUpload"
         />
         <div class="form-group">
-          <label class="form-label">应收单 <span style="color:var(--color-danger)">*</span></label>
-          <select class="form-select" v-model="formData.receivableId" @change="onReceivableChange">
+          <label class="form-label">
+            应收单
+            <span style="color: var(--color-danger)">*</span>
+          </label>
+          <select v-model="formData.receivableId" class="form-select" @change="onReceivableChange">
             <option value="">请选择应收单</option>
-            <option
-              v-for="rv in availableReceivables"
-              :key="rv.id"
-              :value="rv.id"
-            >{{ rv.receivableNo }} - {{ rv.customerName }} (未收: ¥{{ formatMoney(rv.remainingAmount) }})</option>
+            <option v-for="rv in availableReceivables" :key="rv.id" :value="rv.id">
+              {{ rv.receivableNo }} - {{ rv.customerName }} (未收: ¥{{ formatMoney(rv.remainingAmount) }})
+            </option>
           </select>
           <span v-if="errors.receivableId" class="form-error">{{ errors.receivableId }}</span>
         </div>
@@ -39,28 +40,36 @@
           </div>
           <div class="info-bar-item">
             <span class="info-bar-label">未收金额</span>
-            <span class="cell-mono" style="color:var(--color-danger)">¥{{ formatMoney(selectedReceivable.remainingAmount) }}</span>
+            <span class="cell-mono" style="color: var(--color-danger)">
+              ¥{{ formatMoney(selectedReceivable.remainingAmount) }}
+            </span>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">收款金额 <span style="color:var(--color-danger)">*</span></label>
+            <label class="form-label">
+              收款金额
+              <span style="color: var(--color-danger)">*</span>
+            </label>
             <input
+              v-model.number="formData.amount"
               type="number"
               class="form-input"
-              v-model.number="formData.amount"
               min="0.01"
               :max="maxAmount"
               step="0.01"
               placeholder="请输入收款金额"
-            >
+            />
             <span v-if="errors.amount" class="form-error">{{ errors.amount }}</span>
             <span v-if="maxAmount > 0" class="form-hint">最大可收: ¥{{ formatMoney(maxAmount) }}</span>
           </div>
           <div class="form-group">
-            <label class="form-label">收款方式 <span style="color:var(--color-danger)">*</span></label>
-            <select class="form-select" v-model="formData.method">
+            <label class="form-label">
+              收款方式
+              <span style="color: var(--color-danger)">*</span>
+            </label>
+            <select v-model="formData.method" class="form-select">
               <option value="bank">银行转账</option>
               <option value="cash">现金</option>
               <option value="check">支票</option>
@@ -72,23 +81,26 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">银行名称</label>
-            <input type="text" class="form-input" v-model="formData.bankName" placeholder="收款银行名称">
+            <input v-model="formData.bankName" type="text" class="form-input" placeholder="收款银行名称" />
           </div>
           <div class="form-group">
             <label class="form-label">参考号</label>
-            <input type="text" class="form-input" v-model="formData.referenceNo" placeholder="银行流水号等">
+            <input v-model="formData.referenceNo" type="text" class="form-input" placeholder="银行流水号等" />
           </div>
         </div>
 
         <div class="form-group">
-          <label class="form-label">收款日期 <span style="color:var(--color-danger)">*</span></label>
-          <input type="date" class="form-input" v-model="formData.receiptDate">
+          <label class="form-label">
+            收款日期
+            <span style="color: var(--color-danger)">*</span>
+          </label>
+          <input v-model="formData.receiptDate" type="date" class="form-input" />
           <span v-if="errors.receiptDate" class="form-error">{{ errors.receiptDate }}</span>
         </div>
 
         <div class="form-group">
           <label class="form-label">备注</label>
-          <textarea class="form-textarea" v-model="formData.notes" rows="2" placeholder="备注信息"></textarea>
+          <textarea v-model="formData.notes" class="form-textarea" rows="2" placeholder="备注信息"></textarea>
         </div>
       </div>
       <div class="modal-footer">
@@ -99,6 +111,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'ReceiptFormModal' }
+</script>
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useReceivableStore } from '@/modules/finance/stores/receivable'
@@ -131,9 +146,13 @@ const errors = reactive({
 })
 
 const draftData = reactive({})
-watch([formData], ([fd]) => {
-  Object.assign(draftData, { ...fd })
-}, { deep: true })
+watch(
+  [formData],
+  ([fd]) => {
+    Object.assign(draftData, { ...fd })
+  },
+  { deep: true }
+)
 
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('receipt-form', draftData, {
   debounce: 1500,
@@ -145,14 +164,12 @@ const { restoreDraft, clearDraft, hasDraft } = useFormDraft('receipt-form', draf
 })
 
 /* 可选应收单：未完成的 */
-const availableReceivables = computed(() =>
-  receivableStore.receivables.filter(r => r.status !== 'completed')
-)
+const availableReceivables = computed(() => receivableStore.receivables.filter((r) => r.status !== 'completed'))
 
 /* 当前选中的应收单 */
 const selectedReceivable = computed(() => {
   if (!formData.receivableId) return null
-  return receivableStore.receivables.find(r => r.id === formData.receivableId) || null
+  return receivableStore.receivables.find((r) => r.id === formData.receivableId) || null
 })
 
 /* 最大可收金额 */
@@ -162,24 +179,31 @@ const maxAmount = computed(() => {
 })
 
 /* 当传入receivable时自动选中 */
-watch(() => props.receivable, (val) => {
-  if (val && val.id) {
-    formData.receivableId = val.id
-  }
-}, { immediate: true })
+watch(
+  () => props.receivable,
+  (val) => {
+    if (val && val.id) {
+      formData.receivableId = val.id
+    }
+  },
+  { immediate: true }
+)
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    if (props.receivable && props.receivable.id) {
-      formData.receivableId = props.receivable.id
-    } else {
-      resetForm()
-    }
-    if (hasDraft()) {
-      restoreDraft()
+watch(
+  () => props.visible,
+  (val) => {
+    if (val) {
+      if (props.receivable && props.receivable.id) {
+        formData.receivableId = props.receivable.id
+      } else {
+        resetForm()
+      }
+      if (hasDraft()) {
+        restoreDraft()
+      }
     }
   }
-})
+)
 
 function onReceivableChange() {
   formData.amount = 0
@@ -293,7 +317,12 @@ function formatMoney(num) {
   margin-top: var(--space-1);
 }
 @media (max-width: 640px) {
-  .form-row { grid-template-columns: 1fr; }
-  .info-bar { flex-direction: column; gap: var(--space-2); }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .info-bar {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
 }
 </style>

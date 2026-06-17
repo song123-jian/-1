@@ -1,14 +1,20 @@
 <template>
   <div class="material-requirement">
     <div class="mr-header">
-      <div class="mr-title"><Icon name="calculator" :size="14" /> 物料需求计划 (MRP)</div>
+      <div class="mr-title">
+        <Icon name="calculator" :size="14" />
+        物料需求计划 (MRP)
+      </div>
     </div>
 
     <!-- MRP输入 -->
     <div class="mr-input-section">
       <div class="form-row form-row-3">
         <div class="form-group">
-          <label class="form-label">选择产品BOM <span class="required">*</span></label>
+          <label class="form-label">
+            选择产品BOM
+            <span class="required">*</span>
+          </label>
           <select v-model="selectedBomId" class="form-select" @change="handleBomChange">
             <option value="">请选择BOM</option>
             <option v-for="bom in activeBomList" :key="bom.id" :value="bom.id">
@@ -17,13 +23,28 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">生产数量 <span class="required">*</span></label>
-          <input v-model.number="planQuantity" type="number" class="form-input" min="1" placeholder="计划生产数量" @input="calculateRequirement" />
+          <label class="form-label">
+            生产数量
+            <span class="required">*</span>
+          </label>
+          <input
+            v-model.number="planQuantity"
+            type="number"
+            class="form-input"
+            min="1"
+            placeholder="计划生产数量"
+            @input="calculateRequirement"
+          />
         </div>
         <div class="form-group">
           <label class="form-label">&nbsp;</label>
-          <button class="btn btn-primary btn-sm" @click="calculateRequirement" :disabled="!selectedBomId || planQuantity <= 0">
-            <Icon name="calculator" :size="14" /> 计算需求
+          <button
+            class="btn btn-primary btn-sm"
+            :disabled="!selectedBomId || planQuantity <= 0"
+            @click="calculateRequirement"
+          >
+            <Icon name="calculator" :size="14" />
+            计算需求
           </button>
         </div>
       </div>
@@ -38,11 +59,11 @@
         </div>
         <div class="mr-summary-item">
           <span class="mr-summary-label">充足物料</span>
-          <span class="mr-summary-value" style="color:var(--color-success)">{{ sufficientCount }}</span>
+          <span class="mr-summary-value" style="color: var(--color-success)">{{ sufficientCount }}</span>
         </div>
         <div class="mr-summary-item">
           <span class="mr-summary-label">缺口物料</span>
-          <span class="mr-summary-value" style="color:var(--color-danger)">{{ shortageCount }}</span>
+          <span class="mr-summary-value" style="color: var(--color-danger)">{{ shortageCount }}</span>
         </div>
       </div>
 
@@ -61,13 +82,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in requirementResults" :key="item.materialCode" :class="{ 'row-shortage': item.shortage > 0 }">
+            <tr
+              v-for="item in requirementResults"
+              :key="item.materialCode"
+              :class="{ 'row-shortage': item.shortage > 0 }"
+            >
               <td class="cell-mono">{{ item.materialCode }}</td>
-              <td><strong>{{ item.materialName }}</strong></td>
+              <td>
+                <strong>{{ item.materialName }}</strong>
+              </td>
               <td>{{ item.spec || '-' }}</td>
               <td class="cell-mono">{{ item.requiredQty.toFixed(2) }} {{ item.unit }}</td>
               <td class="cell-mono">{{ item.stockQty.toFixed(2) }} {{ item.unit }}</td>
-              <td class="cell-mono" :style="{ color: item.shortage > 0 ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 700 }">
+              <td
+                class="cell-mono"
+                :style="{ color: item.shortage > 0 ? 'var(--color-danger)' : 'var(--color-success)', fontWeight: 700 }"
+              >
                 {{ item.shortage > 0 ? item.shortage.toFixed(2) : '0' }} {{ item.unit }}
               </td>
               <td>
@@ -79,7 +109,7 @@
                 <span v-if="item.shortage > 0" class="mr-purchase-suggest">
                   建议采购 {{ item.shortage.toFixed(2) }} {{ item.unit }}
                 </span>
-                <span v-else style="color:var(--color-text-tertiary)">-</span>
+                <span v-else style="color: var(--color-text-tertiary)">-</span>
               </td>
             </tr>
           </tbody>
@@ -94,6 +124,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'MaterialRequirement' }
+</script>
 <script setup>
 import { ref, computed } from 'vue'
 import { useBomStore } from '@/modules/production/stores/bom'
@@ -113,8 +146,8 @@ const requirementResults = ref([])
 
 const activeBomList = computed(() => bomStore.activeBomList)
 
-const sufficientCount = computed(() => requirementResults.value.filter(r => r.shortage <= 0).length)
-const shortageCount = computed(() => requirementResults.value.filter(r => r.shortage > 0).length)
+const sufficientCount = computed(() => requirementResults.value.filter((r) => r.shortage <= 0).length)
+const shortageCount = computed(() => requirementResults.value.filter((r) => r.shortage > 0).length)
 
 function handleBomChange() {
   requirementResults.value = []
@@ -134,9 +167,12 @@ function calculateRequirement() {
 
   const results = []
   for (const comp of bom.components) {
-    const requiredQty = (parseFloat(comp.quantity) || 0) * (parseFloat(planQuantity.value) || 0) * (1 + (parseFloat(comp.scrapRate) || 0) / 100)
-    const invItem = inventoryStore.inventory.find(i => i.code === comp.materialCode)
-    const stockQty = invItem ? (parseFloat(invItem.quantity) || 0) : 0
+    const requiredQty =
+      (parseFloat(comp.quantity) || 0) *
+      (parseFloat(planQuantity.value) || 0) *
+      (1 + (parseFloat(comp.scrapRate) || 0) / 100)
+    const invItem = inventoryStore.inventory.find((i) => i.code === comp.materialCode)
+    const stockQty = invItem ? parseFloat(invItem.quantity) || 0 : 0
     const shortage = Math.max(0, requiredQty - stockQty)
 
     results.push({
@@ -192,7 +228,9 @@ if (props.bomId && props.quantity > 0) {
   gap: var(--space-4);
 }
 
-.form-row-3 > .form-group { flex: 1; }
+.form-row-3 > .form-group {
+  flex: 1;
+}
 
 .form-group {
   display: flex;
@@ -210,7 +248,8 @@ if (props.bomId && props.quantity > 0) {
   color: var(--color-danger);
 }
 
-.form-input, .form-select {
+.form-input,
+.form-select {
   padding: var(--space-2) var(--space-3);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -219,7 +258,8 @@ if (props.bomId && props.quantity > 0) {
   font-size: var(--font-size-sm);
 }
 
-.form-input:focus, .form-select:focus {
+.form-input:focus,
+.form-select:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 2px var(--color-accent-subtle);
@@ -279,16 +319,32 @@ if (props.bomId && props.quantity > 0) {
   background: var(--color-surface-elevated);
 }
 
-.inv-table td {padding: var(--space-2) var(--space-3);
+.inv-table td {
+  padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text-secondary);
-  vertical-align: middle; overflow-wrap: break-word; word-wrap: break-word}
+  vertical-align: middle;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
-.inv-table tr:hover td {background: var(--color-surface-hover); overflow-wrap: break-word; word-wrap: break-word}
+.inv-table tr:hover td {
+  background: var(--color-surface-hover);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
-.inv-table tr.row-shortage td {background: var(--color-danger-subtle); overflow-wrap: break-word; word-wrap: break-word}
+.inv-table tr.row-shortage td {
+  background: var(--color-danger-subtle);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
-.inv-table tr.row-shortage:hover td {background: rgba(239, 68, 68, 0.2); overflow-wrap: break-word; word-wrap: break-word}
+.inv-table tr.row-shortage:hover td {
+  background: rgba(239, 68, 68, 0.2);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
 
 .cell-mono {
   font-family: var(--font-mono);

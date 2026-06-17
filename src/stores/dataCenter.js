@@ -36,6 +36,7 @@ const STORE_IMPORTS = {
   todo: () => import('@/stores/todo').then((m) => m.useTodoStore()),
   purchase: () => import('@/modules/purchase/stores/purchase').then((m) => m.usePurchaseStore()),
   production: () => import('@/modules/production/stores/production').then((m) => m.useProductionStore()),
+  transaction: () => import('@/modules/sales/stores/transaction').then((m) => m.useTransactionStore()),
   transfer: () => import('@/modules/warehouse/stores/transfer').then((m) => m.useTransferStore())
 }
 
@@ -53,15 +54,37 @@ const DATA_KEY_MAP = {
   warehouseLocation: 'locations',
   cost: 'records',
   todo: 'todos',
-  purchase: 'orders',
-  production: 'orders',
-  transfer: 'transfers'
+  purchase: 'purchaseOrders',
+  production: 'productionOrders',
+  transaction: 'transactions',
+  transfer: 'transferOrders'
 }
 
-/* 表名到模块名的反向映射 */
-const TABLE_TO_MODULE = {}
-for (const [mod, table] of Object.entries(API.TABLE_MAP || {})) {
-  TABLE_TO_MODULE[table] = mod
+/* 表名到模块名的反向映射（Supabase表名 → 本地模块名） */
+const TABLE_TO_MODULE = {
+  customers: 'customer',
+  quotations: 'quotation',
+  contracts: 'contract',
+  inventory: 'inventory',
+  inbound_orders: 'inventory',
+  outbound_orders: 'inventory',
+  deliveries: 'delivery',
+  collections: 'collection',
+  statements: 'statement',
+  suppliers: 'supplier',
+  approval_rules: 'approval',
+  audit_logs: 'log',
+  notifications: 'notification',
+  batches: 'inventory',
+  todos: 'todo',
+  tags: 'tag',
+  archives: 'archive',
+  doc_settings: 'docSettings',
+  cost_records: 'cost',
+  warehouse_locations: 'warehouseLocation',
+  permissions: 'permission',
+  transactions: 'transaction',
+  purchase_orders: 'purchase'
 }
 
 /* 下拉选项配置 - 定义每个模块可提供的下拉选项 */
@@ -231,6 +254,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   const warehouseLocations = computed(() => _stores.value.warehouseLocation?.locations || [])
   const costRecords = computed(() => _stores.value.cost?.records || [])
   const todos = computed(() => _stores.value.todo?.todos || [])
+  const transactions = computed(() => _stores.value.transaction?.transactions || [])
 
   /* ========== 下拉选项缓存 ========== */
   const _selectOptionsCache = ref({})
@@ -419,6 +443,57 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       refreshSelectOptions(module)
     }
     return result
+  }
+
+  /**
+   * 批量替换模块数据（用于种子数据灌入等场景）
+   * 直接替换 store 中的数据数组，跳过逐条验证和 Supabase 同步
+   */
+  function batchUpdate(module, dataArray, options = {}) {
+    const store = _stores.value[module]
+    const dataKey = DATA_KEY_MAP[module]
+    if (!store || !store[dataKey]) {
+      console.warn(`[DataCenter] batchUpdate: 未注册的模块 ${module}`)
+      return { success: false, message: `未注册的模块: ${module}` }
+    }
+
+    /* 直接替换整个数据数组 */
+    store[dataKey] = [...dataArray]
+
+    /* 刷新下拉选项缓存 */
+    refreshSelectOptions(module)
+
+    /* 通知数据变更 */
+    eventBus.emitDataChange(DataEvents.UPDATED, { module, action: 'batchUpdate', count: dataArray.length })
+
+    /* 可选：同步到 Supabase（默认跳过） */
+    if (options.syncToRemote && SupabaseClient.isConnected()) {
+      /* 模块名 → Supabase表名 的正确映射 */
+      const MODULE_TO_TABLE = {
+        customer: 'customers',
+        quotation: 'quotations',
+        contract: 'contracts',
+        inventory: 'inventory',
+        delivery: 'deliveries',
+        collection: 'collections',
+        statement: 'statements',
+        supplier: 'suppliers',
+        warehouseLocation: 'warehouse_locations',
+        cost: 'cost_records',
+        todo: 'todos',
+        purchase: 'purchase_orders',
+        transaction: 'transactions',
+        transfer: 'transferOrders'
+      }
+      const tableName = MODULE_TO_TABLE[module] || module
+      SupabaseClient.getClient().from(tableName).upsert(dataArray).then(({ error }) => {
+        if (error) console.warn(`[DataCenter] batchUpdate 同步失败:`, error.message)
+      }).catch((e) => {
+        console.warn(`[DataCenter] batchUpdate 同步异常:`, e.message)
+      })
+    }
+
+    return { success: true, count: dataArray.length }
   }
 
   /**
@@ -642,7 +717,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       console.warn('[DataCenter] Supabase初始化异常:', e.message)
     }
 
-    console.info('[DataCenter] 数据管理中心初始化完成')
+    console.debug('[DataCenter] 数据管理中心初始化完成')
   }
 
   /* ========== 工具方法 ========== */
@@ -774,7 +849,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       const localOnly = store[dataKey].filter((item) => !serverIds.has(item.id))
       store[dataKey] = [...data, ...localOnly]
 
-      console.info(`[DataCenter] 合并 ${resource}: 远端${data.length}条 + 本地独有${localOnly.length}条`)
+      console.debug(`[DataCenter] 合并 ${resource}: 远端${data.length}条 + 本地独有${localOnly.length}条`)
     }
   }
 
@@ -812,7 +887,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
       }
     })
 
-    console.info('[DataCenter] 已订阅Supabase实时变更')
+    console.debug('[DataCenter] 已订阅Supabase实时变更')
   }
 
   return {
@@ -833,6 +908,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     warehouseLocations,
     costRecords,
     todos,
+    transactions,
 
     /* 跨模块关联 */
     getCustomerRelatedData,
@@ -848,6 +924,7 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
     query,
     create,
     update,
+    batchUpdate,
     remove,
     batchDelete,
 

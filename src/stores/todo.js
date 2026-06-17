@@ -27,14 +27,14 @@ function loadDeletedAutoIds() {
   try {
     const raw = localStorage.getItem(DELETED_AUTO_KEY)
     if (raw) return new Set(JSON.parse(raw))
-  } catch (e) {}
+  } catch (e) { console.warn('[todoStore] loadDeletedAutoIds失败:', e.message) }
   return new Set()
 }
 
 function persistDeletedAutoIds(ids) {
   try {
     localStorage.setItem(DELETED_AUTO_KEY, JSON.stringify([...ids]))
-  } catch (e) {}
+  } catch (e) { console.warn('[todoStore] persistDeletedAutoIds失败:', e.message) }
 }
 
 function persist(todos) {

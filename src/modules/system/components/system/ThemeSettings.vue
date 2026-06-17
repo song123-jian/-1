@@ -1,21 +1,36 @@
 <template>
   <div>
     <!-- Page header -->
-    <div class="page-header" style="margin-bottom:var(--space-3)">
+    <div class="page-header" style="margin-bottom: var(--space-3)">
       <div>
         <h2 class="page-header-title">主题管理</h2>
         <p class="page-header-subtitle">自定义系统外观、主题色、排版和显示模式</p>
       </div>
       <div class="page-header-actions">
-        <button class="btn btn-ghost" @click="showImportModal = true"><Icon name="upload" :size="14" /> 导入主题</button>
-        <button class="btn btn-ghost" @click="exportCurrentTheme"><Icon name="download" :size="14" /> 导出主题</button>
-        <button class="btn btn-primary" @click="saveThemeSettings"><Icon name="save" :size="14" /> 保存主题设置</button>
+        <button class="btn btn-ghost" @click="showImportModal = true">
+          <Icon name="upload" :size="14" />
+          导入主题
+        </button>
+        <button class="btn btn-ghost" @click="exportCurrentTheme">
+          <Icon name="download" :size="14" />
+          导出主题
+        </button>
+        <button class="btn btn-primary" @click="saveThemeSettings">
+          <Icon name="save" :size="14" />
+          保存主题设置
+        </button>
       </div>
     </div>
 
     <!-- Tab bar -->
-    <div class="tab-bar" style="margin-bottom:var(--space-4)">
-      <button v-for="s in themeSchema" :key="s.key" class="tab-btn" :class="{ active: activeTab === s.key }" @click="activeTab = s.key">
+    <div class="tab-bar" style="margin-bottom: var(--space-4)">
+      <button
+        v-for="s in themeSchema"
+        :key="s.key"
+        class="tab-btn"
+        :class="{ active: activeTab === s.key }"
+        @click="activeTab = s.key"
+      >
         <Icon :name="s.icon" :size="14" />
         {{ s.label }}
       </button>
@@ -23,8 +38,9 @@
 
     <!-- Schema-driven renderer -->
     <ThemeRenderer
-      v-for="s in themeSchema" :key="s.key"
+      v-for="s in themeSchema"
       v-show="activeTab === s.key"
+      :key="s.key"
       :section="s"
       :settings="themeStore.themeSettings"
       :store="themeStore"
@@ -41,7 +57,12 @@
         <div class="modal-body">
           <div class="form-group">
             <label class="form-label">粘贴主题配置 JSON</label>
-            <textarea class="form-textarea" v-model="importJson" rows="10" placeholder='{"theme":"ocean","mode":"dark",...}'></textarea>
+            <textarea
+              v-model="importJson"
+              class="form-textarea"
+              rows="10"
+              placeholder='{"theme":"ocean","mode":"dark",...}'
+            ></textarea>
           </div>
           <div v-if="importResult" class="import-result" :class="{ error: !importResult.success }">
             {{ importResult.message }}
@@ -66,8 +87,9 @@
             <label class="form-label">主题配置 JSON</label>
             <textarea class="form-textarea" :value="exportJson" rows="10" readonly></textarea>
           </div>
-          <button class="btn btn-primary" @click="copyExportJson" style="width:100%">
-            <Icon name="copy" :size="14" /> {{ copied ? '已复制' : '复制到剪贴板' }}
+          <button class="btn btn-primary" style="width: 100%" @click="copyExportJson">
+            <Icon name="copy" :size="14" />
+            {{ copied ? '已复制' : '复制到剪贴板' }}
           </button>
         </div>
       </div>
@@ -75,6 +97,9 @@
   </div>
 </template>
 
+<script>
+export default { name: 'ThemeSettings' }
+</script>
 <script setup>
 import { ref } from 'vue'
 import { useThemeStore } from '@/stores/theme'
@@ -106,7 +131,10 @@ function exportCurrentTheme() {
 function doImportTheme() {
   importResult.value = themeStore.importTheme(importJson.value)
   if (importResult.value.success) {
-    setTimeout(() => { showImportModal.value = false; importJson.value = '' }, 800)
+    setTimeout(() => {
+      showImportModal.value = false
+      importJson.value = ''
+    }, 800)
   }
 }
 
@@ -114,7 +142,7 @@ function copyExportJson() {
   if (typeof navigator !== 'undefined' && navigator.clipboard) {
     navigator.clipboard.writeText(exportJson.value).then(() => {
       copied.value = true
-      setTimeout(() => copied.value = false, 2000)
+      setTimeout(() => (copied.value = false), 2000)
     })
   }
 }
@@ -122,27 +150,73 @@ function copyExportJson() {
 function handleAction(action) {
   const map = {
     toggleMode: () => themeStore.toggleMode(),
-    resetDefault: () => { themeStore.resetToDefault(); alert('已恢复默认主题'); },
-    resetBackground: () => themeStore.updateSettings({ bgType: 'solid', bgColor: '#0f172a', gradientColor: '#1e293b', gradientColor2: '#0f172a', gradientDir: 'to bottom' }),
-    resetSurface: () => themeStore.updateSettings({ cardBg: '#1e293b', surfaceElevated: '#1a2332', borderColor: '#475569', shadowEnabled: true, shadowIntensity: 50 }),
+    resetDefault: () => {
+      themeStore.resetToDefault()
+      alert('已恢复默认主题')
+    },
+    resetBackground: () =>
+      themeStore.updateSettings({
+        bgType: 'solid',
+        bgColor: '#0f172a',
+        gradientColor: '#1e293b',
+        gradientColor2: '#0f172a',
+        gradientDir: 'to bottom'
+      }),
+    resetSurface: () =>
+      themeStore.updateSettings({
+        cardBg: '#1e293b',
+        surfaceElevated: '#1a2332',
+        borderColor: '#475569',
+        shadowEnabled: true,
+        shadowIntensity: 50
+      }),
     applyAutoSplash: () => alert('已应用推荐的启动动画方案'),
     refreshSplash: () => alert('已重新分析并更新推荐方案'),
     applyDynamicSplash: () => alert('已根据当前主题色自动调整启动动画配色'),
     previewSplash: () => alert('预览当前启动动画方案'),
     refreshColorSystem: () => alert('色彩系统参考已刷新'),
-    resetAllCustom: () => { themeStore.resetToDefault(); alert('已重置所有自定义'); },
+    resetAllCustom: () => {
+      themeStore.resetToDefault()
+      alert('已重置所有自定义')
+    },
     applyAccentPreset: () => {
       const colorMap = {
-        ocean: '#3b82f6', forest: '#22c55e', sunset: '#f59e0b', royal: '#a855f7',
-        crimson: '#ef4444', amber: '#d97706', emerald: '#10b981', rose: '#f43f5e',
-        sky: '#0ea5e9', violet: '#8b5cf6', teal: '#14b8a6', zinc: '#71717a',
-        indigo: '#6366f1', pink: '#ec4899', lime: '#84cc16', orange: '#f97316', slate: '#475569'
+        ocean: '#3b82f6',
+        forest: '#22c55e',
+        sunset: '#f59e0b',
+        royal: '#a855f7',
+        crimson: '#ef4444',
+        amber: '#d97706',
+        emerald: '#10b981',
+        rose: '#f43f5e',
+        sky: '#0ea5e9',
+        violet: '#8b5cf6',
+        teal: '#14b8a6',
+        zinc: '#71717a',
+        indigo: '#6366f1',
+        pink: '#ec4899',
+        lime: '#84cc16',
+        orange: '#f97316',
+        slate: '#475569'
       }
       const hoverMap = {
-        ocean: '#60a5fa', forest: '#4ade80', sunset: '#fbbf24', royal: '#c084fc',
-        crimson: '#f87171', amber: '#f59e0b', emerald: '#34d399', rose: '#fb7185',
-        sky: '#38bdf8', violet: '#a78bfa', teal: '#2dd4bf', zinc: '#a1a1aa',
-        indigo: '#818cf8', pink: '#f472b6', lime: '#a3e635', orange: '#fb923c', slate: '#64748b'
+        ocean: '#60a5fa',
+        forest: '#4ade80',
+        sunset: '#fbbf24',
+        royal: '#c084fc',
+        crimson: '#f87171',
+        amber: '#f59e0b',
+        emerald: '#34d399',
+        rose: '#fb7185',
+        sky: '#38bdf8',
+        violet: '#a78bfa',
+        teal: '#2dd4bf',
+        zinc: '#a1a1aa',
+        indigo: '#818cf8',
+        pink: '#f472b6',
+        lime: '#a3e635',
+        orange: '#fb923c',
+        slate: '#64748b'
       }
       const preset = themeStore.themeSettings.accentPreset || 'ocean'
       themeStore.updateSettings({
@@ -159,20 +233,98 @@ function handleAction(action) {
 </script>
 
 <style scoped>
-.tab-bar { display: flex; gap: var(--space-1); border-bottom: 2px solid var(--color-border); flex-wrap: wrap; }
-.tab-btn { padding: var(--space-2) var(--space-4); background: none; border: none; color: var(--color-text-secondary); font-size: var(--font-size-sm); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all var(--transition-fast); display: flex; align-items: center; gap: var(--space-2); }
-.tab-btn:hover { color: var(--color-text-primary); }
-.tab-btn.active { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+.tab-bar {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 2px solid var(--color-border);
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tab-btn:hover {
+  color: var(--color-text-primary);
+}
+.tab-btn.active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: var(--z-modal, 2000); }
-.modal-dialog { background: var(--color-surface); border-radius: var(--radius-lg); width: 90%; max-width: 520px; box-shadow: var(--shadow-lg); }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--color-border); }
-.modal-title { font-size: var(--font-size-lg); font-weight: 600; color: var(--color-text-primary); }
-.modal-close { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: none; background: transparent; color: var(--color-text-secondary); border-radius: var(--radius-md); cursor: pointer; }
-.modal-close:hover { background: var(--color-surface-hover); }
-.modal-body { padding: var(--space-5); }
-.modal-footer { display: flex; justify-content: flex-end; gap: var(--space-3); padding: var(--space-4) var(--space-5); border-top: 1px solid var(--color-border); }
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal, 2000);
+}
+.modal-dialog {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  width: 90%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--color-border);
+}
+.modal-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+.modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.modal-close:hover {
+  background: var(--color-surface-hover);
+}
+.modal-body {
+  padding: var(--space-5);
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
 
-.import-result { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); font-size: var(--font-size-sm); margin-top: var(--space-2); background: var(--color-success-subtle, rgba(34,197,94,0.1)); color: var(--color-success, #22c55e); }
-.import-result.error { background: var(--color-error-subtle, rgba(239,68,68,0.1)); color: var(--color-error, #ef4444); }
+.import-result {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+  background: var(--color-success-subtle, rgba(34, 197, 94, 0.1));
+  color: var(--color-success, #22c55e);
+}
+.import-result.error {
+  background: var(--color-error-subtle, rgba(239, 68, 68, 0.1));
+  color: var(--color-error, #ef4444);
+}
 </style>
