@@ -1,0 +1,9 @@
+# 忽略所有文件
+*
+
+# 只保留产物和 README
+!冠久ERP-Setup-3.0.0.exe
+!冠久ERP-Portable-3.0.0.exe
+!guanjiuerp-3.0.0-release.apk
+!README.md
+!.gitignore
