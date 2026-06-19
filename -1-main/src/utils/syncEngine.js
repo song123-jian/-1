@@ -9,6 +9,7 @@ import { SupabaseClient } from '@/lib/supabase.js'
 import { API } from '@/services/api.js'
 import { mergeArrays } from '@/utils/conflictResolver.js'
 import eventBus from '@/utils/eventBus.js'
+import { entityRegistry, getEntityByStore } from '@/entities'
 
 // ==================== Store 导入 ====================
 import { useCustomerStore } from '@/modules/customer/stores/customer'
@@ -23,22 +24,19 @@ import { useCostStore } from '@/modules/finance/stores/cost'
 import { useWarehouseLocationStore } from '@/modules/warehouse/stores/warehouseLocation'
 import { useSupplierStore } from '@/modules/purchase/stores/supplier'
 
-// ==================== 表与 Store 映射 ====================
-const SYNC_MAP = {
-  customers: { storeName: 'customer', dataKey: 'customers' },
-  quotations: { storeName: 'quotation', dataKey: 'quotations' },
-  contracts: { storeName: 'contract', dataKey: 'contracts' },
-  inventory: { storeName: 'inventory', dataKey: 'inventory' },
-  inbound_orders: { storeName: 'inventory', dataKey: 'inboundOrders' },
-  outbound_orders: { storeName: 'inventory', dataKey: 'outboundOrders' },
-  deliveries: { storeName: 'delivery', dataKey: 'deliveries' },
-  collections: { storeName: 'collection', dataKey: 'collections' },
-  statements: { storeName: 'statement', dataKey: 'statements' },
-  todos: { storeName: 'todo', dataKey: 'todos' },
-  cost_records: { storeName: 'cost', dataKey: 'records' },
-  warehouse_locations: { storeName: 'warehouseLocation', dataKey: 'locations' },
-  suppliers: { storeName: 'supplier', dataKey: 'suppliers' }
+// ==================== 表与 Store 映射（从实体注册表自动构建） ====================
+// 基础映射：从 entityRegistry 自动生成
+const SYNC_MAP = {}
+for (const [entityName, meta] of Object.entries(entityRegistry)) {
+  SYNC_MAP[meta.tableName] = {
+    storeName: meta.storeName,
+    dataKey: meta.dataKey,
+    entityName
+  }
 }
+// 补充子表映射（inventory 的出入库单据，共享同一 Store 但不同 dataKey）
+SYNC_MAP['inbound_orders'] = { storeName: 'inventory', dataKey: 'inboundOrders', entityName: 'inventory' }
+SYNC_MAP['outbound_orders'] = { storeName: 'inventory', dataKey: 'outboundOrders', entityName: 'inventory' }
 
 // ==================== Store 实例缓存 ====================
 const _storeCache = new Map()
@@ -770,29 +768,28 @@ function persistStore(storeName, store, dataKey) {
 }
 
 /**
- * 获取 Store 数据对应的 localStorage key
+ * 获取 Store 数据对应的 localStorage key（从实体注册表查询）
  * @param {string} storeName - Store 名称
  * @param {string} dataKey - 数据 key
  * @returns {string|null} localStorage key
  */
 function getStorageKey(storeName, dataKey) {
-  const keyMap = {
-    'customer.customers': 'gj_erp_customers',
-    'quotation.quotations': 'gj_erp_quotations',
-    'contract.contracts': 'gj_erp_contracts',
-    'inventory.inventory': 'gj_erp_inventory',
-    'inventory.inboundOrders': 'gj_erp_warehouseOrders',
-    'inventory.outboundOrders': 'gj_erp_warehouseOrders',
-    'inventory.warehouseOrders': 'gj_erp_warehouseOrders',
-    'delivery.deliveries': 'gj_erp_deliveries',
-    'collection.collections': 'gj_erp_collections',
-    'statement.statements': 'gj_erp_statements',
-    'todo.todos': 'gj_erp_todos',
-    'cost.records': 'gj_erp_costAnalysis',
-    'warehouseLocation.locations': 'gj_erp_warehouseLocations',
-    'supplier.suppliers': 'gj_erp_suppliers'
+  // 先通过 storeName 查找实体
+  const entityName = getEntityByStore(storeName)
+  if (entityName) {
+    const meta = entityRegistry[entityName]
+    // 主 dataKey 直接返回 storageKey
+    if (meta.dataKey === dataKey) {
+      return meta.storageKey
+    }
+    // 子表 dataKey 的特殊处理
+    if (storeName === 'inventory') {
+      if (dataKey === 'inboundOrders' || dataKey === 'outboundOrders' || dataKey === 'warehouseOrders') {
+        return 'gj_erp_warehouseOrders'
+      }
+    }
   }
-  return keyMap[`${storeName}.${dataKey}`] || null
+  return null
 }
 
 /**

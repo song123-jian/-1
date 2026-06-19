@@ -18,6 +18,7 @@ import dataService, { DataResult } from '@/services/dataService'
 import versionControl from '@/utils/versionControl'
 import { SupabaseClient } from '@/lib/supabase.js'
 import { API } from '@/services/api.js'
+import { entityRegistry, getEntityMeta, buildTableToEntityMap } from '@/entities'
 
 /* 各模块Store的懒加载映射 */
 const STORE_IMPORTS = {
@@ -40,52 +41,27 @@ const STORE_IMPORTS = {
   transfer: () => import('@/modules/warehouse/stores/transfer').then((m) => m.useTransferStore())
 }
 
-/* 模块数据键映射 */
-const DATA_KEY_MAP = {
-  customer: 'customers',
-  quotation: 'quotations',
-  contract: 'contracts',
-  inventory: 'inventory',
-  delivery: 'deliveries',
-  collection: 'collections',
-  statement: 'statements',
-  supplier: 'suppliers',
-  warehouse: 'warehouses',
-  warehouseLocation: 'locations',
-  cost: 'records',
-  todo: 'todos',
-  purchase: 'purchaseOrders',
-  production: 'productionOrders',
-  transaction: 'transactions',
-  transfer: 'transferOrders'
-}
-
-/* 表名到模块名的反向映射（Supabase表名 → 本地模块名） */
+/* 表名到模块名的反向映射（从实体注册表自动构建 + 额外系统表） */
 const TABLE_TO_MODULE = {
-  customers: 'customer',
-  quotations: 'quotation',
-  contracts: 'contract',
-  inventory: 'inventory',
-  inbound_orders: 'inventory',
-  outbound_orders: 'inventory',
-  deliveries: 'delivery',
-  collections: 'collection',
-  statements: 'statement',
-  suppliers: 'supplier',
+  ...buildTableToEntityMap(),
+  /* 系统表（非业务实体） */
   approval_rules: 'approval',
   audit_logs: 'log',
   notifications: 'notification',
   batches: 'inventory',
-  todos: 'todo',
   tags: 'tag',
   archives: 'archive',
   doc_settings: 'docSettings',
-  cost_records: 'cost',
-  warehouse_locations: 'warehouseLocation',
-  permissions: 'permission',
-  transactions: 'transaction',
-  purchase_orders: 'purchase'
+  permissions: 'permission'
 }
+
+/* 模块数据键映射（从实体注册表自动构建） */
+const DATA_KEY_MAP = {}
+for (const [name, meta] of Object.entries(entityRegistry)) {
+  DATA_KEY_MAP[name] = meta.dataKey
+}
+/* warehouse 别名指向 warehouseLocation */
+DATA_KEY_MAP.warehouse = 'warehouses'
 
 /* 下拉选项配置 - 定义每个模块可提供的下拉选项 */
 const SELECT_CONFIGS = {
@@ -424,25 +400,17 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
   }
 
   /**
-   * 统一新增
+   * 统一新增（委托给 DataService，事件监听器自动刷新缓存）
    */
   async function create(module, data, options = {}) {
-    const result = await dataService.create(module, data, options)
-    if (result.success) {
-      refreshSelectOptions(module)
-    }
-    return result
+    return dataService.create(module, data, options)
   }
 
   /**
-   * 统一修改
+   * 统一修改（委托给 DataService，事件监听器自动刷新缓存）
    */
   async function update(module, id, updates, options = {}) {
-    const result = await dataService.update(module, id, updates, options)
-    if (result.success) {
-      refreshSelectOptions(module)
-    }
-    return result
+    return dataService.update(module, id, updates, options)
   }
 
   /**

@@ -1,24 +1,26 @@
 /**
  * 统一数据服务层
  * 提供标准化的CRUD接口，封装数据操作逻辑
- * 支持：
+ *
+ * 职责（已解耦）：
  * - 统一的查询/新增/修改/删除操作
- * - 数据验证与转换
- * - 权限检查集成
- * - 事件通知集成
+ * - 数据验证
+ * - 权限检查
+ * - 事件通知（发出事件，不直接同步/启动审批）
  * - 缓存集成
- * - 错误处理与回滚
- * - 批量操作
+ *
+ * 已移除的副作用：
+ * - 不再直接调用 _syncToSupabase（由 SyncEngine 订阅事件后处理）
+ * - 不再直接调用 _tryStartApproval（由视图层显式触发工作流）
  */
 
-import eventBus, { DataModules } from '@/utils/eventBus'
+import eventBus, { DataEvents } from '@/utils/eventBus'
 import dataCache from '@/utils/dataCache'
 import versionControl from '@/utils/versionControl'
 import { generateId } from '@/utils/uid'
 import { useSessionStore } from '@/stores/session'
 import { usePermissionStore } from '@/stores/permission'
-import { SupabaseClient } from '@/lib/supabase.js'
-import { API } from '@/services/api.js'
+import { getEntityMeta, getAllEntityNames } from '@/entities'
 
 /* 操作结果封装 */
 export class DataResult {
@@ -38,75 +40,10 @@ export class DataResult {
   }
 }
 
-/* 数据验证规则定义 */
-const VALIDATION_RULES = {
-  customer: {
-    required: ['name'],
-    fields: {
-      name: { type: 'string', maxLength: 100, label: '客户名称' },
-      phone: { type: 'string', pattern: /^[\d\-+() ]*$/, label: '电话' },
-      email: { type: 'string', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]*$/, label: '邮箱', optional: true },
-      level: { type: 'enum', values: ['A', 'B', 'C'], label: '等级' },
-      creditLimit: { type: 'number', min: 0, label: '信用额度' },
-      balance: { type: 'number', label: '余额' }
-    }
-  },
-  quotation: {
-    required: ['quoteNo'],
-    fields: {
-      quoteNo: { type: 'string', label: '报价编号' },
-      customerName: { type: 'string', label: '客户名称' },
-      total: { type: 'number', min: 0, label: '总金额' }
-    }
-  },
-  contract: {
-    required: ['contractNo'],
-    fields: {
-      contractNo: { type: 'string', label: '合同编号' },
-      customerName: { type: 'string', label: '客户名称' },
-      amount: { type: 'number', min: 0, label: '合同金额' }
-    }
-  },
-  inventory: {
-    required: ['code', 'name'],
-    fields: {
-      code: { type: 'string', label: '编号' },
-      name: { type: 'string', label: '物料名称' },
-      quantity: { type: 'number', min: 0, label: '数量' },
-      unitCost: { type: 'number', min: 0, label: '单价' }
-    }
-  },
-  delivery: {
-    required: ['deliveryNo', 'customerName'],
-    fields: {
-      deliveryNo: { type: 'string', label: '送货单号' },
-      customerName: { type: 'string', label: '客户名称' }
-    }
-  },
-  collection: {
-    required: ['collectionNo'],
-    fields: {
-      collectionNo: { type: 'string', label: '回款编号' },
-      amount: { type: 'number', min: 0, label: '回款金额' }
-    }
-  },
-  supplier: {
-    required: ['name'],
-    fields: {
-      name: { type: 'string', label: '供应商名称' },
-      rating: { type: 'enum', values: ['A', 'B', 'C'], label: '评级' }
-    }
-  }
-}
-
 class DataService {
   constructor() {
     /* Store引用缓存 */
     this._storeCache = new Map()
-    /* 操作锁（防止并发修改同一数据） */
-    this._locks = new Map()
-    /* 事务栈（用于回滚） */
-    this._transactionStack = []
   }
 
   /**
@@ -138,6 +75,9 @@ class DataService {
       const store = this.getStore(module)
       if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
+      const meta = getEntityMeta(module)
+      if (!meta) return DataResult.fail(`未知的实体: ${module}`)
+
       /* 检查缓存 */
       if (options.useCache !== false && options.id) {
         const cacheKey = `${module}:item:${options.id}`
@@ -146,8 +86,7 @@ class DataService {
       }
 
       /* 获取数据源 */
-      const dataKey = this._getDataKey(module)
-      let data = store[dataKey]
+      let data = store[meta.dataKey]
 
       if (!Array.isArray(data)) {
         return DataResult.fail(`模块 ${module} 的数据源不是数组`)
@@ -229,6 +168,9 @@ class DataService {
       const store = this.getStore(module)
       if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
+      const meta = getEntityMeta(module)
+      if (!meta) return DataResult.fail(`未知的实体: ${module}`)
+
       /* 权限检查 */
       if (options.checkPermission !== false) {
         const permResult = this._checkPermission(module, 'create')
@@ -257,26 +199,17 @@ class DataService {
       if (!data.createdBy && options.user) data.createdBy = options.user
 
       /* 调用Store的新增方法 */
-      const addMethod = this._getAddMethod(module)
-      const result = store[addMethod](data)
+      const result = store[meta.methods.add](data)
 
       /* 清除缓存 */
       this._invalidateModuleCache(module)
 
-      /* 发布事件 */
+      /* 发布事件（SyncEngine 和其他监听者会订阅处理） */
       eventBus.emitDataChange(module, 'created', {
         id: data.id,
         data: result || data,
         user: options.user
       })
-
-      /* 自动同步到Supabase */
-      this._syncToSupabase(module, result || data, 'upsert')
-
-      /* 自动启动审批流（如果适用） */
-      if (options.skipApproval !== true) {
-        this._tryStartApproval(module, result || data)
-      }
 
       return DataResult.ok(result || data)
     } catch (e) {
@@ -297,6 +230,9 @@ class DataService {
       const store = this.getStore(module)
       if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
+      const meta = getEntityMeta(module)
+      if (!meta) return DataResult.fail(`未知的实体: ${module}`)
+
       /* 权限检查 */
       if (options.checkPermission !== false) {
         const permResult = this._checkPermission(module, 'update')
@@ -306,8 +242,7 @@ class DataService {
       }
 
       /* 获取旧数据（用于版本控制和事件通知） */
-      const dataKey = this._getDataKey(module)
-      const oldData = store[dataKey]?.find((d) => d.id === id)
+      const oldData = store[meta.dataKey]?.find((d) => d.id === id)
       if (!oldData) return DataResult.fail(`未找到ID为 ${id} 的数据`)
 
       /* 数据验证 */
@@ -327,8 +262,7 @@ class DataService {
       const changes = this._computeChanges(oldData, updates)
 
       /* 调用Store的更新方法 */
-      const updateMethod = this._getUpdateMethod(module)
-      store[updateMethod](id, updates)
+      store[meta.methods.update](id, updates)
 
       /* 清除缓存 */
       this._invalidateItemCache(module, id)
@@ -349,7 +283,7 @@ class DataService {
         )
       }
 
-      /* 发布事件 */
+      /* 发布事件（SyncEngine 会订阅处理同步） */
       eventBus.emitDataChange(module, 'updated', {
         id,
         data: { ...oldData, ...updates },
@@ -357,9 +291,6 @@ class DataService {
         changes,
         user: options.user
       })
-
-      /* 自动同步到Supabase */
-      this._syncToSupabase(module, { ...oldData, ...updates }, 'upsert')
 
       return DataResult.ok({ ...oldData, ...updates })
     } catch (e) {
@@ -379,6 +310,9 @@ class DataService {
       const store = this.getStore(module)
       if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
+      const meta = getEntityMeta(module)
+      if (!meta) return DataResult.fail(`未知的实体: ${module}`)
+
       /* 权限检查 */
       if (options.checkPermission !== false) {
         const permResult = this._checkPermission(module, 'delete')
@@ -388,8 +322,7 @@ class DataService {
       }
 
       /* 获取旧数据 */
-      const dataKey = this._getDataKey(module)
-      const oldData = store[dataKey]?.find((d) => d.id === id)
+      const oldData = store[meta.dataKey]?.find((d) => d.id === id)
       if (!oldData) return DataResult.fail(`未找到ID为 ${id} 的数据`)
 
       /* 软删除 */
@@ -406,22 +339,18 @@ class DataService {
       }
 
       /* 调用Store的删除方法 */
-      const deleteMethod = this._getDeleteMethod(module)
-      store[deleteMethod](id)
+      store[meta.methods.delete](id)
 
       /* 清除缓存 */
       this._invalidateItemCache(module, id)
       this._invalidateModuleCache(module)
 
-      /* 发布事件 */
+      /* 发布事件（SyncEngine 会订阅处理删除同步） */
       eventBus.emitDataChange(module, 'deleted', {
         id,
         data: oldData,
         user: options.user
       })
-
-      /* 自动同步删除到Supabase */
-      this._syncToSupabase(module, { id }, 'delete')
 
       return DataResult.ok({ id })
     } catch (e) {
@@ -481,7 +410,7 @@ class DataService {
 
     /* 发布批量更新事件 */
     if (results.length > 0) {
-      eventBus.emit(DataModules[module.toUpperCase()] ? `${module}:batch_updated` : `data:batch_updated`, {
+      eventBus.emit(DataEvents.BATCH_UPDATED, {
         module,
         count: results.length,
         user: options.user
@@ -502,18 +431,20 @@ class DataService {
     const store = this.getStore(module)
     if (!store) return DataResult.fail(`未注册的模块: ${module}`)
 
+    const meta = getEntityMeta(module)
+    if (!meta) return DataResult.fail(`未知的实体: ${module}`)
+
     /* 权限检查 */
     const permResult = this._checkPermission(module, 'delete')
     if (!permResult.allowed) return DataResult.fail(permResult.reason)
 
-    /* 调用Store的批量删除方法 */
-    const batchDeleteMethod = this._getBatchDeleteMethod(module)
-    if (store[batchDeleteMethod]) {
-      store[batchDeleteMethod](ids)
+    /* 调用Store的批量删除方法（如果存在） */
+    if (meta.methods.batchDelete && store[meta.methods.batchDelete]) {
+      store[meta.methods.batchDelete](ids)
     } else {
-      const deleteMethod = this._getDeleteMethod(module)
+      /* 降级：逐条删除 */
       for (const id of ids) {
-        store[deleteMethod](id)
+        store[meta.methods.delete](id)
       }
     }
 
@@ -569,13 +500,14 @@ class DataService {
   }
 
   /**
-   * 数据验证
+   * 数据验证（从实体注册表获取规则）
    * @param {string} module - 模块名
    * @param {Object} data - 待验证数据
    * @returns {Object} { valid, errors }
    */
   _validate(module, data) {
-    const rules = VALIDATION_RULES[module]
+    const meta = getEntityMeta(module)
+    const rules = meta?.validation
     if (!rules) return { valid: true, errors: [] }
 
     const errors = []
@@ -619,7 +551,7 @@ class DataService {
   }
 
   /**
-   * 权限检查
+   * 权限检查（从实体注册表获取权限映射）
    * @param {string} module - 模块名
    * @param {string} action - 操作类型
    * @returns {Object} { allowed, reason }
@@ -638,31 +570,14 @@ class DataService {
         return { allowed: true, reason: '' }
       }
 
-      /* 模块到权限模块的映射 */
-      const modulePermMap = {
-        customer: 'quote_contract',
-        quotation: 'quote_contract',
-        contract: 'quote_contract',
-        inventory: 'inbound',
-        delivery: 'delivery',
-        collection: 'statement',
-        statement: 'statement',
-        supplier: 'inbound'
-      }
+      const meta = getEntityMeta(module)
+      if (!meta?.permissions?.module) return { allowed: true, reason: '' }
 
-      const permModule = modulePermMap[module]
-      if (!permModule) return { allowed: true, reason: '' }
+      const permKey = meta.permissions.actions[action]
+      if (!permKey) return { allowed: true, reason: '' }
 
-      /* 操作到权限的映射 */
-      const actionPermMap = {
-        create: 'canCreateQuote,inboundCreate,outboundCreate,statementCreate,deliveryCreate,canCreateContract',
-        update: 'canEditOthersQuote,inboundEdit,outboundUpdate,statementUpdate,deliveryEdit,canEditContract',
-        delete: 'canDeleteQuote,inboundDelete,outboundDelete,statementDelete,deliveryDelete,canDeleteContract'
-      }
-
-      const permKeys = actionPermMap[action]?.split(',') || []
-      const hasAny = permKeys.some((pk) => permStore.getPerm(role, permModule, pk))
-      if (!hasAny) {
+      const hasPerm = permStore.getPerm(role, meta.permissions.module, permKey)
+      if (!hasPerm) {
         return { allowed: false, reason: `角色 ${role} 无权限执行此操作` }
       }
 
@@ -672,115 +587,6 @@ class DataService {
       console.error('[DataService] 权限检查异常:', e)
       return { allowed: false, reason: '权限检查失败，默认拒绝' }
     }
-  }
-
-  /**
-   * 获取模块的数据键名
-   */
-  _getDataKey(module) {
-    const keyMap = {
-      customer: 'customers',
-      quotation: 'quotations',
-      contract: 'contracts',
-      inventory: 'inventory',
-      delivery: 'deliveries',
-      collection: 'collections',
-      statement: 'statements',
-      supplier: 'suppliers',
-      warehouseLocation: 'locations',
-      cost: 'records',
-      todo: 'todos',
-      transaction: 'transactions',
-      purchase: 'purchaseOrders',
-      production: 'productionOrders',
-      transfer: 'transferOrders'
-    }
-    return keyMap[module] || module
-  }
-
-  /**
-   * 获取新增方法名
-   */
-  _getAddMethod(module) {
-    const methodMap = {
-      customer: 'addCustomer',
-      quotation: 'addQuotation',
-      contract: 'addContract',
-      inventory: 'addInventoryItem',
-      delivery: 'addDelivery',
-      collection: 'addCollection',
-      statement: 'addStatement',
-      supplier: 'addSupplier',
-      warehouseLocation: 'addLocation',
-      cost: 'addRecord',
-      todo: 'addTodo',
-      transaction: 'addTransaction',
-      purchase: 'addOrder',
-      production: 'addOrder',
-      transfer: 'addOrder'
-    }
-    return methodMap[module] || 'addItem'
-  }
-
-  /**
-   * 获取更新方法名
-   */
-  _getUpdateMethod(module) {
-    const methodMap = {
-      customer: 'updateCustomer',
-      quotation: 'updateQuotation',
-      contract: 'updateContract',
-      inventory: 'updateInventoryItem',
-      delivery: 'updateDelivery',
-      collection: 'updateCollection',
-      statement: 'updateStatement',
-      supplier: 'updateSupplier',
-      warehouseLocation: 'updateLocation',
-      cost: 'updateRecord',
-      todo: 'updateTodo',
-      transaction: 'updateTransaction',
-      purchase: 'updateOrder',
-      production: 'updateOrder',
-      transfer: 'updateOrder'
-    }
-    return methodMap[module] || 'updateItem'
-  }
-
-  /**
-   * 获取删除方法名
-   */
-  _getDeleteMethod(module) {
-    const methodMap = {
-      customer: 'deleteCustomer',
-      quotation: 'deleteQuotation',
-      contract: 'deleteContract',
-      inventory: 'deleteInventoryItem',
-      delivery: 'deleteDelivery',
-      collection: 'deleteCollection',
-      statement: 'deleteStatement',
-      supplier: 'deleteSupplier',
-      warehouseLocation: 'deleteLocation',
-      cost: 'deleteRecord',
-      todo: 'deleteTodo',
-      transaction: 'deleteTransaction',
-      purchase: 'deleteOrder',
-      production: 'deleteOrder',
-      transfer: 'deleteOrder'
-    }
-    return methodMap[module] || 'deleteItem'
-  }
-
-  /**
-   * 获取批量删除方法名
-   */
-  _getBatchDeleteMethod(module) {
-    const methodMap = {
-      customer: 'batchDelete',
-      inventory: 'batchDeleteInventory',
-      quotation: 'batchDelete',
-      contract: 'batchDelete'
-    }
-    return methodMap[module] || null
   }
 
   /**
@@ -811,111 +617,6 @@ class DataService {
       }
     }
     return changes
-  }
-
-  /**
-   * 模块名到工作流类型的映射
-   */
-  _getWorkflowType(module, data) {
-    const map = {
-      quotation: 'quotation',
-      contract: 'contract',
-      purchase: 'purchase',
-      collection: 'payment'
-    }
-    if (module === 'inventory') {
-      if (data.type === 'inbound') return 'inbound'
-      if (data.type === 'outbound') return 'outbound'
-      return null
-    }
-    return map[module] || null
-  }
-
-  /**
-   * 自动同步到Supabase（异步，不阻塞主流程）
-   */
-  _syncToSupabase(module, data, action) {
-    try {
-      if (!SupabaseClient.isConnected()) return
-      /* 模块名 → Supabase表名 的正确映射 */
-      const MODULE_TO_TABLE = {
-        customer: 'customers',
-        quotation: 'quotations',
-        contract: 'contracts',
-        inventory: 'inventory',
-        delivery: 'deliveries',
-        collection: 'collections',
-        statement: 'statements',
-        supplier: 'suppliers',
-        warehouseLocation: 'warehouse_locations',
-        cost: 'cost_records',
-        todo: 'todos',
-        transaction: 'transactions',
-        purchase: 'purchase_orders'
-      }
-      const tableName = MODULE_TO_TABLE[module]
-      if (!tableName) return
-
-      if (action === 'upsert') {
-        API.upsertToServer(tableName, [data]).catch((e) => {
-          console.warn(`[DataService] ${module} upsert同步失败:`, e.message)
-        })
-      } else if (action === 'delete') {
-        API.request('DELETE', tableName, null, { id: data.id }).catch((e) => {
-          console.warn(`[DataService] ${module} delete同步失败:`, e.message)
-        })
-      }
-    } catch (e) {
-      console.warn(`[DataService] Supabase同步异常:`, e.message)
-    }
-  }
-
-  /**
-   * 尝试启动审批流（如果模块配置了工作流）
-   */
-  _tryStartApproval(module, data) {
-    try {
-      const workflowType = this._getWorkflowType(module, data)
-      if (!workflowType) return
-
-      /* 延迟导入避免循环依赖 */
-      import('@/utils/workflowEngine')
-        .then(({ default: workflowEngine }) => {
-          const template = workflowEngine.getTemplate(workflowType)
-          if (!template) return
-
-          const businessNo = data.quotationNo || data.contractNo || data.orderNo || data.id || ''
-          const amount = data.totalAmount || data.amount || data.total || 0
-
-          const instance = workflowEngine.startInstance(workflowType, {
-            businessId: data.id,
-            businessType: workflowType,
-            businessNo,
-            variables: {
-              amount,
-              applicant: this._getCurrentUser(),
-              businessNo,
-              ...data
-            }
-          })
-
-          if (instance) {
-            /* 同步到workflowStore */
-            import('@/modules/system/stores/workflow')
-              .then(({ useWorkflowStore }) => {
-                const workflowStore = useWorkflowStore()
-                workflowStore.instances.unshift(instance)
-                workflowStore._persist()
-              })
-              .catch(() => {})
-
-            console.debug(`[DataService] 已启动 ${workflowType} 审批流: ${instance.id}`)
-          }
-        })
-        .catch(() => {})
-    } catch (e) {
-      console.warn(`[DataService] 启动审批流异常:`, e.message)
-    }
   }
 
   /**

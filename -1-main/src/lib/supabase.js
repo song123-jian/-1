@@ -3,54 +3,6 @@ import { createClient } from '@supabase/supabase-js'
 const STORAGE_URL_KEY = 'gj_erp_sb_url'
 const STORAGE_KEY_KEY = 'gj_erp_sb_key'
 
-// Web Crypto API 加密/解密
-const APP_SECRET = 'gj_erp_v1_secret_key_2024'
-
-async function getCryptoKey() {
-  const enc = new TextEncoder()
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(APP_SECRET), { name: 'PBKDF2' }, false, [
-    'deriveKey'
-  ])
-  return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: enc.encode('gj_erp_salt'), iterations: 100000, hash: 'SHA-256' },
-    keyMaterial,
-    { name: 'AES-GCM', length: 256 },
-    false,
-    ['encrypt', 'decrypt']
-  )
-}
-
-async function encryptKey(plainText) {
-  try {
-    const key = await getCryptoKey()
-    const enc = new TextEncoder()
-    const iv = crypto.getRandomValues(new Uint8Array(12))
-    const encrypted = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(plainText))
-    const combined = new Uint8Array(iv.length + encrypted.byteLength)
-    combined.set(iv)
-    combined.set(new Uint8Array(encrypted), iv.length)
-    return btoa(String.fromCharCode(...combined))
-  } catch (e) {
-    console.error('[Supabase] 加密失败:', e)
-    return ''
-  }
-}
-
-async function decryptKey(cipherText) {
-  try {
-    if (!cipherText) return ''
-    const key = await getCryptoKey()
-    const combined = Uint8Array.from(atob(cipherText), (c) => c.charCodeAt(0))
-    const iv = combined.slice(0, 12)
-    const encrypted = combined.slice(12)
-    const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, encrypted)
-    return new TextDecoder().decode(decrypted)
-  } catch (e) {
-    console.error('[Supabase] 解密失败:', e)
-    return ''
-  }
-}
-
 let _client = null
 let _connected = false
 let _config = { url: '', anonKey: '' }
@@ -121,8 +73,7 @@ async function init(url, anonKey, options = {}) {
     _config.url = url
     _config.anonKey = anonKey
     localStorage.setItem(STORAGE_URL_KEY, url)
-    // 使用 localStorage 存储加密后的 anon key
-    localStorage.setItem(STORAGE_KEY_KEY, await encryptKey(anonKey))
+    localStorage.setItem(STORAGE_KEY_KEY, anonKey)
     _connected = true
     console.debug('[Supabase] 连接成功:', url)
 
@@ -149,7 +100,7 @@ async function autoInit() {
   try {
     // 优先从 localStorage 恢复（用户手动配置的）
     const url = localStorage.getItem(STORAGE_URL_KEY)
-    const key = await decryptKey(localStorage.getItem(STORAGE_KEY_KEY))
+    const key = localStorage.getItem(STORAGE_KEY_KEY)
     if (url && key) {
       return init(url, key)
     }

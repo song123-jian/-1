@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -31,10 +31,14 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Go 后端 API 地址（APK 连电脑局域网IP，EXE 单机模式用 localhost）
-  final String _baseUrl = Platform.isAndroid
-      ? 'http://192.168.1.5:8080'
-      : 'http://localhost:8080';
+  // Go 后端 API 地址
+  // Web 和桌面端用 localhost；Android/iOS 真机用局域网 IP
+  final String _baseUrl = (kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.macOS ||
+          defaultTargetPlatform == TargetPlatform.linux)
+      ? 'http://localhost:8080'
+      : 'http://192.168.1.5:8080';
   Map<String, dynamic>? _info;
   String? _error;
   bool _loading = true;
