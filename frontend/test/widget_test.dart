@@ -11,20 +11,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('RJBC app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const RJBCApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the app bar title is displayed.
+    expect(find.text('RJBC'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Verify that the loading indicator is shown initially.
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Wait for the async fetch to complete and trigger frames.
+    await tester.pumpAndSettle();
+
+    // After settling, either the error or info card should be displayed.
+    // We verify at least one of the expected widgets is present.
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Icon &&
+            (widget.icon == Icons.error_outline || widget.icon == Icons.check_circle),
+      ),
+      findsOneWidget,
+    );
   });
 }

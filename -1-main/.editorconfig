@@ -1,0 +1,34 @@
+# 冠久ERP 编辑器统一配置
+# 确保所有开发者使用一致的编码和格式规则
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.vue]
+indent_size = 2
+
+[*.js]
+indent_size = 2
+
+[*.ts]
+indent_size = 2
+
+[*.css]
+indent_size = 2
+
+[*.json]
+indent_size = 2
+insert_final_newline = false
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{yml,yaml}]
+indent_size = 2
