@@ -1,73 +1,31 @@
-# 编译产物和构建目录
-build/
+node_modules/
 dist/
-release/
-*.exe
-*.apk
-*.dll
-*.so
-*.dylib
-
-# Go
-vendor/
-go.work
-go.work.sum
-*.test
-*.out
-
-# Flutter / Dart
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-.packages
-# 注意：保留 pubspec.lock
-
-# Android
-**/android/**/gradle-wrapper.jar
-**/android/.gradle
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/**/GeneratedPluginRegistrant.java
-**/android/key.properties
-**/android/**/release.keystore
-
-# iOS / macOS
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-
-# IDE
-.idea/
-.vscode/
-*.iml
-*.swp
-*.swo
-*~
-.metadata
-
-# 日志
-*.log
-
-# 系统文件
 .DS_Store
-Thumbs.db
+*.local
+.env
+.env.*
+!.env.example
 
-# 环境工具链（不应提交）
-env/
-gradle-cache/
+# 测试文件
+src/__tests__/
+
+# 临时文件和导出包
+*.tar.gz
+*.bak
+*.tmp
+*.log
+*.err
+*.swp
+*.cache
+Thumbs.db
+browser-opened.flag
+1.txt
+211.txt
+_update_topbar.js
+eslint-full.json
+lint-result.json
+开发.txt
+dpERP版本02.html
+_fix_script.ps1
+dpERP-vue/
+zh4_export.tar.gz
