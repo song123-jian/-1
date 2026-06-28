@@ -307,7 +307,11 @@
       <div class="empty-icon"><Icon name="building" :size="14" /></div>
       <div class="empty-text">未找到客户信息</div>
       <div class="empty-sub">请检查客户ID是否正确，或返回客户列表重新选择</div>
-      <button class="btn btn-primary" style="margin-top: var(--space-4)" @click="router.push('/customers').catch(() => {})">
+      <button
+        class="btn btn-primary"
+        style="margin-top: var(--space-4)"
+        @click="router.push('/customers').catch(() => {})"
+      >
         返回客户列表
       </button>
     </div>

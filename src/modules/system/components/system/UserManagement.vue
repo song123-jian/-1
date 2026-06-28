@@ -91,7 +91,9 @@
         <table class="data-table" style="font-size: var(--font-size-xs)">
           <thead>
             <tr>
-              <th style="position: sticky; left: 0; background: var(--color-surface-elevated); z-index: var(--z-base)">权限项</th>
+              <th style="position: sticky; left: 0; background: var(--color-surface-elevated); z-index: var(--z-base)">
+                权限项
+              </th>
               <th v-for="role in roleList" :key="role.key">{{ role.label }}</th>
             </tr>
           </thead>

@@ -1,17 +1,12 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import legacy from '@vitejs/plugin-legacy'
-import { resolve } from 'path'
+import path, { resolve } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
-  plugins: [
-    vue(),
-    legacy({
-      targets: ['defaults', 'not IE 11', 'Chrome >= 60', 'Firefox >= 60', 'Safari >= 12', 'Edge >= 79'],
-      additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
-      modernPolyfills: true
-    })
-  ],
+  plugins: [vue()],
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src')
@@ -29,13 +24,17 @@ export default defineConfig({
   },
   build: {
     cssTarget: 'chrome60',
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         manualChunks: {
-          'chart': ['echarts/core'],
-          'xlsx': ['xlsx'],
-          'pdf': ['jspdf', 'jspdf-autotable'],
-          'html2canvas': ['html2canvas']
+          'vue-core': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+          supabase: ['@supabase/supabase-js'],
+          chart: ['echarts/core'],
+          chartjs: ['chart.js'],
+          xlsx: ['xlsx'],
+          pdf: ['jspdf', 'jspdf-autotable'],
+          html2canvas: ['html2canvas']
         }
       }
     }

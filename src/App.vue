@@ -46,6 +46,7 @@ import { useSessionStore } from '@/stores/session'
 import { SupabaseClient } from '@/lib/supabase'
 import { useSyncEngine } from '@/utils/syncEngine'
 import { useDataCenterStore } from '@/stores/dataCenter'
+import { useSupabaseStore } from '@/stores/supabase'
 import { useResponsive } from '@/utils/responsive'
 import autoSave from '@/utils/autoSave'
 import dataCache from '@/utils/dataCache'
@@ -61,6 +62,7 @@ const themeStore = useThemeStore()
 const sessionStore = useSessionStore()
 const syncEngine = useSyncEngine()
 const dataCenter = useDataCenterStore()
+const sbStore = useSupabaseStore()
 const { isDesktop, isMobile, deviceType, layoutMode, shouldUseHamburger, responsive } = useResponsive()
 
 /* 全局 Toast 和 ConfirmDialog 引用 */
@@ -115,10 +117,6 @@ let _reconnectInterval = null
 function startConnectionMonitor() {
   if (_reconnectInterval) return
   _reconnectInterval = setInterval(async () => {
-    const { SupabaseClient } = await import('@/lib/supabase.js')
-    const { useSupabaseStore } = await import('@/stores/supabase.js')
-    const sbStore = useSupabaseStore()
-
     if (!SupabaseClient.isConnected() && sbStore.url.value) {
       console.warn('[App] 检测到连接断开，尝试自动重连...')
       const connected = await sbStore.autoConnect()
@@ -266,14 +264,10 @@ onMounted(async () => {
 
   /* 自动恢复 Supabase 连接 */
   try {
-    const { useSupabaseStore } = await import('@/stores/supabase.js')
-    const sbStore = useSupabaseStore()
     const connected = await sbStore.autoConnect()
     if (connected) {
       console.debug('[App] Supabase 自动连接成功')
       /* 连接成功后启动自动同步 */
-      const { useSyncEngine } = await import('@/utils/syncEngine.js')
-      const syncEngine = useSyncEngine()
       syncEngine.initAutoSync()
     } else {
       console.debug('[App] Supabase 无保存的配置，跳过自动连接')

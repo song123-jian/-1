@@ -12,7 +12,9 @@ const APP_SECRET = 'gj_erp_v1_secret_key_2024'
 
 async function getCryptoKey() {
   const enc = new TextEncoder()
-  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(APP_SECRET), { name: 'PBKDF2' }, false, ['deriveKey'])
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(APP_SECRET), { name: 'PBKDF2' }, false, [
+    'deriveKey'
+  ])
   return crypto.subtle.deriveKey(
     { name: 'PBKDF2', salt: enc.encode('gj_erp_salt'), iterations: 100000, hash: 'SHA-256' },
     keyMaterial,

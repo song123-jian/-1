@@ -11,9 +11,12 @@
           v-model:smart-rec-input="smartRecInput"
           :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
+          :template-name="smartRecTemplateName"
+          :template-content="smartRecTemplateContent"
           @run-smart-recognize="runSmartRecognize"
           @apply-smart-recognize="applySmartRecognize"
           @handle-smart-file-upload="handleSmartFileUpload"
+          @clear="smartRecInput = ''; smartRecResult = null"
         />
         <div class="form-group">
           <label class="form-label">

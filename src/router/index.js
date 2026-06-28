@@ -225,12 +225,6 @@ const routes = [
     meta: { title: '销售权限配置', icon: 'shield' }
   },
   {
-    path: '/mobile-design',
-    name: 'MobileDesign',
-    component: () => import('@/modules/system/views/MobileDesign.vue'),
-    meta: { title: '移动端设计', icon: 'mobile' }
-  },
-  {
     path: '/settings/company',
     name: 'SettingsCompany',
     component: () => import('@/modules/system/views/SettingsCompany.vue'),

@@ -1,8 +1,8 @@
-<template>
+﻿<template>
   <div class="todo-page">
     <div class="page-header">
       <div>
-        <h2 class="page-header-title">待办事项管理</h2>
+        <h2 class="page-header-title">寰呭姙浜嬮」绠＄悊</h2>
         <p class="page-header-subtitle">全面的任务管理系统，支持表格化展示、高级筛选、进度追踪、智能提醒</p>
       </div>
       <div class="page-header-actions">
@@ -18,7 +18,7 @@
             {{ v.label }}
           </button>
         </div>
-        <button v-if="canManage" class="btn btn-primary" @click="openAddModal">新建任务</button>
+        <button v-if="canManage" class="btn btn-primary" @click="openAddModal">鏂板缓浠诲姟</button>
         <button
           v-if="canManage"
           class="btn btn-outline"
@@ -26,7 +26,7 @@
           @click="handleBatchComplete"
         >
           <Icon name="check" :size="14" />
-          批量完成
+          鎵归噺瀹屾垚
         </button>
         <button
           v-if="canManage"
@@ -35,47 +35,54 @@
           @click="handleBatchDelete"
         >
           <Icon name="delete" :size="14" />
-          批量删除
+          鎵归噺鍒犻櫎
         </button>
         <button class="btn btn-outline" @click="handleExport">
           <Icon name="upload" :size="14" />
-          导出
+          瀵煎嚭
         </button>
+      </div>
+    </div>
+
+    <div class="todo-quick-stats">
+      <div v-for="stat in quickStats" :key="stat.label" class="todo-quick-stat" :class="stat.tone">
+        <span class="todo-quick-stat-value">{{ stat.value }}</span>
+        <span class="todo-quick-stat-label">{{ stat.label }}</span>
       </div>
     </div>
 
     <div class="todo-toolbar">
       <div class="todo-search">
         <span class="search-icon"><Icon name="search" :size="14" /></span>
-        <input v-model="searchText" type="text" class="search-input" placeholder="搜索任务标题、描述、备注..." />
+        <input v-model="searchText" type="text" class="search-input" placeholder="鎼滅储浠诲姟鏍囬銆佹弿杩般€佸娉?.." />
       </div>
       <div class="todo-filters">
         <select v-model="filterStatus" class="form-select filter-select">
           <option value="all">全部状态</option>
           <option value="pending">进行中</option>
-          <option value="overdue">已逾期</option>
+          <option value="overdue">宸查€炬湡</option>
           <option value="completed">已完成</option>
         </select>
         <select v-model="filterPriority" class="form-select filter-select">
           <option value="all">全部优先级</option>
-          <option value="high">高优先级</option>
-          <option value="medium">中优先级</option>
-          <option value="low">低优先级</option>
+          <option value="high">楂樹紭鍏堢骇</option>
+          <option value="medium">涓紭鍏堢骇</option>
+          <option value="low">浣庝紭鍏堢骇</option>
         </select>
         <select v-model="filterTag" class="form-select filter-select">
           <option value="all">全部标签</option>
           <option v-for="tag in todoStore.allTags" :key="tag" :value="tag">{{ tag }}</option>
         </select>
         <select v-model="sortField" class="form-select filter-select">
-          <option value="priority">按优先级</option>
+          <option value="priority">鎸変紭鍏堢骇</option>
           <option value="dueDate">按截止日期</option>
-          <option value="progress">按完成度</option>
+          <option value="progress">鎸夊畬鎴愬害</option>
           <option value="remainDays">按剩余天数</option>
           <option value="createdAt">按创建时间</option>
         </select>
         <button
           class="btn btn-ghost btn-sm"
-          :title="sortDir === 'asc' ? '升序' : '降序'"
+          :title="sortDir === 'asc' ? '鍗囧簭' : '闄嶅簭'"
           @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'"
         >
           <Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" />
@@ -83,10 +90,17 @@
       </div>
     </div>
 
+    <div class="todo-source-legend">
+      <span v-for="(label, key) in sourceGroupLabels" :key="key" class="source-legend-item">
+        <span class="source-legend-dot" :class="'group-' + key"></span>
+        {{ label }}
+      </span>
+    </div>
+
     <div class="column-config-wrapper" style="margin-bottom: var(--space-3)">
       <button class="btn btn-outline" @click="toggleColumnConfig">
         <Icon name="setting" :size="14" />
-        列
+        鍒?
       </button>
       <div v-if="showColumnConfig" class="column-config-dropdown" :style="colDropdownStyle">
         <label
@@ -100,7 +114,7 @@
       </div>
     </div>
 
-    <!-- 增强统计栏 -->
+    <!-- 澧炲己缁熻鏍?-->
     <div class="todo-stats-bar">
       <div class="stats-ring-section">
         <svg width="56" height="56" viewBox="0 0 56 56" class="stats-ring-svg">
@@ -128,7 +142,7 @@
         <div class="stat-item">
           <span class="stat-dot total"></span>
           <span class="stat-num">{{ todoStore.stats.total }}</span>
-          <span class="stat-label">总计</span>
+          <span class="stat-label">鎬昏</span>
         </div>
         <div class="stat-item">
           <span class="stat-dot pending"></span>
@@ -138,7 +152,7 @@
         <div class="stat-item">
           <span class="stat-dot overdue"></span>
           <span class="stat-num">{{ todoStore.stats.overdue }}</span>
-          <span class="stat-label">逾期</span>
+          <span class="stat-label">閫炬湡</span>
         </div>
         <div class="stat-item">
           <span class="stat-dot completed"></span>
@@ -147,17 +161,17 @@
         </div>
       </div>
       <div class="stat-actions">
-        <button class="btn btn-ghost btn-sm" @click="todoStore.completeAll()">全部完成</button>
-        <button class="btn btn-ghost btn-sm" @click="confirmClearCompleted">清除已完成</button>
+        <button class="btn btn-ghost btn-sm" @click="todoStore.completeAll()">鍏ㄩ儴瀹屾垚</button>
+        <button class="btn btn-ghost btn-sm" @click="confirmClearCompleted">娓呴櫎宸插畬鎴�</button>
       </div>
     </div>
 
     <div v-if="selectedIds.length > 0" class="batch-bar">
-      <span>已选 {{ selectedIds.length }} 项</span>
-      <button class="btn btn-ghost btn-sm" @click="selectedIds = []">取消选择</button>
+      <span>宸查€?{{ selectedIds.length }} 椤?/span>
+      <button class="btn btn-ghost btn-sm" @click="selectedIds = []">鍙栨秷閫夋嫨</button>
     </div>
 
-    <!-- 表格视图 -->
+    <!-- 琛ㄦ牸瑙嗗浘 -->
     <div v-if="currentView === 'table'" class="panel-card">
       <div class="panel-card-body no-padding">
         <div class="table-container">
@@ -165,21 +179,21 @@
             <thead>
               <tr>
                 <th class="col-check">
-                  <div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll">[√]</div>
+                  <div class="checkbox" :class="{ checked: isAllSelected }" @click="toggleSelectAll">[鈭歖</div>
                 </th>
-                <th v-if="columnVisible.idx" class="col-idx" style="width: 50px; text-align: center">序号</th>
-                <th v-if="columnVisible.title" class="col-title">任务标题</th>
-                <th v-if="columnVisible.desc" class="col-desc">描述</th>
-                <th v-if="columnVisible.priority" class="col-priority">优先级</th>
-                <th v-if="columnVisible.tag" class="col-tag">标签</th>
-                <th v-if="columnVisible.startDate" class="col-date">计划开始</th>
-                <th v-if="columnVisible.dueDate" class="col-date">截止日期</th>
-                <th v-if="columnVisible.reminder" class="col-reminder">提前提醒</th>
-                <th v-if="columnVisible.status" class="col-status">状态</th>
-                <th v-if="columnVisible.remain" class="col-remain">剩余</th>
-                <th v-if="columnVisible.reminderStatus" class="col-reminder-status">提醒状态</th>
-                <th v-if="columnVisible.remark" class="col-remark">备注</th>
-                <th class="col-actions">操作</th>
+                <th v-if="columnVisible.idx" class="col-idx" style="width: 50px; text-align: center">搴忓彿</th>
+                <th v-if="columnVisible.title" class="col-title">浠诲姟鏍囬</th>
+                <th v-if="columnVisible.desc" class="col-desc">鎻忚堪</th>
+                <th v-if="columnVisible.priority" class="col-priority">浼樺厛绾?/th>
+                <th v-if="columnVisible.tag" class="col-tag">鏍囩</th>
+                <th v-if="columnVisible.startDate" class="col-date">璁″垝寮€濮?/th>
+                <th v-if="columnVisible.dueDate" class="col-date">鎴鏃ユ湡</th>
+                <th v-if="columnVisible.reminder" class="col-reminder">鎻愬墠鎻愰啋</th>
+                <th v-if="columnVisible.status" class="col-status">鐘舵€?/th>
+                <th v-if="columnVisible.remain" class="col-remain">鍓╀綑</th>
+                <th v-if="columnVisible.reminderStatus" class="col-reminder-status">鎻愰啋鐘舵€?/th>
+                <th v-if="columnVisible.remark" class="col-remark">澶囨敞</th>
+                <th class="col-actions">鎿嶄綔</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +206,7 @@
               >
                 <td class="col-check">
                   <div class="checkbox" :class="{ checked: selectedIds.includes(t.id) }" @click="toggleSelect(t.id)">
-                    [√]
+                    [鈭歖
                   </div>
                 </td>
                 <td v-if="columnVisible.idx" class="col-idx" style="text-align: center">
@@ -209,7 +223,7 @@
                       <Icon name="list" :size="14" />
                       {{ t.subtasks.filter((s) => s.completed).length }}/{{ t.subtasks.length }}
                     </span>
-                    <span v-if="t.auto" class="auto-badge">自动</span>
+                    <span v-if="t.auto" class="auto-badge">鑷姩</span>
                   </div>
                   <input
                     v-else
@@ -246,9 +260,9 @@
                     @blur="confirmInlineEdit(t)"
                     @keydown="onInlineKeydown($event, t)"
                   >
-                    <option value="high">高</option>
-                    <option value="medium">中</option>
-                    <option value="low">低</option>
+                    <option value="high">楂?/option>
+                    <option value="medium">涓?/option>
+                    <option value="low">浣?/option>
                   </select>
                 </td>
                 <td v-if="columnVisible.tag" class="col-tag" @dblclick="startInlineEdit(t, 'tag')">
@@ -323,17 +337,17 @@
                   />
                 </td>
                 <td class="col-actions">
-                  <button class="action-btn-sm" title="编辑" @click="openEditModal(t)">编辑</button>
-                  <button class="action-btn-sm" :title="isCompleted(t) ? '恢复' : '完成'" @click="handleToggle(t)">
-                    {{ isCompleted(t) ? '恢复' : '完成' }}
+                  <button class="action-btn-sm" title="缂栬緫" @click="openEditModal(t)">缂栬緫</button>
+                  <button class="action-btn-sm" :title="isCompleted(t) ? '鎭㈠' : '瀹屾垚'" @click="handleToggle(t)">
+                    {{ isCompleted(t) ? '鎭㈠' : '瀹屾垚' }}
                   </button>
                   <button
                     v-if="canManage && !t.auto"
                     class="action-btn-sm danger"
-                    title="删除"
+                    title="鍒犻櫎"
                     @click="handleDelete(t)"
                   >
-                    删除
+                    鍒犻櫎
                   </button>
                 </td>
               </tr>
@@ -343,7 +357,7 @@
       </div>
     </div>
 
-    <!-- 列表视图 -->
+    <!-- 鍒楄〃瑙嗗浘 -->
     <div v-if="currentView === 'list'" class="todo-list-view">
       <div
         v-for="(t, idx) in filteredTodos"
@@ -353,7 +367,7 @@
         :style="{ animationDelay: idx * 50 + 'ms' }"
       >
         <div class="list-check">
-          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[√]</div>
+          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[鈭歖</div>
         </div>
         <div class="list-body">
           <div class="list-title">{{ t.title }}</div>
@@ -365,11 +379,11 @@
             <span v-if="t.repeat && t.repeat !== 'none'" class="repeat-badge"><Icon name="refresh" :size="14" /></span>
             <span v-if="t.startDate" class="meta-date">
               <Icon name="calendar" :size="14" />
-              开始 {{ t.startDate }}
+              寮€濮?{{ t.startDate }}
             </span>
             <span v-if="t.dueDate" class="meta-date">
               <Icon name="bell" :size="14" />
-              截止 {{ t.dueDate }}
+              鎴 {{ t.dueDate }}
             </span>
             <span v-if="t.subtasks && t.subtasks.length > 0" class="meta-sub">
               <Icon name="list" :size="14" />
@@ -386,15 +400,15 @@
         <div class="list-right">
           <span v-if="t.dueDate" class="remain-badge" :class="getRemainClass(t)">{{ getRemainText(t) }}</span>
           <div class="list-actions">
-            <button class="action-btn-sm" @click="openEditModal(t)">编辑</button>
-            <button class="action-btn-sm" @click="handleToggle(t)">{{ isCompleted(t) ? '恢复' : '完成' }}</button>
-            <button v-if="!t.auto" class="action-btn-sm danger" @click="handleDelete(t)">删除</button>
+            <button class="action-btn-sm" @click="openEditModal(t)">缂栬緫</button>
+            <button class="action-btn-sm" @click="handleToggle(t)">{{ isCompleted(t) ? '鎭㈠' : '瀹屾垚' }}</button>
+            <button v-if="!t.auto" class="action-btn-sm danger" @click="handleDelete(t)">鍒犻櫎</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 卡片视图 -->
+    <!-- 鍗＄墖瑙嗗浘 -->
     <div v-if="currentView === 'card'" class="todo-card-view">
       <div
         v-for="(t, idx) in filteredTodos"
@@ -405,19 +419,19 @@
       >
         <div class="card-prio-bar" :class="'prio-' + (t.priority || 'medium')"></div>
         <div class="card-header">
-          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[√]</div>
+          <div class="checkbox" :class="{ checked: isCompleted(t) }" @click="handleToggle(t)">[鈭歖</div>
           <div class="card-title">{{ t.title }}</div>
-          <span v-if="t.auto" class="auto-badge">自动</span>
+          <span v-if="t.auto" class="auto-badge">鑷姩</span>
         </div>
         <div v-if="t.notes" class="card-desc">{{ t.notes }}</div>
         <div v-if="t.subtasks && t.subtasks.length > 0" class="card-subtasks">
           <div class="subtask-header">
             <Icon name="list" :size="14" />
-            子任务 {{ t.subtasks.filter((s) => s.completed).length }}/{{ t.subtasks.length }}
+            瀛愪换鍔?{{ t.subtasks.filter((s) => s.completed).length }}/{{ t.subtasks.length }}
           </div>
           <div v-for="sub in t.subtasks" :key="sub.id" class="subtask-item" :class="{ completed: sub.completed }">
             <span class="subtask-check" @click="todoStore.toggleSubtask(t.id, sub.id)">
-              {{ sub.completed ? '[√]' : '[□]' }}
+              {{ sub.completed ? '[鈭歖' : '[鈻' }}
             </span>
             {{ sub.title }}
           </div>
@@ -430,11 +444,11 @@
         <div class="card-info">
           <div v-if="t.startDate" class="info-item">
             <Icon name="calendar" :size="14" />
-            开始 {{ t.startDate }}
+            寮€濮?{{ t.startDate }}
           </div>
           <div v-if="t.dueDate" class="info-item">
             <Icon name="bell" :size="14" />
-            截止 {{ t.dueDate }}
+            鎴 {{ t.dueDate }}
           </div>
           <div v-if="t.reminder && t.reminder !== '不提醒'" class="info-item">[提醒] {{ t.reminder }}</div>
         </div>
@@ -448,29 +462,29 @@
           <span class="status-badge" :class="'s-' + getStatusClass(t)">{{ getStatusLabel(t) }}</span>
           <span v-if="t.dueDate" class="remain-badge" :class="getRemainClass(t)">{{ getRemainText(t) }}</span>
           <div class="card-actions">
-            <button class="action-btn-sm" @click="openEditModal(t)">编辑</button>
-            <button class="action-btn-sm" @click="handleToggle(t)">{{ isCompleted(t) ? '恢复' : '完成' }}</button>
-            <button v-if="!t.auto" class="action-btn-sm danger" @click="handleDelete(t)">删除</button>
+            <button class="action-btn-sm" @click="openEditModal(t)">缂栬緫</button>
+            <button class="action-btn-sm" @click="handleToggle(t)">{{ isCompleted(t) ? '鎭㈠' : '瀹屾垚' }}</button>
+            <button v-if="!t.auto" class="action-btn-sm danger" @click="handleDelete(t)">鍒犻櫎</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 日历视图 -->
+    <!-- 鏃ュ巻瑙嗗浘 -->
     <div v-if="currentView === 'calendar'" class="todo-calendar-view">
       <div class="todo-calendar-header">
-        <div class="todo-calendar-title">{{ calYear }}年 {{ calMonthNames[calMonth] }}</div>
+        <div class="todo-calendar-title">{{ calYear }}骞?{{ calMonthNames[calMonth] }}</div>
         <div class="todo-calendar-nav">
           <button class="btn btn-ghost btn-sm" @click="calPrev">
             <Icon name="chevronLeft" :size="14" />
-            上月
+            涓婃湀
           </button>
           <button class="btn btn-ghost btn-sm" @click="calToday">
             <Icon name="checkCircle" :size="14" />
-            今天
+            浠婂ぉ
           </button>
           <button class="btn btn-ghost btn-sm" @click="calNext">
-            下月
+            涓嬫湀
             <Icon name="chevronRight" :size="14" />
           </button>
         </div>
@@ -498,27 +512,27 @@
             >
               {{ item.title }}
             </div>
-            <div v-if="day.items.length > 3" class="todo-calendar-more">+{{ day.items.length - 3 }} 更多</div>
+            <div v-if="day.items.length > 3" class="todo-calendar-more">+{{ day.items.length - 3 }} 鏇村</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 周视图 -->
+    <!-- 鍛ㄨ鍥?-->
     <div v-if="currentView === 'week'" class="todo-week-view">
       <div class="todo-week-header">
         <div class="todo-week-title">{{ weekTitle }}</div>
         <div class="todo-week-nav">
           <button class="btn btn-ghost btn-sm" @click="weekPrev">
             <Icon name="chevronLeft" :size="14" />
-            上周
+            涓婂懆
           </button>
           <button class="btn btn-ghost btn-sm" @click="weekToday">
             <Icon name="checkCircle" :size="14" />
-            本周
+            鏈懆
           </button>
           <button class="btn btn-ghost btn-sm" @click="weekNext">
-            下周
+            涓嬪懆
             <Icon name="chevronRight" :size="14" />
           </button>
         </div>
@@ -550,60 +564,60 @@
       </div>
     </div>
 
-    <!-- 空状态 -->
+    <!-- 绌虹姸鎬?-->
     <div v-if="filteredTodos.length === 0" class="empty-state">
       <div class="empty-icon-circle"><Icon name="list" :size="24" /></div>
       <div class="empty-text">暂无匹配的待办事项</div>
       <div class="empty-sub">尝试调整筛选条件或添加新任务</div>
     </div>
 
-    <!-- 新建/编辑弹窗 -->
+    <!-- 鏂板缓/缂栬緫寮圭獥 -->
     <Teleport to="body">
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3>{{ editingTodo ? '编辑任务' : '新建任务' }}</h3>
+            <h3>{{ editingTodo ? '缂栬緫浠诲姟' : '鏂板缓浠诲姟' }}</h3>
             <button class="modal-close" @click="closeModal"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
             <div class="form-grid">
               <div class="form-group full-width">
-                <label>任务标题 *</label>
-                <input v-model="form.title" type="text" class="form-input" placeholder="输入任务标题..." />
+                <label>浠诲姟鏍囬 *</label>
+                <input v-model="form.title" type="text" class="form-input" placeholder="杈撳叆浠诲姟鏍囬..." />
               </div>
               <div class="form-group full-width">
-                <label>任务描述</label>
-                <textarea v-model="form.notes" class="form-textarea" rows="3" placeholder="输入描述..."></textarea>
+                <label>浠诲姟鎻忚堪</label>
+                <textarea v-model="form.notes" class="form-textarea" rows="3" placeholder="杈撳叆鎻忚堪..."></textarea>
               </div>
               <div class="form-group">
-                <label>优先级</label>
+                <label>浼樺厛绾?/label>
                 <select v-model="form.priority" class="form-select">
-                  <option value="high">高</option>
-                  <option value="medium">中</option>
-                  <option value="low">低</option>
+                  <option value="high">楂?/option>
+                  <option value="medium">涓?/option>
+                  <option value="low">浣?/option>
                 </select>
               </div>
               <div class="form-group">
-                <label>状态</label>
+                <label>鐘舵€?/label>
                 <select v-model="form.status" class="form-select">
-                  <option value="pending">进行中</option>
-                  <option value="completed">已完成</option>
+                  <option value="pending">杩涜涓?/option>
+                  <option value="completed">宸插畬鎴?/option>
                 </select>
               </div>
               <div class="form-group">
-                <label>计划开始日期</label>
+                <label>璁″垝寮€濮嬫棩鏈?/label>
                 <input v-model="form.startDate" type="date" class="form-input" />
               </div>
               <div class="form-group">
-                <label>截止日期</label>
+                <label>鎴鏃ユ湡</label>
                 <input v-model="form.dueDate" type="date" class="form-input" />
               </div>
               <div class="form-group">
-                <label>自定义标签</label>
-                <input v-model="form.tag" type="text" class="form-input" placeholder="如：工作、学习" />
+                <label>鑷畾涔夋爣绛?/label>
+                <input v-model="form.tag" type="text" class="form-input" placeholder="例如：工作、学习" />
               </div>
               <div class="form-group">
-                <label>提前提醒</label>
+                <label>鎻愬墠鎻愰啋</label>
                 <select v-model="form.reminder" class="form-select">
                   <option value="不提醒">不提醒</option>
                   <option value="提前1天">提前1天</option>
@@ -613,29 +627,29 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>重复</label>
+                <label>閲嶅</label>
                 <select v-model="form.repeat" class="form-select">
-                  <option value="none">不重复</option>
-                  <option value="daily">每天</option>
-                  <option value="weekly">每周</option>
-                  <option value="monthly">每月</option>
-                  <option value="yearly">每年</option>
+                  <option value="none">涓嶉噸澶?/option>
+                  <option value="daily">姣忓ぉ</option>
+                  <option value="weekly">姣忓懆</option>
+                  <option value="monthly">姣忔湀</option>
+                  <option value="yearly">姣忓勾</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>完成度 (%)</label>
+                <label>瀹屾垚搴?(%)</label>
                 <input v-model.number="form.progress" type="number" min="0" max="100" class="form-input" />
               </div>
               <div class="form-group">
-                <label>备注</label>
-                <input v-model="form.remark" type="text" class="form-input" placeholder="输入备注..." />
+                <label>澶囨敞</label>
+                <input v-model="form.remark" type="text" class="form-input" placeholder="杈撳叆澶囨敞..." />
               </div>
               <div class="form-group full-width">
-                <label>子任务</label>
+                <label>瀛愪换鍔?/label>
                 <div class="subtask-editor">
                   <div v-for="(sub, idx) in form.subtasks" :key="idx" class="subtask-edit-row">
                     <span class="subtask-check-edit" @click="sub.completed = !sub.completed">
-                      {{ sub.completed ? '[√]' : '[□]' }}
+                      {{ sub.completed ? '[鈭歖' : '[鈻' }}
                     </span>
                     <input v-model="sub.title" type="text" class="form-input subtask-input" />
                     <button class="action-btn danger" @click="form.subtasks.splice(idx, 1)">
@@ -647,24 +661,24 @@
                       v-model="newSubtaskTitle"
                       type="text"
                       class="form-input"
-                      placeholder="添加子任务..."
+                      placeholder="娣诲姞瀛愪换鍔?.."
                       @keyup.enter="addSubtask"
                     />
-                    <button class="btn btn-ghost btn-sm" @click="addSubtask">添加</button>
+                    <button class="btn btn-ghost btn-sm" @click="addSubtask">娣诲姞</button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="closeModal">取消</button>
-            <button class="btn btn-primary" @click="saveTodo">{{ editingTodo ? '保存修改' : '创建任务' }}</button>
+            <button class="btn btn-ghost" @click="closeModal">鍙栨秷</button>
+            <button class="btn btn-primary" @click="saveTodo">{{ editingTodo ? '淇濆瓨淇敼' : '鍒涘缓浠诲姟' }}</button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- 确认弹窗 -->
+    <!-- 纭寮圭獥 -->
     <Teleport to="body">
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-dialog modal-sm">
@@ -673,8 +687,8 @@
             <div style="font-size: 15px; color: var(--color-text-secondary)">{{ confirmMessage }}</div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showConfirm = false">取消</button>
-            <button class="btn btn-danger" @click="confirmAction">确认删除</button>
+            <button class="btn btn-ghost" @click="showConfirm = false">鍙栨秷</button>
+            <button class="btn btn-danger" @click="confirmAction">纭鍒犻櫎</button>
           </div>
         </div>
       </div>
@@ -695,7 +709,7 @@ const sessionStore = useSessionStore()
 
 const canManage = !['查看者'].includes(sessionStore.currentRole)
 
-const currentView = ref('table')
+const currentView = ref('list')
 const searchText = ref('')
 const filterStatus = ref('all')
 const filterPriority = ref('all')
@@ -717,27 +731,23 @@ const colDropdownStyle = ref({})
 const columnDefs = [
   { key: 'check', label: '', hideable: false },
   { key: 'idx', label: '#' },
-  { key: 'title', label: '任务标题' },
-  { key: 'desc', label: '描述' },
+  { key: 'title', label: '浠诲姟鏍囬' },
+  { key: 'desc', label: '鎻忚堪' },
   { key: 'priority', label: '优先级' },
-  { key: 'tag', label: '标签' },
+  { key: 'tag', label: '鏍囩' },
   { key: 'startDate', label: '计划开始' },
-  { key: 'dueDate', label: '截止日期' },
-  { key: 'reminder', label: '提前提醒' },
+  { key: 'dueDate', label: '鎴鏃ユ湡' },
+  { key: 'reminder', label: '鎻愬墠鎻愰啋' },
   { key: 'status', label: '状态' },
-  { key: 'remain', label: '剩余' },
+  { key: 'remain', label: '鍓╀綑' },
   { key: 'reminderStatus', label: '提醒状态' },
-  { key: 'remark', label: '备注' },
-  { key: 'actions', label: '操作', hideable: false }
+  { key: 'remark', label: '澶囨敞' },
+  { key: 'actions', label: '鎿嶄綔', hideable: false }
 ]
 
 const columnVisible = ref(
   Object.fromEntries(columnDefs.filter((c) => c.key !== 'check' && c.key !== 'actions').map((c) => [c.key, true]))
 )
-const visibleColCount = computed(
-  () => columnDefs.filter((c) => c.key !== 'check' && c.key !== 'actions' && columnVisible.value[c.key]).length
-)
-
 function toggleColumnConfig(e) {
   showColumnConfig.value = !showColumnConfig.value
   if (showColumnConfig.value) {
@@ -747,15 +757,15 @@ function toggleColumnConfig(e) {
 }
 
 const viewModes = [
-  { key: 'table', icon: 'chart', label: '表格' },
-  { key: 'list', icon: 'list', label: '列表' },
-  { key: 'card', icon: 'card', label: '卡片' },
-  { key: 'calendar', icon: 'calendar', label: '日历' },
+  { key: 'table', icon: 'chart', label: '琛ㄦ牸' },
+  { key: 'list', icon: 'list', label: '鍒楄〃' },
+  { key: 'card', icon: 'card', label: '鍗＄墖' },
+  { key: 'calendar', icon: 'calendar', label: '鏃ュ巻' },
   { key: 'week', icon: 'calendar', label: '周视图' }
 ]
 
 const calMonthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
-const weekDayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+const weekDayNames = ['鍛ㄤ竴', '鍛ㄤ簩', '鍛ㄤ笁', '鍛ㄥ洓', '鍛ㄤ簲', '鍛ㄥ叚', '鍛ㄦ棩']
 
 const now = new Date()
 const calYear = ref(now.getFullYear())
@@ -882,11 +892,11 @@ const weekTitle = computed(() => {
   we.setDate(we.getDate() + 6)
   return (
     ws.getFullYear() +
-    '年 ' +
+    '年' +
     (ws.getMonth() + 1) +
     '月' +
     ws.getDate() +
-    '日 — ' +
+    '日 - ' +
     (we.getMonth() + 1) +
     '月' +
     we.getDate() +
@@ -940,6 +950,23 @@ const defaultForm = () => ({
 
 const form = reactive(defaultForm())
 
+const sourceGroupLabels = {
+  workflow: '审批',
+  warehouse: '仓储',
+  sales: '业务',
+  finance: '财务',
+  notification: '消息',
+  custom: '自定义',
+  auto: '自动'
+}
+
+const quickStats = computed(() => [
+  { label: '待处理', value: todoStore.stats.pending, tone: 'tone-warning' },
+  { label: '逾期', value: todoStore.stats.overdue, tone: 'tone-danger' },
+  { label: '已完成', value: todoStore.stats.completed, tone: 'tone-success' },
+  { label: '自动任务', value: todoStore.stats.auto, tone: 'tone-info' },
+])
+
 const filteredTodos = computed(() => {
   const now = new Date()
   const today = now.toISOString().split('T')[0]
@@ -964,7 +991,13 @@ const filteredTodos = computed(() => {
   })
 
   const prioOrder = { high: 0, medium: 1, low: 2 }
+  const groupOrder = { workflow: 0, sales: 1, finance: 2, warehouse: 3, notification: 4, custom: 5, auto: 6 }
   list.sort((a, b) => {
+    const ag = groupOrder[a.sourceGroup] ?? 9
+    const bg = groupOrder[b.sourceGroup] ?? 9
+    if (ag < bg) return -1
+    if (ag > bg) return 1
+
     let va, vb
     switch (sortField.value) {
       case 'priority':
@@ -1005,7 +1038,7 @@ const isAllSelected = computed(() => {
   return filteredTodos.value.length > 0 && filteredTodos.value.every((t) => selectedIds.value.includes(t.id))
 })
 
-/* 完成率进度环 */
+/* 瀹屾垚鐜囪繘搴︾幆 */
 const CIRCUMFERENCE = 2 * Math.PI * 22
 const completionPercent = computed(() => {
   const total = todoStore.stats.total
@@ -1067,8 +1100,8 @@ function getRemainText(t) {
   const d = getRemainDays(t)
   if (!t.dueDate) return '-'
   if (d < 0) return '逾期' + Math.abs(d) + '天'
-  if (d === 0) return '今天到期'
-  return d + '天后'
+  if (d === 0) return '浠婂ぉ鍒版湡'
+  return d + '澶╁悗'
 }
 
 function getRemainClass(t) {
@@ -1118,7 +1151,7 @@ function handleToggle(t) {
 }
 
 function handleDelete(t) {
-  confirmMessage.value = `确定要删除待办事项"${t.title}"吗？`
+  confirmMessage.value = `确定要删除待办事项“${t.title}”吗？`
   confirmCallback.value = () => todoStore.deleteTodo(t.id)
   showConfirm.value = true
 }
@@ -1151,26 +1184,26 @@ function confirmClearCompleted() {
 function handleExport() {
   try {
     const data = filteredTodos.value.map((t) => ({
-      标题: t.title,
-      描述: t.notes,
-      优先级: prioLabel(t.priority),
-      状态: getStatusLabel(t),
-      标签: t.tag || '',
-      截止日期: t.dueDate || '',
-      完成度: getProgress(t) + '%',
-      备注: t.remark || ''
+      title: t.title,
+      notes: t.notes,
+      priority: prioLabel(t.priority),
+      status: getStatusLabel(t),
+      tag: t.tag || '',
+      dueDate: t.dueDate || '',
+      progress: getProgress(t) + '%',
+      remark: t.remark || ''
     }))
     const json = JSON.stringify(data, null, 2)
     const blob = new Blob([json], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `待办事项_${todoStore.today}.json`
+    a.download = `寰呭姙浜嬮」_${todoStore.today}.json`
     a.click()
     URL.revokeObjectURL(url)
   } catch (e) {
-    console.error('导出失败:', e)
-    alert('导出失败: ' + e.message)
+    console.error('瀵煎嚭澶辫触:', e)
+    alert('瀵煎嚭澶辫触: ' + e.message)
   }
 }
 
@@ -1365,7 +1398,75 @@ onUnmounted(() => {
   min-width: 100px;
 }
 
-/* 增强统计栏 */
+/* 妗岄潰蹇€熺粺璁?*/
+.todo-quick-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.todo-quick-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.todo-quick-stat-value {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.todo-quick-stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+}
+.todo-quick-stat.tone-warning .todo-quick-stat-value {
+  color: var(--color-warning);
+}
+.todo-quick-stat.tone-danger .todo-quick-stat-value {
+  color: var(--color-danger);
+}
+.todo-quick-stat.tone-success .todo-quick-stat-value {
+  color: var(--color-success);
+}
+.todo-quick-stat.tone-info .todo-quick-stat-value {
+  color: var(--color-info);
+}
+
+/* 澧炲己缁熻鏍?*/
+.todo-source-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.source-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+.source-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.source-legend-dot.group-workflow { background: var(--color-primary); }
+.source-legend-dot.group-sales { background: var(--color-success); }
+.source-legend-dot.group-finance { background: var(--color-warning); }
+.source-legend-dot.group-warehouse { background: var(--color-info); }
+.source-legend-dot.group-notification { background: var(--color-danger); }
+.source-legend-dot.group-custom { background: var(--color-text-secondary); }
+.source-legend-dot.group-auto { background: var(--color-text-tertiary); }
+
 .todo-stats-bar {
   display: flex;
   gap: var(--space-5);
@@ -1548,7 +1649,7 @@ onUnmounted(() => {
   word-wrap: break-word;
 }
 
-/* 表格行入场动画 */
+/* 琛ㄦ牸琛屽叆鍦哄姩鐢?*/
 @keyframes rowSlideIn {
   from {
     opacity: 0;
@@ -1564,7 +1665,7 @@ onUnmounted(() => {
   animation: rowSlideIn 0.3s ease-out both;
 }
 
-/* 优先级指示灯 */
+/* 浼樺厛绾ф寚绀虹伅 */
 .prio-indicator {
   display: inline-block;
   width: 6px;
@@ -1865,7 +1966,7 @@ onUnmounted(() => {
   color: var(--color-text-tertiary);
 }
 
-/* 列表视图 */
+/* 鍒楄〃瑙嗗浘 */
 .todo-list-view {
   display: flex;
   flex-direction: column;
@@ -1961,7 +2062,7 @@ onUnmounted(() => {
   gap: var(--space-1);
 }
 
-/* 列表进度条 */
+/* 鍒楄〃杩涘害鏉?*/
 .list-progress {
   display: flex;
   align-items: center;
@@ -2005,7 +2106,7 @@ onUnmounted(() => {
   min-width: 28px;
 }
 
-/* 卡片视图 */
+/* 鍗＄墖瑙嗗浘 */
 .todo-card-view {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -2129,7 +2230,7 @@ onUnmounted(() => {
   gap: var(--space-1);
 }
 
-/* 日历视图 */
+/* 鏃ュ巻瑙嗗浘 */
 .todo-calendar-view {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -2253,7 +2354,7 @@ onUnmounted(() => {
   padding: var(--space-1) var(--space-1);
 }
 
-/* 周视图 */
+/* 鍛ㄨ鍥?*/
 .todo-week-view {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -2314,7 +2415,7 @@ onUnmounted(() => {
   font-size: var(--font-size-sm);
 }
 
-/* 周视图待办计数 badge */
+/* 鍛ㄨ鍥惧緟鍔炶鏁?badge */
 .week-day-count-badge {
   min-width: 16px;
   height: 16px;
@@ -2355,7 +2456,7 @@ onUnmounted(() => {
   transform: translateX(2px);
 }
 
-/* 周视图优先级小圆点 */
+/* 鍛ㄨ鍥句紭鍏堢骇灏忓渾鐐?*/
 .week-item-dot {
   width: 5px;
   height: 5px;
@@ -2407,7 +2508,7 @@ onUnmounted(() => {
   padding: var(--space-4) 0;
 }
 
-/* 空状态 */
+/* 绌虹姸鎬?*/
 .empty-state {
   text-align: center;
   padding: var(--space-16) 0;
@@ -2433,7 +2534,7 @@ onUnmounted(() => {
   font-size: var(--font-size-sm);
 }
 
-/* 弹窗 */
+/* 寮圭獥 */
 .modal-overlay {
   animation: fade-in 200ms ease;
 }
@@ -2495,7 +2596,7 @@ onUnmounted(() => {
   opacity: 0.9;
 }
 
-/* 确认弹窗图标 */
+/* 纭寮圭獥鍥炬爣 */
 .confirm-icon {
   width: 56px;
   height: 56px;

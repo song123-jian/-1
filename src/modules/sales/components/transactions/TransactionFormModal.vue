@@ -12,9 +12,12 @@
           v-model:smart-rec-input="smartRecInput"
           :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
+          :template-name="smartRecTemplateName"
+          :template-content="smartRecTemplateContent"
           @run-smart-recognize="runSmartRecognize"
           @apply-smart-recognize="applySmartRecognizeToForm"
           @handle-smart-file-upload="handleSmartFileUpload"
+          @clear="smartRecInput = ''; smartRecResult = null"
         />
         <div class="form-group">
           <label class="form-label">客户</label>
@@ -115,15 +118,41 @@ const {
   smartRecInput,
   smartRecResult,
   smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
   runSmartRecognize,
   handleSmartFileUpload,
   resetSmartRec
 } = useSmartRecognize(formData.value)
 
+function normalizeCustomerText(value) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, '')
+    .toLowerCase()
+}
+
+function resolveCustomerId(name) {
+  const target = normalizeCustomerText(name)
+  if (!target) return ''
+  const customer = props.customers.find((c) => {
+    return [c.id, c.name, c.fullName, c.companyName].some((field) => normalizeCustomerText(field).includes(target))
+  })
+  return customer ? customer.id : ''
+}
+
 function applySmartRecognizeToForm() {
   if (!smartRecResult.value || smartRecResult.value.items.length === 0) return
   smartRecResult.value.items.forEach((item) => {
-    if (item.value && Object.hasOwn(formData.value, item.key)) {
+    if (!item.value) return
+    if (item.key === 'customerName') {
+      const customerId = resolveCustomerId(item.value)
+      if (customerId) {
+        formData.value.customerId = customerId
+      }
+      return
+    }
+    if (Object.hasOwn(formData.value, item.key)) {
       formData.value[item.key] = item.value
     }
   })
@@ -151,6 +180,7 @@ watch(
           notes: ''
         }
         resetSmartRec()
+        showSmartRec.value = true
         if (hasDraft()) {
           restoreDraft()
         }

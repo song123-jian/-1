@@ -137,7 +137,6 @@ async function handleClear() {
     'gj_erp_receivables_initialized',
     'gj_erp_workflow_initialized',
     'gj_erp_notification_initialized',
-    'gj_erp_mobileDesign_initialized',
     'gj_erp_company_initialized'
   ]
 

@@ -212,10 +212,10 @@
                 <div v-for="item in field.items" :key="item.key" class="status-item">
                   <span class="status-label">{{ item.label }}</span>
                   <span
+                    v-safe-html="getStatusValue(item.key) + (item.suffix || '')"
                     class="status-value"
                     :class="{ 'color-dot': item.format === 'colorDot' }"
                     :style="item.format === 'colorDot' ? { background: getStatusValue(item.key) } : {}"
-                    v-safe-html="getStatusValue(item.key) + (item.suffix || '')"
                   ></span>
                 </div>
               </div>

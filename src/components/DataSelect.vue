@@ -172,7 +172,9 @@ export default {
     function saveFreqMap(map) {
       try {
         localStorage.setItem(freqKey.value, JSON.stringify(map))
-      } catch (e) { console.warn('[DataSelect] saveFreqMap失败:', e.message) }
+      } catch (e) {
+        console.warn('[DataSelect] saveFreqMap失败:', e.message)
+      }
     }
     function recordUsage(value) {
       const map = getFreqMap()

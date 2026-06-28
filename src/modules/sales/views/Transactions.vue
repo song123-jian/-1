@@ -423,11 +423,7 @@
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" @click="showDetail = false">关闭</button>
-          <button
-            v-if="detailTxn && detailTxn.type === 'manual'"
-            class="btn btn-outline"
-            @click="openForm(detailTxn); showDetail = false"
-          >
+          <button v-if="detailTxn && detailTxn.type === 'manual'" class="btn btn-outline" @click="openForm(detailTxn); showDetail = false">
             编辑
           </button>
           <button

@@ -1,93 +1,114 @@
 import { ref } from 'vue'
+import { extractSmartFileText } from './useSmartFileText'
 
-/**
- * 智能识别基础 composable - 提供通用的识别面板状态和操作逻辑
- * @param {Object} form - 响应式表单对象
- * @param {Function} parseFn - 解析函数，接收文本，返回 { items: Array, identifiedCount: Number, lowConfCount: Number, tableRows?: Array, tableHeaders?: Array }
- * @param {String} placeholder - 输入框占位文本
- */
-export function useSmartRecognizeBase(form, parseFn, placeholder = '粘贴文本，AI将自动识别并提取关键字段...') {
+export function useSmartRecognizeBase(
+  form,
+  parseFn,
+  placeholder = '粘贴文本，AI将自动识别并提取关键字段...',
+  template = null
+) {
   const showSmartRec = ref(false)
   const smartRecInput = ref('')
   const smartRecResult = ref(null)
+  const smartRecError = ref('')
 
   function runSmartRecognize() {
     const text = smartRecInput.value.trim()
+    smartRecError.value = ''
     if (!text) {
       smartRecResult.value = null
       return
     }
-    const result = parseFn(text)
-    smartRecResult.value = result
+    smartRecResult.value = parseFn(text)
   }
 
   function applySmartRecognize() {
-    if (!smartRecResult.value) return
-    // 填入表头字段
-    if (smartRecResult.value.items && smartRecResult.value.items.length > 0) {
-      smartRecResult.value.items.forEach((item) => {
-        if (item.value && Object.hasOwn(form, item.key)) {
+    const result = smartRecResult.value
+    if (!result) return
+    if (Array.isArray(result.items) && result.items.length > 0) {
+      result.items.forEach((item) => {
+        if (!item || item.value === undefined || item.value === null || item.value === '') return
+        if (Object.hasOwn(form, item.key)) {
           form[item.key] = item.value
+          return
+        }
+        if (item.key.includes('.')) {
+          const parts = item.key.split('.')
+          let target = form
+          for (let i = 0; i < parts.length - 1; i++) {
+            if (!target[parts[i]]) target[parts[i]] = {}
+            target = target[parts[i]]
+          }
+          target[parts[parts.length - 1]] = item.value
         }
       })
     }
   }
 
-  function handleSmartFileUpload(event) {
+  async function handleSmartFileUpload(event) {
     const file = event.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target.result
+    try {
+      smartRecError.value = ''
+      const text = await extractSmartFileText(file)
       if (typeof text === 'string' && text.trim()) {
         smartRecInput.value = text.trim()
         runSmartRecognize()
+      } else {
+        smartRecError.value = '无法从该文件中提取识别文本，请使用模板导出的标准文本格式。'
       }
+    } catch (error) {
+      console.error('[useSmartRecognizeBase] file parse failed:', error)
+      smartRecError.value = '文件解析失败，请检查文件格式后重新上传。'
+    } finally {
+      event.target.value = ''
     }
-    reader.readAsText(file)
-    event.target.value = ''
   }
 
   function resetSmartRec() {
     showSmartRec.value = false
     smartRecInput.value = ''
     smartRecResult.value = null
+    smartRecError.value = ''
+  }
+
+  function clearSmartRec() {
+    smartRecInput.value = ''
+    smartRecResult.value = null
+    smartRecError.value = ''
   }
 
   return {
     showSmartRec,
     smartRecInput,
     smartRecResult,
+    smartRecError,
     smartRecPlaceholder: placeholder,
+    smartRecTemplateName: template?.name || '',
+    smartRecTemplateContent: template?.content || '',
     runSmartRecognize,
     applySmartRecognize,
     handleSmartFileUpload,
+    clearSmartRec,
     resetSmartRec
   }
 }
 
-/**
- * 创建置信度项的辅助函数
- */
 export function makeItem(key, label, value, confidence) {
   const confLevel = confidence >= 80 ? 'high' : confidence >= 50 ? 'medium' : 'low'
-  const confLabel = confidence >= 80 ? '可信' : confidence >= 50 ? '待确认' : '低可信'
+  const confLabel = confidence >= 80 ? '高' : confidence >= 50 ? '中' : '低'
   return { key, label, value, confidence, confLevel, confLabel }
 }
 
-/**
- * 解析粘贴的表格文本（支持Tab分隔和常见分隔符）
- * @param {String} text - 粘贴的文本
- * @param {Array} columnDefs - 列定义 [{key, label, type:'string'|'number'}]
- * @returns {Array} 解析后的行数据数组
- */
 export function parseTableText(text, columnDefs) {
   if (!text || !columnDefs || columnDefs.length === 0) return []
 
-  const lines = text.split(/\r?\n/).filter((line) => line.trim())
+  const lines = String(text)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
   if (lines.length === 0) return []
 
-  // 检测分隔符：Tab > 逗号 > 竖线 > 多空格
   let separator = '\t'
   const firstLine = lines[0]
   if (!firstLine.includes('\t')) {
@@ -100,18 +121,10 @@ export function parseTableText(text, columnDefs) {
   const colCount = columnDefs.length
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-
-    let cells
-    if (separator instanceof RegExp) {
-      cells = line.split(separator)
-    } else {
-      cells = line.split(separator)
-    }
+    const line = lines[i]
+    let cells = separator instanceof RegExp ? line.split(separator) : line.split(separator)
     cells = cells.map((c) => c.trim())
 
-    // 跳过表头行（如果第一行看起来像表头）
     if (i === 0 && cells.length >= 2) {
       const headerMatch = columnDefs.some((def, idx) => {
         const cell = cells[idx] || ''
@@ -120,15 +133,18 @@ export function parseTableText(text, columnDefs) {
       if (headerMatch && cells.length >= colCount - 1) continue
     }
 
-    // 跳过列数严重不足的行
     if (cells.length < Math.min(2, colCount - 2)) continue
 
     const row = {}
     columnDefs.forEach((def, idx) => {
       let val = cells[idx] || ''
       if (def.type === 'number') {
-        const num = parseFloat(val.replace(/,/g, '').replace(/[¥￥]/g, ''))
-        val = isNaN(num) ? null : num
+        const num = parseFloat(
+          String(val)
+            .replace(/,/g, '')
+            .replace(/[^\d.-]/g, '')
+        )
+        val = Number.isNaN(num) ? null : num
       }
       row[def.key] = val
     })
@@ -138,22 +154,19 @@ export function parseTableText(text, columnDefs) {
   return rows
 }
 
-/**
- * 通用正则提取工具
- */
 export const CommonPatterns = {
   phone: /1[3-9]\d{9}/,
   email: /[\w.-]+@[\w.-]+\.\w+/,
-  company: /[\u4e00-\u9fa5]{2,20}(?:公司|集团|有限|股份|实业|科技|贸易|制造|机械|电子|智能|精密)/,
+  company: /[\u4e00-\u9fa5]{2,20}(?:公司|集团|有限责任公司|股份|实业|科技|贸易|机械|制造|服务)/,
   contactName: [
-    /(?:联系人|姓名|联系|负责人)[:\s：]*([\u4e00-\u9fa5]{2,4})/,
-    /([\u4e00-\u9fa5]{2,4})(?:先生|女士|经理|总|总监|主管)/
+    /(?:联系人|姓名|业务员)[:\s：]*([\u4e00-\u9fa5]{2,4})/,
+    /([\u4e00-\u9fa5]{2,4})(?:先生|女士|经理|总监|老师)/
   ],
-  position: /(?:职位|职务|头衔)[:\s：]*([\u4e00-\u9fa5]{2,8})/,
+  position: /(?:职位|职务|岗位)[:\s：]*([\u4e00-\u9fa5]{2,8})/,
   address: /(?:地址|住址|Addr)[:\s：]*(.{5,50})/,
-  bankName: /(?:开户银行|开户行|银行)[:\s：]*([\u4e00-\u9fa5]{2,20}(?:银行|支行|分行))/,
-  bankAccount: /(?:银行账号|账号|帐号)[:\s：]*(\d{10,25})/,
+  bankName: /(?:银行名称|开户银行|银行)[:\s：]*([\u4e00-\u9fa5]{2,20}(?:支行|分行|银行))/,
+  bankAccount: /(?:开户账号|账号|卡号)[:\s：]*(\d{10,25})/,
   date: /(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?)/,
-  amount: /(?:金额|合计|总计|总额|总价|款额)[:\s：]*[¥￥]?\s*(\d[\d,]*\.?\d*)/,
-  money: /[¥￥]\s*(\d[\d,]*\.?\d*)/
+  amount: /(?:金额|合计|总计|总额|总价)[:\s：]*([0-9][\d,]*\.?\d*)/,
+  money: /([0-9][\d,]*\.?\d*)/
 }

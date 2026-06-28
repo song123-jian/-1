@@ -2032,10 +2032,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            class="btn btn-ghost"
-            @click="opLogs = []; persistOpLogs()"
-          >
+          <button class="btn btn-ghost" @click="opLogs = []; persistOpLogs()">
             清空日志
           </button>
           <button class="btn btn-ghost" @click="showOpLogModal = false">关闭</button>

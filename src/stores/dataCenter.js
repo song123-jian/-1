@@ -11,36 +11,50 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
-import eventBus, { DataEvents, DataModules } from '@/utils/eventBus'
+import { ref, computed } from 'vue'
+import eventBus, { DataEvents } from '@/utils/eventBus'
 import dataCache from '@/utils/dataCache'
 import dataService, { DataResult } from '@/services/dataService'
 import versionControl from '@/utils/versionControl'
 import { SupabaseClient } from '@/lib/supabase.js'
-import { API } from '@/services/api.js'
+import { useSupabaseStore } from '@/stores/supabase.js'
+import { useCustomerStore } from '@/modules/customer/stores/customer'
+import { useQuotationStore } from '@/modules/sales/stores/quotation'
+import { useContractStore } from '@/modules/sales/stores/contract'
+import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
+import { useDeliveryStore } from '@/stores/delivery'
+import { useCollectionStore } from '@/modules/finance/stores/collection'
+import { useStatementStore } from '@/modules/finance/stores/statement'
+import { useSupplierStore } from '@/modules/purchase/stores/supplier'
+import { useWarehouseLocationStore } from '@/modules/warehouse/stores/warehouseLocation'
+import { useCostStore } from '@/modules/finance/stores/cost'
+import { useTodoStore } from '@/stores/todo'
+import { usePurchaseStore } from '@/modules/purchase/stores/purchase'
+import { useProductionStore } from '@/modules/production/stores/production'
+import { useTransactionStore } from '@/modules/sales/stores/transaction'
+import { useTransferStore } from '@/modules/warehouse/stores/transfer'
 
-/* 各模块Store的懒加载映射 */
+/* ???Store?????? */
 const STORE_IMPORTS = {
-  customer: () => import('@/modules/customer/stores/customer').then((m) => m.useCustomerStore()),
-  quotation: () => import('@/modules/sales/stores/quotation').then((m) => m.useQuotationStore()),
-  contract: () => import('@/modules/sales/stores/contract').then((m) => m.useContractStore()),
-  inventory: () => import('@/modules/warehouse/stores/inventory').then((m) => m.useInventoryStore()),
-  delivery: () => import('@/stores/delivery').then((m) => m.useDeliveryStore()),
-  collection: () => import('@/modules/finance/stores/collection').then((m) => m.useCollectionStore()),
-  statement: () => import('@/modules/finance/stores/statement').then((m) => m.useStatementStore()),
-  supplier: () => import('@/modules/purchase/stores/supplier').then((m) => m.useSupplierStore()),
-  warehouse: () => import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
-  warehouseLocation: () =>
-    import('@/modules/warehouse/stores/warehouseLocation').then((m) => m.useWarehouseLocationStore()),
-  cost: () => import('@/modules/finance/stores/cost').then((m) => m.useCostStore()),
-  todo: () => import('@/stores/todo').then((m) => m.useTodoStore()),
-  purchase: () => import('@/modules/purchase/stores/purchase').then((m) => m.usePurchaseStore()),
-  production: () => import('@/modules/production/stores/production').then((m) => m.useProductionStore()),
-  transaction: () => import('@/modules/sales/stores/transaction').then((m) => m.useTransactionStore()),
-  transfer: () => import('@/modules/warehouse/stores/transfer').then((m) => m.useTransferStore())
+  customer: () => Promise.resolve(useCustomerStore()),
+  quotation: () => Promise.resolve(useQuotationStore()),
+  contract: () => Promise.resolve(useContractStore()),
+  inventory: () => Promise.resolve(useInventoryStore()),
+  delivery: () => Promise.resolve(useDeliveryStore()),
+  collection: () => Promise.resolve(useCollectionStore()),
+  statement: () => Promise.resolve(useStatementStore()),
+  supplier: () => Promise.resolve(useSupplierStore()),
+  warehouse: () => Promise.resolve(useWarehouseLocationStore()),
+  warehouseLocation: () => Promise.resolve(useWarehouseLocationStore()),
+  cost: () => Promise.resolve(useCostStore()),
+  todo: () => Promise.resolve(useTodoStore()),
+  purchase: () => Promise.resolve(usePurchaseStore()),
+  production: () => Promise.resolve(useProductionStore()),
+  transaction: () => Promise.resolve(useTransactionStore()),
+  transfer: () => Promise.resolve(useTransferStore())
 }
 
-/* 模块数据键映射 */
+/* ??????? */
 const DATA_KEY_MAP = {
   customer: 'customers',
   quotation: 'quotations',
@@ -486,11 +500,15 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
         transfer: 'transferOrders'
       }
       const tableName = MODULE_TO_TABLE[module] || module
-      SupabaseClient.getClient().from(tableName).upsert(dataArray).then(({ error }) => {
-        if (error) console.warn(`[DataCenter] batchUpdate 同步失败:`, error.message)
-      }).catch((e) => {
-        console.warn(`[DataCenter] batchUpdate 同步异常:`, e.message)
-      })
+      SupabaseClient.getClient()
+        .from(tableName)
+        .upsert(dataArray)
+        .then(({ error }) => {
+          if (error) console.warn(`[DataCenter] batchUpdate 同步失败:`, error.message)
+        })
+        .catch((e) => {
+          console.warn(`[DataCenter] batchUpdate 同步异常:`, e.message)
+        })
     }
 
     return { success: true, count: dataArray.length }
@@ -703,7 +721,6 @@ export const useDataCenterStore = defineStore('dataCenter', () => {
 
     /* 连接Supabase后自动拉取数据并订阅实时变更 */
     try {
-      const { useSupabaseStore } = await import('@/stores/supabase.js')
       const sbStore = useSupabaseStore()
 
       if (sbStore.isConnected) {

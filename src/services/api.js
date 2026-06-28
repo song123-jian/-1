@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js'
 import { SupabaseClient } from '../lib/supabase.js'
 
 // 数据表名映射：本地资源名 [右] Supabase 表名
@@ -154,8 +155,7 @@ async function syncFromServer(resource) {
  */
 async function testConnection(url, anonKey) {
   try {
-    const { createClient: create } = await import('@supabase/supabase-js')
-    const testClient = create(url, anonKey)
+    const testClient = createClient(url, anonKey)
     const { data, error } = await testClient.from('customers').select('id').limit(1)
     if (error && error.code === '42P01') {
       // 表不存在但连接成功

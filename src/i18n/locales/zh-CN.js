@@ -112,7 +112,6 @@ export default {
     salesPermission: '销售权限配置',
     databaseConnection: '数据库连接',
     operationLog: '操作日志',
-    mobileDesign: '移动端设计',
     companyInfo: '公司信息',
     systemParams: '系统参数',
     themeManagement: '主题管理',
@@ -701,24 +700,6 @@ export default {
     statusValid: '有效',
     statusExpiring: '即将到期',
     statusExpired: '已过期'
-  },
-
-  mobileDesign: {
-    mobileDesign: '移动端设计',
-    layoutDesign: '布局设计',
-    componentLibrary: '组件库',
-    pageManagement: '页面管理',
-    preview: '预览',
-    publish: '发布',
-    draft: '草稿',
-    published: '已发布',
-    addPage: '新增页面',
-    editPage: '编辑页面',
-    navigationBar: '导航栏',
-    tabBar: '标签栏',
-    listPage: '列表页',
-    detailPage: '详情页',
-    formPage: '表单页'
   },
 
   database: {

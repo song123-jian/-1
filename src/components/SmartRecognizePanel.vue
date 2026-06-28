@@ -2,7 +2,7 @@
   <div class="smart-recognize-panel" :class="{ expanded: showSmartRec }">
     <div class="smart-recognize-header" @click="emit('update:showSmartRec', !showSmartRec)">
       <div class="sr-header-left">
-        <span class="sr-icon">[智能]</span>
+        <span class="sr-icon">AI</span>
         智能识别
         <span class="sr-badge sr-badge-success">AI</span>
       </div>
@@ -23,22 +23,29 @@
         <label class="btn btn-ghost btn-sm">
           <Icon name="file" :size="14" />
           上传文件
-          <input type="file" style="display: none" @change="emit('handleSmartFileUpload', $event)" />
+          <input type="file" :accept="accept" style="display: none" @change="emit('handleSmartFileUpload', $event)" />
         </label>
-        <button class="btn btn-ghost btn-sm" @click="emit('clear')">清空</button>
-        <button class="btn btn-primary btn-sm" @click="emit('runSmartRecognize')">
+        <button v-if="props.templateContent" class="btn btn-ghost btn-sm" type="button" @click="handleDownloadTemplate">
+          <Icon name="download" :size="14" />
+          下载模板
+        </button>
+        <button class="btn btn-ghost btn-sm" type="button" @click="emit('clear')">清空</button>
+        <button class="btn btn-primary btn-sm" type="button" @click="emit('runSmartRecognize')">
           <Icon name="search" :size="14" />
           开始识别
         </button>
       </div>
+      <div v-if="smartRecError" class="sr-error-tip">
+        <Icon name="alert" :size="14" />
+        {{ smartRecError }}
+      </div>
       <div v-if="smartRecResult" class="sr-result-panel">
-        <!-- 表头字段识别结果 -->
         <div v-if="smartRecResult.items && smartRecResult.items.length > 0">
           <div class="sr-result-header" :class="{ 'has-warnings': smartRecResult.lowConfCount > 0 }">
             <Icon name="checkCircle" :size="14" />
             已识别
             <strong>{{ smartRecResult.identifiedCount }}</strong>
-            个字段
+            项
             <span v-if="smartRecResult.lowConfCount > 0" class="sr-badge sr-badge-warning">
               {{ smartRecResult.lowConfCount }}项需确认
             </span>
@@ -54,7 +61,6 @@
             </div>
           </div>
         </div>
-        <!-- 表格行识别结果 -->
         <div v-if="smartRecResult.tableRows && smartRecResult.tableRows.length > 0" class="sr-table-section">
           <div class="sr-table-header">
             <Icon name="table" :size="14" />
@@ -95,7 +101,6 @@
             </table>
           </div>
         </div>
-        <!-- 无结果提示 -->
         <div
           v-if="
             (!smartRecResult.items || smartRecResult.items.length === 0) &&
@@ -105,7 +110,6 @@
         >
           未能识别出有效信息，请检查输入内容格式
         </div>
-        <!-- 操作按钮 -->
         <div
           v-if="
             (smartRecResult.items && smartRecResult.items.length > 0) ||
@@ -113,8 +117,8 @@
           "
           class="sr-result-actions"
         >
-          <button class="btn btn-ghost btn-sm" @click="emit('runSmartRecognize')">重新识别</button>
-          <button class="btn btn-primary btn-sm" @click="emit('applySmartRecognize')">
+          <button class="btn btn-ghost btn-sm" type="button" @click="emit('runSmartRecognize')">重新识别</button>
+          <button class="btn btn-primary btn-sm" type="button" @click="emit('applySmartRecognize')">
             <Icon name="checkCircle" :size="14" />
             确认填入
           </button>
@@ -127,14 +131,20 @@
 <script>
 export default { name: 'SmartRecognizePanel' }
 </script>
+
 <script setup>
 import Icon from '@/components/Icon.vue'
+import { downloadSmartTemplateFile } from '@/composables/useSmartRecognizeTemplate'
 
-defineProps({
+const props = defineProps({
   showSmartRec: { type: Boolean, default: false },
   smartRecInput: { type: String, default: '' },
   smartRecResult: { type: Object, default: null },
-  placeholder: { type: String, default: '粘贴文本，AI将自动识别并提取关键字段...' }
+  smartRecError: { type: String, default: '' },
+  placeholder: { type: String, default: '粘贴文本，AI将自动识别并提取关键字段...' },
+  accept: { type: String, default: '.txt,.csv,.tsv,.json,.xlsx,.xls,.md,.log' },
+  templateName: { type: String, default: '' },
+  templateContent: { type: String, default: '' }
 })
 
 const emit = defineEmits([
@@ -145,6 +155,11 @@ const emit = defineEmits([
   'handleSmartFileUpload',
   'clear'
 ])
+
+function handleDownloadTemplate() {
+  if (!props.templateContent) return
+  downloadSmartTemplateFile(props.templateName || 'smart-recognize-template.txt', props.templateContent)
+}
 </script>
 
 <style scoped>
@@ -267,6 +282,18 @@ const emit = defineEmits([
   font-size: var(--font-size-sm);
   color: var(--color-text-tertiary);
 }
+.sr-error-tip {
+  margin-top: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-subtle);
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .sr-result-actions {
   display: flex;
   gap: var(--space-2);
@@ -274,7 +301,6 @@ const emit = defineEmits([
   border-top: 1px solid var(--color-border);
   justify-content: flex-end;
 }
-/* 表格区域 */
 .sr-table-section {
   border-top: 1px solid var(--color-border);
 }

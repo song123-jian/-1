@@ -986,8 +986,6 @@ onMounted(async () => {
   if (sbStore.isConnected) {
     subscribeAllTables()
     /* 启动自动同步引擎 */
-    const { useSyncEngine } = await import('@/utils/syncEngine.js')
-    const syncEngine = useSyncEngine()
     syncEngine.initAutoSync()
   }
 })

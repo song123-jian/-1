@@ -398,15 +398,17 @@ function reconnect() {
   unsubscribeAllAuto()
 
   // 重新初始化客户端（init是async，但reconnect在定时器中调用，不阻塞）
-  init(_config.url, _config.anonKey).then((client) => {
-    if (client && hadAutoSubscriptions && savedCallbacks) {
-      // 恢复自动订阅
-      autoSubscribeTables(savedCallbacks)
-      console.debug('[Supabase] 重连并恢复自动订阅成功')
-    }
-  }).catch((e) => {
-    console.warn('[Supabase] 重连失败:', e.message)
-  })
+  init(_config.url, _config.anonKey)
+    .then((client) => {
+      if (client && hadAutoSubscriptions && savedCallbacks) {
+        // 恢复自动订阅
+        autoSubscribeTables(savedCallbacks)
+        console.debug('[Supabase] 重连并恢复自动订阅成功')
+      }
+    })
+    .catch((e) => {
+      console.warn('[Supabase] 重连失败:', e.message)
+    })
 
   // 返回当前客户端状态（重连是异步的，调用方不应依赖返回值）
   return _client

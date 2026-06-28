@@ -876,8 +876,13 @@
         <div class="modal-header">
           <h3>{{ editingId ? '编辑送货单' : '新建送货单' }}</h3>
           <button class="btn btn-ghost btn-sm" @click="closeEditor"><Icon name="close" :size="14" /></button>
-        </div>
-        <div class="modal-body">
+          @clear="deliveriesSmartRecInput = ''; deliveriesSmartRecResult = null"
+          v-model:show-smart-rec="deliveriesShowSmartRec" v-model:smart-rec-input="deliveriesSmartRecInput"
+          :smart-rec-result="deliveriesSmartRecResult" :placeholder="deliveriesSmartRecPlaceholder"
+          :template-name="deliveriesSmartRecTemplateName" :template-content="deliveriesSmartRecTemplateContent"
+          @run-smart-recognize="runDeliveriesSmartRecognize" @apply-smart-recognize="applySmartRecognizeToForm"
+          @handle-smart-file-upload="handleDeliveriesSmartFileUpload" @clear="deliveriesSmartRecInput = '';
+          deliveriesSmartRecResult = null;" />
           <div class="form-section-title">
             <Icon name="list" :size="14" />
             基本信息
@@ -1569,6 +1574,8 @@ import { useCustomerStore } from '@/modules/customer/stores/customer'
 import { usePermission } from '@/utils/permissionGuard'
 import { formatMoney, escapeHtml, toLocalDateStr } from '@/utils/format'
 import DataSelect from '@/components/DataSelect.vue'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useDeliveriesSmartRecognize } from './useDeliveriesSmartRecognize'
 
 const deliveryStore = useDeliveryStore()
 const customerStore = useCustomerStore()
@@ -1760,6 +1767,20 @@ const editorData = reactive({
 })
 
 const editorItems = ref([])
+
+const deliveriesRecognize = useDeliveriesSmartRecognize(editorData)
+const {
+  showSmartRec: deliveriesShowSmartRec,
+  smartRecInput: deliveriesSmartRecInput,
+  smartRecResult: deliveriesSmartRecResult,
+  smartRecPlaceholder: deliveriesSmartRecPlaceholder,
+  smartRecTemplateName: deliveriesSmartRecTemplateName,
+  smartRecTemplateContent: deliveriesSmartRecTemplateContent,
+  runSmartRecognize: runDeliveriesSmartRecognize,
+  applySmartRecognize: applyDeliveriesSmartRecognize,
+  handleSmartFileUpload: handleDeliveriesSmartFileUpload,
+  resetSmartRec: resetDeliveriesSmartRec
+} = deliveriesRecognize
 
 const customerOptions = computed(() => customerStore.customers || [])
 
@@ -2026,6 +2047,8 @@ function openEditor(data) {
       }
     ]
   }
+  resetDeliveriesSmartRec()
+  deliveriesShowSmartRec.value = true
   showEditor.value = true
 }
 

@@ -13,9 +13,12 @@
             v-model:smart-rec-input="smartRecInput"
             :smart-rec-result="smartRecResult"
             :placeholder="smartRecPlaceholder"
+            :template-name="smartRecTemplateName"
+            :template-content="smartRecTemplateContent"
             @run-smart-recognize="runSmartRecognize"
             @apply-smart-recognize="applySmartRecognize"
             @handle-smart-file-upload="handleSmartFileUpload"
+            @clear="smartRecInput = ''; smartRecResult = null"
           />
           <div class="form-row form-row-2">
             <div class="form-group">
@@ -173,6 +176,8 @@ const {
   smartRecInput,
   smartRecResult,
   smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
   runSmartRecognize,
   applySmartRecognize,
   handleSmartFileUpload,

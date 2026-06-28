@@ -1,7 +1,8 @@
 import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+import { SMART_TEMPLATE_SPECS } from '@/composables/smartRecognizeSpecs'
 
 const TABLE_HEADERS = [
-  { key: 'materialCode', label: '编号', type: 'string' },
+  { key: 'materialCode', label: '物料编码', type: 'string' },
   { key: 'materialName', label: '物料名称', type: 'string' },
   { key: 'spec', label: '规格', type: 'string' },
   { key: 'unit', label: '单位', type: 'string' },
@@ -18,8 +19,8 @@ export function useSmartRecognize(form) {
 
     function pushItem(item) {
       items.push(item)
-      identifiedCount++
-      if (item.confidence < 80) lowConfCount++
+      identifiedCount += 1
+      if (item.confidence < 80) lowConfCount += 1
     }
 
     const companyMatch = text.match(CommonPatterns.company)
@@ -55,7 +56,6 @@ export function useSmartRecognize(form) {
     const notesMatch = text.match(/(?:备注|说明|要求)[:\s：]*(.{5,100})/)
     if (notesMatch) pushItem(makeItem('notes', '备注', notesMatch[1].trim(), 55))
 
-    // 解析表格数据
     const tableRows = parseTableText(text, TABLE_HEADERS)
 
     const result = { items, identifiedCount, lowConfCount }
@@ -69,6 +69,7 @@ export function useSmartRecognize(form) {
   return useSmartRecognizeBase(
     form,
     parsePurchaseInfo,
-    '粘贴采购信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+    '粘贴采购信息或表格数据，AI将自动识别并提取关键字段和明细行...',
+    SMART_TEMPLATE_SPECS.purchase
   )
 }

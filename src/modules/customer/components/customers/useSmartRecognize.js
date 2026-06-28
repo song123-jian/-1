@@ -1,6 +1,6 @@
-import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+﻿import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+import { SMART_TEMPLATE_SPECS } from '@/composables/smartRecognizeSpecs'
 
-// 客户表格列定义（支持批量粘贴客户列表）
 const TABLE_HEADERS = [
   { key: 'fullName', label: '客户全称', type: 'string' },
   { key: 'contactName', label: '联系人', type: 'string' },
@@ -10,7 +10,6 @@ const TABLE_HEADERS = [
   { key: 'address', label: '地址', type: 'string' }
 ]
 
-// 区域映射表
 const SR_REGION_MAP = {
   上海: '华东',
   江苏: '华东',
@@ -53,23 +52,19 @@ export function useSmartRecognize(form) {
 
     function pushItem(item) {
       items.push(item)
-      identifiedCount++
-      if (item.confidence < 80) lowConfCount++
+      identifiedCount += 1
+      if (item.confidence < 80) lowConfCount += 1
     }
 
-    // 提取手机号
     const phoneMatch = text.match(/1[3-9]\d{9}/)
     if (phoneMatch) pushItem(makeItem('phone', '手机号码', phoneMatch[0], 95))
 
-    // 提取邮箱
     const emailMatch = text.match(CommonPatterns.email)
     if (emailMatch) pushItem(makeItem('email', '邮箱', emailMatch[0], 90))
 
-    // 提取公司名称
     const companyMatch = text.match(CommonPatterns.company)
     if (companyMatch) pushItem(makeItem('fullName', '客户全称', companyMatch[0], 85))
 
-    // 提取联系人
     for (const pattern of CommonPatterns.contactName) {
       const match = text.match(pattern)
       if (match) {
@@ -78,15 +73,12 @@ export function useSmartRecognize(form) {
       }
     }
 
-    // 提取职位
     const positionMatch = text.match(/(?:职位|职务|头衔)[:\s：]*([\u4e00-\u9fa5]{2,8})/)
     if (positionMatch) pushItem(makeItem('position', '职位', positionMatch[1], 70))
 
-    // 提取部门
     const deptMatch = text.match(/(?:部门|Dept|Department)[:\s：]*([\u4e00-\u9fa5]{2,8})/i)
     if (deptMatch) pushItem(makeItem('department', '部门', deptMatch[1], 65))
 
-    // 提取地区
     for (const [province, region] of Object.entries(SR_REGION_MAP)) {
       if (text.includes(province)) {
         pushItem(makeItem('region', '地区', region, 70))
@@ -94,11 +86,9 @@ export function useSmartRecognize(form) {
       }
     }
 
-    // 提取地址
     const addrMatch = text.match(CommonPatterns.address)
     if (addrMatch) pushItem(makeItem('address', '地址', addrMatch[1].trim(), 60))
 
-    // 解析表格数据（支持批量粘贴客户列表）
     const tableRows = parseTableText(text, TABLE_HEADERS)
 
     const result = { items, identifiedCount, lowConfCount }
@@ -112,6 +102,7 @@ export function useSmartRecognize(form) {
   return useSmartRecognizeBase(
     form,
     parseCustomerInfo,
-    '粘贴客户信息或表格数据（名片、邮件、Excel复制），AI将自动识别并提取关键字段...'
+    '粘贴客户信息或表格数据，AI将自动识别并提取关键字段...',
+    SMART_TEMPLATE_SPECS.customer
   )
 }

@@ -408,7 +408,7 @@ const overviewItems = computed(() => {
   const items = [
     { path: '/dashboard', icon: 'table', label: '仪表盘' },
     { path: '/data-screen', icon: 'database', label: '数据大屏', matchPath: '/data-screen' },
-    { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.overdue || null },
+    { path: '/todos', icon: 'check', label: '待办事项', badge: todoStore.stats.pending || null },
     {
       path: '/workflow',
       icon: 'layers',
@@ -604,8 +604,7 @@ const systemItems = computed(() => [
   { path: '/approvals', icon: 'check', label: '审批配置', matchPath: '/approvals' },
   { path: '/sales-permission', icon: 'shield', label: '销售权限配置', matchPath: '/sales-permission' },
   { path: '/database-connection', icon: 'link', label: '数据库连接', matchPath: '/database-connection' },
-  { path: '/logs', icon: 'list', label: '操作日志', matchPath: '/logs' },
-  { path: '/mobile-design', icon: 'mobile', label: '移动端设计', matchPath: '/mobile-design' }
+  { path: '/logs', icon: 'list', label: '操作日志', matchPath: '/logs' }
 ])
 </script>
 

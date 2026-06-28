@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { generateId } from '@/utils/uid'
+import { SupabaseClient } from '@/lib/supabase.js'
 
 const STORAGE_KEY = 'gj_erp_notifications'
 const INIT_KEY = 'gj_erp_notification_initialized'
@@ -341,19 +342,12 @@ export const useNotificationStore = defineStore('notification', () => {
   /**
    * 订阅 Supabase Realtime 通知表变更
    */
-  async function subscribeToNotifications() {
+  function subscribeToNotifications() {
     try {
-      const { useSupabaseStore } = await import('./supabase')
-      const supabaseStore = useSupabaseStore()
-      if (!supabaseStore.client) return
-      supabaseStore.client
-        .channel('notifications')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, (payload) => {
-          if (payload.eventType === 'INSERT') {
-            addNotification(payload.new)
-          }
-        })
-        .subscribe()
+      if (!SupabaseClient.isConnected()) return
+      SupabaseClient.subscribe('notifications', {
+        onInsert: (row) => addNotification(row)
+      })
     } catch (e) {
       console.warn('[Notification] 订阅失败:', e)
     }

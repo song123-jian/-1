@@ -98,7 +98,9 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
     persist(STORAGE_KEY, locations.value)
     try {
       useInventoryStore().addAuditLog('create', 'warehouse', '新增库位: ' + item.locationCode)
-    } catch (e) { console.warn('[warehouseLocation] auditLog失败:', e.message) }
+    } catch (e) {
+      console.warn('[warehouseLocation] auditLog失败:', e.message)
+    }
     return item
   }
 
@@ -109,7 +111,9 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
     persist(STORAGE_KEY, locations.value)
     try {
       useInventoryStore().addAuditLog('update', 'warehouse', '更新库位: ' + locations.value[idx].locationCode)
-    } catch (e) { console.warn('[warehouseLocation] auditLog失败:', e.message) }
+    } catch (e) {
+      console.warn('[warehouseLocation] auditLog失败:', e.message)
+    }
     return true
   }
 
@@ -122,7 +126,9 @@ export const useWarehouseLocationStore = defineStore('warehouseLocation', () => 
     persist(STORAGE_KEY, locations.value)
     try {
       useInventoryStore().addAuditLog('delete', 'warehouse', '删除库位: ' + locCode)
-    } catch (e) { console.warn('[warehouseLocation] auditLog失败:', e.message) }
+    } catch (e) {
+      console.warn('[warehouseLocation] auditLog失败:', e.message)
+    }
   }
 
   function initSeedData() {

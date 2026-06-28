@@ -1,4 +1,5 @@
 import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+import { SMART_TEMPLATE_SPECS } from '@/composables/smartRecognizeSpecs'
 
 const TABLE_HEADERS = [
   { key: 'grade', label: '牌号/规格', type: 'string' },
@@ -15,9 +16,10 @@ export function useSmartRecognize(form) {
     let lowConfCount = 0
 
     function pushItem(item) {
+      if (!item) return
       items.push(item)
-      identifiedCount++
-      if (item.confidence < 80) lowConfCount++
+      identifiedCount += 1
+      if (item.confidence < 80) lowConfCount += 1
     }
 
     const companyMatch = text.match(CommonPatterns.company)
@@ -52,9 +54,7 @@ export function useSmartRecognize(form) {
     const notesMatch = text.match(/(?:备注|说明|备注信息)[:\s：]*(.{5,100})/)
     if (notesMatch) pushItem(makeItem('notes', '备注', notesMatch[1].trim(), 55))
 
-    // 解析表格数据（Tab/逗号分隔的多行明细）
     const tableRows = parseTableText(text, TABLE_HEADERS)
-
     const result = { items, identifiedCount, lowConfCount }
     if (tableRows.length > 0) {
       result.tableRows = tableRows
@@ -66,6 +66,7 @@ export function useSmartRecognize(form) {
   return useSmartRecognizeBase(
     form,
     parseQuotationInfo,
-    '粘贴报价信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+    '粘贴报价信息或表格数据，AI将自动识别并提取关键字段和明细行...',
+    SMART_TEMPLATE_SPECS.quotation
   )
 }

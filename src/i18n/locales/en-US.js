@@ -112,7 +112,6 @@ export default {
     salesPermission: 'Sales Permission',
     databaseConnection: 'Database Connection',
     operationLog: 'Operation Log',
-    mobileDesign: 'Mobile Design',
     companyInfo: 'Company Info',
     systemParams: 'System Params',
     themeManagement: 'Theme Management',
@@ -701,24 +700,6 @@ export default {
     statusValid: 'Valid',
     statusExpiring: 'Expiring Soon',
     statusExpired: 'Expired'
-  },
-
-  mobileDesign: {
-    mobileDesign: 'Mobile Design',
-    layoutDesign: 'Layout Design',
-    componentLibrary: 'Component Library',
-    pageManagement: 'Page Management',
-    preview: 'Preview',
-    publish: 'Publish',
-    draft: 'Draft',
-    published: 'Published',
-    addPage: 'Add Page',
-    editPage: 'Edit Page',
-    navigationBar: 'Navigation Bar',
-    tabBar: 'Tab Bar',
-    listPage: 'List Page',
-    detailPage: 'Detail Page',
-    formPage: 'Form Page'
   },
 
   database: {

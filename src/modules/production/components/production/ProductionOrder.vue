@@ -7,6 +7,19 @@
           <button class="btn btn-ghost btn-sm" @click="handleClose"><Icon name="close" :size="14" /></button>
         </div>
         <div class="wizard-body">
+          <SmartRecognizePanel
+            v-if="!isEdit"
+            v-model:show-smart-rec="showSmartRec"
+            v-model:smart-rec-input="smartRecInput"
+            :smart-rec-result="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            :template-name="smartRecTemplateName"
+            :template-content="smartRecTemplateContent"
+            @run-smart-recognize="runSmartRecognize"
+            @apply-smart-recognize="applySmartRecognizeToForm"
+            @handle-smart-file-upload="handleSmartFileUpload"
+            @clear="smartRecInput = ''; smartRecResult = null"
+          />
           <!-- 基本信息 -->
           <div class="form-section-title">
             <Icon name="info" :size="14" />
@@ -155,6 +168,8 @@ import { ref, reactive, computed, watch } from 'vue'
 import { useBomStore } from '@/modules/production/stores/bom'
 import { useProductionStore } from '@/modules/production/stores/production'
 import { generateId } from '@/utils/uid'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useProductionOrderSmartRecognize } from './useProductionOrderSmartRecognize'
 
 const props = defineProps({
   order: { type: Object, default: null },
@@ -192,6 +207,28 @@ const errors = reactive({
   plannedEndDate: ''
 })
 
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = useProductionOrderSmartRecognize(form, bomStore)
+
+function applySmartRecognizeToForm() {
+  applySmartRecognize()
+  if (form.bomId) {
+    handleBomChange()
+  } else if (form.quantity > 0) {
+    recalcMaterials()
+  }
+}
+
 /* 监听order变化，编辑时填充表单 */
 watch(
   () => props.visible,
@@ -226,6 +263,10 @@ watch(
         notes: '',
         materialRequisitions: []
       })
+    }
+    if (val && !props.order) {
+      resetSmartRec()
+      showSmartRec.value = true
     }
     clearErrors()
   }

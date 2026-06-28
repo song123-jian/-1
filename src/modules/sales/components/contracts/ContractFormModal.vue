@@ -24,9 +24,12 @@
             v-model:smart-rec-input="smartRecInput"
             :smart-rec-result="smartRecResult"
             :placeholder="smartRecPlaceholder"
+            :template-name="smartRecTemplateName"
+            :template-content="smartRecTemplateContent"
             @run-smart-recognize="runSmartRecognize"
             @apply-smart-recognize="applySmartRecognizeToForm"
             @handle-smart-file-upload="handleSmartFileUpload"
+            @clear="smartRecInput = ''; smartRecResult = null"
           />
           <div v-if="!isEditing && !wizardData.sourceQuoteId" class="contract-import-hint">
             <Icon name="info" :size="14" />
@@ -542,15 +545,6 @@ const props = defineProps({
 const wizardData = defineModel('wizardData', { default: () => ({}) })
 
 const draftData = reactive({})
-watch(
-  wizardData,
-  (wd) => {
-    if (props.isEditing) return
-    Object.assign(draftData, { ...wd, products: wd.products ? [...wd.products] : [] })
-  },
-  { deep: true }
-)
-
 const { restoreDraft, clearDraft, hasDraft } = useFormDraft('contract-form', draftData, {
   debounce: 1500,
   onRestore: (draft) => {
@@ -570,6 +564,7 @@ watch(
       if (hasDraft()) {
         restoreDraft()
       }
+      showSmartRec.value = true
     }
   }
 )
@@ -579,6 +574,8 @@ const {
   smartRecInput,
   smartRecResult,
   smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
   runSmartRecognize,
   handleSmartFileUpload,
   resetSmartRec
@@ -589,7 +586,6 @@ function applySmartRecognizeToForm() {
   smartRecResult.value.items.forEach((item) => {
     if (item.value) {
       const key = item.key
-      // 处理嵌套属性如 partyAInfo.representative
       if (key.includes('.')) {
         const parts = key.split('.')
         let obj = wizardData.value
@@ -605,7 +601,12 @@ function applySmartRecognizeToForm() {
       }
     }
   })
-  // 填入表格明细行
+  if (wizardData.value.partyA) {
+    emit('partyAChange')
+  }
+  if (!Array.isArray(wizardData.value.products)) {
+    wizardData.value.products = []
+  }
   if (smartRecResult.value.tableRows && smartRecResult.value.tableRows.length > 0) {
     smartRecResult.value.tableRows.forEach((row) => {
       wizardData.value.products.push({

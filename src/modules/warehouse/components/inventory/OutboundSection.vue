@@ -616,6 +616,19 @@
           <button class="btn btn-ghost btn-sm" @click="closeOutboundWizard"><Icon name="close" :size="14" /></button>
         </div>
         <div class="wizard-body">
+          <SmartRecognizePanel
+            v-if="!editingOutboundId"
+            v-model:show-smart-rec="outboundShowSmartRec"
+            v-model:smart-rec-input="outboundSmartRecInput"
+            :smart-rec-result="outboundSmartRecResult"
+            :placeholder="outboundSmartRecPlaceholder"
+            :template-name="outboundSmartRecTemplateName"
+            :template-content="outboundSmartRecTemplateContent"
+            @run-smart-recognize="runOutboundSmartRecognize"
+            @apply-smart-recognize="applySmartRecognizeToForm"
+            @handle-smart-file-upload="handleOutboundSmartFileUpload"
+            @clear="outboundSmartRecInput = ''; outboundSmartRecResult = null"
+          />
           <div class="form-section-title">
             <Icon name="list" :size="14" />
             出库基本信息
@@ -962,8 +975,10 @@ import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
 import { usePermission } from '@/utils/permissionGuard'
 import DataSelect from '@/components/DataSelect.vue'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
 import { escapeHtml, formatNumber } from '@/utils/format'
 import { useClickOutside } from '@/composables/useClickOutside'
+import { useOutboundSmartRecognize } from './useOutboundSmartRecognize'
 
 const emit = defineEmits([])
 
@@ -1043,6 +1058,33 @@ const outboundForm = reactive({
   batchNo: ''
 })
 const outboundErrors = ref([])
+
+const outboundRecognize = useOutboundSmartRecognize(outboundForm, inventoryStore)
+const {
+  showSmartRec: outboundShowSmartRec,
+  smartRecInput: outboundSmartRecInput,
+  smartRecResult: outboundSmartRecResult,
+  smartRecPlaceholder: outboundSmartRecPlaceholder,
+  smartRecTemplateName: outboundSmartRecTemplateName,
+  smartRecTemplateContent: outboundSmartRecTemplateContent,
+  runSmartRecognize: runOutboundSmartRecognize,
+  applySmartRecognize: applyOutboundSmartRecognize,
+  handleSmartFileUpload: handleOutboundSmartFileUpload,
+  resetSmartRec: resetOutboundSmartRec
+} = outboundRecognize
+
+function applySmartRecognizeToForm() {
+  applyOutboundSmartRecognize()
+  const firstRow = outboundSmartRecResult.value?.tableRows?.[0]
+  if (firstRow) {
+    outboundForm.materialCode = firstRow.materialCode || outboundForm.materialCode
+    outboundForm.materialName = firstRow.materialName || outboundForm.materialName
+    outboundForm.grade = firstRow.grade || outboundForm.grade
+    outboundForm.color = firstRow.color || outboundForm.color
+    outboundForm.outQty = firstRow.outQty || outboundForm.outQty
+    outboundForm.unitPrice = firstRow.unitPrice || outboundForm.unitPrice
+  }
+}
 
 /* 自定义确认弹窗 */
 const confirmDialog = ref({ show: false, title: '', message: '', onConfirm: null })
@@ -1318,6 +1360,7 @@ function getParsedItems(order) {
 
 function openOutboundWizard() {
   editingOutboundId.value = null
+  resetOutboundSmartRec()
   Object.assign(outboundForm, {
     date: new Date().toISOString().split('T')[0],
     outType: '',
@@ -1335,12 +1378,14 @@ function openOutboundWizard() {
     batchNo: ''
   })
   outboundErrors.value = []
+  outboundShowSmartRec.value = true
   showOutboundWizard.value = true
 }
 
 function closeOutboundWizard() {
   showOutboundWizard.value = false
   outboundErrors.value = []
+  resetOutboundSmartRec()
 }
 
 function onOutboundMaterialChange() {

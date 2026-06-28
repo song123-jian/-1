@@ -456,6 +456,19 @@
             <button class="btn btn-ghost btn-sm" @click="showBomForm = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="wizard-body">
+            <SmartRecognizePanel
+              v-if="!editingBomId"
+              v-model:show-smart-rec="bomShowSmartRec"
+              v-model:smart-rec-input="bomSmartRecInput"
+              :smart-rec-result="bomSmartRecResult"
+              :placeholder="bomSmartRecPlaceholder"
+              :template-name="bomSmartRecTemplateName"
+              :template-content="bomSmartRecTemplateContent"
+              @run-smart-recognize="runBomSmartRecognize"
+              @apply-smart-recognize="applyBomSmartRecognizeToForm"
+              @handle-smart-file-upload="handleBomSmartFileUpload"
+              @clear="bomSmartRecInput = ''; bomSmartRecResult = null"
+            />
             <div class="form-row form-row-2">
               <div class="form-group">
                 <label class="form-label">
@@ -641,6 +654,8 @@ import BomTree from '@/modules/production/components/production/BomTree.vue'
 import ProductionOrder from '@/modules/production/components/production/ProductionOrder.vue'
 import ProductionSchedule from '@/modules/production/components/production/ProductionSchedule.vue'
 import MaterialRequirement from '@/modules/production/components/production/MaterialRequirement.vue'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
+import { useBomSmartRecognize } from '@/modules/production/components/production/useBomSmartRecognize'
 
 const bomStore = useBomStore()
 const productionStore = useProductionStore()
@@ -813,6 +828,20 @@ const bomErrors = reactive({
   productName: ''
 })
 
+const bomRecognize = useBomSmartRecognize(bomForm)
+const {
+  showSmartRec: bomShowSmartRec,
+  smartRecInput: bomSmartRecInput,
+  smartRecResult: bomSmartRecResult,
+  smartRecPlaceholder: bomSmartRecPlaceholder,
+  smartRecTemplateName: bomSmartRecTemplateName,
+  smartRecTemplateContent: bomSmartRecTemplateContent,
+  runSmartRecognize: runBomSmartRecognize,
+  applySmartRecognize: applyBomSmartRecognize,
+  handleSmartFileUpload: handleBomSmartFileUpload,
+  resetSmartRec: resetBomSmartRec
+} = bomRecognize
+
 const inventoryItems = computed(() => inventoryStore.inventory || [])
 
 const filteredBomList = computed(() => {
@@ -867,7 +896,26 @@ function openBomForm(bom) {
   }
   bomErrors.name = ''
   bomErrors.productName = ''
+  resetBomSmartRec()
+  bomShowSmartRec.value = true
   showBomForm.value = true
+}
+
+function applyBomSmartRecognizeToForm() {
+  applyBomSmartRecognize()
+  if (Array.isArray(bomSmartRecResult.value?.tableRows) && bomSmartRecResult.value.tableRows.length > 0) {
+    bomForm.components = bomSmartRecResult.value.tableRows.map((row) => ({
+      id: generateId('cmp'),
+      materialCode: row.materialCode || '',
+      materialName: row.materialName || '',
+      spec: row.spec || '',
+      unit: row.unit || 'kg',
+      quantity: row.quantity || 0,
+      scrapRate: row.scrapRate || 0,
+      isOptional: false,
+      notes: row.notes || ''
+    }))
+  }
 }
 
 function addComponent() {

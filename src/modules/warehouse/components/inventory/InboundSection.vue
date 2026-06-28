@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="inbound-page">
     <div class="inbound-header">
       <div class="inbound-header-info">
@@ -746,6 +746,18 @@
           <button class="btn btn-ghost btn-sm" @click="closeInboundWizard"><Icon name="close" :size="14" /></button>
         </div>
         <div class="wizard-body">
+          <SmartRecognizePanel
+            v-model:show-smart-rec="showSmartRec"
+            v-model:smart-rec-input="smartRecInput"
+            :smart-rec-result="smartRecResult"
+            :placeholder="smartRecPlaceholder"
+            :template-name="smartRecTemplateName"
+            :template-content="smartRecTemplateContent"
+            @run-smart-recognize="runSmartRecognize"
+            @apply-smart-recognize="applySmartRecognizeToForm"
+            @handle-smart-file-upload="handleSmartFileUpload"
+            @clear="resetSmartRec"
+          />
           <div class="form-section-title">
             <Icon name="list" :size="14" />
             基本信息
@@ -1186,14 +1198,18 @@ export default { name: 'InboundSection' }
 <script setup>
 import { ref, computed, reactive, onMounted, watch } from 'vue'
 import { useInventoryStore } from '@/modules/warehouse/stores/inventory'
+import { useWarehouseLocationStore } from '@/modules/warehouse/stores/warehouseLocation'
 import { usePermission } from '@/utils/permissionGuard'
 import DataSelect from '@/components/DataSelect.vue'
+import SmartRecognizePanel from '@/components/SmartRecognizePanel.vue'
 import { escapeHtml, formatNumber } from '@/utils/format'
 import { useClickOutside } from '@/composables/useClickOutside'
+import { useInboundSmartRecognize } from './useInboundSmartRecognize'
 
 const emit = defineEmits(['edit-item', 'quick-outbound'])
 
 const inventoryStore = useInventoryStore()
+const warehouseLocationStore = useWarehouseLocationStore()
 const perm = usePermission()
 
 const canInbound = computed(() => perm.isAllowed('inbound', 'inboundCreate'))
@@ -1267,6 +1283,21 @@ const inboundForm = reactive({
   notes: '',
   orderNo: ''
 })
+
+const inboundRecognize = useInboundSmartRecognize(inboundForm, inventoryStore, warehouseLocationStore)
+
+const {
+  showSmartRec,
+  smartRecInput,
+  smartRecResult,
+  smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
+  runSmartRecognize,
+  applySmartRecognize,
+  handleSmartFileUpload,
+  resetSmartRec
+} = inboundRecognize
 
 /* computed */
 const filteredInboundOrders = computed(() => {
@@ -1581,6 +1612,7 @@ function calcInboundAmount(order) {
 
 function openInboundWizard() {
   editingInboundId.value = null
+  resetSmartRec()
   Object.assign(inboundForm, {
     date: new Date().toISOString().split('T')[0],
     type: '',
@@ -1595,10 +1627,12 @@ function openInboundWizard() {
   inboundFormItems.value = [{ barcode: '', code: '', name: '', grade: '', color: '', qty: 0, cost: 0, batch: '' }]
   inboundErrors.value = []
   showInboundWizard.value = true
+  showSmartRec.value = true
 }
 
 function openEditInbound(order) {
   editingInboundId.value = order.id
+  resetSmartRec()
   Object.assign(inboundForm, {
     date: order.date || '',
     type: order.type || '',
@@ -1616,11 +1650,92 @@ function openEditInbound(order) {
       : [{ barcode: '', code: '', name: '', grade: '', color: '', qty: 0, cost: 0, batch: '' }]
   inboundErrors.value = []
   showInboundWizard.value = true
+  showSmartRec.value = true
 }
 
 function closeInboundWizard() {
   showInboundWizard.value = false
   editingInboundId.value = null
+  inboundErrors.value = []
+  resetSmartRec()
+}
+
+function applySmartRecognizeToForm() {
+  if (!smartRecResult.value) return
+
+  applySmartRecognize()
+
+  const resultItems = smartRecResult.value.items || []
+  const readValue = (key) => resultItems.find((item) => item.key === key)?.value || ''
+
+  const typeText = readValue('type')
+  if (typeText) {
+    const foundType = inventoryStore.INBOUND_TYPES.find((t) => t.label === typeText || t.value === typeText)
+    if (foundType) inboundForm.type = foundType.value
+  }
+
+  const dateText = readValue('date')
+  if (dateText) inboundForm.date = dateText
+
+  const supplierCodeText = readValue('supplierCode')
+  const supplierNameText = readValue('counterpartyName')
+  const supplier =
+    inventoryStore.lookupSupplier(supplierCodeText) ||
+    inventoryStore.lookupSupplier(supplierNameText) ||
+    inventoryStore.suppliers.find((s) => (s.shortName || s.name) === supplierNameText)
+
+  if (supplier) {
+    inboundForm.counterpartyId = supplier.id
+    inboundForm.counterpartyName = supplier.shortName || supplier.name
+    inboundForm.supplierCode = supplier.supplierCode || supplierCodeText || ''
+  } else {
+    if (supplierNameText) inboundForm.counterpartyName = supplierNameText
+    if (supplierCodeText) inboundForm.supplierCode = supplierCodeText
+  }
+
+  const warehouseText = readValue('warehouseName')
+  if (warehouseText) {
+    const warehouse = inventoryStore.warehouses.find(
+      (w) => w.id === warehouseText || w.name === warehouseText || w.warehouseName === warehouseText
+    )
+    if (warehouse) inboundForm.warehouseId = warehouse.id
+  }
+
+  const locationText = readValue('locationCode')
+  if (locationText) {
+    const location = warehouseLocationStore.locations.find(
+      (loc) => loc.id === locationText || loc.locationCode === locationText
+    )
+    if (location) {
+      inboundForm.locationId = location.id
+      if (!inboundForm.warehouseId && location.warehouseId) {
+        inboundForm.warehouseId = location.warehouseId
+      }
+    }
+  }
+
+  const notesText = readValue('notes')
+  if (notesText) inboundForm.notes = notesText
+
+  const tableRows = smartRecResult.value.tableRows || []
+  if (tableRows.length > 0) {
+    const normalizedRows = tableRows
+      .map((row) => ({
+        barcode: row.barcode || row.code || '',
+        code: row.code || row.barcode || '',
+        name: row.name || '',
+        grade: row.grade || '',
+        color: row.color || '',
+        qty: Number(row.qty) || 0,
+        cost: Number(row.cost) || 0,
+        batch: row.batch || ''
+      }))
+      .filter((row) => row.code || row.name || row.barcode)
+    if (normalizedRows.length > 0) {
+      inboundFormItems.value = normalizedRows
+    }
+  }
+
   inboundErrors.value = []
 }
 

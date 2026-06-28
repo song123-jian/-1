@@ -1,7 +1,8 @@
-import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+﻿import { useSmartRecognizeBase, makeItem, CommonPatterns, parseTableText } from '@/composables/useSmartRecognizeBase'
+import { SMART_TEMPLATE_SPECS } from '@/composables/smartRecognizeSpecs'
 
 const TABLE_HEADERS = [
-  { key: 'materialCode', label: '编号', type: 'string' },
+  { key: 'materialCode', label: '物料编码', type: 'string' },
   { key: 'materialName', label: '物料名称', type: 'string' },
   { key: 'spec', label: '规格', type: 'string' },
   { key: 'unit', label: '单位', type: 'string' },
@@ -16,9 +17,10 @@ export function useSmartRecognize(form) {
     let lowConfCount = 0
 
     function pushItem(item) {
+      if (!item) return
       items.push(item)
-      identifiedCount++
-      if (item.confidence < 80) lowConfCount++
+      identifiedCount += 1
+      if (item.confidence < 80) lowConfCount += 1
     }
 
     const typeMatch = text.match(/(?:同价调拨|异价调拨)/)
@@ -26,10 +28,10 @@ export function useSmartRecognize(form) {
       pushItem(makeItem('type', '调拨类型', typeMatch[0] === '同价调拨' ? 'same_price' : 'diff_price', 85))
     }
 
-    const fromMatch = text.match(/(?:调出仓库|从|源仓库|出库仓库)[:\s：]*([\u4e00-\u9fa5]{2,10}仓库?)/)
+    const fromMatch = text.match(/(?:调出仓库|来源仓库|从)[:\s：]*([\u4e00-\u9fa5]{2,10}库?)/)
     if (fromMatch) pushItem(makeItem('fromWarehouseId', '调出仓库', fromMatch[1], 70))
 
-    const toMatch = text.match(/(?:调入仓库|到|目标仓库|入库仓库)[:\s：]*([\u4e00-\u9fa5]{2,10}仓库?)/)
+    const toMatch = text.match(/(?:调入仓库|到|目标仓库)[:\s：]*([\u4e00-\u9fa5]{2,10}库?)/)
     if (toMatch) pushItem(makeItem('toWarehouseId', '调入仓库', toMatch[1], 70))
 
     for (const pattern of CommonPatterns.contactName) {
@@ -40,16 +42,15 @@ export function useSmartRecognize(form) {
       }
     }
 
-    const dateMatch = text.match(/(?:预计到货|计划到货|到货日期)[:\s：]*(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}[日]?)/)
+    const dateMatch = text.match(/(?:调拨日期|申请日期|日期)[:\s：]*(\d{4}(?:\/|年|-)\d{1,2}(?:\/|月|-)\d{1,2}[日]?)/)
     if (dateMatch) {
       const dateStr = dateMatch[1].replace(/[年月]/g, '-').replace(/日/g, '')
-      pushItem(makeItem('expectedDate', '计划到货日期', dateStr, 70))
+      pushItem(makeItem('expectedDate', '调拨日期', dateStr, 70))
     }
 
     const notesMatch = text.match(/(?:备注|说明|原因|调拨原因)[:\s：]*(.{5,100})/)
     if (notesMatch) pushItem(makeItem('notes', '备注', notesMatch[1].trim(), 55))
 
-    // 解析表格数据
     const tableRows = parseTableText(text, TABLE_HEADERS)
 
     const result = { items, identifiedCount, lowConfCount }
@@ -63,6 +64,7 @@ export function useSmartRecognize(form) {
   return useSmartRecognizeBase(
     form,
     parseTransferInfo,
-    '粘贴调拨信息或表格数据（支持Excel复制），AI将自动识别并提取关键字段和明细行...'
+    '粘贴调拨信息文本或表格数据，AI将自动识别并提取关键字段和明细...',
+    SMART_TEMPLATE_SPECS.transfer
   )
 }

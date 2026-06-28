@@ -560,9 +560,7 @@
         @next-month="nextMonth"
         @prev-week="prevWeek"
         @next-week="nextWeek"
-        @today-month="
-          calendarMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')
-        "
+        @today-month="calendarMonth = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0')"
         @today-week="weekViewDate = new Date()"
       />
 

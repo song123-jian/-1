@@ -35,9 +35,12 @@
           v-model:smart-rec-input="smartRecInput"
           :smart-rec-result="smartRecResult"
           :placeholder="smartRecPlaceholder"
+          :template-name="smartRecTemplateName"
+          :template-content="smartRecTemplateContent"
           @run-smart-recognize="runSmartRecognize"
           @apply-smart-recognize="onApplySmartRecognize"
           @handle-smart-file-upload="handleSmartFileUpload"
+          @clear="smartRecInput = ''; smartRecResult = null"
         />
         <div v-if="hasErrors || hasWarnings" class="form-validation-panel">
           <div v-for="e in errors" :key="e.field" class="val-error">{{ e.message }}</div>
@@ -417,6 +420,8 @@ const {
   smartRecInput,
   smartRecResult,
   smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
   runSmartRecognize,
   applySmartRecognize,
   handleSmartFileUpload

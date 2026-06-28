@@ -476,15 +476,12 @@ onMounted(() => {
   })
 })
 
-watch(
-  [dailyTrend, moduleDistribution],
-  () => {
-    nextTick(() => {
-      renderTrendChart()
-      renderModuleChart()
-    })
-  }
-)
+watch([dailyTrend, moduleDistribution], () => {
+  nextTick(() => {
+    renderTrendChart()
+    renderModuleChart()
+  })
+})
 
 onBeforeUnmount(() => {
   try {

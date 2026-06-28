@@ -384,31 +384,19 @@
                           <Icon name="moreHorizontal" :size="14" />
                         </button>
                         <div v-if="activeActionMenu === q.id" class="action-more-dropdown">
-                          <button
-                            class="action-more-item"
-                            @click="handleDuplicate(q); closeActionMenu()"
-                          >
+                          <button class="action-more-item" @click="handleDuplicate(q); closeActionMenu()">
                             <Icon name="copy" :size="14" />
                             复制
                           </button>
-                          <button
-                            class="action-more-item"
-                            @click="sendQuoteByEmail(q); closeActionMenu()"
-                          >
+                          <button class="action-more-item" @click="sendQuoteByEmail(q); closeActionMenu()">
                             <Icon name="mail" :size="14" />
                             邮件
                           </button>
-                          <button
-                            class="action-more-item"
-                            @click="openFollowUpModal(q); closeActionMenu()"
-                          >
+                          <button class="action-more-item" @click="openFollowUpModal(q); closeActionMenu()">
                             <Icon name="phone" :size="14" />
                             电话
                           </button>
-                          <button
-                            class="action-more-item"
-                            @click="openVersionModal(q); closeActionMenu()"
-                          >
+                          <button class="action-more-item" @click="openVersionModal(q); closeActionMenu()">
                             <Icon name="refresh" :size="14" />
                             版本
                           </button>

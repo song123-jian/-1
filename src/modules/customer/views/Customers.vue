@@ -2,8 +2,8 @@
   <div class="customer-page">
     <div class="page-header">
       <div>
-        <h2 class="page-header-title">客户管理</h2>
-        <p class="page-header-subtitle">全面的客户关系管理，支持多视图、高级筛选、联系人管理</p>
+        <h2 class="page-header-title">????</h2>
+        <p class="page-header-subtitle">?????????????????????????</p>
         <div class="status-flow-chips">
           <span
             class="status-chip"
@@ -11,7 +11,7 @@
             @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'"
           >
             <span class="chip-dot chip-dot-active"></span>
-            活跃
+            ??
             <span class="chip-count">{{ customerStore.activeCount }}</span>
           </span>
           <span
@@ -20,7 +20,7 @@
             @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'"
           >
             <span class="chip-dot chip-dot-potential"></span>
-            潜在
+            ??
             <span class="chip-count">{{ potentialCount }}</span>
           </span>
           <span
@@ -29,7 +29,7 @@
             @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'"
           >
             <span class="chip-dot chip-dot-dormant"></span>
-            非活跃
+            ??
             <span class="chip-count">{{ customerStore.dormantCount }}</span>
           </span>
         </div>
@@ -47,33 +47,30 @@
             {{ v.label }}
           </button>
         </div>
-        <button v-if="canCreate" class="btn btn-primary" @click="openAddModal">新增客户</button>
+        <button v-if="canCreate" class="btn btn-primary" @click="openAddModal">????</button>
         <div class="more-dropdown-wrap">
           <button class="btn btn-outline" @click="showMoreMenu = !showMoreMenu">
             <Icon name="more" :size="14" />
-            更多
+            ??
           </button>
           <div v-if="showMoreMenu" class="more-dropdown-menu" @click.stop>
-            <button
-              class="more-menu-item"
-              @click="handleDownloadTemplate(); showMoreMenu = false"
-            >
+            <button class="more-menu-item" @click="handleDownloadTemplate(); showMoreMenu = false">
               <Icon name="file" :size="14" />
-              模板下载
+              ????
             </button>
             <button
               class="more-menu-item"
               @click="handleBatchAdd(); showMoreMenu = false"
             >
               <Icon name="list" :size="14" />
-              批量增加
+              ????
             </button>
             <button
               class="more-menu-item"
               @click="handleExport(); showMoreMenu = false"
             >
               <Icon name="download" :size="14" />
-              导出CSV
+              ??CSV
             </button>
             <button
               v-if="canDelete"
@@ -82,21 +79,20 @@
               @click="handleBatchDelete(); showMoreMenu = false"
             >
               <Icon name="delete" :size="14" />
-              批量删除
+              ????
             </button>
           </div>
         </div>
         <button v-if="duplicateGroups.length > 0" class="btn btn-duplicate-pulse" @click="showDuplicateModal = true">
           <Icon name="alert" :size="14" />
-          发现
+          ??
           <span class="duplicate-count-badge">{{ duplicateGroups.length }}</span>
-          组重复
+          ??
         </button>
       </div>
     </div>
 
     <div class="customer-toolbar">
-      <!-- 智能搜索栏 -->
       <div class="smart-search" style="margin-bottom: var(--space-3)">
         <span class="smart-search-icon" :class="{ 'search-spinning': isSearching }">
           <Icon name="search" :size="14" />
@@ -105,71 +101,69 @@
           v-model="smartSearchText"
           type="text"
           class="smart-search-input"
-          placeholder="搜索客户：输入名称/编号/手机号，或试试 A级客户"
+          placeholder="????????????????"
           @input="onSmartSearchInput"
-          @keydown.k.ctrl="smartSearchInputRef?.focus()"
         />
         <span class="smart-search-hint">
-          智能搜索
+          ????
           <kbd class="search-kbd">Ctrl+K</kbd>
         </span>
       </div>
 
-      <!-- 标签式筛选 -->
       <div class="tag-filters" style="margin-bottom: var(--space-3)">
         <div class="tag-filter-group">
-          <span class="tag-filter-group-label">等级:</span>
+          <span class="tag-filter-group-label">??</span>
           <span
             class="tag-filter-item"
             :class="{ 'active-success': tagGradeFilter === 'A' }"
             @click="tagGradeFilter = tagGradeFilter === 'A' ? '' : 'A'"
           >
-            A级
+            A?
           </span>
           <span
             class="tag-filter-item"
             :class="{ active: tagGradeFilter === 'B' }"
             @click="tagGradeFilter = tagGradeFilter === 'B' ? '' : 'B'"
           >
-            B级
+            B?
           </span>
           <span
             class="tag-filter-item"
             :class="{ 'active-warning': tagGradeFilter === 'C' }"
             @click="tagGradeFilter = tagGradeFilter === 'C' ? '' : 'C'"
           >
-            C级
+            C?
           </span>
           <span
             class="tag-filter-item"
             :class="{ 'active-danger': tagGradeFilter === 'D' }"
             @click="tagGradeFilter = tagGradeFilter === 'D' ? '' : 'D'"
           >
-            D级
+            D?
           </span>
         </div>
         <div class="tag-filter-group">
-          <span class="tag-filter-group-label">状态:</span>
+          <span class="tag-filter-group-label">??</span>
           <span
             class="tag-filter-item"
             :class="{ 'active-success': tagStatusFilter === 'active' }"
             @click="tagStatusFilter = tagStatusFilter === 'active' ? '' : 'active'"
           >
-            活跃
+            ??
           </span>
           <span
             class="tag-filter-item"
             :class="{ 'active-warning': tagStatusFilter === 'potential' }"
             @click="tagStatusFilter = tagStatusFilter === 'potential' ? '' : 'potential'"
           >
-            潜在
+            ??
           </span>
           <span
             class="tag-filter-item"
             :class="{ 'active-danger': tagStatusFilter === 'dormant' }"
             @click="tagStatusFilter = tagStatusFilter === 'dormant' ? '' : 'dormant'"
           >
-            非活跃
+            ??
           </span>
         </div>
         <span
@@ -177,74 +171,75 @@
           class="tag-filter-clear"
           @click="tagGradeFilter = ''; tagStatusFilter = ''"
         >
-          清除筛选
+          ????
         </span>
       </div>
 
       <div class="customer-search-grid">
         <div class="search-field">
-          <label class="search-field-label">客户编号</label>
-          <input v-model="advFilterNo" type="text" class="search-input" placeholder="输入客户编号..." />
+          <label class="search-field-label">????</label>
+          <input v-model="advFilterNo" type="text" class="search-input" placeholder="???????..." />
         </div>
         <div class="search-field">
-          <label class="search-field-label">客户名称</label>
-          <input v-model="advFilterName" type="text" class="search-input" placeholder="输入客户名称..." />
+          <label class="search-field-label">????</label>
+          <input v-model="advFilterName" type="text" class="search-input" placeholder="???????..." />
         </div>
         <div class="search-field">
-          <label class="search-field-label">手机号码</label>
-          <input v-model="advFilterPhone" type="text" class="search-input" placeholder="输入手机号..." />
+          <label class="search-field-label">????</label>
+          <input v-model="advFilterPhone" type="text" class="search-input" placeholder="???????..." />
         </div>
         <div class="search-field">
-          <label class="search-field-label">核心关注点</label>
-          <input v-model="advFilterConcerns" type="text" class="search-input" placeholder="输入关注点..." />
+          <label class="search-field-label">????</label>
+          <input v-model="advFilterConcerns" type="text" class="search-input" placeholder="???????..." />
         </div>
         <button
           class="btn btn-ghost search-reset-btn"
           @click="advFilterNo = ''; advFilterName = ''; advFilterPhone = ''; advFilterConcerns = ''"
         >
-          重置
+          ??
         </button>
       </div>
+
       <div class="customer-filters">
         <select v-model="filterLevel" class="form-select filter-select">
-          <option value="all">全部等级</option>
-          <option value="A">大客户</option>
-          <option value="B">B类客户</option>
-          <option value="C">C类客户</option>
+          <option value="all">????</option>
+          <option value="A">A?</option>
+          <option value="B">B?</option>
+          <option value="C">C?</option>
         </select>
         <select v-model="filterDept" class="form-select filter-select">
-          <option value="all">全部部门</option>
+          <option value="all">????</option>
           <option v-for="d in customerStore.allDepartments" :key="d" :value="d">{{ d }}</option>
         </select>
         <select v-model="filterRegion" class="form-select filter-select">
-          <option value="all">全部区域</option>
+          <option value="all">????</option>
           <option v-for="r in customerStore.allRegions" :key="r" :value="r">{{ r }}</option>
         </select>
         <select v-model="filterStatus" class="form-select filter-select">
-          <option value="all">全部状态</option>
-          <option value="active">活跃</option>
-          <option value="dormant">休眠</option>
+          <option value="all">????</option>
+          <option value="active">??</option>
+          <option value="dormant">??</option>
         </select>
         <select v-model="filterDecision" class="form-select filter-select">
-          <option value="all">全部决策权限</option>
-          <option value="决策者">决策者</option>
-          <option value="影响者">影响者</option>
-          <option value="使用者">使用者</option>
-          <option value="推荐者">推荐者</option>
-          <option value="把关者">把关者</option>
+          <option value="all">??????</option>
+          <option value="???">???</option>
+          <option value="???">???</option>
+          <option value="???">???</option>
+          <option value="???">???</option>
+          <option value="??">??</option>
         </select>
         <select v-model="filterTag" class="form-select filter-select">
-          <option value="all">全部标签</option>
+          <option value="all">????</option>
           <option v-for="t in customerStore.tags.filter((t) => !t.hidden)" :key="t.id" :value="t.id">
             {{ t.name }}
           </option>
         </select>
         <select v-model="sortField" class="form-select filter-select">
-          <option value="level">按等级</option>
-          <option value="balance">按余额</option>
-          <option value="creditLimit">按信用额度</option>
-          <option value="createdAt">按创建时间</option>
-          <option value="name">按名称</option>
+          <option value="level">????</option>
+          <option value="balance">??</option>
+          <option value="creditLimit">????</option>
+          <option value="createdAt">????</option>
+          <option value="name">????</option>
         </select>
         <button class="btn btn-ghost btn-sm" @click="sortDir = sortDir === 'asc' ? 'desc' : 'asc'">
           <Icon :name="sortDir === 'asc' ? 'chevronUp' : 'chevronDown'" :size="14" />
@@ -258,7 +253,7 @@
           <Icon name="users" :size="16" class="stat-icon stat-icon-total" />
           <div class="stat-compact-text">
             <span class="stat-num">{{ customerStore.customers.length }}</span>
-            <span class="stat-label">总计</span>
+            <span class="stat-label">????</span>
           </div>
           <span class="stat-trend trend-neutral"><Icon name="chevronUp" :size="10" /></span>
         </div>
@@ -266,7 +261,7 @@
           <Icon name="check-circle" :size="16" class="stat-icon stat-icon-active" />
           <div class="stat-compact-text">
             <span class="stat-num">{{ customerStore.activeCount }}</span>
-            <span class="stat-label">活跃</span>
+            <span class="stat-label">????</span>
           </div>
           <span class="stat-trend trend-up"><Icon name="chevronUp" :size="10" /></span>
         </div>
@@ -274,7 +269,7 @@
           <Icon name="clock" :size="16" class="stat-icon stat-icon-dormant" />
           <div class="stat-compact-text">
             <span class="stat-num">{{ customerStore.dormantCount }}</span>
-            <span class="stat-label">休眠</span>
+            <span class="stat-label">????</span>
           </div>
           <span class="stat-trend trend-down"><Icon name="chevronDown" :size="10" /></span>
         </div>
@@ -291,25 +286,24 @@
 
     <div v-if="selectedIds.length > 0" class="batch-bar batch-bar-slide-in">
       <span class="batch-bar-count-badge">{{ selectedIds.length }}</span>
-      <span>已选 {{ selectedIds.length }} 项</span>
+      <span>?? {{ selectedIds.length }} ?</span>
       <select v-model="batchLevel" class="form-select" style="width: 120px; font-size: 12px" @change="handleBatchLevel">
-        <option value="">调整等级...</option>
-        <option value="A">大客户</option>
-        <option value="B">B类客户</option>
-        <option value="C">C类客户</option>
+        <option value="">??????...</option>
+        <option value="A">A?</option>
+        <option value="B">B?</option>
+        <option value="C">C?</option>
       </select>
       <button class="btn btn-outline" @click="handleBatchTag">
         <Icon name="tag" :size="14" />
-        批量标签
+        ?????
       </button>
       <button class="btn btn-outline" @click="handleBatchExport">
         <Icon name="download" :size="14" />
-        导出选中
+        ????
       </button>
-      <button class="btn btn-outline" @click="selectedIds = []">取消选择</button>
+      <button class="btn btn-outline" @click="selectedIds = []">????</button>
     </div>
 
-    <!-- 表格视图 -->
     <CustomerTable
       v-if="currentView === 'table'"
       :customers="filteredCustomers"
@@ -321,8 +315,6 @@
       @open-detail="openDetailModal"
       @handle-delete="handleDelete"
     />
-
-    <!-- 列表视图 -->
     <CustomerList
       v-if="currentView === 'list'"
       :customers="filteredCustomers"
@@ -332,8 +324,6 @@
       @open-detail="openDetailModal"
       @handle-delete="handleDelete"
     />
-
-    <!-- 卡片视图 -->
     <CustomerCardView
       v-if="currentView === 'card'"
       :customers="filteredCustomers"
@@ -342,30 +332,24 @@
       @open-detail="openDetailModal"
       @handle-delete="handleDelete"
     />
-
-    <!-- 日历视图 -->
     <CustomerCalendarView
       v-if="currentView === 'calendar'"
       :customers="filteredCustomers"
       @open-detail="openDetailModal"
     />
-
-    <!-- 周视图 -->
     <CustomerWeekView v-if="currentView === 'week'" :customers="filteredCustomers" @open-detail="openDetailModal" />
 
-    <!-- 空状态 -->
     <div v-if="filteredCustomers.length === 0" class="empty-state">
       <div class="empty-icon-circle"><Icon name="building" :size="24" /></div>
-      <div class="empty-text">暂无匹配的客户数据</div>
-      <div class="empty-sub">尝试调整筛选条件或添加新客户</div>
+      <div class="empty-text">??????</div>
+      <div class="empty-sub">??????????????????????</div>
     </div>
 
-    <!-- 新建/编辑弹窗 -->
     <Teleport to="body">
       <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
         <div class="modal-dialog">
           <div class="modal-header">
-            <h3>{{ editingCustomer ? '编辑客户' : '新增客户' }}</h3>
+            <h3>{{ editingCustomer ? '????' : '????' }}</h3>
             <button class="modal-close" @click="closeModal"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
@@ -375,6 +359,8 @@
               v-model:smart-rec-input="smartRecInput"
               :smart-rec-result="smartRecResult"
               :placeholder="smartRecPlaceholder"
+              :template-name="smartRecTemplateName"
+              :template-content="smartRecTemplateContent"
               @run-smart-recognize="runSmartRecognize"
               @apply-smart-recognize="applySmartRecognize"
               @handle-smart-file-upload="handleSmartFileUpload"
@@ -382,7 +368,7 @@
             />
             <div class="form-grid">
               <div class="form-group">
-                <label>客户编号</label>
+                <label>????</label>
                 <input
                   v-model="form.customerNo"
                   type="text"
@@ -392,74 +378,69 @@
                 />
               </div>
               <div class="form-group">
-                <label>客户全称</label>
-                <input v-model="form.fullName" type="text" class="form-input" placeholder="公司全称（选填）" />
+                <label>????</label>
+                <input v-model="form.fullName" type="text" class="form-input" placeholder="???????" />
               </div>
               <div class="form-group">
-                <label>姓名</label>
-                <input v-model="form.contactName" type="text" class="form-input" placeholder="联系人姓名（选填）" />
+                <label>???</label>
+                <input v-model="form.contactName" type="text" class="form-input" placeholder="??????" />
               </div>
               <div class="form-group">
-                <label>部门</label>
+                <label>??</label>
                 <select v-model="form.department" class="form-select" @change="handleDeptChange">
-                  <option value="">请选择部门</option>
+                  <option value="">?????</option>
                   <option v-for="d in customerStore.allDepartments" :key="d" :value="d">{{ d }}</option>
-                  <option value="__new__">新建部门...</option>
+                  <option value="__new__">????...</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>职位</label>
-                <input v-model="form.position" type="text" class="form-input" placeholder="职位（选填）" />
+                <label>??</label>
+                <input v-model="form.position" type="text" class="form-input" placeholder="?????" />
               </div>
               <div class="form-group">
-                <label>手机号码</label>
+                <label>????</label>
                 <input
                   v-model="form.phone"
                   type="tel"
                   class="form-input"
-                  placeholder="手机号码（选填）"
+                  placeholder="???????"
                   maxlength="11"
                   @input="form.phone = form.phone.replace(/[^0-9]/g, '')"
                 />
               </div>
               <div class="form-group">
-                <label>客户等级</label>
+                <label>????</label>
                 <select v-model="form.level" class="form-select">
-                  <option value="A">大客户</option>
-                  <option value="B">B类客户</option>
-                  <option value="C">C类客户</option>
+                  <option value="A">A?</option>
+                  <option value="B">B?</option>
+                  <option value="C">C?</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>决策权限</label>
+                <label>????</label>
                 <select v-model="form.decisionAuthority" class="form-select">
-                  <option value="">请选择</option>
-                  <option value="决策者">决策者</option>
-                  <option value="影响者">影响者</option>
-                  <option value="使用者">使用者</option>
-                  <option value="推荐者">推荐者</option>
-                  <option value="把关者">把关者</option>
+                  <option value="">???????</option>
+                  <option value="???">???</option>
+                  <option value="???">???</option>
+                  <option value="???">???</option>
+                  <option value="???">???</option>
+                  <option value="??">??</option>
                 </select>
               </div>
               <div class="form-group">
-                <label>邮箱</label>
-                <input v-model="form.email" type="email" class="form-input" placeholder="邮箱地址" />
+                <label>??</label>
+                <input v-model="form.email" type="email" class="form-input" placeholder="?????" />
               </div>
               <div class="form-group full-width">
-                <label>核心关注点</label>
-                <textarea
-                  v-model="form.coreConcerns"
-                  class="form-textarea"
-                  rows="2"
-                  placeholder="如：交货速度、产品质量（选填）"
-                ></textarea>
+                <label>????</label>
+                <textarea v-model="form.coreConcerns" class="form-textarea" rows="2" placeholder="???????"></textarea>
               </div>
               <div class="form-group">
-                <label>地区</label>
-                <input v-model="form.region" type="text" class="form-input" placeholder="如：华东、华北" />
+                <label>??</label>
+                <input v-model="form.region" type="text" class="form-input" placeholder="?????" />
               </div>
               <div class="form-group">
-                <label>信用额度</label>
+                <label>????</label>
                 <input
                   v-model.number="form.creditLimit"
                   type="number"
@@ -471,11 +452,11 @@
                 />
               </div>
               <div class="form-group full-width">
-                <label>地址</label>
-                <textarea v-model="form.address" class="form-textarea" rows="2" placeholder="详细地址"></textarea>
+                <label>??</label>
+                <textarea v-model="form.address" class="form-textarea" rows="2" placeholder="?????"></textarea>
               </div>
               <div class="form-group full-width">
-                <label>标签</label>
+                <label>??</label>
                 <div class="tag-selector">
                   <span
                     v-for="tag in customerStore.tags.filter((t) => !t.hidden)"
@@ -499,16 +480,13 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="closeModal">取消</button>
-            <button class="btn btn-primary" @click="saveCustomer">
-              {{ editingCustomer ? '保存修改' : '新增客户' }}
-            </button>
+            <button class="btn btn-ghost" @click="closeModal">??</button>
+            <button class="btn btn-primary" @click="saveCustomer">{{ editingCustomer ? '????' : '????' }}</button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- 客户详情弹窗 -->
     <CustomerDetailModal
       :show-detail="showDetail"
       :detail-customer="detailCustomer"
@@ -517,7 +495,6 @@
       @open360="goCustomerDetail"
     />
 
-    <!-- 确认弹窗 -->
     <Teleport to="body">
       <div v-if="showConfirm" class="modal-overlay" @click.self="showConfirm = false">
         <div class="modal-dialog modal-sm">
@@ -527,22 +504,21 @@
           </div>
           <div class="modal-footer">
             <button class="btn btn-ghost" @click="showConfirm = false">
-              {{ confirmType === 'warning' ? '知道了' : '取消' }}
+              {{ confirmType === 'warning' ? '???' : '??' }}
             </button>
-            <button v-if="confirmType === 'confirm'" class="btn btn-danger" @click="confirmAction">确认删除</button>
+            <button v-if="confirmType === 'confirm'" class="btn btn-danger" @click="confirmAction">????</button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- 批量标签弹窗 -->
     <Teleport to="body">
       <div v-if="showBatchTagModal" class="modal-overlay" @click.self="showBatchTagModal = false">
         <div class="modal-dialog modal-sm">
           <div class="modal-header">
             <h3>
               <Icon name="tag" :size="14" />
-              批量添加标签
+              ??????
             </h3>
             <button class="modal-close" @click="showBatchTagModal = false"><Icon name="close" :size="14" /></button>
           </div>
@@ -550,9 +526,9 @@
             <div
               style="margin-bottom: var(--space-3); font-size: var(--font-size-sm); color: var(--color-text-secondary)"
             >
-              已选
+              ??
               <strong>{{ selectedIds.length }}</strong>
-              位客户，请选择要添加的标签：
+              ???
             </div>
             <div class="batch-tag-list">
               <span
@@ -579,36 +555,35 @@
                 padding: var(--space-4);
               "
             >
-              暂无可用标签，请先在标签分类中创建
+              ??????????????
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showBatchTagModal = false">取消</button>
+            <button class="btn btn-ghost" @click="showBatchTagModal = false">??</button>
             <button class="btn btn-primary" :disabled="batchSelectedTags.length === 0" @click="applyBatchTags">
-              确认添加 ({{ batchSelectedTags.length }})
+              ???? ({{ batchSelectedTags.length }})
             </button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- 重复检测结果弹窗 -->
     <Teleport to="body">
       <div v-if="showDuplicateModal" class="modal-overlay" @click.self="showDuplicateModal = false">
         <div class="modal-dialog">
           <div class="modal-header">
             <h3>
               <Icon name="alert" :size="14" />
-              重复客户检测结果
+              ????
             </h3>
             <button class="modal-close" @click="showDuplicateModal = false"><Icon name="close" :size="14" /></button>
           </div>
           <div class="modal-body">
             <div v-for="(group, idx) in duplicateGroups" :key="idx" class="duplicate-group">
-              <div class="duplicate-group-title">第 {{ idx + 1 }} 组重复（{{ group.length }} 条）</div>
+              <div class="duplicate-group-title">? {{ idx + 1 }} ??{{ group.length }} ??</div>
               <div class="duplicate-group-list">
                 <div v-for="item in group" :key="item.id" class="duplicate-item">
-                  <span class="duplicate-item-name">{{ item.fullName || item.name || '未命名' }}</span>
+                  <span class="duplicate-item-name">{{ item.fullName || item.name || '?????' }}</span>
                   <span class="duplicate-item-phone">{{ item.phone || '-' }}</span>
                   <span class="duplicate-item-level" :class="'level-' + item.level">{{ levelLabel(item.level) }}</span>
                 </div>
@@ -623,11 +598,11 @@
                 padding: var(--space-4);
               "
             >
-              暂无重复客户
+              ???????
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-ghost" @click="showDuplicateModal = false">关闭</button>
+            <button class="btn btn-ghost" @click="showDuplicateModal = false">??</button>
           </div>
         </div>
       </div>
@@ -729,16 +704,16 @@ const activeRingDash = computed(() => {
 })
 
 const viewModes = [
-  { key: 'table', icon: 'table', label: '表格' },
-  { key: 'list', icon: 'list', label: '列表' },
-  { key: 'card', icon: 'card', label: '卡片' },
-  { key: 'calendar', icon: 'calendar', label: '日历' },
-  { key: 'week', icon: 'calendar', label: '周视图' }
+  { key: 'table', icon: 'table', label: '??' },
+  { key: 'list', icon: 'list', label: '??' },
+  { key: 'card', icon: 'card', label: '??' },
+  { key: 'calendar', icon: 'calendar', label: '??' },
+  { key: 'week', icon: 'calendar', label: '???' }
 ]
 
 const filteredCustomers = computed(() => {
   let list = [...customerStore.customers]
-  // 智能搜索：支持名称/编号/手机号模糊匹配，以及关键词识别（如"A级客户"）
+  // 鏅鸿兘鎼滅储锛氭敮鎸佸悕绉?缂栧彿/鎵嬫満鍙锋ā绯婂尮閰嶏紝浠ュ強鍏抽敭璇嶈瘑鍒紙濡?A绾у鎴?锛?
   if (smartSearchText.value) {
     const pf = parsedFilters.value
     if (pf.grade) {
@@ -761,7 +736,7 @@ const filteredCustomers = computed(() => {
           (c.contactName || c.contact || '').toLowerCase().includes(kw)
       )
     } else if (!pf.grade && !pf.status && !pf.region) {
-      // 没有任何解析出的过滤条件，回退到原始模糊匹配
+      // 娌℃湁浠讳綍瑙ｆ瀽鍑虹殑杩囨护鏉′欢锛屽洖閫€鍒板師濮嬫ā绯婂尮閰?
       const s = smartSearchText.value.toLowerCase()
       list = list.filter(
         (c) =>
@@ -772,11 +747,11 @@ const filteredCustomers = computed(() => {
       )
     }
   }
-  // 标签式筛选：等级
+  // 鏍囩寮忕瓫閫夛細绛夌骇
   if (tagGradeFilter.value) {
     list = list.filter((c) => c.level === tagGradeFilter.value)
   }
-  // 标签式筛选：状态
+  // 鏍囩寮忕瓫閫夛細鐘舵€?
   if (tagStatusFilter.value) {
     list = list.filter((c) => c.status === tagStatusFilter.value)
   }
@@ -855,6 +830,8 @@ const {
   smartRecInput,
   smartRecResult,
   smartRecPlaceholder,
+  smartRecTemplateName: smartRecTemplateName,
+  smartRecTemplateContent: smartRecTemplateContent,
   runSmartRecognize,
   applySmartRecognize,
   handleSmartFileUpload,
@@ -920,34 +897,29 @@ function closeModal() {
 function saveCustomer() {
   formErrors.value = []
 
-  // 至少一个关键信息字段非空
   if (!form.fullName.trim() && !form.contactName.trim() && !form.phone.trim()) {
-    formErrors.value.push('请至少填写客户全称、联系人姓名或手机号码中的一项')
+    formErrors.value.push('Please fill at least one of customer name, contact name, or phone number.')
   }
 
-  // 客户编号唯一性校验
   if (form.customerNo) {
     const existing = customerStore.customers.find(
       (c) => c.customerNo === form.customerNo && (!editingCustomer.value || c.id !== editingCustomer.value.id)
     )
     if (existing) {
-      formErrors.value.push('客户编号已存在，请使用其他编号')
+      formErrors.value.push('Customer number already exists.')
     }
   }
 
-  // 手机号格式校验
   if (form.phone && !/^1[3-9]\d{9}$/.test(form.phone)) {
-    formErrors.value.push('手机号格式不正确，应为11位手机号码')
+    formErrors.value.push('Invalid phone number format.')
   }
 
-  // 邮箱格式校验
   if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-    formErrors.value.push('邮箱格式不正确')
+    formErrors.value.push('Invalid email format.')
   }
 
-  // 信用额度非负校验
   if (form.creditLimit !== undefined && form.creditLimit !== '' && Number(form.creditLimit) < 0) {
-    formErrors.value.push('信用额度不能为负数')
+    formErrors.value.push('Credit limit cannot be negative.')
   }
 
   if (formErrors.value.length > 0) return
@@ -967,7 +939,7 @@ function toggleFormTag(tagId) {
 }
 
 function handleDelete(c) {
-  confirmMessage.value = `确定要删除客户"${c.fullName || c.name}"吗？`
+  confirmMessage.value = 'Delete customer ' + (c.fullName || c.name || '') + '?'
   confirmCallback.value = () => {
     const result = customerStore.deleteCustomer(c.id)
     if (!result.success) {
@@ -991,7 +963,7 @@ function confirmAction() {
 }
 
 function handleBatchDelete() {
-  confirmMessage.value = `确定要删除选中的 ${selectedIds.value.length} 个客户吗？`
+  confirmMessage.value = 'Delete ' + selectedIds.value.length + ' selected customers?'
   confirmCallback.value = () => {
     customerStore.batchDelete(selectedIds.value)
     selectedIds.value = []
@@ -1031,45 +1003,45 @@ function applyBatchTags() {
 
 function handleBatchExport() {
   const selected = customerStore.customers.filter((c) => selectedIds.value.includes(c.id))
-  const statusText = (s) => (s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠')
+  const statusText = (s) => (s === 'active' ? 'active' : s === 'potential' ? 'potential' : 'dormant')
   const data = selected.map((c) => ({
-    编号: c.customerNo,
-    名称: c.fullName || c.name,
-    联系人: c.contactName || c.contact,
-    电话: c.phone,
-    邮箱: c.email,
-    部门: c.department,
-    等级: levelLabel(c.level),
-    决策权: c.decisionAuthority,
-    区域: c.region,
-    余额: c.balance,
-    信用额度: c.creditLimit,
-    状态: statusText(c.status)
+    customerNo: c.customerNo,
+    name: c.fullName || c.name,
+    contact: c.contactName || c.contact,
+    phone: c.phone,
+    email: c.email,
+    department: c.department,
+    level: levelLabel(c.level),
+    decisionAuthority: c.decisionAuthority,
+    region: c.region,
+    balance: c.balance,
+    creditLimit: c.creditLimit,
+    status: statusText(c.status)
   }))
-  exportToCSV(data, `客户数据_选中${selected.length}条`)
+  exportToCSV(data, 'customers_export_' + selected.length)
 }
 
 function handleExport() {
   try {
-    const statusText = (s) => (s === 'active' ? '活跃' : s === 'potential' ? '潜在' : '休眠')
+    const statusText = (s) => (s === 'active' ? 'active' : s === 'potential' ? 'potential' : 'dormant')
     const data = filteredCustomers.value.map((c) => ({
-      编号: c.customerNo,
-      名称: c.fullName || c.name,
-      联系人: c.contactName || c.contact,
-      电话: c.phone,
-      邮箱: c.email,
-      部门: c.department,
-      等级: levelLabel(c.level),
-      决策权: c.decisionAuthority,
-      区域: c.region,
-      余额: c.balance,
-      信用额度: c.creditLimit,
-      状态: statusText(c.status)
+      customerNo: c.customerNo,
+      name: c.fullName || c.name,
+      contact: c.contactName || c.contact,
+      phone: c.phone,
+      email: c.email,
+      department: c.department,
+      level: levelLabel(c.level),
+      decisionAuthority: c.decisionAuthority,
+      region: c.region,
+      balance: c.balance,
+      creditLimit: c.creditLimit,
+      status: statusText(c.status)
     }))
-    exportToCSV(data, '客户数据')
+    exportToCSV(data, 'customers_export')
   } catch (e) {
-    console.error('导出失败:', e)
-    alert('导出失败: ' + e.message)
+    console.error('Customer export failed:', e)
+    alert('Customer export failed: ' + e.message)
   }
 }
 
@@ -1081,7 +1053,6 @@ function exportToCSV(data, filename) {
     for (const row of data) {
       const values = headers.map((h) => {
         const val = row[h] !== undefined && row[h] !== null ? String(row[h]) : ''
-        // CSV 中包含逗号、引号或换行符的字段需要用双引号包裹
         if (val.includes(',') || val.includes('"') || val.includes('\n')) {
           return '"' + val.replace(/"/g, '""') + '"'
         }
@@ -1094,18 +1065,18 @@ function exportToCSV(data, filename) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${filename}_${new Date().toISOString().split('T')[0]}.csv`
+    a.download = filename + '_' + new Date().toISOString().split('T')[0] + '.csv'
     a.click()
     URL.revokeObjectURL(url)
   } catch (e) {
-    console.error('导出失败:', e)
-    alert('导出失败: ' + e.message)
+    console.error('Customer export failed:', e)
+    alert('Customer export failed: ' + e.message)
   }
 }
 
 function handleDeptChange() {
   if (form.department === '__new__') {
-    const newDept = prompt('请输入新部门名称：')
+    const newDept = prompt('Enter a department name')
     if (newDept && newDept.trim()) {
       form.department = newDept.trim()
     } else {
@@ -1116,26 +1087,26 @@ function handleDeptChange() {
 
 function handleDownloadTemplate() {
   const headers = [
-    '客户编号',
-    '客户全称',
-    '联系人',
-    '部门',
-    '职位',
-    '手机号码',
-    '邮箱',
-    '等级',
-    '决策权限',
-    '核心关注点',
-    '地区',
-    '信用额度',
-    '地址'
+    'customerNo',
+    'name',
+    'contact',
+    'department',
+    'position',
+    'phone',
+    'email',
+    'level',
+    'decisionAuthority',
+    'coreConcerns',
+    'region',
+    'creditLimit',
+    'address'
   ]
   const csv = headers.join(',') + '\n'
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = '客户导入模板.csv'
+  a.download = 'customer_template.csv'
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -1149,14 +1120,12 @@ function onSmartSearchInput() {
 }
 
 onMounted(() => {
-  // 处理从客户详情页跳转过来的编辑请求
   const editId = route.query.editId
   if (editId) {
     const customer = customerStore.customers.find((c) => c.id === editId)
     if (customer) {
       openEditModal(customer)
     }
-    // 清除 URL 中的 editId 参数，避免刷新页面时重复打开
     router.replace({ path: '/customers', query: {} })
   }
 })

@@ -81,7 +81,9 @@ class EventBus {
 
     if (event === '*') {
       this._wildcardListeners.add(listener)
-      return () => { this._wildcardListeners.delete(listener) }
+      return () => {
+        this._wildcardListeners.delete(listener)
+      }
     }
 
     if (!this._listeners.has(event)) {
@@ -126,7 +128,7 @@ class EventBus {
     }
 
     if (this._debug) {
-      console.debug(`[EventBus] ${event}`, data)
+      console.info(`[EventBus] ${event}`, data)
     }
 
     const listeners = this._listeners.get(event)
@@ -163,10 +165,14 @@ class EventBus {
     const event = `${module}:${action}`
     this.emit(event, { module, action, ...detail, timestamp: Date.now() })
 
-    const genericEvent = action === 'created' ? DataEvents.CREATED
-      : action === 'updated' ? DataEvents.UPDATED
-      : action === 'deleted' ? DataEvents.DELETED
-      : null
+    const genericEvent =
+      action === 'created'
+        ? DataEvents.CREATED
+        : action === 'updated'
+          ? DataEvents.UPDATED
+          : action === 'deleted'
+            ? DataEvents.DELETED
+            : null
     if (genericEvent) {
       this.emit(genericEvent, { module, action, ...detail, timestamp: Date.now() })
     }
@@ -208,7 +214,13 @@ class EventBus {
     if (componentInstance) {
       const fns = (componentInstance as any).__cleanup_fns as Function[] | undefined
       if (Array.isArray(fns)) {
-        fns.forEach(fn => { try { fn() } catch (e) { /* ignore */ } })
+        fns.forEach((fn) => {
+          try {
+            fn()
+          } catch (e) {
+            /* ignore */
+          }
+        })
         ;(componentInstance as any).__cleanup_fns = []
       }
     }
@@ -217,12 +229,17 @@ class EventBus {
   getHistory(eventFilter?: string, limit = 50): EventHistoryEntry[] {
     let history = this._history
     if (eventFilter) {
-      history = history.filter(h => h.event.startsWith(eventFilter))
+      history = history.filter((h) => h.event.startsWith(eventFilter))
     }
     return history.slice(-limit)
   }
 
-  getStats(): { totalEmitted: number; byType: Record<string, number>; activeListeners: number; wildcardListeners: number } {
+  getStats(): {
+    totalEmitted: number
+    byType: Record<string, number>
+    activeListeners: number
+    wildcardListeners: number
+  } {
     return {
       totalEmitted: this._stats.totalEmitted,
       byType: { ...this._stats.byType },
